@@ -1,0 +1,12 @@
+{
+    "name": "hatfield/extensions",
+    "type": "project",
+    "config": {
+        "prepend-autoloader": false,
+        "autoloader-suffix": "HatfieldExted3827c1832eb726f6744d63bcd22823f5eb168e2854173db0c3f4b3befbc569"
+    },
+    "require": {
+        "ineersa/hatfield-ext-task-workflow": "^0.0.45",
+        "ineersa/hatfield-ext-observational-memory": "^0.0.43"
+    }
+}
