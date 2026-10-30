@@ -4,7 +4,7 @@
 
 Build a locally installable personal finance demo for the Symfony AI hackathon. Read [SPEC.md](SPEC.md) and the relevant [accepted ADRs](docs/adr/README.md) before changing behavior or architecture. Proposed choices are not accepted requirements.
 
-The project has a Symfony hello-world Docker bootstrap, Castor static checks, Mate diagnostics, and a PHP Playwright harness. Authentication, financial workflows, and chat remain unimplemented. Install dependencies or start services only within the current task's authorized scope.
+A finance UI preview and development tooling are implemented; authentication, financial workflows, and chat generation are not. Install dependencies or start services only within the current task's authorized scope.
 
 ## Development rules
 
@@ -38,6 +38,7 @@ The project has a Symfony hello-world Docker bootstrap, Castor static checks, Ma
 
 ## Development tooling
 
+- Follow the [development setup](README.md#run-development) and [isolated browser stack](TESTING.md#isolated-live-stack). Use checkout-scoped Castor lifecycle tasks and printed URLs, not manual ports or Compose project names. Stop owned stacks before worktree removal; stop the shared proxy only through `dev:proxy:stop`.
 - Prefer Castor tasks for development, dependency management, QA, and diagnostics. Use host `vendor/bin/castor` as the single tooling entry point. Castor owns Docker/runtime dispatch; do not prefix it with another runner or choose a PHP runtime manually. Run `vendor/bin/castor tooling:prepare` after the initial dependency bootstrap described in [Testing](TESTING.md). Follow [ADR 0009](docs/adr/0009-castor-and-static-checks.md); do not add parallel Composer QA scripts or executable task wrappers.
 - If a needed operation is missing from Castor and is simple to add within the current task's scope, add a small task or option in `.castor/` instead of assembling long shell commands, Docker invocations, or pipelines. Reuse existing helpers; do not build another runner or add unrelated tooling.
 - For application or tooling code changes, run `vendor/bin/castor cs:fix`, then the relevant `test` scenarios and `qa:static`. The workflow's `check` gate combines the browser suite and static gate. The static gate includes Composer validation, read-only style checking, PHPStan, and `symfony lsp:check`. Missing tools or incomplete analysis are failures, not passes.
