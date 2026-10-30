@@ -204,7 +204,7 @@ final class FinanceAccessTest extends PlaywrightTestCase
         $page->goto($categoryUrl);
         self::assertSame('Edited shared catalog entry', $page->getByLabel('Name', ['exact' => true])->inputValue());
         $page->goto($categoryDetailUrl);
-        $page->locator('.action-delete')->click();
+        $this->openDeleteConfirmation($page);
         $this->submit(static fn () => $page->locator('#modal-action-confirmation-button')->click());
         $page->waitForLoadState();
         $page = $this->visit('/admin/category');
@@ -227,7 +227,7 @@ final class FinanceAccessTest extends PlaywrightTestCase
         $this->assertPageContains('Settings');
         $this->login('admin');
         $page->goto($userDetailUrl);
-        $page->locator('.action-delete')->click();
+        $this->openDeleteConfirmation($page);
         $this->submit(static fn () => $page->locator('#modal-action-confirmation-button')->click());
         $page->waitForLoadState();
         $page = $this->visit('/admin/user');
@@ -253,7 +253,7 @@ final class FinanceAccessTest extends PlaywrightTestCase
         $detailUrl = $row->locator('a.action-detail')->getAttribute('href');
         self::assertNotNull($detailUrl);
         $page->goto($detailUrl);
-        $page->locator('.action-delete')->click();
+        $this->openDeleteConfirmation($page);
         $page->evaluate('() => document.querySelector("#action-confirmation-form [name=token]").value = "forged"');
         $this->submit(static fn () => $page->locator('#modal-action-confirmation-button')->click());
         $page->waitForLoadState();
@@ -261,18 +261,18 @@ final class FinanceAccessTest extends PlaywrightTestCase
         $this->assertPageContains('Disposable synthetic source');
         $page->goto($detailUrl);
         $page->evaluate('(path) => document.querySelector(".action-delete").setAttribute("formaction", path)', '/admin/source/'.$this->bobSource.'/delete');
-        $page->locator('.action-delete')->click();
+        $this->openDeleteConfirmation($page);
         $this->submit(static fn () => $page->locator('#modal-action-confirmation-button')->click());
         $page->waitForLoadState();
         self::assertSame(403, $this->getLastResponse()->getStatusCode());
         $page->goto($detailUrl);
-        $page->locator('.action-delete')->click();
+        $this->openDeleteConfirmation($page);
         $this->submit(static fn () => $page->locator('#modal-action-confirmation-button')->click());
         $page->waitForLoadState();
         $page = $this->visit('/admin/source');
         self::assertStringNotContainsString('Disposable synthetic source', $page->locator('body')->textContent());
         $page = $this->visit('/admin/source/'.$this->aliceSource);
-        $page->locator('.action-delete')->click();
+        $this->openDeleteConfirmation($page);
         $this->submit(static fn () => $page->locator('#modal-action-confirmation-button')->click());
         $page->waitForLoadState();
         $this->assertPageContains('This record is still referenced and was not deleted');
@@ -295,6 +295,38 @@ final class FinanceAccessTest extends PlaywrightTestCase
         $this->assertPageContains('The CSRF token is invalid');
         $page = $this->visit('/settings');
         self::assertSame('USD', $page->getByLabel('Reporting currency')->inputValue());
+    }
+
+    private function openDeleteConfirmation(PageInterface $page): void
+    {
+        $runtime = $page->evaluate(<<<'JS'
+            () => ({
+                app: typeof window.EasyAdminApp,
+                modal: typeof window.bootstrap?.Modal,
+                assets: performance.getEntriesByType('resource')
+                    .filter(entry => entry.name.includes('/bundles/easyadmin/'))
+                    .slice(-12).map(entry => ({url: entry.name, status: entry.responseStatus}))
+            })
+            JS);
+        $diagnostic = json_encode($runtime, \JSON_THROW_ON_ERROR);
+        self::assertSame('object', $runtime['app'], 'EasyAdmin must initialize before opening confirmation. '.$diagnostic);
+        self::assertSame('function', $runtime['modal'], 'Bootstrap modal code must load. '.$diagnostic);
+        $page->locator('.action-delete')->click();
+        try {
+            $page->locator('#modal-action-confirmation-button')->waitFor(['state' => 'visible', 'timeout' => 5000]);
+        } catch (\Throwable $exception) {
+            $state = $page->evaluate(<<<'JS'
+                () => ({
+                    url: location.href,
+                    trigger: document.querySelector('.action-delete')?.outerHTML,
+                    modalClass: document.querySelector('#modal-action-confirmation')?.className,
+                    modalDisplay: document.querySelector('#modal-action-confirmation')
+                        ? getComputedStyle(document.querySelector('#modal-action-confirmation')).display : null,
+                    confirmationButtons: document.querySelectorAll('#modal-action-confirmation-button').length
+                })
+                JS);
+            self::fail('Delete confirmation did not become visible: '.json_encode($state, \JSON_THROW_ON_ERROR).' '.$exception->getMessage());
+        }
     }
 
     private function openSourceCreation(): PageInterface
