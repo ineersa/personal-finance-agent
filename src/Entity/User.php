@@ -33,8 +33,12 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     #[ORM\Column]
     private string $password = '';
 
+    #[ORM\Column(length: 3, options: ['default' => 'USD'])]
+    private string $reportingCurrency = 'USD';
+
     /**
-     * Ensure the session doesn't contain actual password hashes by CRC32C-hashing them, as supported since Symfony 7.3.
+     * Symfony's session-only password fingerprint, not the stored password hash.
+     * Database passwords use the configured Symfony auto hasher.
      *
      * @return array<string, mixed>
      */
@@ -54,6 +58,18 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     public function getEmail(): ?string
     {
         return $this->email;
+    }
+
+    public function getReportingCurrency(): string
+    {
+        return $this->reportingCurrency;
+    }
+
+    public function setReportingCurrency(string $currency): static
+    {
+        $this->reportingCurrency = $currency;
+
+        return $this;
     }
 
     public function setEmail(string $email): static

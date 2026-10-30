@@ -54,6 +54,27 @@ function testDatabasePrepare(): int
     return report('test:database:prepare', ['php', 'bin/console', 'doctrine:migrations:migrate', '--env=test', '--no-interaction', '--allow-no-migration']);
 }
 
+#[AsTask(namespace: 'test', name: 'database:fresh', description: 'Verify migrations and mappings on new, isolated diagnostic storage without resetting existing databases.')]
+function testDatabaseFresh(): int
+{
+    $root = \dirname(__DIR__);
+    foreach ([$root.'/var', $root.'/var/browser'] as $path) {
+        if (is_link($path)) {
+            throw new \RuntimeException('Refusing symlinked diagnostic storage.');
+        }
+    }
+    $relative = 'var/browser/migrations-'.bin2hex(random_bytes(8));
+    mkdir($root.'/'.$relative, 0700, true);
+    // The dev configuration accepts this explicit URL; test always uses its fixed database.
+    $command = ['env', 'DATABASE_URL=sqlite:////app/'.$relative.'/application.db', 'php', 'bin/console'];
+    $exit = report('test:database:fresh-migrate', [...$command, 'doctrine:migrations:migrate', '--env=dev', '--no-interaction']);
+    if (0 !== $exit) {
+        return $exit;
+    }
+
+    return report('test:database:fresh-schema', [...$command, 'doctrine:schema:validate', '--env=dev']);
+}
+
 #[AsTask(namespace: 'browser', name: 'stack:up', description: 'Build and start only the isolated browser-test application.')]
 function browserStackUp(): int
 {

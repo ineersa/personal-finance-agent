@@ -22,7 +22,7 @@ Use one shared SQLite application database, managed through Doctrine. Keep queue
 - Treat administrative maintenance permissions separately from access to personal financial records. Do not introduce an implicit ownership bypass.
 - Define reset scope and safeguards before implementation. Administrative permission is not permission to reset unrelated installations or reference projects.
 
-Personal entities inherit an immutable owner relationship. An enabled-by-default Doctrine SQL filter denies reads without an explicit trusted owner scope; a flush listener rejects personal writes and associations outside that scope. Scope changes clear the entity manager to prevent identity-map reuse across owners. There is no role-based bypass. [Domain persistence](../domain-persistence.md) defines the calling contract and the separate bulk-DQL/raw-SQL boundary. HTTP and worker integrations remain later work.
+Source, Statement and Transaction inherit only an immutable user relationship/accessor from a mapped superclass; each declares its own ID. Personal foreign keys use `user_id`. Scoped repository queries cover lists, direct lookups and association choices. Symfony voters authorize individual records and their associations, without an administrative bypass. Voters do not scope lists, and there is no flush listener, owner filter or mutable scope. Shared categories and currency rates have no user relationship. [Domain persistence](../domain-persistence.md) defines the calling contract and remaining HTTP/worker/raw-SQL enforcement obligations.
 
 ### Connection and transaction policy
 

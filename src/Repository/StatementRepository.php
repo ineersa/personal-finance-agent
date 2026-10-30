@@ -5,14 +5,37 @@ declare(strict_types=1);
 namespace App\Repository;
 
 use App\Entity\Statement;
-use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
-use Doctrine\Persistence\ManagerRegistry;
+use App\Entity\User;
+use Doctrine\ORM\EntityManagerInterface;
+use Doctrine\ORM\QueryBuilder;
 
-/** @extends ServiceEntityRepository<Statement> */
-final class StatementRepository extends ServiceEntityRepository
+final readonly class StatementRepository
 {
-    public function __construct(ManagerRegistry $registry)
+    public function __construct(private EntityManagerInterface $entityManager)
     {
-        parent::__construct($registry, Statement::class);
+    }
+
+    public function queryForUser(User $user): QueryBuilder
+    {
+        if (null === $user->getId()) {
+            throw new \InvalidArgumentException('A persisted trusted user is required.');
+        }
+
+        return $this->entityManager->createQueryBuilder()
+            ->select('record')
+            ->from(Statement::class, 'record')
+            ->where('record.user = :user')
+            ->innerJoin('record.source', 'source')
+            ->andWhere('source.user = :user')
+            ->setParameter('user', $user->getId());
+    }
+
+    public function findForUser(User $user, int $id): ?Statement
+    {
+        return $this->queryForUser($user)
+            ->andWhere('record.id = :id')
+            ->setParameter('id', $id)
+            ->getQuery()
+            ->getOneOrNullResult();
     }
 }

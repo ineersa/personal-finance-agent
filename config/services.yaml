@@ -20,7 +20,6 @@ services:
         resource: '../src/'
         exclude:
             - '../src/Entity/'
-            - '../src/Doctrine/OwnerFilter.php'
             - '../src/Doctrine/ExactDecimalType.php'
             - '../src/Doctrine/SqliteImmediateTransactionConnection.php'
             - '../src/Doctrine/SqliteImmediateTransactionDriver.php'

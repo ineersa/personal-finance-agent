@@ -13,7 +13,7 @@ The MVP needs a small finance model, reviewable imports, flexible analysis, and 
 
 Use one transaction date exactly as supplied by the statement, not separate booking/value dates. A source is a bank account, card, or other financial account instrument, not a merchant. Retain amount strings, currency, credit/debit direction, and category. The legacy Credit/Debit enum is not proof that a credit is income rather than a refund or own-account transfer. Do not introduce complex accounting or inferred tax policy.
 
-Use upload → parsed editable draft → user approval/editing → approved financial records for analysis. Validation and ownership enforcement remain mandatory; confirmation cannot authorize invalid money or bypass security. No advanced reconciliation, overlapping-statement matching, or automatic deduplication subsystem is required for the MVP. Required message-redelivery idempotency remains unchanged.
+Use upload → parsed editable draft → user approval/editing → approved financial records for analysis. Store drafts and approved rows in one Transaction table with an `isDraft` flag, not separate entities/tables. Categories are shared reference data with name, description and icon, not owner-specific records. Validation and ownership enforcement remain mandatory; confirmation cannot authorize invalid money or bypass security. No advanced reconciliation, overlapping-statement matching, or automatic deduplication subsystem is required for the MVP. Required message-redelivery idempotency remains unchanged.
 
 ### Model-written, bounded read-only SQL
 

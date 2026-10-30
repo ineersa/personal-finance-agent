@@ -15,7 +15,7 @@ Use decimal strings with Doctrine and BCMath operations. Preserve each original 
 
 Do not assume a Doctrine DECIMAL declaration alone guarantees exact SQLite storage. A prior in-memory SQLite probe stored `DECIMAL(24,8)` input `123456789012.12345678` as `real`, reading `123456789012.12346`, while TEXT preserved the string. SQLite `SUM` of `0.10` and `0.20` yielded `0.30000000000000004`.
 
-The domain implementation uses a custom Doctrine `exact_decimal` type declared as CLOB, giving SQLite TEXT affinity. It validates plain decimal strings without changing their sign, zeros or precision. A probe against the generated declaration preserved long fractional values and signed, zero-padded strings with storage class `text`. Application round trips remain part of the later CRUD browser scenarios. See [domain persistence](../domain-persistence.md).
+Transaction amounts use Doctrine text/CLOB storage so incomplete drafts can retain unvalidated original text. Approval must validate plain decimal strings before analysis. `CurrencyRate` uses the custom `exact_decimal` type, also declared as CLOB. Both have SQLite TEXT affinity and preserve signs, zeros and precision. Migration diagnostics preserve long fractional amounts and signed, zero-padded rate strings with storage class `text`. Application round trips remain part of the later CRUD browser scenarios. Reporting currency is a User column, defaulting to USD. See [domain persistence](../domain-persistence.md).
 
 Raw SQL `SUM` or `CAST` can still coerce textual values; SQL-based money aggregates and FX calculations must preserve precision. The SQL strategy remains unresolved, not delegated to model arithmetic.
 

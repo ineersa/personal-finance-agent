@@ -7,7 +7,7 @@ namespace App\Entity;
 use Doctrine\ORM\Mapping as ORM;
 
 #[ORM\Entity]
-class ExchangeRate
+class CurrencyRate
 {
     public function __construct(
         #[ORM\Id]
