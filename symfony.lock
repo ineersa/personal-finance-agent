@@ -1,0 +1,220 @@
+{
+    "doctrine/deprecations": {
+        "version": "1.1",
+        "recipe": {
+            "repo": "github.com/symfony/recipes",
+            "branch": "main",
+            "version": "1.0",
+            "ref": "fdd756167454623e21f1d769c5b814b243782a67"
+        }
+    },
+    "doctrine/doctrine-bundle": {
+        "version": "3.3",
+        "recipe": {
+            "repo": "github.com/symfony/recipes",
+            "branch": "main",
+            "version": "3.1",
+            "ref": "798165f38ea0191f4b195503338d843f13acd312"
+        },
+        "files": [
+            "config/packages/doctrine.yaml",
+            "src/Entity/.gitignore",
+            "src/Repository/.gitignore"
+        ]
+    },
+    "easycorp/easyadmin-bundle": {
+        "version": "5.8",
+        "recipe": {
+            "repo": "github.com/symfony/recipes",
+            "branch": "main",
+            "version": "4.14",
+            "ref": "13b3e524d1038a6861ad6c7fc64e31b644ba0c54"
+        },
+        "files": [
+            "config/routes/easyadmin.yaml"
+        ]
+    },
+    "symfony/asset-mapper": {
+        "version": "8.2",
+        "recipe": {
+            "repo": "github.com/symfony/recipes",
+            "branch": "main",
+            "version": "8.2",
+            "ref": "e6c7a755207c237c61e1d16ace459b5e73593316"
+        },
+        "files": [
+            "assets/app.js",
+            "assets/styles/app.css",
+            "config/packages/asset_mapper.yaml",
+            "importmap.php"
+        ]
+    },
+    "symfony/console": {
+        "version": "8.2",
+        "recipe": {
+            "repo": "github.com/symfony/recipes",
+            "branch": "main",
+            "version": "5.3",
+            "ref": "1781ff40d8a17d87cf53f8d4cf0c8346ed2bb461"
+        },
+        "files": [
+            "bin/console"
+        ]
+    },
+    "symfony/flex": {
+        "version": "2.12",
+        "recipe": {
+            "repo": "github.com/symfony/recipes",
+            "branch": "main",
+            "version": "2.4",
+            "ref": "52e9754527a15e2b79d9a610f98185a1fe46622a"
+        },
+        "files": [
+            ".env",
+            ".env.dev"
+        ]
+    },
+    "symfony/form": {
+        "version": "8.2",
+        "recipe": {
+            "repo": "github.com/symfony/recipes",
+            "branch": "main",
+            "version": "8.2",
+            "ref": "3432a58fba173e2c80d9e86b50fdd9598fef1335"
+        },
+        "files": [
+            "config/packages/form.yaml"
+        ]
+    },
+    "symfony/framework-bundle": {
+        "version": "8.2",
+        "recipe": {
+            "repo": "github.com/symfony/recipes",
+            "branch": "main",
+            "version": "8.2",
+            "ref": "6dad798dd0f9536371957911281436501bdc0d8f"
+        },
+        "files": [
+            "config/packages/cache.yaml",
+            "config/packages/framework.yaml",
+            "config/preload.php",
+            "config/routes/framework.yaml",
+            "config/services.yaml",
+            "public/index.php",
+            "src/Controller/.gitignore",
+            "src/Kernel.php",
+            ".editorconfig",
+            ".symfony.local.yaml",
+            "AGENTS.md"
+        ]
+    },
+    "symfony/property-info": {
+        "version": "8.2",
+        "recipe": {
+            "repo": "github.com/symfony/recipes",
+            "branch": "main",
+            "version": "8.2",
+            "ref": "46c0212530169ce92351ce7d58336db04f77c2a6"
+        }
+    },
+    "symfony/routing": {
+        "version": "8.2",
+        "recipe": {
+            "repo": "github.com/symfony/recipes",
+            "branch": "main",
+            "version": "8.2",
+            "ref": "1c0b0d4378307e83cb6e99cf3333390e3c2c9041"
+        },
+        "files": [
+            "config/packages/routing.yaml",
+            "config/routes.yaml"
+        ]
+    },
+    "symfony/security-bundle": {
+        "version": "8.2",
+        "recipe": {
+            "repo": "github.com/symfony/recipes",
+            "branch": "main",
+            "version": "8.2",
+            "ref": "c0af0228ae2d5825bbbca9f32a4c054f1c40e88d"
+        },
+        "files": [
+            "config/packages/security.yaml",
+            "config/routes/security.yaml"
+        ]
+    },
+    "symfony/security-csrf": {
+        "version": "8.2",
+        "recipe": {
+            "repo": "github.com/symfony/recipes",
+            "branch": "main",
+            "version": "8.2",
+            "ref": "939ab3e95126f02c1d7a481abf72c40f810ea1cb"
+        },
+        "files": [
+            "config/packages/csrf_protection.yaml"
+        ]
+    },
+    "symfony/translation": {
+        "version": "8.2",
+        "recipe": {
+            "repo": "github.com/symfony/recipes",
+            "branch": "main",
+            "version": "8.2",
+            "ref": "30050bb35d10c0195a1500199a97c8c04085d2be"
+        },
+        "files": [
+            "config/packages/translation.yaml",
+            "translations/.gitignore"
+        ]
+    },
+    "symfony/twig-bundle": {
+        "version": "8.2",
+        "recipe": {
+            "repo": "github.com/symfony/recipes",
+            "branch": "main",
+            "version": "8.2",
+            "ref": "7e3e99b592d2b9d9afa64cfbd2fe18f1400f9750"
+        },
+        "files": [
+            "config/packages/twig.yaml",
+            "templates/base.html.twig"
+        ]
+    },
+    "symfony/uid": {
+        "version": "8.2",
+        "recipe": {
+            "repo": "github.com/symfony/recipes",
+            "branch": "main",
+            "version": "7.0",
+            "ref": "0df5844274d871b37fc3816c57a768ffc60a43a5"
+        }
+    },
+    "symfony/ux-twig-component": {
+        "version": "3.6",
+        "recipe": {
+            "repo": "github.com/symfony/recipes",
+            "branch": "main",
+            "version": "2.13",
+            "ref": "f367ae2a1faf01c503de2171f1ec22567febeead"
+        },
+        "files": [
+            "config/packages/twig_component.yaml"
+        ]
+    },
+    "symfony/validator": {
+        "version": "8.2",
+        "recipe": {
+            "repo": "github.com/symfony/recipes",
+            "branch": "main",
+            "version": "8.2",
+            "ref": "06ad4500705d987fa871ffb4ad04cea68870371e"
+        },
+        "files": [
+            "config/packages/validator.yaml"
+        ]
+    },
+    "twig/extra-bundle": {
+        "version": "v3.29.0"
+    }
+}

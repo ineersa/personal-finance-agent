@@ -1,0 +1,60 @@
+{
+    "name": "ineersa/personal-finance-agent",
+    "description": "Personal finance demo for the Symfony AI hackathon",
+    "type": "project",
+    "license": "MIT",
+    "require": {
+        "php": "^8.5",
+        "ext-bcmath": "*",
+        "ext-ctype": "*",
+        "ext-fileinfo": "*",
+        "ext-iconv": "*",
+        "ext-intl": "*",
+        "ext-pcntl": "*",
+        "ext-pdo_sqlite": "*",
+        "ext-posix": "*",
+        "ext-sqlite3": "*",
+        "easycorp/easyadmin-bundle": "^5.8",
+        "symfony/ai-agent": "~1.0.0@beta",
+        "symfony/ai-platform": "~1.0.0@beta",
+        "symfony/asset": "8.2.*@dev",
+        "symfony/asset-mapper": "8.2.*@dev",
+        "symfony/console": "8.2.*@dev",
+        "symfony/dotenv": "8.2.*@dev",
+        "symfony/flex": "^2.10",
+        "symfony/framework-bundle": "8.2.*@dev",
+        "symfony/runtime": "8.2.*@dev",
+        "symfony/twig-bundle": "8.2.*@dev",
+        "symfony/yaml": "8.2.*@dev",
+        "twig/twig": "^3.24"
+    },
+    "config": {
+        "allow-plugins": {
+            "symfony/flex": true,
+            "symfony/runtime": true
+        },
+        "sort-packages": true
+    },
+    "autoload": {
+        "psr-4": {
+            "App\\": "src/"
+        }
+    },
+    "minimum-stability": "dev",
+    "prefer-stable": true,
+    "extra": {
+        "symfony": {
+            "allow-contrib": false,
+            "require": "8.2.*"
+        }
+    },
+    "scripts": {
+        "auto-scripts": {
+            "cache:clear": "symfony-cmd",
+            "assets:install %PUBLIC_DIR%": "symfony-cmd",
+            "importmap:install": "symfony-cmd"
+        },
+        "post-install-cmd": ["@auto-scripts"],
+        "post-update-cmd": ["@auto-scripts"]
+    }
+}

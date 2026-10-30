@@ -1,0 +1,21 @@
+name: personal-finance-agent
+
+services:
+  php:
+    build: .
+    user: "${LOCAL_UID:-1000}:${LOCAL_GID:-1000}"
+    environment:
+      COMPOSER_HOME: /tmp/composer
+      COMPOSER_CACHE_DIR: /tmp/composer/cache
+      XDG_CONFIG_HOME: /tmp/caddy-config
+      XDG_DATA_HOME: /tmp/caddy-data
+    volumes:
+      - ./:/app
+    ports:
+      - "127.0.0.1:${HTTP_PORT:-8080}:8080"
+    healthcheck:
+      test: ["CMD", "php", "-r", "exit(@file_get_contents('http://127.0.0.1:8080/') === false ? 1 : 0);"]
+      interval: 10s
+      timeout: 5s
+      start_period: 15s
+      retries: 3
