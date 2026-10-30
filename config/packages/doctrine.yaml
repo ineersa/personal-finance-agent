@@ -1,5 +1,14 @@
 doctrine:
     dbal:
         url: '%env(resolve:DATABASE_URL)%'
+        types:
+            exact_decimal: App\Doctrine\ExactDecimalType
     orm:
         auto_mapping: false
+        naming_strategy: doctrine.orm.naming_strategy.underscore_number_aware
+        mappings:
+            App:
+                type: attribute
+                dir: '%kernel.project_dir%/src/Entity'
+                prefix: App\Entity
+                is_bundle: false

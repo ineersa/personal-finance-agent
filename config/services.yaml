@@ -18,6 +18,17 @@ services:
     # this creates a service per class whose id is the fully-qualified class name
     App\:
         resource: '../src/'
+        exclude:
+            - '../src/Entity/'
+            - '../src/Doctrine/ExactDecimalType.php'
+            - '../src/Doctrine/SqliteImmediateTransactionConnection.php'
+            - '../src/Doctrine/SqliteImmediateTransactionDriver.php'
+
+    App\Doctrine\SqliteImmediateTransactionMiddleware:
+        autoconfigure: false
+        tags:
+            # Wrap the native driver before connection-caching/test middleware.
+            - { name: doctrine.middleware, connection: default, priority: 1000 }
 
     # add more service definitions when explicit configuration is needed
     # please note that last definitions always *replace* previous ones
