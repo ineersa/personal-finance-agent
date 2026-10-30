@@ -138,8 +138,7 @@ final class FinanceAccessTest extends PlaywrightTestCase
     public function testSourceCrudValidationEscapingAndReload(): void
     {
         $this->login('alice');
-        $page = $this->visit('/admin/source/new');
-        self::assertSame(200, $this->getLastResponse()->getStatusCode(), 'An authenticated owner must be able to open source creation.');
+        $page = $this->openSourceCreation();
         $page->getByLabel('Name', ['exact' => true])->fill('<script>window.financeInjected=true</script>');
         $page->getByLabel('Description', ['exact' => true])->fill('Synthetic source created through the browser');
         $this->save($page);
@@ -196,13 +195,16 @@ final class FinanceAccessTest extends PlaywrightTestCase
         $this->save($page);
         $page = $this->visit('/admin/category');
         $this->assertPageContains('New shared catalog entry');
-        $categoryUrl = $page->locator('tbody tr')->filter(['hasText' => 'New shared catalog entry'])->locator('a.action-edit')->getAttribute('href');
+        $categoryRow = $page->locator('tbody tr')->filter(['hasText' => 'New shared catalog entry']);
+        $categoryUrl = $categoryRow->locator('a.action-edit')->getAttribute('href');
+        $categoryDetailUrl = $categoryRow->locator('a.action-detail')->getAttribute('href');
         $page->goto($categoryUrl);
         $page->getByLabel('Name', ['exact' => true])->fill('Edited shared catalog entry');
         $this->save($page);
         $page->goto($categoryUrl);
         self::assertSame('Edited shared catalog entry', $page->getByLabel('Name', ['exact' => true])->inputValue());
-        $page->locator('a.action-delete')->click();
+        $page->goto($categoryDetailUrl);
+        $page->locator('.action-delete')->click();
         $this->submit(static fn () => $page->locator('#modal-action-confirmation-button')->click());
         $page->waitForLoadState();
         $page = $this->visit('/admin/category');
@@ -213,7 +215,9 @@ final class FinanceAccessTest extends PlaywrightTestCase
         $this->save($page);
         $page = $this->visit('/admin/user');
         $this->assertPageContains('created@example.test');
-        $userUrl = $page->locator('tbody tr')->filter(['hasText' => 'created@example.test'])->locator('a.action-edit')->getAttribute('href');
+        $userRow = $page->locator('tbody tr')->filter(['hasText' => 'created@example.test']);
+        $userUrl = $userRow->locator('a.action-edit')->getAttribute('href');
+        $userDetailUrl = $userRow->locator('a.action-detail')->getAttribute('href');
         $page->goto($userUrl);
         $page->getByLabel('Email', ['exact' => true])->fill('renamed@example.test');
         // An empty new-password field must preserve the existing hash.
@@ -222,8 +226,8 @@ final class FinanceAccessTest extends PlaywrightTestCase
         $this->visit('/settings');
         $this->assertPageContains('Settings');
         $this->login('admin');
-        $page->goto($userUrl);
-        $page->locator('a.action-delete')->click();
+        $page->goto($userDetailUrl);
+        $page->locator('.action-delete')->click();
         $this->submit(static fn () => $page->locator('#modal-action-confirmation-button')->click());
         $page->waitForLoadState();
         $page = $this->visit('/admin/user');
@@ -241,35 +245,34 @@ final class FinanceAccessTest extends PlaywrightTestCase
     public function testSourceDeletionRequiresCsrfAndCannotTargetAnotherOwner(): void
     {
         $this->login('alice');
-        $page = $this->visit('/admin/source/new');
-        self::assertSame(200, $this->getLastResponse()->getStatusCode(), 'Source creation must not be denied by metadata-only authorization.');
+        $page = $this->openSourceCreation();
         $page->getByLabel('Name', ['exact' => true])->fill('Disposable synthetic source');
         $this->save($page);
         $page = $this->visit('/admin/source');
         $row = $page->locator('tbody tr')->filter(['hasText' => 'Disposable synthetic source']);
-        $editUrl = $row->locator('a.action-edit')->getAttribute('href');
-        self::assertNotNull($editUrl);
-        $page->goto($editUrl);
+        $detailUrl = $row->locator('a.action-detail')->getAttribute('href');
+        self::assertNotNull($detailUrl);
+        $page->goto($detailUrl);
         $page->locator('.action-delete')->click();
         $page->evaluate('() => document.querySelector("#action-confirmation-form [name=token]").value = "forged"');
         $this->submit(static fn () => $page->locator('#modal-action-confirmation-button')->click());
         $page->waitForLoadState();
         $this->visit('/admin/source');
         $this->assertPageContains('Disposable synthetic source');
-        $page->goto($editUrl);
+        $page->goto($detailUrl);
         $page->evaluate('(path) => document.querySelector(".action-delete").setAttribute("formaction", path)', '/admin/source/'.$this->bobSource.'/delete');
         $page->locator('.action-delete')->click();
         $this->submit(static fn () => $page->locator('#modal-action-confirmation-button')->click());
         $page->waitForLoadState();
         self::assertSame(403, $this->getLastResponse()->getStatusCode());
-        $page->goto($editUrl);
-        $page->locator('a.action-delete')->click();
+        $page->goto($detailUrl);
+        $page->locator('.action-delete')->click();
         $this->submit(static fn () => $page->locator('#modal-action-confirmation-button')->click());
         $page->waitForLoadState();
         $page = $this->visit('/admin/source');
         self::assertStringNotContainsString('Disposable synthetic source', $page->locator('body')->textContent());
-        $page = $this->visit('/admin/source/'.$this->aliceSource.'/edit');
-        $page->locator('a.action-delete')->click();
+        $page = $this->visit('/admin/source/'.$this->aliceSource);
+        $page->locator('.action-delete')->click();
         $this->submit(static fn () => $page->locator('#modal-action-confirmation-button')->click());
         $page->waitForLoadState();
         $this->assertPageContains('This record is still referenced and was not deleted');
@@ -292,6 +295,18 @@ final class FinanceAccessTest extends PlaywrightTestCase
         $this->assertPageContains('The CSRF token is invalid');
         $page = $this->visit('/settings');
         self::assertSame('USD', $page->getByLabel('Reporting currency')->inputValue());
+    }
+
+    private function openSourceCreation(): PageInterface
+    {
+        $page = $this->getPage();
+        // The bridge's last Symfony response may be a late subresource, not the document.
+        $document = $page->goto($this->getBaseUrl().'/admin/source/new');
+        self::assertNotNull($document);
+        self::assertSame(200, $document->status(), 'Source creation document: '.substr($page->locator('body')->textContent() ?? '', 0, 1600));
+        self::assertStringEndsWith('/favicon.svg', $page->locator('link[rel="shortcut icon"]')->getAttribute('href') ?? '');
+
+        return $page;
     }
 
     private function login(string $name): void

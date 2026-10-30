@@ -23,7 +23,7 @@ final class DashboardController extends AbstractDashboardController
 
     public function configureDashboard(): Dashboard
     {
-        return Dashboard::new()->setTitle('Personal finance');
+        return Dashboard::new()->setTitle('Personal finance')->setFaviconPath('favicon.svg');
     }
 
     public function configureUserMenu(UserInterface $user): UserMenu
