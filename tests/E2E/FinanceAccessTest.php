@@ -25,6 +25,9 @@ final class FinanceAccessTest extends PlaywrightTestCase
     private int $draftTransaction;
     private int $bobStatement;
     private int $bobUser;
+    private int $category;
+    /** @var array<string, int> */
+    private array $originalCurrencyTransactions = [];
 
     protected function setUp(): void
     {
@@ -61,7 +64,17 @@ final class FinanceAccessTest extends PlaywrightTestCase
         }
         $draft = new Transaction($alice, $statements[0], $aliceSource, description: 'Unapproved draft');
         $em->persist($draft);
+        $originals = [];
+        foreach (['UAH', 'BGN'] as $currency) {
+            $original = new Transaction($alice, $statements[0], $aliceSource, new \DateTimeImmutable('2025-10-01'), '10.00', $currency, Direction::Debit, 'Original '.$currency, $category, false);
+            $em->persist($original);
+            $originals[$currency] = $original;
+        }
         $em->flush();
+        $this->category = $category->getId();
+        foreach ($originals as $currency => $original) {
+            $this->originalCurrencyTransactions[$currency] = $original->getId();
+        }
         $this->aliceSource = $aliceSource->getId();
         $this->bobSource = $bobSource->getId();
         $this->aliceTransaction = $transactions[0]->getId();
@@ -179,12 +192,152 @@ final class FinanceAccessTest extends PlaywrightTestCase
         self::assertSame('EUR', $page->getByLabel('Reporting currency')->inputValue());
         $page = $this->visit('/admin/transaction/'.$this->aliceTransaction.'/edit');
         self::assertSame('-000123456789012.123456789012345678', $page->getByLabel('Amount', ['exact' => true])->inputValue());
-        self::assertSame('USD', $page->locator('select[name="Transaction[currency]"]')->inputValue());
+        self::assertSame('USD', $page->getByLabel('Currency', ['exact' => true])->inputValue());
         $page->evaluate('(id) => { const s = document.querySelector("select[name=\"Transaction[source]\"]"); s.add(new Option("Forged foreign source", id, true, true)); }', (string) $this->bobSource);
         $this->save($page);
         $this->assertPageContains('The selected choice is invalid');
         $page = $this->visit('/admin/transaction/'.$this->aliceTransaction.'/edit');
         self::assertSame((string) $this->aliceSource, $page->locator('select[name="Transaction[source]"]')->inputValue());
+    }
+
+    public function testAssociationNamesAreEscapedAndCategoryLinksRespectRole(): void
+    {
+        $sourceName = '<img id="source-injection" src=x onerror="window.sourceInjected=true">';
+        $categoryName = '<script id="category-injection">window.categoryInjected=true</script>';
+        $this->login('alice');
+        $page = $this->visit('/admin/source/'.$this->aliceSource.'/edit');
+        $page->getByLabel('Name', ['exact' => true])->fill($sourceName);
+        $this->save($page);
+        // An administrator controls the shared label rendered in Alice's finances.
+        $this->login('admin');
+        $page = $this->visit('/admin/category/'.$this->category.'/edit');
+        $page->getByLabel('Name', ['exact' => true])->fill($categoryName);
+        $this->save($page);
+        $this->login('alice');
+        foreach (['/admin/transaction', '/admin/transaction/'.$this->aliceTransaction] as $path) {
+            $page = $this->visit($path);
+            $body = $page->locator('body')->textContent();
+            self::assertStringContainsString($sourceName, $body);
+            self::assertStringContainsString($categoryName, $body);
+            self::assertSame(0, $page->locator('#source-injection, #category-injection')->count());
+            self::assertNull($page->evaluate('() => window.sourceInjected'));
+            self::assertNull($page->evaluate('() => window.categoryInjected'));
+            self::assertSame(0, $page->locator('a[href*="/admin/category"]')->count());
+        }
+        $page = $this->visit('/admin/transaction/'.$this->aliceTransaction.'/edit');
+        self::assertStringContainsString($categoryName, $page->locator('select[name="Transaction[category]"]')->textContent());
+        $page->getByLabel('Category', ['exact' => true])->selectOption((string) $this->category);
+        $this->save($page);
+        $page = $this->visit('/admin/transaction/'.$this->aliceTransaction.'/edit');
+        self::assertSame((string) $this->category, $page->getByLabel('Category', ['exact' => true])->inputValue());
+        $this->visit('/admin/category/'.$this->category);
+        self::assertSame(403, $this->getLastResponse()->getStatusCode());
+    }
+
+    public function testOriginalCurrenciesAndOptionalDescriptionSurviveOrdinaryEdits(): void
+    {
+        $this->login('alice');
+        foreach ($this->originalCurrencyTransactions as $currency => $id) {
+            $page = $this->visit('/admin/transaction/'.$id.'/edit');
+            self::assertSame($currency, $page->getByLabel('Currency', ['exact' => true])->inputValue());
+            $page->getByLabel('Description', ['exact' => true])->fill('Unrelated correction');
+            $this->save($page);
+            $page = $this->visit('/admin/transaction/'.$id.'/edit');
+            self::assertSame($currency, $page->getByLabel('Currency', ['exact' => true])->inputValue());
+            self::assertSame('Unrelated correction', $page->getByLabel('Description', ['exact' => true])->inputValue());
+            // Leave native browser validation enabled for the optional blank field.
+            $page->getByLabel('Description', ['exact' => true])->fill('');
+            $this->save($page);
+            $page = $this->visit('/admin/transaction/'.$id.'/edit');
+            self::assertSame('', $page->getByLabel('Description', ['exact' => true])->inputValue());
+            self::assertSame($currency, $page->getByLabel('Currency', ['exact' => true])->inputValue());
+            self::assertSame('10.00', $page->getByLabel('Amount', ['exact' => true])->inputValue());
+            $page->getByLabel('Currency', ['exact' => true])->fill('usd');
+            $this->save($page);
+            $this->assertPageContains('This value is not valid');
+            $page = $this->visit('/admin/transaction/'.$id.'/edit');
+            self::assertSame($currency, $page->getByLabel('Currency', ['exact' => true])->inputValue());
+        }
+    }
+
+    public function testNativePasswordFormLifecycleAndRootInvalidSubmission(): void
+    {
+        $email = 'password-lifecycle@example.test';
+        $changedPassword = 'Changed-synthetic-password-05';
+        $this->login('admin');
+        $page = $this->visit('/admin/user/new');
+        $page->getByLabel('Email', ['exact' => true])->fill($email);
+        $page->getByLabel('New password', ['exact' => true])->fill(self::PASSWORD);
+        $this->save($page);
+        $page = $this->visit('/admin/user');
+        $editUrl = $page->locator('tbody tr')->filter(['hasText' => $email])->locator('a.action-edit')->getAttribute('href');
+        self::assertNotNull($editUrl);
+        $originalHash = $this->storedPasswordHash($email);
+        self::assertNotSame(self::PASSWORD, $originalHash);
+        $this->login('password-lifecycle');
+        $this->login('admin');
+        $page->goto($editUrl);
+        $page->getByLabel('Email', ['exact' => true])->fill('password-renamed@example.test');
+        $this->save($page);
+        self::assertSame($originalHash, $this->storedPasswordHash('password-renamed@example.test'));
+        $this->login('password-renamed');
+        $this->login('admin');
+        $page->goto($editUrl);
+        // A valid password must not be hashed when another root field is invalid.
+        $page->getByLabel('Email', ['exact' => true])->fill('invalid-email');
+        $page->getByLabel('New password', ['exact' => true])->fill($changedPassword);
+        $page->evaluate('() => document.querySelector("form[name=User]").noValidate = true');
+        $this->save($page);
+        $this->assertPageContains('This value is not a valid email address');
+        self::assertSame($originalHash, $this->storedPasswordHash('password-renamed@example.test'));
+        $boundUser = self::getContainer()->get(EntityManagerInterface::class)->getRepository(User::class)->findOneBy(['email' => 'password-renamed@example.test']);
+        self::assertInstanceOf(User::class, $boundUser);
+        self::assertSame($originalHash, $boundUser->getPassword());
+        $this->login('password-renamed');
+        $this->login('admin');
+        $page->goto($editUrl);
+        $page->getByLabel('New password', ['exact' => true])->fill($changedPassword);
+        $this->save($page);
+        self::assertNotSame($originalHash, $this->storedPasswordHash('password-renamed@example.test'));
+        $page = $this->visit('/login');
+        $this->submitLogin($page, 'password-renamed@example.test', self::PASSWORD);
+        $this->assertPageContains('Invalid credentials');
+        $this->submitLogin($page, 'password-renamed@example.test', $changedPassword);
+        $page->getByRole('heading', ['name' => 'Make sense of your money.', 'exact' => true])->waitFor();
+    }
+
+    public function testPasswordCharacterMinimumAndMultibyteByteMaximum(): void
+    {
+        $this->login('admin');
+        $page = $this->visit('/admin/user/new');
+        $page->getByLabel('Email', ['exact' => true])->fill('password-limits@example.test');
+        $page->evaluate('() => document.querySelector("form[name=User]").noValidate = true');
+        $this->save($page);
+        $this->assertPageContains('This value should not be blank');
+        $page->getByLabel('New password', ['exact' => true])->fill(str_repeat('界', 11));
+        $page->evaluate('() => document.querySelector("form[name=User]").noValidate = true');
+        $this->save($page);
+        $this->assertPageContains('12 characters or more');
+        // 1,400 Unicode characters fit the character limit but exceed 4,096 bytes.
+        $oversized = str_repeat('界', 1400);
+        $page->getByLabel('New password', ['exact' => true])->fill($oversized);
+        $this->save($page);
+        $this->assertPageContains('4096 bytes or less');
+        $page = $this->visit('/admin/user/'.$this->bobUser.'/edit');
+        $originalHash = $this->storedPasswordHash('bob@example.test');
+        $page->getByLabel('New password', ['exact' => true])->fill($oversized);
+        $this->save($page);
+        $this->assertPageContains('4096 bytes or less');
+        self::assertSame($originalHash, $this->storedPasswordHash('bob@example.test'));
+        // Twelve characters, even when multibyte, satisfy the character minimum.
+        $accepted = str_repeat('界', 12);
+        $page = $this->visit('/admin/user/new');
+        $page->getByLabel('Email', ['exact' => true])->fill('password-limits@example.test');
+        $page->getByLabel('New password', ['exact' => true])->fill($accepted);
+        $this->save($page);
+        $page = $this->visit('/login');
+        $this->submitLogin($page, 'password-limits@example.test', $accepted);
+        $page->getByRole('heading', ['name' => 'Make sense of your money.', 'exact' => true])->waitFor();
     }
 
     public function testAdminManagesSharedCategoriesAndUsers(): void
@@ -295,6 +448,14 @@ final class FinanceAccessTest extends PlaywrightTestCase
         $this->assertPageContains('The CSRF token is invalid');
         $page = $this->visit('/settings');
         self::assertSame('USD', $page->getByLabel('Reporting currency')->inputValue());
+    }
+
+    private function storedPasswordHash(string $email): string
+    {
+        $hash = self::getContainer()->get(EntityManagerInterface::class)->getConnection()->fetchOne('SELECT password FROM user WHERE email = ?', [$email]);
+        self::assertIsString($hash);
+
+        return $hash;
     }
 
     private function openDeleteConfirmation(PageInterface $page): void

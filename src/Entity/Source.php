@@ -7,6 +7,7 @@ namespace App\Entity;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
+use Symfony\Component\Validator\Constraints as Assert;
 
 #[ORM\Entity]
 #[ORM\HasLifecycleCallbacks]
@@ -24,8 +25,11 @@ class Source extends UserRecord
     public function __construct(
         User $user,
         #[ORM\Column(length: 255)]
+        #[Assert\NotBlank]
+        #[Assert\Length(max: 255)]
         public string $name,
         #[ORM\Column(length: 255, nullable: true)]
+        #[Assert\Length(max: 255)]
         public ?string $description = null,
         #[ORM\Column(type: 'datetime_immutable', nullable: true)]
         public ?\DateTimeImmutable $createdAt = new \DateTimeImmutable(),
@@ -34,6 +38,11 @@ class Source extends UserRecord
     ) {
         parent::__construct($user);
         $this->statements = new ArrayCollection();
+    }
+
+    public function __toString(): string
+    {
+        return $this->name;
     }
 
     public function getId(): ?int

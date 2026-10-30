@@ -6,7 +6,6 @@ namespace App\Controller\Admin;
 
 use App\Entity\User;
 use App\Finance\ReportingCurrencies;
-use Doctrine\ORM\EntityManagerInterface;
 use EasyCorp\Bundle\EasyAdminBundle\Config\Action;
 use EasyCorp\Bundle\EasyAdminBundle\Config\Actions;
 use EasyCorp\Bundle\EasyAdminBundle\Config\Crud;
@@ -15,7 +14,6 @@ use EasyCorp\Bundle\EasyAdminBundle\Field\ChoiceField;
 use EasyCorp\Bundle\EasyAdminBundle\Field\EmailField;
 use EasyCorp\Bundle\EasyAdminBundle\Field\TextField;
 use Symfony\Component\Form\Extension\Core\Type\PasswordType;
-use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
 use Symfony\Component\Security\Http\Attribute\IsGranted;
 use Symfony\Component\Validator\Constraints as Assert;
 
@@ -24,10 +22,6 @@ use Symfony\Component\Validator\Constraints as Assert;
 final class UserCrudController extends AbstractCrudController
 {
     use RestrictReferencedDeletionTrait;
-
-    public function __construct(private readonly UserPasswordHasherInterface $passwordHasher)
-    {
-    }
 
     public static function getEntityFqcn(): string
     {
@@ -46,26 +40,12 @@ final class UserCrudController extends AbstractCrudController
         yield ChoiceField::new('reportingCurrency')->setChoices(ReportingCurrencies::choices());
         yield TextField::new('plainPassword', 'New password')->setFormType(PasswordType::class)->onlyOnForms()
             ->setRequired(Crud::PAGE_NEW === $pageName)
-            ->setFormTypeOption('constraints', Crud::PAGE_NEW === $pageName ? [new Assert\NotBlank(), new Assert\Length(min: 12, max: 4096)] : [new Assert\Length(min: 12, max: 4096)]);
-    }
-
-    public function persistEntity(EntityManagerInterface $entityManager, object $entityInstance): void
-    {
-        $this->hashPassword($entityInstance);
-        parent::persistEntity($entityManager, $entityInstance);
-    }
-
-    public function updateEntity(EntityManagerInterface $entityManager, object $entityInstance): void
-    {
-        $this->hashPassword($entityInstance);
-        parent::updateEntity($entityManager, $entityInstance);
-    }
-
-    private function hashPassword(User $user): void
-    {
-        if (null !== $user->plainPassword && '' !== $user->plainPassword) {
-            $user->setPassword($this->passwordHasher->hashPassword($user, $user->plainPassword));
-        }
-        $user->plainPassword = null;
+            ->setFormTypeOption('mapped', false)
+            ->setFormTypeOption('hash_property_path', 'password')
+            ->setFormTypeOption('constraints', [
+                ...(Crud::PAGE_NEW === $pageName ? [new Assert\NotBlank()] : []),
+                new Assert\Length(min: 12),
+                new Assert\Length(max: 4096, maxMessage: 'This value is too long. It should have {{ limit }} bytes or less.', countUnit: Assert\Length::COUNT_BYTES),
+            ]);
     }
 }

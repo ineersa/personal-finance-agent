@@ -7,7 +7,6 @@ namespace App\Controller\Admin;
 use App\Entity\Transaction;
 use App\Entity\User;
 use App\Enum\Direction;
-use App\Finance\ReportingCurrencies;
 use App\Repository\SourceRepository;
 use App\Repository\TransactionRepository;
 use Doctrine\ORM\QueryBuilder;
@@ -47,14 +46,13 @@ final class TransactionCrudController extends OwnedCrudController
         yield DateField::new('transactionDate')->setRequired(true);
         // Never use MoneyField or NumberField: they coerce canonical decimal strings.
         yield TextField::new('amount')->setRequired(true);
-        yield ChoiceField::new('currency')->setChoices(ReportingCurrencies::choices())->setRequired(true);
+        yield TextField::new('currency')->setRequired(true);
         yield ChoiceField::new('direction')->setChoices(['Credit' => Direction::Credit, 'Debit' => Direction::Debit])->setRequired(true);
-        yield TextareaField::new('description');
+        yield TextareaField::new('description')->setRequired(false)->setFormTypeOption('empty_data', '');
         yield AssociationField::new('source')->renderAsNativeWidget()->setFormTypeOption('choice_label', 'name')
-            ->setFormTypeOption('query_builder', fn (): QueryBuilder => $this->sources->queryForUser($this->owner()))
-            ->formatValue(static fn (mixed $value, Transaction $transaction): string => $transaction->source->name);
+            ->setFormTypeOption('query_builder', fn (): QueryBuilder => $this->sources->queryForUser($this->owner()));
         yield AssociationField::new('category')->renderAsNativeWidget()->setFormTypeOption('choice_label', 'name')
-            ->setRequired(false)->formatValue(static fn (mixed $value, Transaction $transaction): string => $transaction->category->name ?? '');
+            ->setRequired(false);
     }
 
     protected function ownedQuery(User $user): QueryBuilder

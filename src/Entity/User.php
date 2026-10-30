@@ -16,8 +16,6 @@ use Symfony\Component\Validator\Constraints as Assert;
 #[UniqueEntity('email')]
 class User implements UserInterface, PasswordAuthenticatedUserInterface
 {
-    public ?string $plainPassword = null;
-
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
@@ -53,7 +51,6 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     public function __serialize(): array
     {
         $data = (array) $this;
-        unset($data['plainPassword']);
         $data["\0".self::class."\0password"] = hash('crc32c', $this->password);
 
         return $data;

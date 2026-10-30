@@ -10,7 +10,6 @@ use App\Repository\SourceRepository;
 use Doctrine\ORM\QueryBuilder;
 use EasyCorp\Bundle\EasyAdminBundle\Field\TextareaField;
 use EasyCorp\Bundle\EasyAdminBundle\Field\TextField;
-use Symfony\Component\Validator\Constraints as Assert;
 
 /** @extends OwnedCrudController<Source> */
 final class SourceCrudController extends OwnedCrudController
@@ -31,8 +30,8 @@ final class SourceCrudController extends OwnedCrudController
 
     public function configureFields(string $pageName): iterable
     {
-        yield TextField::new('name')->setFormTypeOption('constraints', [new Assert\NotBlank(), new Assert\Length(max: 255)]);
-        yield TextareaField::new('description')->setFormTypeOption('constraints', [new Assert\Length(max: 255)]);
+        yield TextField::new('name');
+        yield TextareaField::new('description');
     }
 
     protected function ownedQuery(User $user): QueryBuilder

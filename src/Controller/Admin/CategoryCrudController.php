@@ -12,7 +12,6 @@ use EasyCorp\Bundle\EasyAdminBundle\Controller\AbstractCrudController;
 use EasyCorp\Bundle\EasyAdminBundle\Field\TextareaField;
 use EasyCorp\Bundle\EasyAdminBundle\Field\TextField;
 use Symfony\Component\Security\Http\Attribute\IsGranted;
-use Symfony\Component\Validator\Constraints as Assert;
 
 /** @extends AbstractCrudController<Category> */
 #[IsGranted('ROLE_ADMIN')]
@@ -35,10 +34,15 @@ final class CategoryCrudController extends AbstractCrudController
         return $actions->add(Crud::PAGE_INDEX, Action::DETAIL)->disable(Action::BATCH_DELETE);
     }
 
+    public function configureCrud(Crud $crud): Crud
+    {
+        return $crud->setEntityPermission('ROLE_ADMIN');
+    }
+
     public function configureFields(string $pageName): iterable
     {
-        yield TextField::new('name')->setFormTypeOption('constraints', [new Assert\NotBlank(), new Assert\Length(max: 255)]);
+        yield TextField::new('name');
         yield TextareaField::new('description');
-        yield TextField::new('icon')->setFormTypeOption('constraints', [new Assert\Length(max: 255)]);
+        yield TextField::new('icon');
     }
 }
