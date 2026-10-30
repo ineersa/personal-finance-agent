@@ -51,7 +51,7 @@ function testDatabasePrepare(): int
         mkdir($storage, 0700, true);
     }
 
-    return report('test:database:prepare', ['php', 'bin/console', 'dbal:run-sql', 'SELECT 1', '--env=test', '--no-interaction']);
+    return report('test:database:prepare', ['php', 'bin/console', 'doctrine:migrations:migrate', '--env=test', '--no-interaction', '--allow-no-migration']);
 }
 
 #[AsTask(namespace: 'browser', name: 'stack:up', description: 'Build and start only the isolated browser-test application.')]

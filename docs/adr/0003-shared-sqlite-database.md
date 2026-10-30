@@ -22,7 +22,7 @@ Use one shared SQLite application database, managed through Doctrine. Keep queue
 - Treat administrative maintenance permissions separately from access to personal financial records. Do not introduce an implicit ownership bypass.
 - Define reset scope and safeguards before implementation. Administrative permission is not permission to reset unrelated installations or reference projects.
 
-The exact enforcement mechanisms and ownership mappings remain implementation decisions. Do not rely on each caller remembering an optional owner predicate.
+Personal entities inherit an immutable owner relationship. An enabled-by-default Doctrine SQL filter denies reads without an explicit trusted owner scope; a flush listener rejects personal writes and associations outside that scope. Scope changes clear the entity manager to prevent identity-map reuse across owners. There is no role-based bypass. [Domain persistence](../domain-persistence.md) defines the calling contract and the separate bulk-DQL/raw-SQL boundary. HTTP and worker integrations remain later work.
 
 ### Connection and transaction policy
 
@@ -52,4 +52,4 @@ Use `synchronous = NORMAL` for the application database, configured on every con
 - WAL permits concurrent readers and a writer, but SQLite still has one writer per database file.
 - `BEGIN IMMEDIATE` moves writer contention to transaction start; it does not increase writer concurrency and can unnecessarily block writers if used for read-only work.
 - WAL with `synchronous = NORMAL` can lose recently committed transactions after an OS crash or power loss. It does not provide the stronger commit durability of `FULL`.
-- No database, middleware, or application configuration has been created at the time of this decision.
+- The domain scaffolding includes the connection-scoped middleware, mappings and initial migration. Browser persistence/ownership proof belongs with the real CRUD implementation; this schema does not implement financial workflows.
