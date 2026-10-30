@@ -15,7 +15,7 @@ final class HomepageProfilerTest extends PlaywrightTestCase
         $client = self::getPlaywrightClient();
         $client->enableProfiler();
         $this->visit('/');
-        $this->assertPageContains('Symfony is running in Docker.');
+        $this->assertPageContains('Make sense of your money.');
 
         $profile = $client->getProfile();
         self::assertNotNull($profile);

@@ -1,6 +1,29 @@
-{% extends 'base.html.twig' %}
+{% extends 'application.html.twig' %}
 
-{% block body %}
-    <h1>Hello, world!</h1>
-    <p>Symfony is running in Docker.</p>
+{% block workspace %}
+    <section class="chat-empty" aria-labelledby="welcome-heading">
+        <span class="intro-mark" aria-hidden="true">pf</span>
+        <p class="eyebrow">Your finances, in perspective</p>
+        <h1 id="welcome-heading">Make sense of your money.</h1>
+        <p class="intro-copy">A place to ask questions, spot patterns, and understand your everyday finances.</p>
+
+        <div class="composer-preview" aria-describedby="preview-note">
+            <label class="visually-hidden" for="finance-question">Your financial question</label>
+            <textarea id="finance-question" rows="2" placeholder="What would you like to understand?" disabled></textarea>
+            <div class="composer-toolbar">
+                <button class="attachment-button" type="button" disabled>+ <span>Add statement</span></button>
+                <button class="send-button" type="button" aria-label="Send message" disabled>↑</button>
+            </div>
+        </div>
+        <p id="preview-note" class="preview-note">Preview only. Chat, statement uploads, and sign-in are not available yet.</p>
+
+        <div class="question-ideas" role="group" aria-label="Ideas for future questions">
+            <p class="eyebrow">A few questions to start with, once connected</p>
+            <ul>
+                <li>Where did my money go this month?</li>
+                <li>How much am I spending on subscriptions?</li>
+                <li>How has my spending changed over time?</li>
+            </ul>
+        </div>
+    </section>
 {% endblock %}
