@@ -23,6 +23,7 @@
         "symfony/dotenv": "8.2.*@dev",
         "symfony/flex": "^2.10",
         "symfony/framework-bundle": "8.2.*@dev",
+        "symfony/monolog-bundle": "^4.1",
         "symfony/runtime": "8.2.*@dev",
         "symfony/twig-bundle": "8.2.*@dev",
         "symfony/yaml": "8.2.*@dev",
@@ -46,6 +47,15 @@
         "symfony": {
             "allow-contrib": false,
             "require": "8.2.*"
+        },
+        "ai-mate": {
+            "extension": false,
+            "scan-dirs": [
+                "mate/src"
+            ],
+            "includes": [
+                "mate/config.php"
+            ]
         }
     },
     "scripts": {
@@ -54,7 +64,32 @@
             "assets:install %PUBLIC_DIR%": "symfony-cmd",
             "importmap:install": "symfony-cmd"
         },
-        "post-install-cmd": ["@auto-scripts"],
-        "post-update-cmd": ["@auto-scripts"]
+        "post-install-cmd": [
+            "@auto-scripts"
+        ],
+        "post-update-cmd": [
+            "@auto-scripts"
+        ]
+    },
+    "require-dev": {
+        "dama/doctrine-test-bundle": "^8.7",
+        "friendsofphp/php-cs-fixer": "^3.95",
+        "jolicode/castor": "^1.9",
+        "phpstan/phpstan": "^2.3",
+        "phpstan/phpstan-phpunit": "^2.1",
+        "phpstan/phpstan-strict-rules": "^2.1",
+        "phpunit/phpunit": "^13.4",
+        "playwright-php/playwright": "^1.5",
+        "playwright-php/playwright-symfony": "^0.11.0",
+        "symfony/ai-mate": "^0.15.0",
+        "symfony/ai-monolog-mate-extension": "^0.15.0",
+        "symfony/ai-symfony-mate-extension": "^0.15.0",
+        "symfony/web-profiler-bundle": "8.2.*@dev"
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "App\\Tests\\": "tests/",
+            "Mate\\": "mate/src/"
+        }
     }
 }

@@ -4,7 +4,7 @@ A planned personal finance demo for the Symfony AI hackathon, using Symfony, Sym
 
 ## Current status
 
-The Docker bootstrap renders a Symfony hello-world page. EasyAdmin and Symfony AI are installed, but authentication, financial workflows, chat, and development QA tooling are not implemented yet.
+The Docker bootstrap renders a Symfony hello-world page. Castor static checks, Mate diagnostics, the web template's Monolog configuration, and a PHP Playwright harness are installed. Authentication, financial workflows, and chat are not implemented yet.
 
 The lockfile pins Symfony `8.2.x-dev`, Symfony AI `1.0.0-BETA1`, and EasyAdmin `5.8.0`. Symfony 8.2 has no released tag at this bootstrap revision; using its locked development branch is an explicit project decision. The Dockerfile pins FrankenPHP `1.13.2` with PHP `8.5.12` by image digest.
 
@@ -67,7 +67,40 @@ docker compose -f compose.yaml -f compose.prod.yaml exec php php bin/console abo
 docker compose -f compose.yaml -f compose.prod.yaml down
 ```
 
-Keep the data volume; do not use `down -v`. Before returning to the default development project, unset `COMPOSE_PROJECT_NAME` and `HTTP_PORT`, or restore that development stack's values. Full Castor static checks and headed Playwright test commands will be added in task 02. Their absence is not a passing QA result.
+Keep the data volume; do not use `down -v`. Before returning to the default development project, unset `COMPOSE_PROJECT_NAME` and `HTTP_PORT`, or restore that development stack's values.
+
+## Development checks and diagnostics
+
+Follow [Testing](TESTING.md#prepare-the-tooling-runtime) for the one-time dependency bootstrap. After that, use host Castor for preparation, QA, and Mate. Castor selects the authoritative Docker runtime; do not choose between host and container PHP or prefix commands with another runner. The production target does not contain Node.js, Symfony CLI, or development Composer packages.
+
+```sh
+	vendor/bin/castor tooling:prepare
+	vendor/bin/castor cs:fix
+	vendor/bin/castor qa:static
+	vendor/bin/castor test
+```
+
+Castor prints one JSON summary per invoked task and stores diagnostics under ignored `var/qa/`. `qa:static` runs Composer validation, a read-only formatting check, strict PHPStan level 6, and complete runtime-aware Symfony Language Tools analysis. CS Fixer uses the selected sqlite-queue rules except for the approved `call_type: self` assertion policy, and retains risky Symfony rules and strict types. PHPStan follows that reference's production/tooling scope, not its tests. Browser tests receive style checks and real-browser execution, not a claimed PHPStan pass. The task workflow runs `castor check` during the CODE-REVIEW transition as the sole combined static/browser gate. It runs both groups even if either fails. Read its stdout report for child summaries; do not invoke it prematurely during task-start.
+
+Pass native PHPUnit selectors after `--`, for example `vendor/bin/castor test -- --filter='testHomepage$' tests/E2E/HomepageTest.php`. Multiple files, regex filters, groups, suites, and listing flags use PHPUnit's own syntax; `check` always runs the full suite. Use `app:composer -- COMMAND OPTIONS` for application Composer and `app:console -- COMMAND OPTIONS` for Symfony console commands. Bare `castor composer` manages Castor itself, not the application. See [Testing](TESTING.md#command-contract) for examples.
+
+Use bounded Mate tasks after warming the relevant cache or recording local requests:
+
+```sh
+	vendor/bin/castor mate:discover
+	vendor/bin/castor mate:tools
+	vendor/bin/castor mate:inspect symfony-services
+	vendor/bin/castor dev:cache:warmup
+	vendor/bin/castor mate:call symfony-services --json='{"query":"HomeController","context":"dev","limit":1}'
+	vendor/bin/castor mate:call symfony-profiler-list --json='{"context":"test","limit":1}'
+	vendor/bin/castor mate:call monolog-search --json='{"environment":"dev","level":"ERROR","limit":5}'
+```
+
+`mate:call` exposes all 11 installed selected official tools through their upstream JSON parameter schemas. Service results are limited to 10 per context, profile listings to 5, log searches/tail to 20, and dotenv listings to 200. `mate:collector TOKEN COLLECTOR` reads one targeted official profiler collector. Dev and test artifacts are separate named contexts; the saved profiler scenario enables collection for its own request without changing the collection policy. See [Mate instructions](mate/AGENT_INSTRUCTIONS.md) for filters and prerequisites. Missing artifacts fail rather than masquerading as empty results. Do not dump full profiler records into agent context. Mate-generated skills are disabled. `mate:discover` refreshes official extensions while preserving the curated Castor instructions and not retaining a newly generated editor-specific instruction file.
+
+The `test` task creates the fixed, separate SQLite test database non-destructively through Doctrine, then runs the homepage scenarios headlessly by default. Use `vendor/bin/castor test --headed` only when the owner requests a visible browser. DAMA is registered only for test and its PHPUnit extension supplies per-test rollback for intercepted same-process scenarios. No application schema exists yet; entity fixtures and observable rollback scenarios belong with the features that introduce that schema. See [Testing](TESTING.md) for storage and real-stack limits.
+
+Monolog uses the web template's configuration unchanged: development writes to `var/log/dev.log`; test logs are buffered until an error; production uses an error-triggered buffer with JSON output on stderr. There is no custom HTTP lifecycle subscriber, correlation generator, sanitizer, or log rotation. Standard logging does not remove personal data: callers must keep financial content, model exchanges, credentials, and sensitive exception details out of logs. See [ADR 0007](docs/adr/0007-structured-monolog-logging.md).
 
 ## Planned workflow
 
@@ -94,5 +127,5 @@ Chat history will use the existing application SQLite database: five temporary c
 
 - [Specification](SPEC.md): product scope, workflows, and open decisions.
 - [Architecture decisions](docs/adr/README.md): accepted technical direction, not implementation claims.
-- [Testing](TESTING.md): headed Playwright-only browser testing and agent verification.
+- [Testing](TESTING.md): Playwright-only browser testing and agent verification.
 - [Development rules](AGENTS.md): task workflow, worktrees, safety, and tooling requirements.

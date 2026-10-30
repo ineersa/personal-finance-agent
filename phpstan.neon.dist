@@ -1,0 +1,16 @@
+includes:
+    - vendor/phpstan/phpstan-strict-rules/rules.neon
+    - vendor/phpstan/phpstan-phpunit/extension.neon
+    - vendor/jolicode/castor/extension.neon
+parameters:
+    level: 6
+    treatPhpDocTypesAsCertain: false
+    paths:
+        - src
+        - .castor
+        - castor.php
+        - .php-cs-fixer.dist.php
+        - bin/console
+        - public/index.php
+        - mate/config.php
+    tmpDir: var/phpstan

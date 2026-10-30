@@ -19,13 +19,13 @@ PHPUnit may serve as the PHP browser-suite harness required by this integration.
 
 Use the installed `playwright-cli` for agent-led exploration and focused verification. Keep durable regression scenarios in the project suite; a CLI session does not replace repeatable test coverage.
 
-### Visible, agent-operated browsers
+### Browser visibility and ownership
 
-- Run both automated scenarios and exploratory sessions in headed mode so the owner can see them. Do not silently fall back to headless operation when a display is unavailable.
+- Amendment, 2026-10-30: the owner selected headless operation by default for saved tests and exploratory sessions. Show a browser only on an explicit owner request. `test --headed` and `check --headed` enable visible saved runs; `check` forwards the option to `test`. Only visible runs require display forwarding. If a requested visible run lacks display access, fail rather than silently changing mode.
 - Agents must perform relevant browser checks themselves. Do not ask the owner to click through behavior that an agent can verify.
 - Give exploratory sessions unique names and isolated profiles. Do not use the owner's personal browser state.
 - Close owned browser sessions and contexts after each testing run, including failure paths. Arrange teardown and interruption handling; never use global browser cleanup that could close someone else's session.
-- Report missing display access, failed cleanup, missing tools, and incomplete scenarios as blockers rather than passes.
+- Report missing display access for requested visible runs, failed cleanup, missing tools, and incomplete scenarios as blockers rather than passes.
 
 ### Real background integrations
 
@@ -35,11 +35,17 @@ Keep testing those integrations through Playwright against an isolated running a
 
 Use committed synthetic fixtures and dedicated application, queue, and file storage for cross-process scenarios. Do not assume a transaction rolled back inside the test process also isolates or cleans up independent workers. Do not adopt DAMA or parallel execution automatically because the article demonstrates them.
 
+Amendment, 2026-10-30: the owner explicitly selected `dama/doctrine-test-bundle`, superseding its earlier nonselection above. Install it as a locked development dependency, register its bundle only for `test`, and enable its documented PHPUnit extension. DAMA supplies per-test transaction rollback for intercepted Symfony browser requests sharing the current PHP connection. It does not isolate external application servers, workers, brokers, or Mercure processes. Parallel execution remains unselected.
+
+Use a fixed, separate SQLite test URL; Doctrine's database-name suffix does not isolate SQLite files. Prepare the database non-destructively through Castor using the existing `dbal:run-sql 'SELECT 1' --env=test` command. Connecting creates a missing SQLite file without changing existing data; the pinned DBAL 4 SQLite platform does not support Doctrine's database-create command. Do not invent application test commands, endpoints, tables, or a fixture/reset framework to test the bundle. There is no domain schema at bootstrap; schema/migrations, synthetic entity fixtures, and observable rollback regression scenarios accompany the features that introduce them. Follow Symfony's [test database setup](https://symfony.com/doc/current/testing.html#configuring-a-database-for-tests) and the [DAMA documentation](https://github.com/dmaicher/doctrine-test-bundle). DBAL 4 needs no extra savepoint option.
+
 ### Commands and prerequisites
 
 Use Castor for the browser-suite task and the combined validation gate. Extend the concise report convention from [ADR 0009](0009-castor-and-static-checks.md): preserve failure codes, save diagnostics, and print short summaries. Keep formatting fixes separate from validation.
 
-Playwright's Node.js runtime, browser binaries, and display requirements are development/test prerequisites. They do not introduce Encore or a Node-based frontend build into [ADR 0006](0006-assetmapper-and-symfony-ux.md).
+The command surface is `test` for the headless-by-default suite, `qa:static` for static-only checks, and `check` as the sole combined gate executed by the task workflow. Castor owns their runtime and lifecycle implementation; do not add executable task wrappers or another combined command.
+
+Playwright's Node.js runtime and browser binaries are development/test prerequisites. Display access and Xauth are required only for explicitly requested headed runs. These tools do not introduce Encore or a Node-based frontend build into [ADR 0006](0006-assetmapper-and-symfony-ux.md).
 
 ## Alternatives considered
 
