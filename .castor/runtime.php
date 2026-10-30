@@ -6,18 +6,24 @@ namespace AppTasks;
 
 use Symfony\Component\Process\Process;
 
-const TOOLING_IMAGE = 'personal-finance-agent-tooling:dev';
+function toolingImage(): string
+{
+    return 'pfa-'.checkoutId().'-tooling:dev';
+}
 
 /** @param list<string> $command
  * @return list<string>
  */
-function runtimeCommand(array $command, string $container, bool $headed): array
+function runtimeCommand(array $command, string $container, bool $headed, bool $networked = false): array
 {
     $root = \dirname(__DIR__);
     if (!is_dir($root.'/var/tooling/home')) {
         mkdir($root.'/var/tooling/home', 0700, true);
     }
     $docker = ['docker', 'run', '--rm', '--init', '--name', $container, '--label', 'finance.qa.owner='.hash('sha256', $root), '--user', posix_getuid().':'.posix_getgid(), '--volume', $root.':/app', '--env', 'XDG_CONFIG_HOME=/app/var/tooling/home/.config', '--env', 'XDG_CACHE_HOME=/app/var/tooling/home/.cache'];
+    if ($networked) {
+        $docker = [...$docker, '--network', developmentNetwork()];
+    }
     if ($headed) {
         $display = getenv('DISPLAY');
         if (false === $display || '' === $display || !is_dir('/tmp/.X11-unix')) {
@@ -36,7 +42,7 @@ function runtimeCommand(array $command, string $container, bool $headed): array
         $docker = [...$docker, '--volume', '/tmp/.X11-unix:/tmp/.X11-unix:ro', '--env', 'DISPLAY='.$display, '--env', 'XAUTHORITY=/app/var/tooling/'.$container.'.Xauthority'];
     }
 
-    return [...$docker, TOOLING_IMAGE, ...$command];
+    return [...$docker, toolingImage(), ...$command];
 }
 
 function cleanupRuntime(string $container): void
