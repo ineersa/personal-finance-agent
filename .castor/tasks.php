@@ -71,7 +71,7 @@ function report(string $task, array $command, bool $runtime = true, bool $headed
                 $result['runtime_container'] = $container;
                 $save();
             }
-            $process = new Process($command, $root, ['NO_COLOR' => '1', 'COMPOSER_NO_INTERACTION' => '1'], timeout: $headed ? 300 : 600);
+            $process = new Process($command, $root, ['NO_COLOR' => '1', 'COMPOSER_NO_INTERACTION' => '1'], timeout: 'test:browser' === $task ? 300 : 600);
             $exit = $process->run(static function (string $type, string $data) use ($directory, $stdout): void {
                 file_put_contents($directory.'/'.(Process::ERR === $type ? 'stderr.log' : $stdout), $data, \FILE_APPEND);
             });
@@ -148,16 +148,16 @@ function lspCheck(): int
     return report('lsp:check', ['symfony', 'lsp:check', '--format=json', '--environment=dev']);
 }
 
-#[AsTask(namespace: '', name: 'test')]
-function browserTest(): int
+#[AsTask(namespace: '', name: 'test', description: 'Run browser tests headlessly; use --headed only when the owner requests visibility.')]
+function browserTest(bool $headed = false): int
 {
-    return report('test', ['vendor/bin/castor', 'test'], runtime: false, operation: static function (): int {
+    return report('test', ['vendor/bin/castor', 'test', ...($headed ? ['--headed'] : [])], runtime: false, operation: static function () use ($headed): int {
         $prepared = testDatabasePrepare();
         if (0 !== $prepared) {
             return $prepared;
         }
 
-        return report('test:browser', ['php', 'vendor/bin/phpunit', '--log-junit', 'var/qa/test/junit.xml'], headed: true);
+        return report('test:browser', ['env', 'PLAYWRIGHT_HEADLESS='.($headed ? 'false' : 'true'), 'php', 'vendor/bin/phpunit', '--log-junit', 'var/qa/test/junit.xml'], headed: $headed);
     });
 }
 
@@ -186,8 +186,8 @@ function qaStatic(): int
     return aggregate('qa:static', ['composer:validate' => composerValidate(...), 'cs:check' => csCheck(...), 'phpstan' => phpstan(...), 'lsp:check' => lspCheck(...)]);
 }
 
-#[AsTask(namespace: '', name: 'check', description: 'Run the task workflow full gate: static checks and headed browser tests.')]
-function check(): int
+#[AsTask(namespace: '', name: 'check', description: 'Run static checks and headless browser tests; --headed requires an owner request.')]
+function check(bool $headed = false): int
 {
-    return aggregate('check', ['qa:static' => qaStatic(...), 'test' => browserTest(...)]);
+    return aggregate('check', ['qa:static' => qaStatic(...), 'test' => static fn (): int => browserTest($headed)]);
 }

@@ -19,13 +19,13 @@ PHPUnit may serve as the PHP browser-suite harness required by this integration.
 
 Use the installed `playwright-cli` for agent-led exploration and focused verification. Keep durable regression scenarios in the project suite; a CLI session does not replace repeatable test coverage.
 
-### Visible, agent-operated browsers
+### Browser visibility and ownership
 
-- Run both automated scenarios and exploratory sessions in headed mode so the owner can see them. Do not silently fall back to headless operation when a display is unavailable.
+- Amendment, 2026-10-30: the owner selected headless operation by default for saved tests and exploratory sessions. Show a browser only on an explicit owner request. `test --headed` and `check --headed` enable visible saved runs; `check` forwards the option to `test`. Only visible runs require display forwarding. If a requested visible run lacks display access, fail rather than silently changing mode.
 - Agents must perform relevant browser checks themselves. Do not ask the owner to click through behavior that an agent can verify.
 - Give exploratory sessions unique names and isolated profiles. Do not use the owner's personal browser state.
 - Close owned browser sessions and contexts after each testing run, including failure paths. Arrange teardown and interruption handling; never use global browser cleanup that could close someone else's session.
-- Report missing display access, failed cleanup, missing tools, and incomplete scenarios as blockers rather than passes.
+- Report missing display access for requested visible runs, failed cleanup, missing tools, and incomplete scenarios as blockers rather than passes.
 
 ### Real background integrations
 
@@ -43,9 +43,9 @@ Use a fixed, separate SQLite test URL; Doctrine's database-name suffix does not 
 
 Use Castor for the browser-suite task and the combined validation gate. Extend the concise report convention from [ADR 0009](0009-castor-and-static-checks.md): preserve failure codes, save diagnostics, and print short summaries. Keep formatting fixes separate from validation.
 
-The command surface is `test` for the headed suite, `qa:static` for static-only checks, and `check` as the sole combined gate executed by the task workflow. Castor owns their runtime and lifecycle implementation; do not add executable task wrappers or another combined command.
+The command surface is `test` for the headless-by-default suite, `qa:static` for static-only checks, and `check` as the sole combined gate executed by the task workflow. Castor owns their runtime and lifecycle implementation; do not add executable task wrappers or another combined command.
 
-Playwright's Node.js runtime, browser binaries, and display requirements are development/test prerequisites. They do not introduce Encore or a Node-based frontend build into [ADR 0006](0006-assetmapper-and-symfony-ux.md).
+Playwright's Node.js runtime and browser binaries are development/test prerequisites. Display access and Xauth are required only for explicitly requested headed runs. These tools do not introduce Encore or a Node-based frontend build into [ADR 0006](0006-assetmapper-and-symfony-ux.md).
 
 ## Alternatives considered
 

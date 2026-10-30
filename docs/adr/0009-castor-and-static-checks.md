@@ -38,7 +38,7 @@ Expose the following tasks when the application is bootstrapped:
 | `phpstan` | Run the configured static analysis. |
 | `lsp:check` | Run `symfony lsp:check` with JSON diagnostics. |
 | `qa:static` | Run Composer validation, style checking, PHPStan, and LSP checking. |
-| `check` | Run the static gate and headed browser suite during the workflow review transition. |
+| `check` | Run the static gate and browser suite (headless by default) during the workflow review transition. |
 
 Each task prints one JSON summary with `task`, `status`, `exit_code`, and a relative result path. Write detailed diagnostics to `var/qa/<task>/`, replacing colons in directory names with hyphens. Keep native JSON output where supported, otherwise capture stdout and stderr as logs.
 

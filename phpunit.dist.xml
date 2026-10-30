@@ -14,12 +14,11 @@
         <ini name="display_errors" value="1" />
         <ini name="error_reporting" value="-1" />
         <server name="APP_ENV" value="test" force="true" />
-        <env name="PLAYWRIGHT_HEADLESS" value="false" force="true" verbatim="true" />
         <server name="SHELL_VERBOSITY" value="-1" />
     </php>
 
     <testsuites>
-        <testsuite name="Headed browser suite">
+        <testsuite name="Browser suite">
             <directory>tests/E2E</directory>
         </testsuite>
     </testsuites>

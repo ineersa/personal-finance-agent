@@ -26,9 +26,9 @@ After that bootstrap, use only host Castor for routine preparation and tooling:
 	vendor/bin/castor test
 ```
 
-`tooling:prepare` builds the development-only image, installs locked dependencies, and installs Chromium. Its constituent tasks are `tooling:build`, `composer:install`, and `browser:install`. Castor runs application tools as the host UID/GID in disposable containers and mounts this checkout. Its private home, browser cache, Symfony CLI cache, and per-invocation display cookie live under ignored `var/tooling/`. For browser execution it passes `DISPLAY`, a read-only X11 socket mount, and only the current display's Xauth entry. It does not use `xhost` or the owner's browser profile. An unavailable display or failed browser launch fails the suite, never selects headless mode.
+`tooling:prepare` builds the development-only image, installs locked dependencies, and installs Chromium. Its constituent tasks are `tooling:build`, `composer:install`, and `browser:install`. Castor runs application tools as the host UID/GID in disposable containers and mounts this checkout. Its private home, browser cache, Symfony CLI cache, and per-invocation display cookie live under ignored `var/tooling/`. Only for explicitly requested `--headed` runs does it pass `DISPLAY`, a read-only X11 socket mount, and the current display's Xauth entry. Default runs require no display or Xauth access. It does not use `xhost` or the owner's browser profile. An unavailable display fails a requested headed run; a failed browser launch fails either mode.
 
-The Symfony bridge reads the literal string `PLAYWRIGHT_HEADLESS=false`. PHPUnit XML sets `verbatim="true"` so it does not convert that value to boolean false. `HeadedBrowserTestCase` rejects a headless registry before browser creation, and the homepage scenario asserts that configuration. Extend that base for saved Symfony browser scenarios. Each test uses fresh browser contexts. The bridge closes contexts after tests and stops its shared browser after the class. Its pinned Node server closes owned browsers when its PHP parent's stdin closes, including termination paths. The Castor report/runtime helpers forward normal interruption signals, bound browser execution to five minutes, and clean up only the invocation's named container after checking its ownership label. They also remove its private display cookie. Docker's init process and container removal terminate owned remaining processes. Abrupt host failure still requires inspecting task-owned leftovers, not global browser cleanup.
+Castor sets the literal `PLAYWRIGHT_HEADLESS=true` for default tests and `false` for `--headed`; PHPUnit XML and `.env.test` do not override the choice. Saved scenarios extend the integration's `PlaywrightTestCase` directly. Use `vendor/bin/castor test --headed` or `vendor/bin/castor check --headed` only when the owner explicitly requests visibility. The `check` task forwards this option to `test`. Each test uses fresh browser contexts. The bridge closes contexts after tests and stops its shared browser after the class. Its pinned Node server closes owned browsers when its PHP parent's stdin closes, including termination paths. The Castor report/runtime helpers forward normal interruption signals, bound browser execution to five minutes, and clean up only the invocation's named container after checking its ownership label. They also remove its private display cookie. Docker's init process and container removal terminate owned remaining processes. Abrupt host failure still requires inspecting task-owned leftovers, not global browser cleanup.
 
 The default suite uses intercepted Symfony requests, not a network application server. Test SQLite storage is `var/browser/application.db`, separate from development `var/app.db`; shared test files use `var/browser/share`. The test Doctrine configuration fixes the SQLite URL explicitly rather than resolving ambient `DATABASE_URL` overrides. SQLite does not support Doctrine's database-name suffix isolation. `test` invokes `test:database:prepare`, which creates the parent directory, rejects symlinked storage, and runs existing `dbal:run-sql 'SELECT 1' --env=test` in the application runtime. SQLite creates a missing database file when Doctrine connects; the query checks that connection without changing existing data. The pinned DBAL 4 SQLite platform does not support `doctrine:database:create`. Preparation does not drop databases, reset data, or create speculative tables.
 
@@ -41,7 +41,7 @@ Use this path for exploratory checks and future direct-network PHP browser scena
 ```sh
 	vendor/bin/castor browser:stack:up
 	vendor/bin/castor browser:stack:status
-	# Browser agent: open http://127.0.0.1:18081/ in a unique headed session.
+	# Browser agent: open http://127.0.0.1:18081/ in a unique session; add --headed only on an owner request.
 	vendor/bin/castor browser:stack:stop
 ```
 
@@ -53,21 +53,21 @@ Use this procedure once the application and relevant project tasks exist. Delega
 
 1. Select the affected workflows and observable assertions. Include a failure or ownership-denial path when relevant.
 2. Use project Castor tasks to prepare isolated synthetic fixtures and start only the services needed for the scenario. Verify the target URL and test storage before any reset or cleanup.
-3. Run the relevant saved browser scenarios. Use headed mode for the automated suite as well as exploratory checks.
-4. Open a uniquely named, headed CLI session when further investigation is needed. Read the page snapshot before interacting and use current element references.
+3. Run the relevant saved browser scenarios. Use headless mode unless the owner explicitly requests visibility.
+4. Open a uniquely named CLI session when further investigation is needed. Read the page snapshot before interacting and use current element references.
 5. Assert the expected result. For background operations, wait on observable UI state with a bounded timeout. Do not replace assertions with sleeps or treat a click, screenshot, or successful page load as proof of the workflow.
 6. Inspect bounded browser diagnostics, Mate logs, or profiler records when a check fails. Fix the cause and rerun the affected scenario. Add a repeatable browser regression case for a bug fix.
 7. Save useful failure evidence, then close all browser resources owned by this run. Clean up only its test processes and data. Ensure teardown also runs on errors and normal interruption.
 8. Report the command or scenario, assertions checked, result, and evidence paths. State any blocked, untested, or mocked integration explicitly.
 
-Do not silently switch to headless mode. If the owner cannot see the browser because display access is unavailable, report that blocker. Do not use `close-all`, `kill-all`, or the owner's personal profile to recover a session. Verify ownership before cleaning up a leftover browser.
+Show a browser only on an explicit owner request. If display access is unavailable for that requested visible run, report the blocker rather than silently changing mode. Do not use `close-all`, `kill-all`, or the owner's personal profile to recover a session. Verify ownership before cleaning up a leftover browser.
 
 ### CLI session commands
 
 Prefer project Castor browser tasks when available. The underlying commands for the installed CLI are shown below. Set `APP_URL` to the verified test application URL and `BROWSER_SESSION` to a unique name for this run.
 
 ```sh
-	playwright-cli -s="$BROWSER_SESSION" open "$APP_URL" --headed
+	playwright-cli -s="$BROWSER_SESSION" open "$APP_URL"
 	playwright-cli -s="$BROWSER_SESSION" snapshot
 	playwright-cli -s="$BROWSER_SESSION" close
 ```
@@ -76,7 +76,7 @@ Arrange cleanup before opening the browser. The final command is required even w
 
 ## Automated browser suite
 
-Use the PHP Playwright/Symfony approach from the [SymfonyCasts article](https://symfonycasts.com/blog/playwright-php-symfony). Keep browser launch configuration headed. The integration documents `PLAYWRIGHT_HEADLESS=false`; verify it against the pinned release during bootstrap.
+Use the PHP Playwright/Symfony approach from the [SymfonyCasts article](https://symfonycasts.com/blog/playwright-php-symfony). Keep browser launch configuration headless by default. Use the explicit `--headed` Castor option only when the owner requests visibility.
 
 Use fresh browser contexts and synthetic users. Cover the real login form even if other scenarios use the integration's authentication helpers. Use stable accessible locators and Playwright waiting/assertion facilities rather than timing guesses.
 
@@ -92,7 +92,7 @@ Run these tasks from the host checkout. Castor owns their runtime selection:
 
 | Command | Scope |
 |---|---|
-| `vendor/bin/castor test` | Run the headed Playwright browser suite with cleanup and saved diagnostics. |
+| `vendor/bin/castor test` | Run the headless Playwright browser suite with cleanup and saved diagnostics; `--headed` requires an owner request. |
 | `vendor/bin/castor qa:static` | Run the static gate defined in ADR 0009, including `symfony lsp:check`. |
 | `vendor/bin/castor check` | Sole combined static/browser gate, executed by the workflow's literal `castor check` at the CODE-REVIEW transition. |
 
@@ -117,13 +117,13 @@ Implement browser scenarios alongside each supported feature:
 
 ### Statement conversion
 
-Cover [ADR 0016](docs/adr/0016-local-markitdown-conversion.md) through headed browser uploads and the actual worker/local MCP converter. Use synthetic digital PDF/XLSX and PHP-parsed CSV fixtures with known dates, amounts, and expected transactions; assert validation/review and stored results, not just generated Markdown.
+Cover [ADR 0016](docs/adr/0016-local-markitdown-conversion.md) through browser uploads and the actual worker/local MCP converter. Use synthetic digital PDF/XLSX and PHP-parsed CSV fixtures with known dates, amounts, and expected transactions; assert validation/review and stored results, not just generated Markdown.
 
 Exercise unsupported, malformed, no-text/image-only, conversion-error, and bounded-output cases without fabricating financial records or claiming OCR succeeded. Verify owner isolation, authorized staging access, cleanup, and hostile document text treated as data rather than instructions. Ordinary digital conversion must not require an LLM/API key; subsequent AI extraction remains a separate configured-provider step. Do not claim scanned-PDF support until an existing OCR backend is explicitly selected and verified.
 
 ### Finance precision, review, and analysis
 
-Cover [ADR 0017](docs/adr/0017-exact-money-and-ecb-reporting.md) and [ADR 0018](docs/adr/0018-finance-review-sql-and-jev.md) through headed browser scenarios with synthetic fixtures:
+Cover [ADR 0017](docs/adr/0017-exact-money-and-ecb-reporting.md) and [ADR 0018](docs/adr/0018-finance-review-sql-and-jev.md) through browser scenarios with synthetic fixtures:
 
 - Verify exact high-precision amount round trips, sums, and EUR-based cross-conversion with known decimal results. Changing reporting currency must preserve originals. Exercise missing-date/weekend handling once chosen; do not assume a fallback or exact SQLite `SUM`.
 - Verify editable drafts require valid user approval before analysis, preserve the statement date and account-source meaning, and do not treat every credit as income. Redelivery must not duplicate imports.
@@ -137,13 +137,13 @@ Any cassettes/replay used for final verification must be identified as such, not
 
 ### Inline charts
 
-Cover [ADR 0014](docs/adr/0014-inline-chat-and-antv-charts.md) through headed browser scenarios. Verify actual Docker MCP chart generation through the worker and private Mercure delivery, not just a substituted image. Use synthetic aggregates only for external-renderer tests.
+Cover [ADR 0014](docs/adr/0014-inline-chat-and-antv-charts.md) through browser scenarios. Verify actual Docker MCP chart generation through the worker and private Mercure delivery, not just a substituted image. Use synthetic aggregates only for external-renderer tests.
 
 Check unsafe text/table content and untrusted image references, owned saved chat-output access, and reload/reconnect behavior. Exercise hosted-renderer failures and unavailable images with clear chat feedback and retained conversation state still readable. Do not claim that external image URLs are private or permanently available. Exact image lifecycle remains open; chat retention follows ADR 0015 below.
 
 ### Conversation persistence and retention
 
-Cover [ADR 0015](docs/adr/0015-sqlite-conversation-history.md) through headed Playwright scenarios against the isolated application/worker stack:
+Cover [ADR 0015](docs/adr/0015-sqlite-conversation-history.md) through Playwright scenarios against the isolated application/worker stack:
 
 - Verify temporary-by-default creation, Save chat, and reload of retained messages and generation state from the shared application database.
 - Give two users distinct histories. Verify five temporary chats per user, saved chats outside that count, owner-only access, and pruning of only the owner's oldest inactive temporary chat when a sixth is created.
@@ -154,7 +154,7 @@ Cover [ADR 0015](docs/adr/0015-sqlite-conversation-history.md) through headed Pl
 
 ### Rate limits and budgets
 
-Cover [ADR 0011](docs/adr/0011-layered-rate-limiting.md) through headed Playwright scenarios with isolated synthetic users and explicitly configured test thresholds:
+Cover [ADR 0011](docs/adr/0011-layered-rate-limiting.md) through Playwright scenarios with isolated synthetic users and explicitly configured test thresholds:
 
 - Exercise login throttling, AI burst/daily allowances, upload count/size/byte limits, and retained-storage quotas. Assert clear refusal messages, `429` and `Retry-After` where applicable, and continued read access to existing records.
 - Use two users sharing an IP to verify separate user allowances below the coarse IP threshold. Verify that chat and AI extraction share one user's AI allowance.

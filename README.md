@@ -4,7 +4,7 @@ A planned personal finance demo for the Symfony AI hackathon, using Symfony, Sym
 
 ## Current status
 
-The Docker bootstrap renders a Symfony hello-world page. Castor static checks, Mate diagnostics, structured lifecycle logging, and a headed PHP Playwright harness are installed. Authentication, financial workflows, and chat are not implemented yet.
+The Docker bootstrap renders a Symfony hello-world page. Castor static checks, Mate diagnostics, structured lifecycle logging, and a PHP Playwright harness are installed. Authentication, financial workflows, and chat are not implemented yet.
 
 The lockfile pins Symfony `8.2.x-dev`, Symfony AI `1.0.0-BETA1`, and EasyAdmin `5.8.0`. Symfony 8.2 has no released tag at this bootstrap revision; using its locked development branch is an explicit project decision. The Dockerfile pins FrankenPHP `1.13.2` with PHP `8.5.12` by image digest.
 
@@ -96,7 +96,7 @@ Use bounded Mate tasks after warming the development cache or recording local re
 
 Service results are limited to 10, profile listings to 5, and correlation searches to 20. Missing artifacts fail rather than masquerading as empty results. Do not dump full profiler records into agent context. Mate-generated skills are disabled. `mate:discover` refreshes official extensions while preserving the curated Castor instructions and not retaining a newly generated editor-specific instruction file.
 
-The `test` task creates the fixed, separate SQLite test database non-destructively through Doctrine, then runs the headed homepage scenario. DAMA is registered only for test and its PHPUnit extension supplies per-test rollback for intercepted same-process scenarios. No application schema exists yet; entity fixtures and observable rollback scenarios belong with the features that introduce that schema. See [Testing](TESTING.md) for storage and real-stack limits.
+The `test` task creates the fixed, separate SQLite test database non-destructively through Doctrine, then runs the homepage scenario headlessly by default. Use `vendor/bin/castor test --headed` only when the owner requests a visible browser. DAMA is registered only for test and its PHPUnit extension supplies per-test rollback for intercepted same-process scenarios. No application schema exists yet; entity fixtures and observable rollback scenarios belong with the features that introduce that schema. See [Testing](TESTING.md) for storage and real-stack limits.
 
 HTTP lifecycle logs record server-generated correlation IDs, status codes, durations, and exception class names. They omit URLs, request bodies, exception messages, and raw framework context. Other framework messages become `framework.record`, so detailed exception text is deliberately unavailable in logs. Development JSON-lines files rotate under `var/log/`, retaining seven lifecycle/framework files and three deprecation files. Production sends sanitized lifecycle output to stdout and framework/deprecation output to stderr. Logging processors keep no request state between calls. Future jobs must explicitly propagate correlation IDs and add their own lifecycle events; this bootstrap does not implement those workflows.
 
@@ -125,5 +125,5 @@ Chat history will use the existing application SQLite database: five temporary c
 
 - [Specification](SPEC.md): product scope, workflows, and open decisions.
 - [Architecture decisions](docs/adr/README.md): accepted technical direction, not implementation claims.
-- [Testing](TESTING.md): headed Playwright-only browser testing and agent verification.
+- [Testing](TESTING.md): Playwright-only browser testing and agent verification.
 - [Development rules](AGENTS.md): task workflow, worktrees, safety, and tooling requirements.
