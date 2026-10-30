@@ -4,11 +4,6 @@ declare(strict_types=1);
 
 namespace App\Controller\Admin;
 
-use App\Entity\Category;
-use App\Entity\Source;
-use App\Entity\Statement;
-use App\Entity\Transaction;
-use App\Entity\User;
 use EasyCorp\Bundle\EasyAdminBundle\Attribute\AdminDashboard;
 use EasyCorp\Bundle\EasyAdminBundle\Config\Dashboard;
 use EasyCorp\Bundle\EasyAdminBundle\Config\MenuItem;
@@ -41,14 +36,14 @@ final class DashboardController extends AbstractDashboardController
     public function configureMenuItems(): iterable
     {
         yield MenuItem::linkToRoute('Chat (preview)', 'fa fa-comment', 'app_home');
-        yield MenuItem::linkToCrud('Sources', 'fa fa-wallet', Source::class);
-        yield MenuItem::linkToCrud('Statements (read-only)', 'fa fa-file', Statement::class);
-        yield MenuItem::linkToCrud('Approved transactions', 'fa fa-list', Transaction::class);
+        yield MenuItem::linkTo(SourceCrudController::class, 'Sources', 'fa fa-wallet');
+        yield MenuItem::linkTo(StatementCrudController::class, 'Statements (read-only)', 'fa fa-file');
+        yield MenuItem::linkTo(TransactionCrudController::class, 'Approved transactions', 'fa fa-list');
         yield MenuItem::linkToRoute('Upload (not implemented)', 'fa fa-upload', 'app_planned', ['page' => 'upload']);
         yield MenuItem::linkToRoute('Review (not implemented)', 'fa fa-check', 'app_planned', ['page' => 'review']);
         yield MenuItem::linkToRoute('Settings', 'fa fa-gear', 'app_settings');
         yield MenuItem::section('Administration')->setPermission('ROLE_ADMIN');
-        yield MenuItem::linkToCrud('Categories', 'fa fa-tags', Category::class)->setPermission('ROLE_ADMIN');
-        yield MenuItem::linkToCrud('Users', 'fa fa-users', User::class)->setPermission('ROLE_ADMIN');
+        yield MenuItem::linkTo(CategoryCrudController::class, 'Categories', 'fa fa-tags')->setPermission('ROLE_ADMIN');
+        yield MenuItem::linkTo(UserCrudController::class, 'Users', 'fa fa-users')->setPermission('ROLE_ADMIN');
     }
 }

@@ -14,7 +14,7 @@ final class SecurityController extends AbstractController
     #[Route('/login', name: 'app_login', methods: ['GET', 'POST'])]
     public function login(AuthenticationUtils $authentication): Response
     {
-        return $this->render('@EasyAdmin/page/login.html.twig', [
+        return $this->render('security/login.html.twig', [
             'error' => $authentication->getLastAuthenticationError(),
             'last_username' => $authentication->getLastUsername(),
             'page_title' => 'Personal finance login',

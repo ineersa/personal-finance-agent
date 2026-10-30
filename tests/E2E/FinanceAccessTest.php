@@ -82,7 +82,7 @@ final class FinanceAccessTest extends PlaywrightTestCase
         $this->assertPageContains('Alice account');
         self::assertStringNotContainsString('Bob secret account', $page->locator('body')->textContent());
         $page = $this->visit('/settings');
-        $page->getByRole('button', ['name' => 'Log out', 'exact' => true])->click();
+        $this->submit(static fn () => $page->getByRole('button', ['name' => 'Log out', 'exact' => true])->click());
         $page->waitForURL('**/login');
         $this->visit('/settings');
         $this->assertPageContains('Personal finance login');
@@ -151,7 +151,8 @@ final class FinanceAccessTest extends PlaywrightTestCase
         $page = $this->visit('/admin/source/'.$this->aliceSource.'/edit');
         self::assertSame('Alice renamed account', $page->getByLabel('Name', ['exact' => true])->inputValue());
         $page->getByLabel('Name', ['exact' => true])->fill('');
-        $page->evaluate('() => { const f = document.querySelector("form[name=Source]"); f.noValidate = true; f.requestSubmit(); }');
+        $page->evaluate('() => document.querySelector("form[name=Source]").noValidate = true');
+        $this->save($page);
         $this->assertPageContains('This value should not be blank');
     }
 
@@ -172,7 +173,7 @@ final class FinanceAccessTest extends PlaywrightTestCase
         $page = $this->visit('/settings');
         self::assertSame('USD', $page->getByLabel('Reporting currency')->inputValue());
         $page->getByLabel('Reporting currency')->selectOption('EUR');
-        $page->getByRole('button', ['name' => 'Save preferences'])->click();
+        $this->submit(static fn () => $page->getByRole('button', ['name' => 'Save preferences'])->click());
         $this->assertPageContains('Reporting currency saved');
         $page = $this->visit('/settings');
         self::assertSame('EUR', $page->getByLabel('Reporting currency')->inputValue());
@@ -201,7 +202,7 @@ final class FinanceAccessTest extends PlaywrightTestCase
         $page->goto($categoryUrl);
         self::assertSame('Edited shared catalog entry', $page->getByLabel('Name', ['exact' => true])->inputValue());
         $page->locator('a.action-delete')->click();
-        $page->locator('#modal-action-confirmation-button')->click();
+        $this->submit(static fn () => $page->locator('#modal-action-confirmation-button')->click());
         $page->waitForLoadState();
         $page = $this->visit('/admin/category');
         self::assertStringNotContainsString('Edited shared catalog entry', $page->locator('body')->textContent());
@@ -222,7 +223,7 @@ final class FinanceAccessTest extends PlaywrightTestCase
         $this->login('admin');
         $page->goto($userUrl);
         $page->locator('a.action-delete')->click();
-        $page->locator('#modal-action-confirmation-button')->click();
+        $this->submit(static fn () => $page->locator('#modal-action-confirmation-button')->click());
         $page->waitForLoadState();
         $page = $this->visit('/admin/user');
         self::assertStringNotContainsString('renamed@example.test', $page->locator('body')->textContent());
@@ -247,24 +248,27 @@ final class FinanceAccessTest extends PlaywrightTestCase
         $editUrl = $row->locator('a.action-edit')->getAttribute('href');
         self::assertNotNull($editUrl);
         $page->goto($editUrl);
-        $deletePath = preg_replace('~/edit(?:\?.*)?$~', '/delete', $editUrl);
-        $page->evaluate('(path) => { const f = document.querySelector("#action-confirmation-form"); f.action = path; f.querySelector("[name=token]").value = "forged"; f.requestSubmit(); }', $deletePath);
+        $page->locator('.action-delete')->click();
+        $page->evaluate('() => document.querySelector("#action-confirmation-form [name=token]").value = "forged"');
+        $this->submit(static fn () => $page->locator('#modal-action-confirmation-button')->click());
         $page->waitForLoadState();
         $this->visit('/admin/source');
         $this->assertPageContains('Disposable synthetic source');
         $page->goto($editUrl);
-        $page->evaluate('(path) => { const f = document.querySelector("#action-confirmation-form"); f.action = path; f.requestSubmit(); }', '/admin/source/'.$this->bobSource.'/delete');
+        $page->evaluate('(path) => document.querySelector(".action-delete").setAttribute("formaction", path)', '/admin/source/'.$this->bobSource.'/delete');
+        $page->locator('.action-delete')->click();
+        $this->submit(static fn () => $page->locator('#modal-action-confirmation-button')->click());
         $page->waitForLoadState();
         self::assertSame(403, $this->getLastResponse()->getStatusCode());
         $page->goto($editUrl);
         $page->locator('a.action-delete')->click();
-        $page->locator('#modal-action-confirmation-button')->click();
+        $this->submit(static fn () => $page->locator('#modal-action-confirmation-button')->click());
         $page->waitForLoadState();
         $page = $this->visit('/admin/source');
         self::assertStringNotContainsString('Disposable synthetic source', $page->locator('body')->textContent());
         $page = $this->visit('/admin/source/'.$this->aliceSource.'/edit');
         $page->locator('a.action-delete')->click();
-        $page->locator('#modal-action-confirmation-button')->click();
+        $this->submit(static fn () => $page->locator('#modal-action-confirmation-button')->click());
         $page->waitForLoadState();
         $this->assertPageContains('This record is still referenced and was not deleted');
         $this->visit('/admin/source');
@@ -276,13 +280,13 @@ final class FinanceAccessTest extends PlaywrightTestCase
         $this->login('alice');
         $page = $this->visit('/settings');
         $page->evaluate('() => { const s = document.querySelector("select[name=\"form[reportingCurrency]\"]"); s.add(new Option("Unsupported", "XXX", true, true)); }');
-        $page->getByRole('button', ['name' => 'Save preferences'])->click();
+        $this->submit(static fn () => $page->getByRole('button', ['name' => 'Save preferences'])->click());
         $this->assertPageContains('The selected choice is invalid');
         $page = $this->visit('/settings');
         self::assertSame('USD', $page->getByLabel('Reporting currency')->inputValue());
         $page->getByLabel('Reporting currency')->selectOption('EUR');
         $page->evaluate('() => document.querySelector("input[name=\"form[_token]\"]").value = "invalid"');
-        $page->getByRole('button', ['name' => 'Save preferences'])->click();
+        $this->submit(static fn () => $page->getByRole('button', ['name' => 'Save preferences'])->click());
         $this->assertPageContains('The CSRF token is invalid');
         $page = $this->visit('/settings');
         self::assertSame('USD', $page->getByLabel('Reporting currency')->inputValue());
@@ -292,20 +296,38 @@ final class FinanceAccessTest extends PlaywrightTestCase
     {
         $page = $this->visit('/login');
         $this->submitLogin($page, $name.'@example.test', self::PASSWORD);
-        $page->waitForURL('**/admin/source');
+        $page->getByRole('heading', ['name' => 'Make sense of your money.', 'exact' => true])->waitFor();
     }
 
     private function submitLogin(PageInterface $page, string $email, string $password): void
     {
         $page->getByLabel('Email', ['exact' => true])->fill($email);
         $page->getByLabel('Password', ['exact' => true])->fill($password);
-        $page->getByRole('button', ['name' => 'Log in', 'exact' => true])->click();
+        $this->submit(static fn () => $page->getByRole('button', ['name' => 'Log in', 'exact' => true])->click());
         $page->waitForLoadState();
     }
 
     private function save(PageInterface $page): void
     {
-        $page->locator('button[name="ea[newForm][btn]"], button[name="ea[editForm][btn]"]')->first()->click();
+        $this->submit(static fn () => $page->locator('button[name="ea[newForm][btn]"], button[name="ea[editForm][btn]"]')->first()->click());
         $page->waitForLoadState();
+    }
+
+    /** @param callable(): void $action */
+    private function submit(callable $action): void
+    {
+        $client = self::getPlaywrightClient();
+        // Follow POST redirects explicitly: the pinned bridge's automatic path
+        // uses a 204 navigation response, on which a locator click can stall.
+        $client->followRedirects(false);
+        try {
+            $action();
+            $response = $this->getLastResponse();
+        } finally {
+            $client->followRedirects();
+        }
+        if (null !== $response && $response->isRedirect()) {
+            $client->followRedirect();
+        }
     }
 }

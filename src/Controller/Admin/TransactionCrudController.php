@@ -54,7 +54,7 @@ final class TransactionCrudController extends OwnedCrudController
             ->setFormTypeOption('query_builder', fn (): QueryBuilder => $this->sources->queryForUser($this->owner()))
             ->formatValue(static fn (mixed $value, Transaction $transaction): string => $transaction->source->name);
         yield AssociationField::new('category')->renderAsNativeWidget()->setFormTypeOption('choice_label', 'name')
-            ->setRequired(false)->formatValue(static fn (mixed $value, Transaction $transaction): string => $transaction->category?->name ?? '');
+            ->setRequired(false)->formatValue(static fn (mixed $value, Transaction $transaction): string => $transaction->category->name ?? '');
     }
 
     protected function ownedQuery(User $user): QueryBuilder
