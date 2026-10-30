@@ -18,13 +18,26 @@ These project-curated instructions replace generic generated Mate CLI examples. 
 | Task | Prerequisite | Bound |
 |---|---|---|
 | `vendor/bin/castor dev:cache:warmup` | Installed application dependencies | Development container metadata only |
-| `vendor/bin/castor mate:services QUERY` | Compiled development container and a nonempty service query | 10 services |
-| `vendor/bin/castor mate:logs CORRELATION_ID` | Local log files and a nonempty correlation identifier | 20 matching entries |
-| `vendor/bin/castor mate:profiles` | Locally recorded development profiles | 5 profile summaries |
+| `vendor/bin/castor mate:call TOOL --json='{}'` | Inspect the official tool schema and provide its required parameters | 10 services per context, 20 log entries, 5 profile summaries, or 200 dotenv variables |
+| `vendor/bin/castor mate:collector TOKEN COLLECTOR` | An existing profile token and one collector name from `symfony-profiler-get` | One collector, never a full profile dump |
 
-`mate:logs` searches an existing `correlation_id` context field. The standard Monolog configuration does not generate that field; use this task only when a caller has supplied it. The configuration does not sanitize log contents.
+`mate:call` forwards the official CLI's native JSON parameter object; upstream validates names, required fields, and types. All installed selected tools are available: `server-info`; `monolog-search`, `monolog-context-search`, `monolog-tail`, `monolog-list-files`, `monolog-list-channels`; `symfony-services`, `symfony-service-detail`, `symfony-profiler-list`, `symfony-profiler-get`, `symfony-dotenv-check`. Use `mate:inspect TOOL` for the full current schema rather than inventing flags. The result-count limits above are defaults and maxima; lower `limit` values are allowed. Narrow upstream filters instead of requesting unbounded results. Metadata listings and single-item tools retain their official schemas.
 
-Read `var/qa/<task>/result.json` first, replacing colons with hyphens. JSON diagnostic output lives at the result's `stdout` path. Missing container, log, or profiler artifacts fail rather than appearing as an empty successful result. Schema inspection does not grant permission to invoke additional tools or dump full records.
+```sh
+	vendor/bin/castor mate:call symfony-services --json='{"query":"HomeController","context":"test","limit":1}'
+	vendor/bin/castor mate:call symfony-service-detail --json='{"id":"App\\Controller\\HomeController","context":"test"}'
+	vendor/bin/castor mate:call monolog-search --json='{"term":"error","environment":"dev","level":"ERROR","limit":5}'
+	vendor/bin/castor mate:call monolog-context-search --json='{"key":"correlation_id","value":"SYNTHETIC_ID","limit":5}'
+	vendor/bin/castor mate:call symfony-profiler-list --json='{"context":"test","method":"GET","url":"/","limit":1}'
+	vendor/bin/castor mate:call symfony-profiler-get --json='{"token":"TOKEN"}'
+	vendor/bin/castor mate:collector TOKEN time
+```
+
+Container and profiler directories use the official named `dev`/`test` context maps. Profiler listing defaults to `dev`; select `test` explicitly for saved-suite artifacts. Neither this map nor the tasks enable collection globally. The browser profiler scenario uses the existing client's `enableProfiler()` for its request and asserts the resulting profile. Warm a container with `app:console -- cache:warmup --env=test` when needed. Record a real request before querying profiles; an empty profile directory fails rather than appearing as a successful empty list.
+
+Log tools require existing matching local files. Context search works only when a caller supplies the requested context field; standard Monolog does not generate application correlation identifiers or sanitize log contents. A filtered search can legitimately return no matches once the required artifacts exist.
+
+Read `var/qa/<task>/result.json` first, replacing colons with hyphens. The call and collector parent reports contain validation errors or child summaries. Native JSON is saved under `var/qa/mate-tool/` and `var/qa/mate-collector-read/` respectively. Calls share those report directories, so read or preserve each result before the next call and do not run calls concurrently. Missing container, log, or profiler artifacts fail rather than appearing as an empty successful result. The collector task accepts only a token and collector name, not arbitrary resource URIs. Schema inspection does not grant permission to invoke additional tools or dump full records.
 
 ## Privacy
 

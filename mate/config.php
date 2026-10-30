@@ -15,6 +15,14 @@ return static function (ContainerConfigurator $container): void {
         // major.minor, because it would then report on a runtime that is not your application's
         // and extensions may behave differently. Set to null to disable the check.
         ->set('mate.php_version', '8.5')
+        ->set('ai_mate_symfony.profiler_dir', [
+            'dev' => '%mate.root_dir%/var/cache/dev/profiler',
+            'test' => '%mate.root_dir%/var/cache/test/profiler',
+        ])
+        ->set('ai_mate_symfony.cache_dir', [
+            'dev' => '%mate.root_dir%/var/cache/dev',
+            'test' => '%mate.root_dir%/var/cache/test',
+        ])
 
         // Override default parameters here
         // ->set('mate.cache_dir', sys_get_temp_dir().'/mate')

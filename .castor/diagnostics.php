@@ -6,30 +6,74 @@ namespace AppTasks;
 
 use Castor\Attribute\AsTask;
 
-#[AsTask(namespace: 'mate', name: 'services')]
-function mateServices(string $query): int
+#[AsTask(namespace: 'mate', name: 'call', description: 'Call a selected official tool using its native --json parameter object; inspect its schema first.')]
+function mateCall(string $tool, string $json = '{}'): int
 {
-    if ('' === trim($query)) {
-        throw new \InvalidArgumentException('A narrow service query is required.');
-    }
-
-    return report('mate:services', ['php', 'vendor/bin/mate', 'tools:call', 'symfony-services', '--query='.$query, '--limit=10', '--format=json'], artifact: 'var/cache/dev/*Container.xml');
+    return report('mate:call', ['vendor/bin/castor', 'mate:call', $tool, '--json='.$json], runtime: false, operation: static fn (): int => callMateTool($tool, $json));
 }
 
-#[AsTask(namespace: 'mate', name: 'logs')]
-function mateLogs(string $correlation): int
+function callMateTool(string $tool, string $json): int
 {
-    if ('' === trim($correlation)) {
-        throw new \InvalidArgumentException('A correlation identifier is required.');
+    $tools = ['server-info', 'monolog-search', 'monolog-context-search', 'monolog-tail', 'monolog-list-files', 'monolog-list-channels', 'symfony-services', 'symfony-service-detail', 'symfony-profiler-list', 'symfony-profiler-get', 'symfony-dotenv-check'];
+    if (!\in_array($tool, $tools, true)) {
+        throw new \InvalidArgumentException('Only the installed selected official tools are supported. Use mate:tools.');
+    }
+    $decoded = json_decode($json, flags: \JSON_THROW_ON_ERROR);
+    if (!$decoded instanceof \stdClass) {
+        throw new \InvalidArgumentException('--json must be a parameter object.');
+    }
+    $parameters = (array) $decoded;
+    $maximum = match ($tool) {
+        'symfony-services' => 10,
+        'symfony-profiler-list' => 5,
+        'symfony-dotenv-check' => 200,
+        'monolog-search', 'monolog-context-search', 'monolog-tail' => 20,
+        default => null,
+    };
+    if (null !== $maximum) {
+        $limit = $parameters['limit'] ?? $maximum;
+        if (!\is_int($limit) || $limit < 1 || $limit > $maximum) {
+            throw new \InvalidArgumentException('limit must be an integer between 1 and '.$maximum.'. Narrow the upstream filters instead.');
+        }
+        $parameters['limit'] = $limit;
+    }
+    $artifact = '';
+    if (str_starts_with($tool, 'monolog-')) {
+        $environment = $parameters['environment'] ?? '*';
+        if (!\is_string($environment) || ('*' !== $environment && 1 !== preg_match('/^[a-zA-Z0-9_-]+$/D', $environment))) {
+            throw new \InvalidArgumentException('Invalid log environment.');
+        }
+        $artifact = 'var/log/'.$environment.'*.log';
+    } elseif (\in_array($tool, ['symfony-services', 'symfony-service-detail'], true)) {
+        $artifact = 'var/cache/*/*Container.xml';
+    } elseif ('symfony-profiler-list' === $tool) {
+        $context = $parameters['context'] ?? 'dev';
+        if (!\in_array($context, ['dev', 'test'], true)) {
+            throw new \InvalidArgumentException('Profiler context must be dev or test.');
+        }
+        $parameters['context'] = $context;
+        $artifact = 'var/cache/'.$context.'/profiler/*/*/*';
+    } elseif ('symfony-profiler-get' === $tool) {
+        $token = $parameters['token'] ?? '';
+        if (!\is_string($token) || 1 !== preg_match('/^[a-f0-9]{6}$/D', $token)) {
+            throw new \InvalidArgumentException('A six-character profiler token is required.');
+        }
+        $artifact = 'var/cache/*/profiler/*/*/'.$token;
     }
 
-    return report('mate:logs', ['php', 'vendor/bin/mate', 'tools:call', 'monolog-context-search', '--key=correlation_id', '--value='.$correlation, '--limit=20', '--format=json'], artifact: 'var/log/*.log');
+    return report('mate:tool', ['php', 'vendor/bin/mate', 'tools:call', $tool, '--json='.json_encode((object) $parameters, \JSON_THROW_ON_ERROR), '--format=json'], artifact: $artifact);
 }
 
-#[AsTask(namespace: 'mate', name: 'profiles')]
-function mateProfiles(): int
+#[AsTask(namespace: 'mate', name: 'collector', description: 'Read one official profiler collector, not a full profile or arbitrary resource URI.')]
+function mateCollector(string $token, string $collector): int
 {
-    return report('mate:profiles', ['php', 'vendor/bin/mate', 'tools:call', 'symfony-profiler-list', '--limit=5', '--format=json'], artifact: 'var/cache/dev/profiler/*/*/*');
+    return report('mate:collector', ['vendor/bin/castor', 'mate:collector', $token, $collector], runtime: false, operation: static function () use ($token, $collector): int {
+        if (1 !== preg_match('/^[a-f0-9]{6}$/D', $token) || 1 !== preg_match('/^[a-zA-Z0-9_.-]+$/D', $collector)) {
+            throw new \InvalidArgumentException('Use a profiler token and one collector name returned by symfony-profiler-get.');
+        }
+
+        return report('mate:collector:read', ['php', 'vendor/bin/mate', 'resources:read', 'symfony-profiler://profile/'.$token.'/'.$collector, '--format=json'], artifact: 'var/cache/*/profiler/*/*/'.$token);
+    });
 }
 
 #[AsTask(namespace: 'mate', name: 'tools', description: 'Discover installed Mate tool schemas as JSON.')]

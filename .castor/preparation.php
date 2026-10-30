@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace AppTasks;
 
+use Castor\Attribute\AsArgsAfterOptionEnd;
 use Castor\Attribute\AsTask;
 
 #[AsTask(namespace: 'tooling', name: 'build', description: 'Build the authoritative development and QA runtime.')]
@@ -12,10 +13,11 @@ function toolingBuild(): int
     return report('tooling:build', ['docker', 'build', '--target', 'frankenphp_tooling', '-t', TOOLING_IMAGE, '.'], runtime: false);
 }
 
-#[AsTask(namespace: 'composer', name: 'install', description: 'Install locked dependencies in the application runtime.')]
-function composerInstall(): int
+/** @param list<string> $arguments */
+#[AsTask(namespace: 'composer', name: 'install', description: 'Install locked dependencies; pass additional native Composer options after --.')]
+function composerInstall(#[AsArgsAfterOptionEnd] array $arguments = []): int
 {
-    return report('composer:install', ['composer', 'install', '--no-interaction', '--no-progress']);
+    return report('composer:install', ['composer', 'install', '--no-interaction', '--no-progress', ...$arguments]);
 }
 
 #[AsTask(namespace: 'browser', name: 'install', description: 'Install the pinned Chromium browser without launching it.')]

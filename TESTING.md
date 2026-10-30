@@ -4,11 +4,11 @@
 
 [ADR 0010](docs/adr/0010-playwright-only-testing.md) selects Playwright as the only application behavior-testing approach. Do not add unit, kernel-only, service-only, or API-only suites. A PHP runner such as PHPUnit is only a harness for the real-browser suite, not a separate testing layer.
 
-The Symfony hello-world Docker bootstrap has a saved PHP Playwright scenario in `tests/E2E/HomepageTest.php`, Castor tasks, and a separate live-stack configuration. Static checks have run successfully with PHP 8.5.12, Node.js 22.23.4, Symfony CLI 5.20.0, and Symfony Language Tools 0.24.2. Browser execution must be recorded separately; installing the harness or passing static checks is not proof of browser behavior. No financial fixtures, workers, broker, or Mercure workflows exist yet.
+The Symfony hello-world Docker bootstrap has saved PHP Playwright scenarios for the homepage and its explicit profiler request in `tests/E2E/`, Castor tasks, and a separate live-stack configuration. Static checks have run successfully with PHP 8.5.12, Node.js 22.23.4, Symfony CLI 5.20.0, and Symfony Language Tools 0.24.2. Browser execution must be recorded separately; installing the harness or passing static checks is not proof of browser behavior. No financial fixtures, workers, broker, or Mercure workflows exist yet.
 
 ## Prepare the tooling runtime
 
-Use Linux amd64 with Docker, host PHP 8.5 CLI with PCNTL/POSIX for Castor orchestration, a visible X11 display, and host `xauth`. Application commands always run in the authoritative tooling container, including when the host lacks BCMath. The tooling image includes PHP 8.5, the application's extensions, Node.js, Chromium system libraries, and Symfony CLI. Language Tools downloads on its first invocation and needs network access.
+Use Linux amd64 with Docker and host PHP 8.5 CLI with PCNTL/POSIX for Castor orchestration. Only explicitly requested headed runs need a visible X11 display and host `xauth`. Application commands always run in the authoritative tooling container, including when the host lacks BCMath. The tooling image includes PHP 8.5, the application's extensions, Node.js, Chromium system libraries, and Symfony CLI. Language Tools downloads on its first invocation and needs network access.
 
 On a fresh checkout without `vendor/bin/castor`, install the locked dependencies once using the existing development Docker target. This bootstrap is necessary before the Composer-installed command exists:
 
@@ -96,11 +96,37 @@ Run these tasks from the host checkout. Castor owns their runtime selection:
 | `vendor/bin/castor qa:static` | Run the static gate defined in ADR 0009, including `symfony lsp:check`. |
 | `vendor/bin/castor check` | Sole combined static/browser gate, executed by the workflow's literal `castor check` at the CODE-REVIEW transition. |
 
+Pass native PHPUnit arguments after Castor's `--` separator. Castor owns visibility, the JUnit path, and failure on an empty test selection; PHPUnit owns file selection, filters, groups, suites, and listing options. Listing commands do not launch a browser. `check` accepts only its visibility option and always invokes the full suite, never a filtered selection.
+
+```sh
+	vendor/bin/castor test -- tests/E2E/HomepageTest.php
+	vendor/bin/castor test -- tests/E2E/HomepageTest.php tests/E2E/HomepageProfilerTest.php
+	vendor/bin/castor test -- --filter='testHomepage$|testHomepageProfile$'
+	vendor/bin/castor test -- --group=profiler
+	vendor/bin/castor test -- --testsuite='Browser suite'
+	vendor/bin/castor test -- --list-tests
+	vendor/bin/castor test -- --list-groups
+```
+
+The profiler scenario exercises the real homepage with the integration's `enableProfiler()` and `getProfile()` methods. It records a test-context artifact without changing the default `collect: false` policy. Main runs these saved tests directly; the browser subagent remains limited to actual system `playwright-cli` interaction.
+
+Use `app:composer` for application Composer, not Castor's built-in `composer` command, which manages Castor's own dependencies. Use `app:console` for Symfony application console commands. Both forward native argv after `--` through the existing runtime/report boundary, without a shell parser. Keep quotes around a single argument containing spaces or regular-expression metacharacters. `composer:install` also accepts native install options after `--`.
+
+```sh
+	vendor/bin/castor app:composer -- --version
+	vendor/bin/castor app:composer -- check-platform-reqs
+	vendor/bin/castor composer:install -- --dry-run --no-scripts
+	vendor/bin/castor app:console -- about --env=test
+	vendor/bin/castor app:console -- cache:warmup --env=dev
+```
+
+Read each task's result before another invocation overwrites the same report directory. Tool failures retain their exit codes. For official Mate filters, context maps, bounds, and targeted collector access, see [Mate instructions](mate/AGENT_INSTRUCTIONS.md).
+
 The individual static tasks are `composer:validate`, `cs:check`, `phpstan`, and `lsp:check`. `cs:fix` modifies PHP formatting separately. The selected sqlite-queue CS Fixer rules apply to application/task/test PHP and selected entry points, with one owner-approved exception: `php_unit_test_case_static_method_calls` uses `call_type: self`. Call declared-static PHPUnit and Symfony assertions with `self::`; keep actual instance methods such as Playwright's `visit` and `assertPageContains` on `$this`. PHPStan preserves its strict level 6 rules, PHPUnit/Castor extensions, and production/tooling scope; it does not analyze browser-test files. Each task writes `var/qa/<task>/result.json`, with colons replaced by hyphens, and prints a short JSON summary. Reports include command, timestamps, duration, status, exit code, and stdout/stderr paths. Native JSON is preserved for style, PHPStan, LSP, and Mate tasks. The `test` report contains database/browser child summaries; PHPUnit diagnostics are in `var/qa/test-browser/`, with JUnit at `var/qa/test/junit.xml`. Do not run the same task concurrently: its report directory is locked. Normal interruption records a failure after cleanup; abrupt interruption can leave `running`, never a stale pass. QA aggregates execute all children and preserve the first failure; interruption stops further work. Their stdout files contain each child's summary.
 
 The LSP task requires both global and project completeness, runtime mode, and ready runtime state. It never uses source-only analysis. Read only the failing task's diagnostic files before widening inspection. Reports, logs, profiles, cookies, screenshots, and traces remain private generated data.
 
-Run `vendor/bin/castor cs:fix` before validation when application or tooling code changes. During task-start, run affected browser scenarios and `qa:static`; let the CODE-REVIEW transition execute `check`. Keep task output concise, preserve failures, and save reports under `var/qa/`. A missing browser, unavailable display, startup failure, or interrupted suite must not produce a passing result.
+Run `vendor/bin/castor cs:fix` before validation when application or tooling code changes. During task-start, run affected browser scenarios and `qa:static`; let the CODE-REVIEW transition execute `check`. Keep task output concise, preserve failures, and save reports under `var/qa/`. A missing browser, unavailable display for a requested headed run, startup failure, or interrupted suite must not produce a passing result.
 
 ## Initial coverage requirements
 

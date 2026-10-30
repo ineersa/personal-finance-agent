@@ -80,23 +80,25 @@ Follow [Testing](TESTING.md#prepare-the-tooling-runtime) for the one-time depend
 	vendor/bin/castor test
 ```
 
-Castor prints one JSON summary per invoked task and stores diagnostics under ignored `var/qa/`. `qa:static` runs Composer validation, a read-only formatting check, strict PHPStan level 6, and complete runtime-aware Symfony Language Tools analysis. CS Fixer uses the selected sqlite-queue rules unchanged, including risky Symfony rules, strict types, and instance assertion calls. PHPStan follows that reference's production/tooling scope, not its tests. Browser tests receive style checks and real-browser execution, not a claimed PHPStan pass. The task workflow runs `castor check` during the CODE-REVIEW transition as the sole combined static/browser gate. It runs both groups even if either fails. Read its stdout report for child summaries; do not invoke it prematurely during task-start.
+Castor prints one JSON summary per invoked task and stores diagnostics under ignored `var/qa/`. `qa:static` runs Composer validation, a read-only formatting check, strict PHPStan level 6, and complete runtime-aware Symfony Language Tools analysis. CS Fixer uses the selected sqlite-queue rules except for the approved `call_type: self` assertion policy, and retains risky Symfony rules and strict types. PHPStan follows that reference's production/tooling scope, not its tests. Browser tests receive style checks and real-browser execution, not a claimed PHPStan pass. The task workflow runs `castor check` during the CODE-REVIEW transition as the sole combined static/browser gate. It runs both groups even if either fails. Read its stdout report for child summaries; do not invoke it prematurely during task-start.
 
-Use bounded Mate tasks after warming the development cache or recording local requests:
+Pass native PHPUnit selectors after `--`, for example `vendor/bin/castor test -- --filter='testHomepage$' tests/E2E/HomepageTest.php`. Multiple files, regex filters, groups, suites, and listing flags use PHPUnit's own syntax; `check` always runs the full suite. Use `app:composer -- COMMAND OPTIONS` for application Composer and `app:console -- COMMAND OPTIONS` for Symfony console commands. Bare `castor composer` manages Castor itself, not the application. See [Testing](TESTING.md#command-contract) for examples.
+
+Use bounded Mate tasks after warming the relevant cache or recording local requests:
 
 ```sh
 	vendor/bin/castor mate:discover
 	vendor/bin/castor mate:tools
 	vendor/bin/castor mate:inspect symfony-services
 	vendor/bin/castor dev:cache:warmup
-	vendor/bin/castor mate:services HomeController
-	vendor/bin/castor mate:profiles
-	vendor/bin/castor mate:logs CORRELATION_ID
+	vendor/bin/castor mate:call symfony-services --json='{"query":"HomeController","context":"dev","limit":1}'
+	vendor/bin/castor mate:call symfony-profiler-list --json='{"context":"test","limit":1}'
+	vendor/bin/castor mate:call monolog-search --json='{"environment":"dev","level":"ERROR","limit":5}'
 ```
 
-Service results are limited to 10, profile listings to 5, and correlation searches to 20. `mate:logs` requires a caller-supplied `correlation_id` in existing logs; the standard configuration does not generate it. Missing artifacts fail rather than masquerading as empty results. Do not dump full profiler records into agent context. Mate-generated skills are disabled. `mate:discover` refreshes official extensions while preserving the curated Castor instructions and not retaining a newly generated editor-specific instruction file.
+`mate:call` exposes all 11 installed selected official tools through their upstream JSON parameter schemas. Service results are limited to 10 per context, profile listings to 5, log searches/tail to 20, and dotenv listings to 200. `mate:collector TOKEN COLLECTOR` reads one targeted official profiler collector. Dev and test artifacts are separate named contexts; the saved profiler scenario enables collection for its own request without changing the collection policy. See [Mate instructions](mate/AGENT_INSTRUCTIONS.md) for filters and prerequisites. Missing artifacts fail rather than masquerading as empty results. Do not dump full profiler records into agent context. Mate-generated skills are disabled. `mate:discover` refreshes official extensions while preserving the curated Castor instructions and not retaining a newly generated editor-specific instruction file.
 
-The `test` task creates the fixed, separate SQLite test database non-destructively through Doctrine, then runs the homepage scenario headlessly by default. Use `vendor/bin/castor test --headed` only when the owner requests a visible browser. DAMA is registered only for test and its PHPUnit extension supplies per-test rollback for intercepted same-process scenarios. No application schema exists yet; entity fixtures and observable rollback scenarios belong with the features that introduce that schema. See [Testing](TESTING.md) for storage and real-stack limits.
+The `test` task creates the fixed, separate SQLite test database non-destructively through Doctrine, then runs the homepage scenarios headlessly by default. Use `vendor/bin/castor test --headed` only when the owner requests a visible browser. DAMA is registered only for test and its PHPUnit extension supplies per-test rollback for intercepted same-process scenarios. No application schema exists yet; entity fixtures and observable rollback scenarios belong with the features that introduce that schema. See [Testing](TESTING.md) for storage and real-stack limits.
 
 Monolog uses the web template's configuration unchanged: development writes to `var/log/dev.log`; test logs are buffered until an error; production uses an error-triggered buffer with JSON output on stderr. There is no custom HTTP lifecycle subscriber, correlation generator, sanitizer, or log rotation. Standard logging does not remove personal data: callers must keep financial content, model exchanges, credentials, and sensitive exception details out of logs. See [ADR 0007](docs/adr/0007-structured-monolog-logging.md).
 

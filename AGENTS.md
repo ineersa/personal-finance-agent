@@ -88,7 +88,7 @@ This project uses the Symfony UX frontend stack. Seven agent skills are installe
 Mate diagnostics use the same host Castor entry point as QA. These project-curated instructions replace generic Mate CLI examples and are preserved by `mate:discover`.
 
 - Discover extensions with `vendor/bin/castor mate:discover`, list tools with `vendor/bin/castor mate:tools`, and inspect one schema with `vendor/bin/castor mate:inspect TOOL`.
-- Run bounded diagnostics with `vendor/bin/castor mate:services QUERY`, `vendor/bin/castor mate:logs CORRELATION_ID`, or `vendor/bin/castor mate:profiles`. Read the result path printed by each task.
-- See [Mate instructions](mate/AGENT_INSTRUCTIONS.md) for prerequisites, limits, and privacy rules. Do not invoke Mate directly or invent a raw tool-call wrapper.
+- Run selected official tools with `vendor/bin/castor mate:call TOOL --json='{...}'`; inspect upstream parameter names first. Use `vendor/bin/castor mate:collector TOKEN COLLECTOR` for one targeted profiler collector. Read the result path printed by each task.
+- See [Mate instructions](mate/AGENT_INSTRUCTIONS.md) for prerequisites, limits, and privacy rules. Do not invoke Mate directly or add overlapping tool wrappers.
 - Installed extensions: `symfony/ai-mate`, `symfony/ai-monolog-mate-extension`, `symfony/ai-symfony-mate-extension`.
 <!-- END AI_MATE_INSTRUCTIONS -->

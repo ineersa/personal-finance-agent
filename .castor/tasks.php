@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace AppTasks;
 
+use Castor\Attribute\AsArgsAfterOptionEnd;
 use Castor\Attribute\AsTask;
 use Symfony\Component\Process\Process;
 
@@ -24,7 +25,7 @@ function report(string $task, array $command, bool $runtime = true, bool $headed
         throw new \RuntimeException('Task report is already locked: '.$task);
     }
     $started = microtime(true);
-    $stdout = \in_array($task, ['cs:fix', 'cs:check', 'phpstan', 'lsp:check', 'mate:services', 'mate:logs', 'mate:profiles', 'mate:tools', 'mate:inspect'], true) ? 'stdout.json' : 'stdout.log';
+    $stdout = \in_array($task, ['cs:fix', 'cs:check', 'phpstan', 'lsp:check', 'mate:tool', 'mate:collector:read', 'mate:tools', 'mate:inspect'], true) ? 'stdout.json' : 'stdout.log';
     $result = ['task' => $task, 'command' => $command, 'started_at' => gmdate(\DATE_ATOM), 'status' => 'running', 'exit_code' => null, 'stdout' => $relative.'/'.$stdout, 'stderr' => $relative.'/stderr.log'];
     $save = static function () use (&$result, $directory): void {
         file_put_contents($directory.'/result.json', json_encode($result, \JSON_PRETTY_PRINT | \JSON_THROW_ON_ERROR)."\n");
@@ -75,6 +76,14 @@ function report(string $task, array $command, bool $runtime = true, bool $headed
             $exit = $process->run(static function (string $type, string $data) use ($directory, $stdout): void {
                 file_put_contents($directory.'/'.(Process::ERR === $type ? 'stderr.log' : $stdout), $data, \FILE_APPEND);
             });
+            if (0 === $exit && 'mate:collector:read' === $task) {
+                $contents = json_decode((string) file_get_contents($directory.'/'.$stdout), true, flags: \JSON_THROW_ON_ERROR);
+                foreach ($contents as $content) {
+                    if (isset($content['text']['error'])) {
+                        throw new \RuntimeException('Collector unavailable: '.$content['text']['error']);
+                    }
+                }
+            }
             if (0 === $exit && 'lsp:check' === $task) {
                 $diagnostics = json_decode((string) file_get_contents($directory.'/'.$stdout), true, flags: \JSON_THROW_ON_ERROR);
                 if (!\is_array($diagnostics) || true !== ($diagnostics['complete'] ?? false) || [] === ($diagnostics['projects'] ?? [])) {
@@ -148,17 +157,32 @@ function lspCheck(): int
     return report('lsp:check', ['symfony', 'lsp:check', '--format=json', '--environment=dev']);
 }
 
-#[AsTask(namespace: '', name: 'test', description: 'Run browser tests headlessly; use --headed only when the owner requests visibility.')]
-function browserTest(bool $headed = false): int
+/** @param list<string> $arguments */
+#[AsTask(namespace: '', name: 'test', description: 'Run browser tests; pass native PHPUnit arguments after --. Visibility requires an owner request.')]
+function browserTest(bool $headed = false, #[AsArgsAfterOptionEnd] array $arguments = []): int
 {
-    return report('test', ['vendor/bin/castor', 'test', ...($headed ? ['--headed'] : [])], runtime: false, operation: static function () use ($headed): int {
+    return report('test', ['vendor/bin/castor', 'test', ...($headed ? ['--headed'] : []), '--', ...$arguments], runtime: false, operation: static function () use ($headed, $arguments): int {
         $prepared = testDatabasePrepare();
         if (0 !== $prepared) {
             return $prepared;
         }
 
-        return report('test:browser', ['env', 'PLAYWRIGHT_HEADLESS='.($headed ? 'false' : 'true'), 'php', 'vendor/bin/phpunit', '--log-junit', 'var/qa/test/junit.xml'], headed: $headed);
+        return report('test:browser', ['env', 'PLAYWRIGHT_HEADLESS='.($headed ? 'false' : 'true'), 'php', 'vendor/bin/phpunit', ...$arguments, '--fail-on-empty-test-suite', '--log-junit', 'var/qa/test/junit.xml'], headed: $headed);
     });
+}
+
+/** @param list<string> $arguments */
+#[AsTask(namespace: 'app', name: 'composer', description: 'Run application Composer in the project runtime; pass its arguments after --.')]
+function appComposer(#[AsArgsAfterOptionEnd] array $arguments = []): int
+{
+    return report('app:composer', ['composer', ...$arguments]);
+}
+
+/** @param list<string> $arguments */
+#[AsTask(namespace: 'app', name: 'console', description: 'Run the Symfony application console; pass its arguments after --.')]
+function appConsole(#[AsArgsAfterOptionEnd] array $arguments = []): int
+{
+    return report('app:console', ['php', 'bin/console', ...$arguments]);
 }
 
 /** @param array<string, callable(): int> $tasks */

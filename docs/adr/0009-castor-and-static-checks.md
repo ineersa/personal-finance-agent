@@ -19,6 +19,8 @@ Amendment, 2026-10-30: Castor is the single public tooling interface. Invoke `ve
 
 The external task workflow executes literal `castor check` during its CODE-REVIEW transition. Expose `check` as the sole combined static/browser gate, with the same reporting, cleanup, and failure conventions as individual tasks. Keep `qa:static` for static-only validation. Do not add another combined command or alias, or execute the workflow gate prematurely during task-start.
 
+Amendment, 2026-10-30: use Castor's native argument passthrough after `--` for `test`, `app:composer`, and `app:console`. PHPUnit retains its selector/option syntax; application Composer and Symfony console commands retain their native argv. `composer:install` also accepts install options after `--`. These tasks reuse the runtime/report boundary rather than introducing executable runners or a shell parser. Bare `castor composer` belongs to Castor's dependency manager, not the application. `check` always runs the full suite and does not accept PHPUnit selection arguments.
+
 Adapt these read-only references rather than copying their package-specific tasks:
 
 - `/home/ineersa/projects/sqlite-queue/.castor/tasks.php`.
