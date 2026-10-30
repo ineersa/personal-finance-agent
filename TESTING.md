@@ -62,13 +62,50 @@ Run `vendor/bin/castor cs:fix` before final validation when application or tooli
 Implement browser scenarios alongside each supported feature:
 
 - Authentication: login, rejected credentials, logout, and protected pages.
-- Ownership: at least two users with distinct data. Check lists, direct record URLs, association selectors, downloads, aggregates, conversations, artifacts, and private event access. An administrator role does not grant access to everyone's finances.
+- Ownership: at least two users with distinct data. Check lists, direct record URLs, association selectors, downloads, aggregates, conversations, saved inline chat output, and private event access. An administrator role does not grant access to everyone's finances.
 - Statement processing: valid uploads, rejected uploads, processing progress, failures, extracted results, and persistence after reload.
 - Review: transaction corrections and source creation/editing, including invalid submissions.
 - Financial questions: synthetic history with known expected totals for subscriptions, yearly income, and internet bills. Assert results, not just the presence of answer text.
-- Chat and artifacts: input, streamed updates, completed artifacts, failure states, and reload/reconnect recovery. Include real worker/broker/Mercure delivery checks.
+- Chat and inline output: input, safe text/table rendering, streamed updates, completed chart images, failure states, and reload/reconnect recovery. Include real worker/broker/Mercure delivery checks.
 - Untrusted content: uploaded and model-supplied text must not execute scripts or render unsafe HTML.
 - Administration: account management and authorized reset behavior once reset scope and safeguards are defined.
+
+### Statement conversion
+
+Cover [ADR 0016](docs/adr/0016-local-markitdown-conversion.md) through headed browser uploads and the actual worker/local MCP converter. Use synthetic digital PDF/XLSX and PHP-parsed CSV fixtures with known dates, amounts, and expected transactions; assert validation/review and stored results, not just generated Markdown.
+
+Exercise unsupported, malformed, no-text/image-only, conversion-error, and bounded-output cases without fabricating financial records or claiming OCR succeeded. Verify owner isolation, authorized staging access, cleanup, and hostile document text treated as data rather than instructions. Ordinary digital conversion must not require an LLM/API key; subsequent AI extraction remains a separate configured-provider step. Do not claim scanned-PDF support until an existing OCR backend is explicitly selected and verified.
+
+### Finance precision, review, and analysis
+
+Cover [ADR 0017](docs/adr/0017-exact-money-and-ecb-reporting.md) and [ADR 0018](docs/adr/0018-finance-review-sql-and-jev.md) through headed browser scenarios with synthetic fixtures:
+
+- Verify exact high-precision amount round trips, sums, and EUR-based cross-conversion with known decimal results. Changing reporting currency must preserve originals. Exercise missing-date/weekend handling once chosen; do not assume a fallback or exact SQLite `SUM`.
+- Verify editable drafts require valid user approval before analysis, preserve the statement date and account-source meaning, and do not treat every credit as income. Redelivery must not duplicate imports.
+- Exercise model-written SQL with attempted owner/table/write-access violations and bounded results. Confirm external enforcement rather than a prompted owner clause, and precision-preserving money results.
+- Verify LLM row extraction from converted Markdown/text separately from Jev categorization/decision checks. Exercise malformed/truncated/empty JSON and invalid dates, currencies, fields, or money values. LLM output must not automatically approve/commit financial records, and no invalid output or unapproved draft may feed analysis. Preserve monetary strings rather than JSON floats, and keep CSV PHP parsing independent of a forced LLM step.
+- Exercise JSON decoding, DTO denormalization, and Symfony Validator failures. Verify bounded correction requests include specific errors and retain the original statement context. Cover a successful correction that produces only an editable draft and exhausted attempts that report failure without accepting invalid records.
+- Verify extraction provider/model configuration is independent of chat, uses only enabled/configured allowed integrations, and captures validated choices for queued work. Do not infer uniform native JSON Schema support, automatic failover, or runtime bridge compatibility from provider documentation. Jev Choice/Score/Noul checks do not establish arbitrary-field extraction or OCR.
+- Verify target-model history conversion leaves canonical stored history unchanged and isolates tool IDs/reasoning state between concurrent users. Reconstructing context is not resuming an exact provider execution.
+
+Any cassettes/replay used for final verification must be identified as such, not reported as live provider integration.
+
+### Inline charts
+
+Cover [ADR 0014](docs/adr/0014-inline-chat-and-antv-charts.md) through headed browser scenarios. Verify actual Docker MCP chart generation through the worker and private Mercure delivery, not just a substituted image. Use synthetic aggregates only for external-renderer tests.
+
+Check unsafe text/table content and untrusted image references, owned saved chat-output access, and reload/reconnect behavior. Exercise hosted-renderer failures and unavailable images with clear chat feedback and retained conversation state still readable. Do not claim that external image URLs are private or permanently available. Exact image lifecycle remains open; chat retention follows ADR 0015 below.
+
+### Conversation persistence and retention
+
+Cover [ADR 0015](docs/adr/0015-sqlite-conversation-history.md) through headed Playwright scenarios against the isolated application/worker stack:
+
+- Verify temporary-by-default creation, Save chat, and reload of retained messages and generation state from the shared application database.
+- Give two users distinct histories. Verify five temporary chats per user, saved chats outside that count, owner-only access, and pruning of only the owner's oldest inactive temporary chat when a sixth is created.
+- Keep queued/running conversations protected. Exercise creation when no eligible victim exists; verify no protected deletion or silent count increase without assuming a new admission policy.
+- Race Save chat, new-chat creation, and work admission in separate browser contexts. Verify atomic counts and protection of newly saved or queued/running conversations.
+- Verify pruning leaves source financial data and accounting/idempotency information needed for admitted work intact. Use bounded test-owned diagnostics when browser output alone cannot establish this.
+- Distinguish the five stored temporary chats from the unchanged shared one-active-generation-per-user limit. Do not infer unlimited context, cross-provider compatibility, a TTL, or permanent remote image availability from saved history.
 
 ### Rate limits and budgets
 

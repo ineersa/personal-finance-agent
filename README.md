@@ -10,8 +10,8 @@ This repository contains planning and documentation only. The application is not
 
 1. Log in and upload bank statements.
 2. Review extracted transactions, correct them, and manage sources.
-3. Ask questions in the left-hand chat panel.
-4. Explore tables, graphs, and other artifacts in the right-hand panel.
+3. Ask questions in chat.
+4. Read answers, tables, and inline chart images in the same conversation. There is no separate artifact workspace.
 
 Example questions:
 
@@ -20,6 +20,12 @@ Example questions:
 - "Show me my internet bills over the past year."
 
 The intended demo will be locally installable and include a demo user and synthetic financial history so judges can explore it without uploading personal statements. AI work and uploads will have configurable rate limits, quotas, and shared AI-budget controls.
+
+PDF/XLSX conversion will run locally through official MarkItDown MCP in Docker; CSV will be parsed in PHP. Scanned-PDF/OCR support remains unresolved.
+
+Charts will use a Docker-hosted AntV MCP server and its documented free hosted renderer. Aggregated chart labels and values leave the installation, even with a local chat model. [ADR 0014](docs/adr/0014-inline-chat-and-antv-charts.md) records the decision and service limitations.
+
+Chat history will use the existing application SQLite database: five temporary chats per user plus saved chats, with a Save chat button. Only inactive temporary chats can be pruned; queued/running work is protected. See [ADR 0015](docs/adr/0015-sqlite-conversation-history.md).
 
 ## Project documents
 

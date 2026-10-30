@@ -21,7 +21,7 @@ Use the existing projects selectively rather than copying either application who
 ### Finance application
 
 - Use entities, authentication, and EasyAdmin screens as references. Adapt useful code to this project's requirements.
-- Build statement processing, review state, financial queries, and the chat/artifact workspace around the new specification.
+- Build statement processing, review state, financial queries, and chat around the new specification.
 - Do not reuse the legacy test suite or assume its test configuration will carry over.
 
 ### Symfony web template
@@ -56,3 +56,5 @@ FrankenPHP and Castor are candidates, not accepted requirements under this ADR. 
 [ADR 0008](0008-mate-development-tools.md) explicitly selects Mate with the official Symfony and Monolog extensions. [ADR 0009](0009-castor-and-static-checks.md) selects Castor and the static-check reporting workflow. Those later choices resolve the corresponding open tooling questions without authorizing wholesale import of the template or its testing setup.
 
 [ADR 0010](0010-playwright-only-testing.md) resolves the testing-approach decision with real Playwright browsers and no unit or other non-browser suites.
+
+[ADR 0014](0014-inline-chat-and-antv-charts.md) replaces the separate artifact-workspace proposal with inline chat output and selects a Docker-hosted AntV MCP service using hosted rendering. This does not authorize wholesale template import.
