@@ -59,6 +59,8 @@ For a saved direct-network regression, start two owned stacks, then pass their p
 
 For worktree-isolation verification, start stacks from two task-managed worktrees, run the routing scenario against both URLs, stop one checkout, and confirm the other URL still renders through Playwright. Inspect the stopped checkout's route failure too. Preserve evidence before rerunning a task because its report directory is reused. Stop each owned stack before task-worktree removal; the shared proxy stays running until `dev:proxy:stop` succeeds with no registered routes.
 
+Use `browser:routes:test "$SURVIVING_URL" --absent="$STOPPED_URL"` to save the survivor and exact unregistered HTTP 404 assertions together. Omit the positional argument when all supplied routes are expected absent; pass at least two distinct URLs across both lists. Follow the [routing lifecycle regression procedures](docs/development-routing-regressions.md) to verify cleanup while the proxy is stopped, persisted configuration after restart, and SIGTERM cancellation during a controlled subprocess. Process and registry probes corroborate browser assertions; they do not replace them.
+
 ## Agent verification workflow
 
 Use this procedure once the application and relevant project tasks exist. Delegate browser interaction to the configured browser agent and load the `playwright-cli` skill. The agent must perform the checks, not ask the owner to operate the browser.

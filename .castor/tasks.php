@@ -34,23 +34,23 @@ function report(string $task, array $command, bool $runtime = true, bool $headed
     file_put_contents($directory.'/'.$stdout, '');
     file_put_contents($directory.'/stderr.log', '');
     $container = $runtime ? 'pfa-qa-'.bin2hex(random_bytes(8)) : null;
-    $interrupted = 0;
+    $execution = new TaskExecution(TaskExecution::$current);
+    TaskExecution::$current = $execution;
     $handlers = [];
-    $process = new Process($command, $root, timeout: 600);
     pcntl_async_signals(true);
     foreach ([\SIGINT, \SIGTERM, \SIGHUP] as $signal) {
         $handlers[$signal] = pcntl_signal_get_handler($signal);
-        pcntl_signal($signal, static function (int $received) use (&$interrupted, &$process, $runtime): void {
-            $interrupted = 128 + $received;
-            if ($process->isRunning()) {
+        pcntl_signal($signal, static function (int $received) use ($execution): void {
+            $execution->interrupted = 128 + $received;
+            $process = $execution->process;
+            if (null !== $process && $process->isRunning()) {
                 $process->signal($received);
-                if ($runtime) {
-                    $process->stop(10, \SIGKILL);
-                }
+                $process->stop(10, \SIGKILL);
             }
         });
     }
     try {
+        $execution->throwIfInterrupted();
         if ('' !== $artifact && [] === glob($root.'/'.$artifact)) {
             throw new \RuntimeException('Missing diagnostic artifacts. Warm the development cache or record a local request first.');
         }
@@ -73,7 +73,7 @@ function report(string $task, array $command, bool $runtime = true, bool $headed
                 $save();
             }
             $process = new Process($command, $root, ['NO_COLOR' => '1', 'COMPOSER_NO_INTERACTION' => '1'], timeout: 'test:browser' === $task ? 300 : 600);
-            $exit = $process->run(static function (string $type, string $data) use ($directory, $stdout): void {
+            $exit = runTaskProcess($process, false, static function (string $type, string $data) use ($directory, $stdout): void {
                 file_put_contents($directory.'/'.(Process::ERR === $type ? 'stderr.log' : $stdout), $data, \FILE_APPEND);
             });
             if (0 === $exit && 'mate:collector:read' === $task) {
@@ -111,9 +111,10 @@ function report(string $task, array $command, bool $runtime = true, bool $headed
         foreach ($handlers as $signal => $handler) {
             pcntl_signal($signal, $handler);
         }
+        TaskExecution::$current = $execution->parent;
     }
-    if (0 !== $interrupted) {
-        $exit = $interrupted;
+    if (0 !== $execution->interrupted) {
+        $exit = $execution->interrupted;
     }
     $result['exit_code'] = $exit;
     $result['status'] = 0 === $exit ? 'passed' : 'failed';

@@ -12,11 +12,14 @@ final class RoutingTest extends TestCase
 {
     public function testDistinctLiveOrigins(): void
     {
-        $urls = explode(',', (string) getenv('FINANCE_ROUTING_URLS'));
-        self::assertGreaterThanOrEqual(2, \count(array_unique($urls)), 'Pass at least two live stack URLs.');
+        $urls = array_filter(explode(',', (string) getenv('FINANCE_ROUTING_URLS')));
+        $absent = array_filter(explode(',', (string) getenv('FINANCE_UNREGISTERED_URLS')));
+        $all = [...$urls, ...$absent];
+        self::assertGreaterThanOrEqual(2, \count(array_unique($all)), 'Pass at least two distinct registered or unregistered URLs.');
+        self::assertSame(\count($all), \count(array_unique($all)), 'Each origin must have one expected state.');
         $address = getenv('FINANCE_PROXY_IP');
         self::assertNotFalse(filter_var($address, \FILTER_VALIDATE_IP, \FILTER_FLAG_IPV4));
-        foreach ($urls as $url) {
+        foreach ($all as $url) {
             self::assertMatchesRegularExpression('~^http://[a-z0-9.-]+\.finance\.localhost/?$~D', $url);
         }
 
@@ -40,6 +43,12 @@ final class RoutingTest extends TestCase
                     $page->goto($url);
                     self::assertSame((string) $index, $page->evaluate('() => localStorage.getItem("routing-isolation")'));
                     $page->evaluate('() => localStorage.removeItem("routing-isolation")');
+                }
+                foreach ($absent as $url) {
+                    $response = $page->goto($url);
+                    self::assertNotNull($response);
+                    self::assertSame(404, $response->status(), 'Unregistered routes must not reach an application.');
+                    self::assertSame('No development route registered', $page->locator('body')->textContent());
                 }
             } finally {
                 $context->close();

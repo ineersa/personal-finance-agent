@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace AppTasks;
 
+use Castor\Attribute\AsArgument;
 use Castor\Attribute\AsTask;
 use Symfony\Component\Process\Process;
 
@@ -18,7 +19,7 @@ function checkoutId(): string
 function repositoryState(): string
 {
     $process = new Process(['git', 'rev-parse', '--path-format=absolute', '--git-common-dir'], \dirname(__DIR__));
-    $process->mustRun();
+    runTaskProcess($process);
 
     return trim($process->getOutput());
 }
@@ -47,7 +48,7 @@ function stackUrl(string $mode): string
 function developmentProcess(array $command): string
 {
     $process = new Process($command, \dirname(__DIR__), timeout: 600);
-    $process->mustRun();
+    runTaskProcess($process);
     echo $process->getErrorOutput();
 
     return $process->getOutput();
@@ -69,7 +70,7 @@ function stackEnvironment(string $mode): array
 function stackRun(string $mode, array $arguments): void
 {
     $process = new Process([...stackCommand($mode), ...$arguments], \dirname(__DIR__), stackEnvironment($mode), timeout: 600);
-    $process->mustRun();
+    runTaskProcess($process);
     echo $process->getOutput();
     echo $process->getErrorOutput();
 }
@@ -93,7 +94,7 @@ function assertProxyOwner(string $kind, string $name): bool
     if ('container' === $kind) {
         $inspect = new Process(['docker', 'inspect', '--format', '{{index .Config.Labels "finance.proxy.owner"}}', $name]);
     }
-    if (0 !== $inspect->run()) {
+    if (0 !== runTaskProcess($inspect, false)) {
         if (false === stripos($inspect->getErrorOutput(), 'no such') && false === stripos($inspect->getErrorOutput(), 'not found')) {
             throw new \RuntimeException('Cannot inspect development proxy resource: '.$inspect->getErrorOutput());
         }
@@ -137,6 +138,7 @@ function ensureProxy(string $state): void
 /** @param array<string, string> $routes */
 function writeProxyConfig(string $state, array $routes): void
 {
+    TaskExecution::$current?->throwIfInterrupted();
     $config = "{\n\tadmin localhost:2019\n\tauto_https off\n}\n:80 {\n\trespond \"No development route registered\" 404\n}\n";
     ksort($routes);
     foreach ($routes as $hostname => $upstream) {
@@ -146,6 +148,7 @@ function writeProxyConfig(string $state, array $routes): void
         $config .= "http://{$hostname} {\n\treverse_proxy {$upstream}\n}\n";
     }
     file_put_contents($state.'/Caddyfile.next', $config);
+    TaskExecution::$current?->throwIfInterrupted();
     rename($state.'/Caddyfile.next', $state.'/Caddyfile');
 }
 
@@ -179,6 +182,7 @@ function developmentStack(string $mode, string $action): int
             }
             $hostname = (string) parse_url(stackUrl($mode), \PHP_URL_HOST);
             if ('up' === $action) {
+                TaskExecution::$current?->throwIfInterrupted();
                 $secret = \dirname(__DIR__).'/.env.local';
                 if ('dev' === $mode && !file_exists($secret)) {
                     $file = fopen($secret, 'xb');
@@ -207,10 +211,13 @@ function developmentStack(string $mode, string $action): int
                 unset($routes[$hostname]);
             }
             writeProxyConfig($state, $routes);
-            if (assertProxyOwner('container', proxyName())) {
+            if (assertProxyOwner('container', proxyName()) && 'true' === trim(developmentProcess(['docker', 'inspect', '--format', '{{.State.Running}}', proxyName()]))) {
                 developmentProcess(['docker', 'exec', proxyName(), 'frankenphp', 'reload', '--config', '/etc/pfa/Caddyfile']);
             }
-            file_put_contents($state.'/routes.json', json_encode($routes, \JSON_THROW_ON_ERROR)."\n");
+            TaskExecution::$current?->throwIfInterrupted();
+            file_put_contents($state.'/routes.json.next', json_encode($routes, \JSON_THROW_ON_ERROR)."\n");
+            TaskExecution::$current?->throwIfInterrupted();
+            rename($state.'/routes.json.next', $state.'/routes.json');
             echo stackUrl($mode)."\n";
         } finally {
             flock($lock, \LOCK_UN);
@@ -245,9 +252,9 @@ function developmentStackStop(): int
 }
 
 #[AsTask(namespace: 'browser', name: 'routes:test', description: 'Verify comma-separated live stack URLs in a real tooling-container browser.')]
-function browserRoutesTest(string $urls): int
+function browserRoutesTest(#[AsArgument] string $urls = '', string $absent = ''): int
 {
-    return report('browser:routes:test', ['env', 'FINANCE_ROUTING_URLS='.$urls, 'FINANCE_PROXY_IP='.proxyAddress(), 'php', 'vendor/bin/phpunit', 'tests/Live/RoutingTest.php', '--fail-on-empty-test-suite', '--log-junit', 'var/qa/browser-routes-test/junit.xml'], networked: true);
+    return report('browser:routes:test', ['env', 'FINANCE_ROUTING_URLS='.$urls, 'FINANCE_UNREGISTERED_URLS='.$absent, 'FINANCE_PROXY_IP='.proxyAddress(), 'php', 'vendor/bin/phpunit', 'tests/Live/RoutingTest.php', '--fail-on-empty-test-suite', '--log-junit', 'var/qa/browser-routes-test/junit.xml'], networked: true);
 }
 
 #[AsTask(namespace: 'dev', name: 'proxy:stop', description: 'Stop the shared proxy only when no checkout has registered routes.')]
