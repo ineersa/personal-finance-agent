@@ -22,6 +22,8 @@ These project-curated instructions replace generic generated Mate CLI examples. 
 | `vendor/bin/castor mate:logs CORRELATION_ID` | Local log files and a nonempty correlation identifier | 20 matching entries |
 | `vendor/bin/castor mate:profiles` | Locally recorded development profiles | 5 profile summaries |
 
+`mate:logs` searches an existing `correlation_id` context field. The standard Monolog configuration does not generate that field; use this task only when a caller has supplied it. The configuration does not sanitize log contents.
+
 Read `var/qa/<task>/result.json` first, replacing colons with hyphens. JSON diagnostic output lives at the result's `stdout` path. Missing container, log, or profiler artifacts fail rather than appearing as an empty successful result. Schema inspection does not grant permission to invoke additional tools or dump full records.
 
 ## Privacy
