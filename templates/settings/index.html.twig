@@ -1,0 +1,11 @@
+{% extends 'application.html.twig' %}
+{% block workspace %}
+    <h1>Settings</h1>
+    {% for message in app.flashes('success') %}<p role="status">{{ message }}</p>{% endfor %}
+    <p>This preference does not convert or change original transaction amounts. Reporting conversion is not implemented yet.</p>
+    {{ form_start(form) }}
+        {{ form_errors(form) }}
+        {{ form_row(form.reportingCurrency) }}
+        <button type="submit">Save preferences</button>
+    {{ form_end(form) }}
+{% endblock %}

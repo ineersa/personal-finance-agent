@@ -1,15 +1,26 @@
 security:
-    firewalls:
-        main:
-            security: false
-
     password_hashers:
         App\Entity\User:
             algorithm: auto
-
     providers:
-        # used to reload user from session & other features (e.g. switch_user)
         app_user_provider:
             entity:
                 class: App\Entity\User
                 property: email
+    firewalls:
+        main:
+            lazy: true
+            provider: app_user_provider
+            form_login:
+                login_path: app_login
+                check_path: app_login
+                enable_csrf: true
+                default_target_path: admin
+            login_throttling: ~
+            logout:
+                path: app_logout
+                target: app_login
+                enable_csrf: true
+    access_control:
+        - { path: ^/login$, roles: PUBLIC_ACCESS }
+        - { path: ^/(admin|settings|planned)(/|$), roles: ROLE_USER }

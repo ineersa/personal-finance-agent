@@ -87,6 +87,19 @@ function browserStackStatus(): int
     return developmentStack('browser', 'status');
 }
 
+/** @param list<string> $arguments */
+#[AsTask(namespace: 'browser', name: 'stack:console', description: 'Run Symfony console in this checkout\'s running isolated browser stack; pass arguments after --.')]
+function browserStackConsole(#[AsArgsAfterOptionEnd] array $arguments = []): int
+{
+    $command = ['exec', '-T', '--user', posix_getuid().':'.posix_getgid(), 'php', 'php', 'bin/console', ...$arguments];
+
+    return report('browser:stack:console', [...stackCommand('browser'), ...$command], runtime: false, operation: static function () use ($command): int {
+        stackRun('browser', $command);
+
+        return 0;
+    });
+}
+
 #[AsTask(namespace: 'browser', name: 'stack:stop', description: 'Stop only the isolated browser-test application without deleting storage.')]
 function browserStackStop(): int
 {

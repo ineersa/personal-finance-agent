@@ -13,7 +13,7 @@ final class HomepageTest extends PlaywrightTestCase
         $page = $this->visit('/');
         self::assertResponseIsSuccessful();
         self::assertSame('Make sense of your money.', $page->getByRole('heading', ['level' => 1])->textContent());
-        $this->assertPageContains('Preview only. Chat, statement uploads, and sign-in are not available yet.');
+        $this->assertPageContains('Preview only. Chat and statement uploads are not available yet.');
         self::assertTrue($page->getByRole('button', ['name' => 'Send message', 'exact' => true])->isDisabled());
         self::assertTrue($page->getByRole('textbox', ['name' => 'Your financial question'])->isDisabled());
         $page->getByRole('link', ['name' => 'Chat', 'exact' => true])->click();

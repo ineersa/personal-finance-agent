@@ -4,7 +4,7 @@ A planned personal finance demo for the Symfony AI hackathon, using Symfony, Sym
 
 ## Current status
 
-The application renders a responsive finance chat design preview with a dark layout and disabled controls for unfinished features. Castor static checks, Mate diagnostics, the web template's Monolog configuration, and a PHP Playwright harness are installed. Authentication, financial workflows, and chat are not implemented yet.
+The application provides form login, owner-scoped source management, approved-transaction corrections, read-only statements, and a reporting-currency preference. Administrators manage user accounts and the shared category catalog, without access to other users' finances. The finance chat remains a responsive design preview with disabled controls. Uploads, draft approval, chat generation, currency conversion, and reset controls are not implemented yet.
 
 The lockfile pins Symfony `8.2.x-dev`, Symfony AI `1.0.0-BETA1`, and EasyAdmin `5.8.0`. Symfony 8.2 has no released tag at this bootstrap revision; using its locked development branch is an explicit project decision. The Dockerfile pins FrankenPHP `1.13.2` with PHP `8.5.12` by image digest.
 
@@ -34,6 +34,24 @@ Inspect or stop only the current checkout:
 ```
 
 Stopping a checkout unregisters its route but preserves its containers, data, other checkouts, and the shared proxy. Stop each owned stack before removing its worktree. `vendor/bin/castor dev:proxy:stop` stops the proxy only when no routes remain registered. It removes no volumes. The locked route registry lives in `finance-development/` inside the repository's common Git directory, shared across its worktrees. See [ADR 0019](docs/adr/0019-worktree-development-routing.md) for boundaries and limitations.
+
+## Create synthetic development accounts
+
+Start the development stack first so it creates a private application secret. Apply migrations without resetting existing data, then create reserved-domain synthetic accounts:
+
+```sh
+	vendor/bin/castor app:console -- doctrine:migrations:migrate --no-interaction
+	vendor/bin/castor app:console -- app:demo:user admin@example.test --admin
+	vendor/bin/castor app:console -- app:demo:user alice@example.test
+```
+
+Each creation prints a random password once. Keep it private. Castor captures command output in ignored `var/qa/app-console/`; that report can contain the password until the next invocation replaces it. The command accepts only `@example.test` addresses in `dev` or `test`. Repeating an address changes nothing, including its password and roles. No default administrator password is committed. The command does not create financial records or reset any data.
+
+Open `/login` on the printed development URL. Use `/admin` for finance management and `/settings` for the signed-in user's reporting preference. Settings and sign out are also available from the EasyAdmin user menu. Public signup and password recovery are not implemented.
+
+Login uses Symfony's default throttling: five failed attempts per minute per username and client IP, with its broader IP limit. Forwarded client-IP headers are not trusted by default. Configure a verified deployment proxy explicitly before enabling those headers; the local proxy otherwise shares one observed client identity.
+
+The reporting-currency choices are EUR and the ECB reference-feed currencies verified on 2026-10-30. Selecting a preference does not rewrite or convert original amounts. Referenced users, sources, and categories cannot be deleted while financial foreign keys still reference them. There is no implicit cascade or demo reset.
 
 ## Run the production image
 

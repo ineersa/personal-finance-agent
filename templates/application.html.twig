@@ -14,20 +14,32 @@
             <nav class="app-nav" aria-label="Main navigation">
                 <a class="nav-item is-current" href="{{ path('app_home') }}" aria-current="page"><span>Chat</span><span aria-hidden="true">↗</span></a>
                 <span class="nav-label">Your finances</span>
-                <button class="nav-item" type="button" disabled><span>Statements</span><span class="nav-status">Soon</span></button>
-                <button class="nav-item" type="button" disabled><span>Review & sources</span><span class="nav-status">Soon</span></button>
+                {% if app.user %}
+                    <a class="nav-item" href="{{ path('admin') }}">Manage finances</a>
+                    <a class="nav-item" href="{{ path('app_planned', {page: 'upload'}) }}">Upload (not implemented)</a>
+                    <a class="nav-item" href="{{ path('app_planned', {page: 'review'}) }}">Review (not implemented)</a>
+                    <a class="nav-item" href="{{ path('app_settings') }}">Settings</a>
+                {% else %}
+                    <a class="nav-item" href="{{ path('app_login') }}">Log in</a>
+                {% endif %}
             </nav>
 
             <div class="sidebar-note">
                 <span class="eyebrow">Work in progress</span>
-                <p>A first look at your finance workspace. No accounts or financial data are connected.</p>
+                <p>Manage sources and approved transactions. Chat, uploads, and draft review are not implemented yet.</p>
+                {% if app.user %}
+                    <form action="{{ path('app_logout') }}" method="post">
+                        <input type="hidden" name="_csrf_token" value="{{ csrf_token('logout') }}">
+                        <button type="submit">Log out</button>
+                    </form>
+                {% endif %}
             </div>
         </aside>
 
         <div class="app-workspace">
             <header class="workspace-header">
                 <span>Finance chat</span>
-                <span class="preview-badge">Design preview</span>
+                <span class="preview-badge">Chat preview</span>
             </header>
             <main id="main-content" class="workspace-main" tabindex="-1">
                 {% block workspace %}{% endblock %}
