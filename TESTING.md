@@ -4,7 +4,7 @@
 
 [ADR 0010](docs/adr/0010-playwright-only-testing.md) selects Playwright as the only application behavior-testing approach. Do not add unit, kernel-only, service-only, or API-only suites. A PHP runner such as PHPUnit is only a harness for the real-browser suite, not a separate testing layer.
 
-The application is not bootstrapped. The system `playwright-cli` command is installed and its headed/session options have been inspected. The project browser suite, Castor tasks, fixtures, and live test stack do not exist yet. No application test has run.
+The Symfony hello-world Docker bootstrap is running. Exploratory headed `playwright-cli` checks verified HTTP 200, the expected page content, and successful CSS/JavaScript loading with no console errors; owned browser sessions were closed. The saved PHP browser suite, Castor tasks, synthetic financial fixtures, and isolated background-integration test stack do not exist yet. Focused bootstrap checks are not a passing full QA gate.
 
 ## Agent verification workflow
 
