@@ -4,7 +4,7 @@ A planned personal finance demo for the Symfony AI hackathon, using Symfony, Sym
 
 ## Current status
 
-The Docker bootstrap renders a Symfony hello-world page. Castor static checks, Mate diagnostics, the web template's Monolog configuration, and a PHP Playwright harness are installed. Authentication, financial workflows, and chat are not implemented yet.
+The application renders a responsive finance chat design preview with a dark layout and disabled controls for unfinished features. Castor static checks, Mate diagnostics, the web template's Monolog configuration, and a PHP Playwright harness are installed. Authentication, financial workflows, and chat are not implemented yet.
 
 The lockfile pins Symfony `8.2.x-dev`, Symfony AI `1.0.0-BETA1`, and EasyAdmin `5.8.0`. Symfony 8.2 has no released tag at this bootstrap revision; using its locked development branch is an explicit project decision. The Dockerfile pins FrankenPHP `1.13.2` with PHP `8.5.12` by image digest.
 
@@ -20,7 +20,7 @@ docker compose run --rm --no-deps php composer install --no-interaction
 docker compose up -d --wait
 ```
 
-Open <http://127.0.0.1:8080/>. The page heading is **Hello, world!**
+Open <http://127.0.0.1:8080/>. Check that the page heading is **Make sense of your money.** and the dark design-preview layout appears.
 
 The PHP service binds only to loopback. If port 8080 is occupied, set `export HTTP_PORT=8081` before starting and use that port in the browser. Do not stop another project's container to free the port. To run a second checkout alongside this one, also set a distinct `COMPOSE_PROJECT_NAME` and keep those variables set for its lifecycle commands.
 
@@ -52,7 +52,7 @@ fi
 docker compose -f compose.yaml -f compose.prod.yaml up -d --wait
 ```
 
-Open <http://127.0.0.1:8081/>. The same hello-world page should render with compiled assets. After source or lockfile changes, rebuild with `docker compose -f compose.yaml -f compose.prod.yaml up -d --build --wait`.
+Open <http://127.0.0.1:8081/>. Check that the same design-preview page renders with compiled assets, including its dark layout and **Make sense of your money.** heading. After source or lockfile changes, rebuild with `docker compose -f compose.yaml -f compose.prod.yaml up -d --build --wait`.
 
 `.env.prod.local` is required runtime input, not an image build input. Do not commit it, print its contents, or use a real secret in the public `.env`. Private environment files, Composer credentials, development tooling directories, host dependencies, and generated host assets are excluded from the build context.
 
