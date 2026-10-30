@@ -25,6 +25,10 @@ Use narrow filters, bounded result counts, and targeted profiler collectors. Tre
 
 Use Castor as the project command runner and reporting boundary. Mate supplies diagnostic capabilities; it does not replace the Castor PHPStan, style, or final static-check tasks. Add Castor entry points for the selected diagnostic workflows during bootstrap rather than importing every template wrapper.
 
+Amendment, 2026-10-30: expose `mate:discover`, `mate:tools`, `mate:inspect`, `mate:call TOOL --json='{}'`, and `mate:collector TOKEN COLLECTOR` through host Castor. The call task supersedes the restrictive services/logs/profiles wrappers and exposes all 11 installed selected official tools using their upstream JSON parameter schemas and validation. Keep defaults and maxima of 10 service results per context, 20 log entries, 5 profile summaries, and 200 dotenv variables; accept lower limits and upstream filters. Single-item tools and metadata listings retain their official schemas. Read only one selected profiler collector through the official resource command, not arbitrary resource URIs or a full dump.
+
+Configure the official container and profiler providers with named `dev` and `test` directory maps. This does not change profiler collection policy; browser scenarios may explicitly enable collection for their own request through the existing Symfony integration. Require the relevant local artifacts before inspection. The native Mate CLI remains an internal implementation detail in the authoritative runtime, not another public command interface. Keep project-curated Castor instructions in `AGENTS.md` and `mate/AGENT_INSTRUCTIONS.md`; extension discovery must preserve them instead of publishing generic native-CLI examples or retaining newly generated editor-specific instructions.
+
 Do not add community Composer, PHPStan, PHPUnit, database, or other extensions by default. Select additional extensions only for an agreed need. Do not expose development tools to the user-facing financial assistant or through public routes.
 
 ## Alternatives considered
@@ -34,7 +38,7 @@ Do not add community Composer, PHPStan, PHPUnit, database, or other extensions b
 
 ## Consequences
 
-- Log searches can use the correlation context selected in [ADR 0007](0007-structured-monolog-logging.md).
+- Log context searches require fields actually supplied by callers. The standard configuration in [ADR 0007](0007-structured-monolog-logging.md) does not generate correlation identifiers.
 - Container inspection needs a compiled container; profiler inspection needs locally recorded profiles. Missing artifacts must not be reported as an empty successful result.
 - Extensions execute code. Review their enablement, pin dependencies, and keep diagnostic files private.
 - Mate is development tooling, not a prerequisite for a judge to use the packaged demo.
