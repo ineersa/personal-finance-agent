@@ -72,9 +72,11 @@
         ]
     },
     "require-dev": {
+        "dama/doctrine-test-bundle": "^8.7",
         "friendsofphp/php-cs-fixer": "^3.95",
         "jolicode/castor": "^1.9",
         "phpstan/phpstan": "^2.3",
+        "phpstan/phpstan-phpunit": "^2.1",
         "phpstan/phpstan-strict-rules": "^2.1",
         "phpunit/phpunit": "^13.4",
         "playwright-php/playwright": "^1.5",

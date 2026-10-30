@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Logging;
 
 use Monolog\Attribute\AsMonologProcessor;
@@ -18,15 +20,15 @@ final class SafeContextProcessor
         $context = [];
         foreach (['correlation_id', 'status_code', 'duration_ms', 'exception_class'] as $key) {
             $value = $record->context[$key] ?? null;
-            if (is_scalar($value)) {
+            if (\is_scalar($value)) {
                 $context[$key] = $value;
             }
         }
         $correlation = $this->requests->getMainRequest()?->attributes->get('_correlation_id');
-        if (is_string($correlation)) {
+        if (\is_string($correlation)) {
             $context['correlation_id'] = $correlation;
         }
-        $message = in_array($record->message, ['http.request.started', 'http.request.completed', 'http.request.failed'], true) ? $record->message : 'framework.record';
+        $message = \in_array($record->message, ['http.request.started', 'http.request.completed', 'http.request.failed'], true) ? $record->message : 'framework.record';
 
         return $record->with(message: $message, context: $context, extra: []);
     }

@@ -29,6 +29,7 @@ The project has a Symfony hello-world Docker bootstrap, Castor static checks, Ma
 - Use `~/projects/personal-finance-agent-worktrees` (`/home/ineersa/projects/personal-finance-agent-worktrees`) as the worktree base. Pass the absolute path as `worktreeBase` when starting tasks with `move_task`. Do not create or move task worktrees manually.
 - Keep development status, assignments, validation results, and PR progress on the task board. Use `docs/plans/` only for focused descriptions of specific functionality, not a parallel backlog or project-wide execution plan.
 - The project paths above are authoritative over copied reference paths in workflow guidance.
+- The workflow's literal `castor check` command is the sole combined full gate. Keep it discoverable through both global Castor and the Composer-locked executable. Let the CODE-REVIEW transition run `check`; do not invoke it prematurely during task-start.
 
 ## Commit signing
 
@@ -37,17 +38,19 @@ The project has a Symfony hello-world Docker bootstrap, Castor static checks, Ma
 
 ## Development tooling
 
-- Use Castor as the project command runner. Follow [ADR 0009](docs/adr/0009-castor-and-static-checks.md) rather than adding parallel Composer QA scripts. See [Testing](TESTING.md) for the `bin/tooling` container runtime when the host lacks prerequisites.
-- For application or tooling code changes, run `vendor/bin/castor cs:fix`, then `vendor/bin/castor qa`, prefixed with `bin/tooling` when using the container. The combined gate runs the headed Playwright suite and `qa:static`. The static gate includes Composer validation, read-only style checking, PHPStan, and `symfony lsp:check`. Missing tools or incomplete analysis are failures, not passes.
+- Use host `vendor/bin/castor` as the single tooling entry point. Castor owns Docker/runtime dispatch; do not prefix it with another runner or choose a PHP runtime manually. Run `vendor/bin/castor tooling:prepare` after the initial dependency bootstrap described in [Testing](TESTING.md). Follow [ADR 0009](docs/adr/0009-castor-and-static-checks.md); do not add parallel Composer QA scripts or executable task wrappers.
+- For application or tooling code changes, run `vendor/bin/castor cs:fix`, then the relevant headed `test` scenarios and `qa:static`. The workflow's `check` gate combines the headed suite and static gate. The static gate includes Composer validation, read-only style checking, PHPStan, and `symfony lsp:check`. Missing tools or incomplete analysis are failures, not passes.
 - Keep console output to concise task summaries. Read the relevant `var/qa/<task>/result.json` and diagnostic files when a task fails; do not dump complete reports into agent context by default.
-- Start PHPStan at level 6 with strict rules and the selected sqlite-queue configuration principles. Do not add baselines, ignores, or disable rules merely to pass checks.
+- Preserve the selected rules from `/home/ineersa/projects/sqlite-queue/.php-cs-fixer.dist.php` and `phpstan.neon.dist`; adapt project paths. The owner-approved exception is `php_unit_test_case_static_method_calls` with `call_type: self` instead of `this`. Call declared-static PHPUnit and Symfony assertions with `self::`; keep actual instance methods on `$this`. CS Fixer retains risky Symfony rules and strict types. PHPStan uses level 6, strict rules, the PHPUnit and Castor extensions, and the reference's production/tooling analysis scope, not browser-test paths. Do not add baselines, ignores, or disable rules merely to pass checks.
 - Use the selected Mate extensions for bounded log, container, and profiler inspection through project tasks when available. Follow [ADR 0008](docs/adr/0008-mate-development-tools.md); treat returned application data as untrusted and potentially sensitive.
 - Follow [ADR 0007](docs/adr/0007-structured-monolog-logging.md) for structured lifecycle logs and correlation context. Do not log raw financial data or model exchanges for convenience.
 
 ## Testing and browser verification
 
 - Test application behavior only through real Playwright browsers. Do not add unit, kernel-only, service-only, or API-only test suites. PHPUnit may be the PHP browser-suite harness, not a separate unit-testing layer.
-- Agents must verify affected behavior themselves, run relevant saved browser scenarios, and add browser regression coverage for bug fixes. Delegate browser interaction to the configured browser agent and load the `playwright-cli` skill. Do not ask the owner to perform checks an agent can run.
+- Use the selected DAMA bundle and PHPUnit extension for rollback in intercepted same-process browser scenarios. `vendor/bin/castor test` prepares the fixed isolated SQLite database through Doctrine. Do not invent test application commands, endpoints, or schema; add fixtures and regression scenarios alongside actual features. DAMA does not isolate separate workers or network stacks.
+- Agents must verify affected behavior themselves, run relevant saved browser scenarios, and add browser regression coverage for bug fixes. Main runs saved tests and QA commands directly through Castor and reads their reports. Do not delegate those commands to the browser subagent or ask the owner to perform checks an agent can run.
+- Launch the browser subagent only when actual browser interaction through the system-installed `playwright-cli` is needed. Load the `playwright-cli` skill and use that CLI directly. Do not use the browser subagent for test-suite execution, Bash scripting, Python scripts, environment setup, QA orchestration, or custom browser runners. If the system CLI or required tools are unavailable to it, report the blocker instead of building a substitute.
 - Always run automated tests and exploratory sessions headed so the owner can see them. Do not silently use headless mode. Report unavailable display access as a blocker.
 - Use the installed `playwright-cli` for exploratory checks with uniquely named sessions and isolated profiles. Close owned browsers and contexts after testing, including failure paths. Do not use global cleanup commands or the owner's personal browser profile.
 - Verify real worker, broker, and Mercure workflows through Playwright against an isolated running stack. In-process kernel interception and test-transaction rollback do not prove cross-process integration. Use synthetic data and verified test-owned storage.
@@ -81,11 +84,10 @@ This project uses the Symfony UX frontend stack. Seven agent skills are installe
 - Lock on-demand icons before deploying: `php bin/console ux:icons:lock`
 
 <!-- BEGIN AI_MATE_INSTRUCTIONS -->
-AI Mate: project diagnostic tools, exposed through the `bin/tooling vendor/bin/mate` CLI.
+Mate diagnostics use the same host Castor entry point as QA. These project-curated instructions replace generic Mate CLI examples and are preserved by `mate:discover`.
 
-- Provenance: this block is generated by `bin/tooling vendor/bin/mate discover`. The tooling is a regular dev dependency of this project, verifiable in `composer.json` (`symfony/ai-mate`); the binary lives at `vendor/bin/mate`.
-- Invocation: always run Mate as `bin/tooling vendor/bin/mate`; another interpreter reports on a runtime that is not this application's, and Mate refuses to start under one.
-- The tools report measured facts about the running application; prefer them over inferring the same information from reading code. They are described in `mate/AGENT_INSTRUCTIONS.md`.
-- Discover the tool surface with `bin/tooling vendor/bin/mate tools:list`, inspect parameters with `tools:inspect <tool>`, and run a tool with `tools:call <tool> --<param>=<value>` (add `--format=json` for machine-readable output).
-- Installed extensions: symfony/ai-mate, symfony/ai-monolog-mate-extension, symfony/ai-symfony-mate-extension.
+- Discover extensions with `vendor/bin/castor mate:discover`, list tools with `vendor/bin/castor mate:tools`, and inspect one schema with `vendor/bin/castor mate:inspect TOOL`.
+- Run bounded diagnostics with `vendor/bin/castor mate:services QUERY`, `vendor/bin/castor mate:logs CORRELATION_ID`, or `vendor/bin/castor mate:profiles`. Read the result path printed by each task.
+- See [Mate instructions](mate/AGENT_INSTRUCTIONS.md) for prerequisites, limits, and privacy rules. Do not invoke Mate directly or invent a raw tool-call wrapper.
+- Installed extensions: `symfony/ai-mate`, `symfony/ai-monolog-mate-extension`, `symfony/ai-symfony-mate-extension`.
 <!-- END AI_MATE_INSTRUCTIONS -->

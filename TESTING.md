@@ -8,33 +8,41 @@ The Symfony hello-world Docker bootstrap has a saved PHP Playwright scenario in 
 
 ## Prepare the tooling runtime
 
-Use Linux amd64 with Docker, a visible X11 display, and host `xauth`. The host PHP must not substitute for the application runtime when required extensions are missing. The tooling image includes PHP 8.5, the application's extensions, Node.js, Chromium system libraries, and Symfony CLI. Language Tools downloads on its first invocation and needs network access.
+Use Linux amd64 with Docker, host PHP 8.5 CLI with PCNTL/POSIX for Castor orchestration, a visible X11 display, and host `xauth`. Application commands always run in the authoritative tooling container, including when the host lacks BCMath. The tooling image includes PHP 8.5, the application's extensions, Node.js, Chromium system libraries, and Symfony CLI. Language Tools downloads on its first invocation and needs network access.
+
+On a fresh checkout without `vendor/bin/castor`, install the locked dependencies once using the existing development Docker target. This bootstrap is necessary before the Composer-installed command exists:
 
 ```sh
-	docker build --target frankenphp_tooling -t personal-finance-agent-task02-tooling .
-	bin/tooling composer install --no-interaction
-	bin/tooling vendor/bin/playwright-install chromium
-	mkdir -p var/browser
-	bin/tooling vendor/bin/castor cs:fix
-	bin/tooling vendor/bin/castor qa
+	docker build --target frankenphp_dev -t personal-finance-agent-bootstrap .
+	docker run --rm --user "$(id -u):$(id -g)" --volume "$PWD:/app" --entrypoint composer personal-finance-agent-bootstrap install --no-interaction
 ```
 
-`bin/tooling` runs as the host UID/GID and mounts this checkout. Its private home, browser cache, Symfony CLI cache, and display cookie live under ignored `var/tooling/`. It passes `DISPLAY`, a read-only X11 socket mount, and a copy of the current display's Xauth entry. It does not use `xhost` or the owner's browser profile. An unavailable display or failed browser launch must fail the suite, never select headless mode. The display-cookie copy can warn that the original authority file is not writable; it only reads that file.
+After that bootstrap, use only host Castor for routine preparation and tooling:
 
-The Symfony bridge reads the literal string `PLAYWRIGHT_HEADLESS=false`. PHPUnit XML sets `verbatim="true"` so it does not convert that value to boolean false. `HeadedBrowserTestCase` rejects a headless registry before browser creation, and the homepage scenario asserts that configuration. Extend that base for saved Symfony browser scenarios. Each test uses fresh browser contexts. The bridge closes contexts after tests and stops its shared browser after the class. Its pinned Node server closes owned browsers when its PHP parent's stdin closes, including termination paths. `bin/browser-suite` forwards normal interruption signals to PHPUnit, stops its child on shutdown, and bounds execution to five minutes. The disposable tooling container uses Docker's init process and removes its own remaining processes when it exits. Abrupt host failure still requires inspecting task-owned leftovers, not global browser cleanup.
+```sh
+	vendor/bin/castor tooling:prepare
+	vendor/bin/castor cs:fix
+	vendor/bin/castor qa:static
+	vendor/bin/castor test
+```
 
-The default suite uses intercepted Symfony requests, not a network application server. Test SQLite storage is `var/browser/application.db`, separate from development `var/app.db`; shared test files use `var/browser/share`. Do not use development database files or uploads as fixtures. Keep future worker-accessible synthetic data within verified test-owned storage.
+`tooling:prepare` builds the development-only image, installs locked dependencies, and installs Chromium. Its constituent tasks are `tooling:build`, `composer:install`, and `browser:install`. Castor runs application tools as the host UID/GID in disposable containers and mounts this checkout. Its private home, browser cache, Symfony CLI cache, and per-invocation display cookie live under ignored `var/tooling/`. For browser execution it passes `DISPLAY`, a read-only X11 socket mount, and only the current display's Xauth entry. It does not use `xhost` or the owner's browser profile. An unavailable display or failed browser launch fails the suite, never selects headless mode.
+
+The Symfony bridge reads the literal string `PLAYWRIGHT_HEADLESS=false`. PHPUnit XML sets `verbatim="true"` so it does not convert that value to boolean false. `HeadedBrowserTestCase` rejects a headless registry before browser creation, and the homepage scenario asserts that configuration. Extend that base for saved Symfony browser scenarios. Each test uses fresh browser contexts. The bridge closes contexts after tests and stops its shared browser after the class. Its pinned Node server closes owned browsers when its PHP parent's stdin closes, including termination paths. The Castor report/runtime helpers forward normal interruption signals, bound browser execution to five minutes, and clean up only the invocation's named container after checking its ownership label. They also remove its private display cookie. Docker's init process and container removal terminate owned remaining processes. Abrupt host failure still requires inspecting task-owned leftovers, not global browser cleanup.
+
+The default suite uses intercepted Symfony requests, not a network application server. Test SQLite storage is `var/browser/application.db`, separate from development `var/app.db`; shared test files use `var/browser/share`. The test Doctrine configuration fixes the SQLite URL explicitly rather than resolving ambient `DATABASE_URL` overrides. SQLite does not support Doctrine's database-name suffix isolation. `test` invokes `test:database:prepare`, which creates the parent directory, rejects symlinked storage, and runs existing `dbal:run-sql 'SELECT 1' --env=test` in the application runtime. SQLite creates a missing database file when Doctrine connects; the query checks that connection without changing existing data. The pinned DBAL 4 SQLite platform does not support `doctrine:database:create`. Preparation does not drop databases, reset data, or create speculative tables.
+
+DAMA is a development dependency, registered only in the test environment with its PHPUnit extension. The extension begins and rolls back a transaction for each same-process browser scenario. DBAL 4 requires no additional savepoint setting. There is no domain schema or entity fixture yet, so the homepage scenario verifies the real browser/runtime setup, not entity rollback. Add actual schema/migrations, synthetic fixtures, and observable rollback regression scenarios with the features that need them. Do not add a test application command, endpoint, or invented schema merely to test the test bundle. Do not use development data as fixtures.
 
 ### Isolated live stack
 
 Use this path for exploratory checks and future direct-network PHP browser scenarios. It does not demonstrate worker, broker, or Mercure integration by itself.
 
 ```sh
-	mkdir -p var/browser-live/browser
-	docker compose -f compose.browser.yaml up -d --build
-	docker compose -f compose.browser.yaml ps
+	vendor/bin/castor browser:stack:up
+	vendor/bin/castor browser:stack:status
 	# Browser agent: open http://127.0.0.1:18081/ in a unique headed session.
-	docker compose -f compose.browser.yaml stop
+	vendor/bin/castor browser:stack:stop
 ```
 
 This configuration does not load the development override. It uses Compose project `personal-finance-agent-browser`, loopback port 18081, read-only source, and `var/browser-live` mounted as the stack's entire writable `/app/var`. Its SQLite URL points to `/app/var/browser/application.db`. Never reuse development worker/queue/upload storage when adding background services. Future direct-network PHP scenarios must create a browser context without the Symfony interception client and use this verified URL. The current saved scenario is explicitly not cross-process coverage. Stop only this stack; do not remove volumes or reset data as part of normal validation.
@@ -80,19 +88,19 @@ Do not assume the article's transaction rollback technique cleans up the whole l
 
 ### Command contract
 
-Run these tasks directly in a fully provisioned application runtime, or prefix them with `bin/tooling`:
+Run these tasks from the host checkout. Castor owns their runtime selection:
 
 | Command | Scope |
 |---|---|
 | `vendor/bin/castor test` | Run the headed Playwright browser suite with cleanup and saved diagnostics. |
 | `vendor/bin/castor qa:static` | Run the static gate defined in ADR 0009, including `symfony lsp:check`. |
-| `vendor/bin/castor qa` | Run the static gate and the browser suite, reporting both results. |
+| `vendor/bin/castor check` | Sole combined static/browser gate, executed by the workflow's literal `castor check` at the CODE-REVIEW transition. |
 
-The individual static tasks are `composer:validate`, `cs:check`, `phpstan`, and `lsp:check`. `cs:fix` modifies PHP formatting separately. Each task writes `var/qa/<task>/result.json`, with colons replaced by hyphens, and prints a short JSON summary. Reports include command, timestamps, duration, status, exit code, and stdout/stderr paths. Native JSON is preserved for style, PHPStan, LSP, and Mate tasks. PHPUnit writes `var/qa/test/junit.xml`. Do not run the same task concurrently: its report directory is locked. An interrupted invocation leaves `running`, never a stale pass. Aggregates execute all children and preserve the first failure. Their stdout files contain each child's summary.
+The individual static tasks are `composer:validate`, `cs:check`, `phpstan`, and `lsp:check`. `cs:fix` modifies PHP formatting separately. The selected sqlite-queue CS Fixer rules apply to application/task/test PHP and selected entry points, with one owner-approved exception: `php_unit_test_case_static_method_calls` uses `call_type: self`. Call declared-static PHPUnit and Symfony assertions with `self::`; keep actual instance methods such as Playwright's `visit` and `assertPageContains` on `$this`. PHPStan preserves its strict level 6 rules, PHPUnit/Castor extensions, and production/tooling scope; it does not analyze browser-test files. Each task writes `var/qa/<task>/result.json`, with colons replaced by hyphens, and prints a short JSON summary. Reports include command, timestamps, duration, status, exit code, and stdout/stderr paths. Native JSON is preserved for style, PHPStan, LSP, and Mate tasks. The `test` report contains database/browser child summaries; PHPUnit diagnostics are in `var/qa/test-browser/`, with JUnit at `var/qa/test/junit.xml`. Do not run the same task concurrently: its report directory is locked. Normal interruption records a failure after cleanup; abrupt interruption can leave `running`, never a stale pass. QA aggregates execute all children and preserve the first failure; interruption stops further work. Their stdout files contain each child's summary.
 
 The LSP task requires both global and project completeness, runtime mode, and ready runtime state. It never uses source-only analysis. Read only the failing task's diagnostic files before widening inspection. Reports, logs, profiles, cookies, screenshots, and traces remain private generated data.
 
-Run `vendor/bin/castor cs:fix` before final validation when application or tooling code changes. Keep task output concise, preserve failures, and save reports under `var/qa/`. A missing browser, unavailable display, startup failure, or interrupted suite must not produce a passing result.
+Run `vendor/bin/castor cs:fix` before validation when application or tooling code changes. During task-start, run affected browser scenarios and `qa:static`; let the CODE-REVIEW transition execute `check`. Keep task output concise, preserve failures, and save reports under `var/qa/`. A missing browser, unavailable display, startup failure, or interrupted suite must not produce a passing result.
 
 ## Initial coverage requirements
 

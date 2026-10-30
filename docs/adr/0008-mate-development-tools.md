@@ -25,6 +25,8 @@ Use narrow filters, bounded result counts, and targeted profiler collectors. Tre
 
 Use Castor as the project command runner and reporting boundary. Mate supplies diagnostic capabilities; it does not replace the Castor PHPStan, style, or final static-check tasks. Add Castor entry points for the selected diagnostic workflows during bootstrap rather than importing every template wrapper.
 
+Amendment, 2026-10-30: expose `mate:discover`, `mate:tools`, `mate:inspect`, and the bounded `mate:services`, `mate:logs`, and `mate:profiles` tasks through host Castor. The native Mate CLI is an internal implementation detail in the authoritative runtime, not another public command interface. Keep project-curated Castor instructions in `AGENTS.md` and `mate/AGENT_INSTRUCTIONS.md`; extension discovery must preserve them instead of publishing generic native-CLI examples or retaining newly generated editor-specific instructions.
+
 Do not add community Composer, PHPStan, PHPUnit, database, or other extensions by default. Select additional extensions only for an agreed need. Do not expose development tools to the user-facing financial assistant or through public routes.
 
 ## Alternatives considered

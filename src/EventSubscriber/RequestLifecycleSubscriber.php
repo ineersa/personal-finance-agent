@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\EventSubscriber;
 
 use Psr\Log\LoggerInterface;
@@ -45,7 +47,7 @@ final class RequestLifecycleSubscriber implements EventSubscriberInterface
         }
         $request = $event->getRequest();
         $started = $request->attributes->get('_lifecycle_start');
-        $duration = is_float($started) ? (microtime(true) - $started) * 1000 : 0.0;
+        $duration = \is_float($started) ? (microtime(true) - $started) * 1000 : 0.0;
         $this->logger->info('http.request.completed', ['correlation_id' => $request->attributes->get('_correlation_id'), 'status_code' => $event->getResponse()->getStatusCode(), 'duration_ms' => $duration]);
         $request->attributes->remove('_correlation_id');
         $request->attributes->remove('_lifecycle_start');

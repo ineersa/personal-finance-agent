@@ -71,25 +71,32 @@ Keep the data volume; do not use `down -v`. Before returning to the default deve
 
 ## Development checks and diagnostics
 
-Follow [Testing](TESTING.md#prepare-the-tooling-runtime) to build the development-only tooling image and install browser prerequisites. The production target does not contain Node.js, Symfony CLI, or development Composer packages.
+Follow [Testing](TESTING.md#prepare-the-tooling-runtime) for the one-time dependency bootstrap. After that, use host Castor for preparation, QA, and Mate. Castor selects the authoritative Docker runtime; do not choose between host and container PHP or prefix commands with another runner. The production target does not contain Node.js, Symfony CLI, or development Composer packages.
 
 ```sh
-	bin/tooling vendor/bin/castor cs:fix
-	bin/tooling vendor/bin/castor qa
+	vendor/bin/castor tooling:prepare
+	vendor/bin/castor cs:fix
+	vendor/bin/castor qa:static
+	vendor/bin/castor test
 ```
 
-Castor prints one JSON summary per invoked task and stores diagnostics under ignored `var/qa/`. `qa:static` runs Composer validation, a read-only formatting check, strict PHPStan level 6, and complete runtime-aware Symfony Language Tools analysis. `qa` runs that gate and the headed browser suite, even if either fails. Read the aggregate's stdout file for child summaries.
+Castor prints one JSON summary per invoked task and stores diagnostics under ignored `var/qa/`. `qa:static` runs Composer validation, a read-only formatting check, strict PHPStan level 6, and complete runtime-aware Symfony Language Tools analysis. CS Fixer uses the selected sqlite-queue rules unchanged, including risky Symfony rules, strict types, and instance assertion calls. PHPStan follows that reference's production/tooling scope, not its tests. Browser tests receive style checks and real-browser execution, not a claimed PHPStan pass. The task workflow runs `castor check` during the CODE-REVIEW transition as the sole combined static/browser gate. It runs both groups even if either fails. Read its stdout report for child summaries; do not invoke it prematurely during task-start.
 
 Use bounded Mate tasks after warming the development cache or recording local requests:
 
 ```sh
-	bin/tooling php bin/console cache:warmup --env=dev
-	bin/tooling vendor/bin/castor mate:services RequestLifecycleSubscriber
-	bin/tooling vendor/bin/castor mate:profiles
-	bin/tooling vendor/bin/castor mate:logs CORRELATION_ID
+	vendor/bin/castor mate:discover
+	vendor/bin/castor mate:tools
+	vendor/bin/castor mate:inspect symfony-services
+	vendor/bin/castor dev:cache:warmup
+	vendor/bin/castor mate:services RequestLifecycleSubscriber
+	vendor/bin/castor mate:profiles
+	vendor/bin/castor mate:logs CORRELATION_ID
 ```
 
-Service results are limited to 10, profile listings to 5, and correlation searches to 20. Missing artifacts fail rather than masquerading as empty results. Discover schemas with `bin/tooling vendor/bin/mate tools:inspect TOOL`; do not dump full profiler records into agent context. Mate-generated skills are disabled, and editor-specific generated files are not part of this setup. `mate discover` can recreate those local files; review generated changes before committing.
+Service results are limited to 10, profile listings to 5, and correlation searches to 20. Missing artifacts fail rather than masquerading as empty results. Do not dump full profiler records into agent context. Mate-generated skills are disabled. `mate:discover` refreshes official extensions while preserving the curated Castor instructions and not retaining a newly generated editor-specific instruction file.
+
+The `test` task creates the fixed, separate SQLite test database non-destructively through Doctrine, then runs the headed homepage scenario. DAMA is registered only for test and its PHPUnit extension supplies per-test rollback for intercepted same-process scenarios. No application schema exists yet; entity fixtures and observable rollback scenarios belong with the features that introduce that schema. See [Testing](TESTING.md) for storage and real-stack limits.
 
 HTTP lifecycle logs record server-generated correlation IDs, status codes, durations, and exception class names. They omit URLs, request bodies, exception messages, and raw framework context. Other framework messages become `framework.record`, so detailed exception text is deliberately unavailable in logs. Development JSON-lines files rotate under `var/log/`, retaining seven lifecycle/framework files and three deprecation files. Production sends sanitized lifecycle output to stdout and framework/deprecation output to stderr. Logging processors keep no request state between calls. Future jobs must explicitly propagate correlation IDs and add their own lifecycle events; this bootstrap does not implement those workflows.
 
