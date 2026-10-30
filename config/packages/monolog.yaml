@@ -1,0 +1,36 @@
+monolog:
+    channels: [lifecycle, deprecation]
+    handlers:
+        lifecycle:
+            type: rotating_file
+            path: '%kernel.logs_dir%/%kernel.environment%.lifecycle.log'
+            max_files: 7
+            level: info
+            channels: [lifecycle]
+            formatter: monolog.formatter.json
+        framework:
+            type: rotating_file
+            path: '%kernel.logs_dir%/%kernel.environment%.framework.log'
+            max_files: 7
+            level: warning
+            channels: ['!lifecycle', '!deprecation']
+            formatter: monolog.formatter.json
+        deprecation:
+            type: rotating_file
+            path: '%kernel.logs_dir%/%kernel.environment%.deprecation.log'
+            max_files: 3
+            channels: [deprecation]
+            formatter: monolog.formatter.json
+
+when@prod:
+    monolog:
+        handlers:
+            lifecycle:
+                type: stream
+                path: php://stdout
+            framework:
+                type: stream
+                path: php://stderr
+            deprecation:
+                type: stream
+                path: php://stderr

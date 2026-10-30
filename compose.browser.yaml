@@ -1,0 +1,20 @@
+name: personal-finance-agent-browser
+services:
+    php:
+        image: personal-finance-agent-browser-php:dev
+        build:
+            context: .
+            target: frankenphp_dev
+        user: '1000:1000'
+        environment:
+            APP_ENV: test
+            APP_DEBUG: '1'
+            APP_SECRET: browser-synthetic-only
+            DATABASE_URL: 'sqlite:////app/var/browser/application.db'
+            XDG_CONFIG_HOME: /tmp/caddy-config
+            XDG_DATA_HOME: /tmp/caddy-data
+        volumes:
+            - .:/app:ro
+            - ./var/browser-live:/app/var
+        ports:
+            - '127.0.0.1:18081:8080'

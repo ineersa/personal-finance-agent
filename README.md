@@ -4,7 +4,7 @@ A planned personal finance demo for the Symfony AI hackathon, using Symfony, Sym
 
 ## Current status
 
-The Docker bootstrap renders a Symfony hello-world page. EasyAdmin and Symfony AI are installed, but authentication, financial workflows, chat, and development QA tooling are not implemented yet.
+The Docker bootstrap renders a Symfony hello-world page. Castor static checks, Mate diagnostics, structured lifecycle logging, and a headed PHP Playwright harness are installed. Authentication, financial workflows, and chat are not implemented yet.
 
 The lockfile pins Symfony `8.2.x-dev`, Symfony AI `1.0.0-BETA1`, and EasyAdmin `5.8.0`. Symfony 8.2 has no released tag at this bootstrap revision; using its locked development branch is an explicit project decision. The Dockerfile pins FrankenPHP `1.13.2` with PHP `8.5.12` by image digest.
 
@@ -67,7 +67,31 @@ docker compose -f compose.yaml -f compose.prod.yaml exec php php bin/console abo
 docker compose -f compose.yaml -f compose.prod.yaml down
 ```
 
-Keep the data volume; do not use `down -v`. Before returning to the default development project, unset `COMPOSE_PROJECT_NAME` and `HTTP_PORT`, or restore that development stack's values. Full Castor static checks and headed Playwright test commands will be added in task 02. Their absence is not a passing QA result.
+Keep the data volume; do not use `down -v`. Before returning to the default development project, unset `COMPOSE_PROJECT_NAME` and `HTTP_PORT`, or restore that development stack's values.
+
+## Development checks and diagnostics
+
+Follow [Testing](TESTING.md#prepare-the-tooling-runtime) to build the development-only tooling image and install browser prerequisites. The production target does not contain Node.js, Symfony CLI, or development Composer packages.
+
+```sh
+	bin/tooling vendor/bin/castor cs:fix
+	bin/tooling vendor/bin/castor qa
+```
+
+Castor prints one JSON summary per invoked task and stores diagnostics under ignored `var/qa/`. `qa:static` runs Composer validation, a read-only formatting check, strict PHPStan level 6, and complete runtime-aware Symfony Language Tools analysis. `qa` runs that gate and the headed browser suite, even if either fails. Read the aggregate's stdout file for child summaries.
+
+Use bounded Mate tasks after warming the development cache or recording local requests:
+
+```sh
+	bin/tooling php bin/console cache:warmup --env=dev
+	bin/tooling vendor/bin/castor mate:services RequestLifecycleSubscriber
+	bin/tooling vendor/bin/castor mate:profiles
+	bin/tooling vendor/bin/castor mate:logs CORRELATION_ID
+```
+
+Service results are limited to 10, profile listings to 5, and correlation searches to 20. Missing artifacts fail rather than masquerading as empty results. Discover schemas with `bin/tooling vendor/bin/mate tools:inspect TOOL`; do not dump full profiler records into agent context. Mate-generated skills are disabled, and editor-specific generated files are not part of this setup. `mate discover` can recreate those local files; review generated changes before committing.
+
+HTTP lifecycle logs record server-generated correlation IDs, status codes, durations, and exception class names. They omit URLs, request bodies, exception messages, and raw framework context. Other framework messages become `framework.record`, so detailed exception text is deliberately unavailable in logs. Development JSON-lines files rotate under `var/log/`, retaining seven lifecycle/framework files and three deprecation files. Production sends sanitized lifecycle output to stdout and framework/deprecation output to stderr. Logging processors keep no request state between calls. Future jobs must explicitly propagate correlation IDs and add their own lifecycle events; this bootstrap does not implement those workflows.
 
 ## Planned workflow
 
