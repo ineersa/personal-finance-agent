@@ -1,0 +1,11 @@
+services:
+  php:
+    image: "${COMPOSE_PROJECT_NAME:-personal-finance-agent}-php:dev"
+    build:
+      target: frankenphp_dev
+    user: "${LOCAL_UID:-1000}:${LOCAL_GID:-1000}"
+    environment:
+      APP_ENV: dev
+      APP_DEBUG: "1"
+    volumes:
+      - ./:/app

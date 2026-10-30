@@ -8,7 +8,7 @@ The Docker bootstrap renders a Symfony hello-world page. EasyAdmin and Symfony A
 
 The lockfile pins Symfony `8.2.x-dev`, Symfony AI `1.0.0-BETA1`, and EasyAdmin `5.8.0`. Symfony 8.2 has no released tag at this bootstrap revision; using its locked development branch is an explicit project decision. The Dockerfile pins FrankenPHP `1.13.2` with PHP `8.5.12` by image digest.
 
-## Run the bootstrap
+## Run development
 
 Install Docker Engine with Docker Compose. Run these commands from the repository root on a Unix-like host. No host PHP, Composer, Node.js, API keys, or reference checkouts are needed.
 
@@ -24,7 +24,7 @@ Open <http://127.0.0.1:8080/>. The page heading is **Hello, world!**
 
 The PHP service binds only to loopback. If port 8080 is occupied, set `export HTTP_PORT=8081` before starting and use that port in the browser. Do not stop another project's container to free the port. To run a second checkout alongside this one, also set a distinct `COMPOSE_PROJECT_NAME` and keep those variables set for its lifecycle commands.
 
-The source and installed dependencies are bind-mounted from the checkout. `.env.local` contains the generated local secret and is ignored by Git and the Docker build context. Keep it private; do not replace the blank public `APP_SECRET` default with a real secret. Application runtime files belong under ignored `var/`. No financial database or demo data is created by this bootstrap.
+Compose automatically combines shared `compose.yaml` with local `compose.override.yaml`. It builds the `frankenphp_dev` target and bind-mounts the checkout, including locally installed dependencies. `.env.local` contains the generated local secret and is ignored by Git and the Docker build context. Keep it private; do not replace the blank public `APP_SECRET` default with a real secret. Application runtime files belong under ignored `var/`. No financial database or demo data is created by this bootstrap.
 
 Inspect or stop this project with the same environment variables used at startup:
 
@@ -35,7 +35,39 @@ docker compose exec php php bin/console about
 docker compose down
 ```
 
-`down` stops this Compose project; do not add volume-deletion flags. Full Castor static checks and headed Playwright test commands will be added in task 02. Their absence is not a passing QA result.
+`down` stops this Compose project; do not add volume-deletion flags.
+
+## Run the production image
+
+Select production files explicitly so Compose does not load the development override. The `frankenphp_prod` image contains the application, locked production dependencies, and compiled AssetMapper/EasyAdmin assets. It does not mount source or host `vendor/`. It runs as UID/GID 1000 with `APP_ENV=prod` and debug disabled.
+
+Use a separate project and free port to run alongside development. These commands build the production image, generate a private runtime environment file if absent, and start the production configuration:
+
+```sh
+export COMPOSE_PROJECT_NAME=personal-finance-agent-prod HTTP_PORT=8081
+docker compose -f compose.yaml build
+if [ ! -f .env.prod.local ]; then
+	(umask 077; docker compose -f compose.yaml run --rm --no-deps -T php php -r 'echo "APP_SECRET=", bin2hex(random_bytes(32)), PHP_EOL;' > .env.prod.local)
+fi
+docker compose -f compose.yaml -f compose.prod.yaml up -d --wait
+```
+
+Open <http://127.0.0.1:8081/>. The same hello-world page should render with compiled assets. After source or lockfile changes, rebuild with `docker compose -f compose.yaml -f compose.prod.yaml up -d --build --wait`.
+
+`.env.prod.local` is required runtime input, not an image build input. Do not commit it, print its contents, or use a real secret in the public `.env`. Private environment files, Composer credentials, development tooling directories, host dependencies, and generated host assets are excluded from the build context.
+
+The project-scoped `app_data` volume provides writable persistent `/app/var/data`; production's SQLite URL points there for later database work. Cache and asset metadata stay outside that volume so it does not hide image-built files. The bootstrap still creates no financial database. This is a local production-image proof, not the later HTTPS/server-deployment setup.
+
+Use the same project/port variables for production diagnostics and shutdown:
+
+```sh
+docker compose -f compose.yaml -f compose.prod.yaml ps
+docker compose -f compose.yaml -f compose.prod.yaml logs --tail 50 php
+docker compose -f compose.yaml -f compose.prod.yaml exec php php bin/console about
+docker compose -f compose.yaml -f compose.prod.yaml down
+```
+
+Keep the data volume; do not use `down -v`. Before returning to the default development project, unset `COMPOSE_PROJECT_NAME` and `HTTP_PORT`, or restore that development stack's values. Full Castor static checks and headed Playwright test commands will be added in task 02. Their absence is not a passing QA result.
 
 ## Planned workflow
 
