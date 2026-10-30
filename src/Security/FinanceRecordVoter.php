@@ -13,14 +13,14 @@ use Symfony\Component\Security\Core\Authentication\Token\TokenInterface;
 use Symfony\Component\Security\Core\Authorization\Voter\Vote;
 use Symfony\Component\Security\Core\Authorization\Voter\Voter;
 
-/** @extends Voter<string, UserRecord> */
+/** @extends Voter<string, UserRecord|null> */
 final class FinanceRecordVoter extends Voter
 {
     public const string ACCESS = 'FINANCE_RECORD';
 
     protected function supports(string $attribute, mixed $subject): bool
     {
-        return self::ACCESS === $attribute && $subject instanceof UserRecord;
+        return self::ACCESS === $attribute && (null === $subject || $subject instanceof UserRecord);
     }
 
     protected function voteOnAttribute(string $attribute, mixed $subject, TokenInterface $token, ?Vote $vote = null): bool
@@ -30,7 +30,9 @@ final class FinanceRecordVoter extends Voter
             return false;
         }
 
-        return $this->owns($user, $subject);
+        // EasyAdmin checks entity metadata before createEntity() supplies the
+        // new record. Actual records still require ownership, including after binding.
+        return null === $subject || $this->owns($user, $subject);
     }
 
     private function owns(User $user, UserRecord $record): bool

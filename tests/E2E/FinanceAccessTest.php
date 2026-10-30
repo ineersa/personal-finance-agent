@@ -139,6 +139,7 @@ final class FinanceAccessTest extends PlaywrightTestCase
     {
         $this->login('alice');
         $page = $this->visit('/admin/source/new');
+        self::assertSame(200, $this->getLastResponse()->getStatusCode(), 'An authenticated owner must be able to open source creation.');
         $page->getByLabel('Name', ['exact' => true])->fill('<script>window.financeInjected=true</script>');
         $page->getByLabel('Description', ['exact' => true])->fill('Synthetic source created through the browser');
         $this->save($page);
@@ -195,7 +196,7 @@ final class FinanceAccessTest extends PlaywrightTestCase
         $this->save($page);
         $page = $this->visit('/admin/category');
         $this->assertPageContains('New shared catalog entry');
-        $categoryUrl = $page->getByRole('row')->filter(['hasText' => 'New shared catalog entry'])->locator('a.action-edit')->getAttribute('href');
+        $categoryUrl = $page->locator('tbody tr')->filter(['hasText' => 'New shared catalog entry'])->locator('a.action-edit')->getAttribute('href');
         $page->goto($categoryUrl);
         $page->getByLabel('Name', ['exact' => true])->fill('Edited shared catalog entry');
         $this->save($page);
@@ -212,7 +213,7 @@ final class FinanceAccessTest extends PlaywrightTestCase
         $this->save($page);
         $page = $this->visit('/admin/user');
         $this->assertPageContains('created@example.test');
-        $userUrl = $page->getByRole('row')->filter(['hasText' => 'created@example.test'])->locator('a.action-edit')->getAttribute('href');
+        $userUrl = $page->locator('tbody tr')->filter(['hasText' => 'created@example.test'])->locator('a.action-edit')->getAttribute('href');
         $page->goto($userUrl);
         $page->getByLabel('Email', ['exact' => true])->fill('renamed@example.test');
         // An empty new-password field must preserve the existing hash.
@@ -241,10 +242,11 @@ final class FinanceAccessTest extends PlaywrightTestCase
     {
         $this->login('alice');
         $page = $this->visit('/admin/source/new');
+        self::assertSame(200, $this->getLastResponse()->getStatusCode(), 'Source creation must not be denied by metadata-only authorization.');
         $page->getByLabel('Name', ['exact' => true])->fill('Disposable synthetic source');
         $this->save($page);
         $page = $this->visit('/admin/source');
-        $row = $page->getByRole('row')->filter(['hasText' => 'Disposable synthetic source']);
+        $row = $page->locator('tbody tr')->filter(['hasText' => 'Disposable synthetic source']);
         $editUrl = $row->locator('a.action-edit')->getAttribute('href');
         self::assertNotNull($editUrl);
         $page->goto($editUrl);
