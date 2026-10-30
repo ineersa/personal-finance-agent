@@ -1,6 +1,9 @@
+# Castor supplies checkout identity and the shared proxy network.
+name: "${FINANCE_PROJECT:?Run vendor/bin/castor dev:stack:up}"
+
 services:
   php:
-    image: "${COMPOSE_PROJECT_NAME:-personal-finance-agent}-php:dev"
+    image: "pfa-${FINANCE_CHECKOUT_ID:?Run vendor/bin/castor dev:stack:up}-php:dev"
     build:
       target: frankenphp_dev
     user: "${LOCAL_UID:-1000}:${LOCAL_GID:-1000}"
@@ -9,3 +12,14 @@ services:
       APP_DEBUG: "1"
     volumes:
       - ./:/app
+    ports: !reset []
+    networks:
+      default: {}
+      development:
+        aliases:
+          - "${FINANCE_PROJECT}"
+
+networks:
+  development:
+    external: true
+    name: "${FINANCE_NETWORK:?Run vendor/bin/castor dev:stack:up}"

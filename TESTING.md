@@ -8,7 +8,7 @@ The Symfony hello-world Docker bootstrap has saved PHP Playwright scenarios for 
 
 ## Prepare the tooling runtime
 
-Use Linux amd64 with Docker and host PHP 8.5 CLI with PCNTL/POSIX for Castor orchestration. Only explicitly requested headed runs need a visible X11 display and host `xauth`. Application commands always run in the authoritative tooling container, including when the host lacks BCMath. The tooling image includes PHP 8.5, the application's extensions, Node.js, Chromium system libraries, and Symfony CLI. Language Tools downloads on its first invocation and needs network access.
+Use Linux amd64 with Docker, Docker Compose 2.24.4 or newer, Git, and host PHP 8.5 CLI with PCNTL/POSIX for Castor orchestration. Only explicitly requested headed runs need a visible X11 display and host `xauth`. Application commands always run in the authoritative tooling container, including when the host lacks BCMath. The tooling image includes PHP 8.5, the application's extensions, Node.js, Chromium system libraries, and Symfony CLI. Language Tools downloads on its first invocation and needs network access.
 
 On a fresh checkout without `vendor/bin/castor`, install the locked dependencies once using the existing development Docker target. This bootstrap is necessary before the Composer-installed command exists:
 
@@ -41,11 +41,23 @@ Use this path for exploratory checks and future direct-network PHP browser scena
 ```sh
 	vendor/bin/castor browser:stack:up
 	vendor/bin/castor browser:stack:status
-	# Browser agent: open http://127.0.0.1:18081/ in a unique session; add --headed only on an owner request.
+	# Browser agent: open the printed URL in a unique session; add --headed only on an owner request.
 	vendor/bin/castor browser:stack:stop
 ```
 
-This configuration does not load the development override. It uses Compose project `personal-finance-agent-browser`, loopback port 18081, read-only source, and `var/browser-live` mounted as the stack's entire writable `/app/var`. Its SQLite URL points to `/app/var/browser/application.db`. Never reuse development worker/queue/upload storage when adding background services. Future direct-network PHP scenarios must create a browser context without the Symfony interception client and use this verified URL. The current saved scenario is explicitly not cross-process coverage. Stop only this stack; do not remove volumes or reset data as part of normal validation.
+Castor layers `compose.browser.yaml` over the base and development files. The resulting stack uses its own checkout-scoped Compose project and `http://<checkout-id>.browser.finance.localhost` route through the shared loopback-only proxy. It publishes no host ports. Source is read-only; `var/browser-live` is mounted as the entire writable `/app/var`. Its SQLite URL points to `/app/var/browser/application.db`. Development keeps separate storage and a different hostname. Never reuse development worker, queue, or upload storage when adding background services. Stop only this stack; do not remove volumes or reset data as part of normal validation.
+
+For a saved direct-network regression, start two owned stacks, then pass their printed URLs as one positional comma-separated argument:
+
+```sh
+	vendor/bin/castor dev:stack:up
+	vendor/bin/castor browser:stack:up
+	vendor/bin/castor browser:routes:test 'http://<checkout-id>.finance.localhost,http://<checkout-id>.browser.finance.localhost'
+```
+
+`tests/Live/RoutingTest.php` launches real headless Chromium without Symfony request interception. It checks HTTP success, the heading, loaded CSS, disabled controls, and independent browser storage across origins. The task attaches only its disposable tooling container to the shared proxy network and passes the inspected proxy IPv4 address to Chromium's native `--host-resolver-rules`. It does not change host DNS or add a DNS server. This separate command requires live stacks; the default `test` and `check` suites remain self-contained intercepted-browser scenarios. Routing coverage does not prove worker, broker, or Mercure integration.
+
+For worktree-isolation verification, start stacks from two task-managed worktrees, run the routing scenario against both URLs, stop one checkout, and confirm the other URL still renders through Playwright. Inspect the stopped checkout's route failure too. Preserve evidence before rerunning a task because its report directory is reused. Stop each owned stack before task-worktree removal; the shared proxy stays running until `dev:proxy:stop` succeeds with no registered routes.
 
 ## Agent verification workflow
 

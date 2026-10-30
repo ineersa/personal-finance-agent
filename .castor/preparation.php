@@ -10,7 +10,7 @@ use Castor\Attribute\AsTask;
 #[AsTask(namespace: 'tooling', name: 'build', description: 'Build the authoritative development and QA runtime.')]
 function toolingBuild(): int
 {
-    return report('tooling:build', ['docker', 'build', '--target', 'frankenphp_tooling', '-t', TOOLING_IMAGE, '.'], runtime: false);
+    return report('tooling:build', ['docker', 'build', '--target', 'frankenphp_tooling', '-t', toolingImage(), '.'], runtime: false);
 }
 
 /** @param list<string> $arguments */
@@ -57,22 +57,17 @@ function testDatabasePrepare(): int
 #[AsTask(namespace: 'browser', name: 'stack:up', description: 'Build and start only the isolated browser-test application.')]
 function browserStackUp(): int
 {
-    $storage = \dirname(__DIR__).'/var/browser-live/browser';
-    if (!is_dir($storage)) {
-        mkdir($storage, 0700, true);
-    }
-
-    return report('browser:stack:up', ['docker', 'compose', '--project-name', 'personal-finance-agent-browser', '-f', 'compose.browser.yaml', 'up', '-d', '--build'], runtime: false);
+    return developmentStack('browser', 'up');
 }
 
 #[AsTask(namespace: 'browser', name: 'stack:status', description: 'Inspect only the isolated browser-test application.')]
 function browserStackStatus(): int
 {
-    return report('browser:stack:status', ['docker', 'compose', '--project-name', 'personal-finance-agent-browser', '-f', 'compose.browser.yaml', 'ps', '--format=json'], runtime: false);
+    return developmentStack('browser', 'status');
 }
 
 #[AsTask(namespace: 'browser', name: 'stack:stop', description: 'Stop only the isolated browser-test application without deleting storage.')]
 function browserStackStop(): int
 {
-    return report('browser:stack:stop', ['docker', 'compose', '--project-name', 'personal-finance-agent-browser', '-f', 'compose.browser.yaml', 'stop'], runtime: false);
+    return developmentStack('browser', 'stop');
 }

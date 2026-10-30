@@ -10,32 +10,30 @@ The lockfile pins Symfony `8.2.x-dev`, Symfony AI `1.0.0-BETA1`, and EasyAdmin `
 
 ## Run development
 
-Install Docker Engine with Docker Compose. Run these commands from the repository root on a Unix-like host. No host PHP, Composer, Node.js, API keys, or reference checkouts are needed.
+Use Linux amd64, Docker Engine, Docker Compose 2.24.4 or newer, Git, and host PHP 8.5 CLI with PCNTL/POSIX. Follow the [initial dependency bootstrap](TESTING.md#prepare-the-tooling-runtime) if `vendor/bin/castor` is missing. No host Composer, Node.js, API keys, or reference checkouts are needed.
 
 ```sh
-export LOCAL_UID="$(id -u)" LOCAL_GID="$(id -g)"
-docker compose build
-docker compose run --rm --no-deps php php -r 'if (!is_file(".env.local")) { file_put_contents(".env.local", "APP_SECRET=".bin2hex(random_bytes(32)).PHP_EOL); chmod(".env.local", 0600); }'
-docker compose run --rm --no-deps php composer install --no-interaction
-docker compose up -d --wait
+	vendor/bin/castor tooling:prepare
+	vendor/bin/castor dev:stack:up
 ```
 
-Open <http://127.0.0.1:8080/>. Check that the page heading is **Make sense of your money.** and the dark design-preview layout appears.
+Open the URL printed by `dev:stack:up`. Check that the page heading is **Make sense of your money.** and the dark design-preview layout appears. Each checkout gets a hostname such as `http://personal-finance-agent-<path-hash>.finance.localhost`. Do not set `HTTP_PORT` or `COMPOSE_PROJECT_NAME` for development.
 
-The PHP service binds only to loopback. If port 8080 is occupied, set `export HTTP_PORT=8081` before starting and use that port in the browser. Do not stop another project's container to free the port. To run a second checkout alongside this one, also set a distinct `COMPOSE_PROJECT_NAME` and keep those variables set for its lifecycle commands.
+A shared Caddy proxy publishes only `127.0.0.1:80`; application containers publish no host ports. Port 80 must be free. If another service owns it, startup fails; do not stop that service without authorization. Modern browsers resolve `*.localhost` to loopback. The saved [live-routing check](TESTING.md#isolated-live-stack) explicitly configures Chromium resolution inside tooling containers instead of relying on container DNS.
 
-Compose automatically combines shared `compose.yaml` with local `compose.override.yaml`. It builds the `frankenphp_dev` target and bind-mounts the checkout, including locally installed dependencies. `.env.local` contains the generated local secret and is ignored by Git and the Docker build context. Keep it private; do not replace the blank public `APP_SECRET` default with a real secret. Application runtime files belong under ignored `var/`. No financial database or demo data is created by this bootstrap.
+Castor supplies checkout-scoped Compose names, image tags, host UID/GID, and network aliases. It builds the `frankenphp_dev` target and bind-mounts the checkout. Direct development `docker compose` commands deliberately require Castor's identity variables; use the tasks below instead. Production commands still select files explicitly and retain their port configuration.
 
-Inspect or stop this project with the same environment variables used at startup:
+`dev:stack:up` creates a private `.env.local` with a random secret if absent, without overwriting an existing file. Keep it private; do not put a real secret in the public `.env`. Application runtime files stay under this checkout's ignored `var/`.
+
+Inspect or stop only the current checkout:
 
 ```sh
-docker compose ps
-docker compose logs --tail 50 php
-docker compose exec php php bin/console about
-docker compose down
+	vendor/bin/castor dev:stack:status
+	vendor/bin/castor app:console -- about
+	vendor/bin/castor dev:stack:stop
 ```
 
-`down` stops this Compose project; do not add volume-deletion flags.
+Stopping a checkout unregisters its route but preserves its containers, data, other checkouts, and the shared proxy. Stop each owned stack before removing its worktree. `vendor/bin/castor dev:proxy:stop` stops the proxy only when no routes remain registered. It removes no volumes. The locked route registry lives in `finance-development/` inside the repository's common Git directory, shared across its worktrees. See [ADR 0019](docs/adr/0019-worktree-development-routing.md) for boundaries and limitations.
 
 ## Run the production image
 
