@@ -2,3 +2,14 @@ security:
     firewalls:
         main:
             security: false
+
+    password_hashers:
+        App\Entity\User:
+            algorithm: auto
+
+    providers:
+        # used to reload user from session & other features (e.g. switch_user)
+        app_user_provider:
+            entity:
+                class: App\Entity\User
+                property: email
