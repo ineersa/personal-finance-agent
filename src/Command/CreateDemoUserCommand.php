@@ -43,7 +43,7 @@ final class CreateDemoUserCommand extends Command
 
             return Command::FAILURE;
         }
-        if (!\is_string($email) || !preg_match('/\A[a-z0-9][a-z0-9._+-]*@example\.test\z/D', $email) || \strlen($email) > 180) {
+        if (!\is_string($email) || 1 !== preg_match('/\A[a-z0-9][a-z0-9._+-]*@example\.test\z/D', $email) || \strlen($email) > 180) {
             $output->writeln('<error>Use a synthetic email ending in @example.test.</error>');
 
             return Command::INVALID;
@@ -54,7 +54,7 @@ final class CreateDemoUserCommand extends Command
             return Command::SUCCESS;
         }
         $password = bin2hex(random_bytes(18));
-        $user = (new User())->setEmail($email)->setRoles($input->getOption('admin') ? ['ROLE_ADMIN'] : ['ROLE_USER']);
+        $user = (new User())->setEmail($email)->setRoles(true === $input->getOption('admin') ? ['ROLE_ADMIN'] : ['ROLE_USER']);
         $user->setPassword($this->hasher->hashPassword($user, $password));
         $this->entityManager->persist($user);
         $this->entityManager->flush();
