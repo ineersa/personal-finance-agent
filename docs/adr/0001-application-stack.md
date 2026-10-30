@@ -7,16 +7,18 @@
 
 The project is a personal finance demo for the Symfony AI hackathon. Judges need to install and run it locally. Development must prioritize a working MVP while keeping code quality high.
 
-The project owner selected Symfony 8.2 and Symfony AI 1.0 beta. The main interface is a two-panel chat workspace, with financial artifacts displayed alongside the conversation. Source management and transaction corrections should require less custom UI work.
+The project owner selected Symfony 8.2 and Symfony AI 1.0 beta. The original interface proposal used a two-panel chat workspace; [ADR 0014](0014-inline-chat-and-antv-charts.md) replaces that layout with inline chat output. Source management and transaction corrections should require less custom UI work.
 
 ## Decision
 
 - Use Symfony 8.2 as the application framework.
 - Use Symfony AI 1.0 beta for the application's AI integration.
 - Use EasyAdmin for source management and transaction corrections.
-- Build the chat and artifact workspace as application-specific UI rather than treating an admin dashboard as the main product interface.
+- Build chat as application-specific UI rather than treating an admin dashboard as the main product interface. Follow ADR 0014 for inline text, tables, and chart images, without a separate artifact workspace.
 
 These are target versions, not a claim that dependencies have been installed or compatibility has been verified. Select the exact Symfony release, Symfony AI beta tags, and compatible EasyAdmin release during bootstrap. If the targets are unavailable or incompatible, report the blocker instead of silently substituting versions.
+
+At bootstrap, no Symfony 8.2 release tag was available. The owner explicitly approved using `8.2.x-dev` pinned to a development revision in `composer.lock`, rather than substituting stable Symfony 8.1. A temporary Composer dry-run resolved FrameworkBundle at revision `a3f9d86` with Symfony AI `1.0.0-BETA1` and EasyAdmin `5.8.0`; this establishes dependency resolution only, not an installed or working application.
 
 PHP, the runtime server, database, frontend packages, AI provider, and model remain undecided. This ADR does not select testing tools or a testing architecture.
 

@@ -47,7 +47,7 @@ Keep write transactions short. Never hold one open during uploading, parsing, br
 
 - Return `429 Too Many Requests` with `Retry-After` for request throttling and exhausted daily request allowances. Show the reason and next eligible time where applicable.
 - Explain storage-capacity failures and background budget exhaustion clearly. A failure after enqueueing needs an observable job/UI state, not an HTTP response that no longer reaches the initiating request.
-- Keep existing transactions, conversations, and artifacts readable when costly actions are restricted.
+- Keep existing transactions, conversations, and saved inline chat output readable when costly actions are restricted. [ADR 0014](0014-inline-chat-and-antv-charts.md) replaces the separate artifact proposal without changing this access requirement.
 - Enforce body-size limits in PHP and the web server as well as application file validation. A file-count allowance does not cap transferred bytes.
 - Configure trusted proxies explicitly before relying on client IP addresses. Do not trust arbitrary forwarded headers.
 - Do not present application rate limiters as denial-of-service protection: they execute only after PHP and Symfony start. Network or web-server protection is a separate deployment concern.

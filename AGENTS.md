@@ -4,7 +4,7 @@
 
 Build a locally installable personal finance demo for the Symfony AI hackathon. Read [SPEC.md](SPEC.md) and the relevant [accepted ADRs](docs/adr/README.md) before changing behavior or architecture. Proposed choices are not accepted requirements.
 
-The project is currently in planning and documentation. Do not scaffold Symfony, install application dependencies, or start services unless the task requests application setup or implementation.
+The project has a working Symfony hello-world Docker bootstrap. Authentication, financial workflows, chat, and development QA tooling remain unimplemented. Install dependencies or start services only within the current task's authorized scope.
 
 ## Development rules
 
@@ -29,6 +29,11 @@ The project is currently in planning and documentation. Do not scaffold Symfony,
 - Use `~/projects/personal-finance-agent-worktrees` (`/home/ineersa/projects/personal-finance-agent-worktrees`) as the worktree base. Pass the absolute path as `worktreeBase` when starting tasks with `move_task`. Do not create or move task worktrees manually.
 - Keep development status, assignments, validation results, and PR progress on the task board. Use `docs/plans/` only for focused descriptions of specific functionality, not a parallel backlog or project-wide execution plan.
 - The project paths above are authoritative over copied reference paths in workflow guidance.
+
+## Commit signing
+
+- Use unsigned commits during implementation and review iteration with a per-command `--no-gpg-sign` override. Do not interrupt routine work for signing or change repository/global signing configuration.
+- Reserve one signing checkpoint immediately before merge. This does not require signing every development commit or authorize rewriting published history or force-pushing without approval.
 
 ## Development tooling
 

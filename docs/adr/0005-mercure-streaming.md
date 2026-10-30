@@ -14,7 +14,7 @@ The re-search prototype demonstrates worker-driven Symfony AI streaming through 
 - Use Symfony AI for model streaming and Mercure for delivering live updates to the browser.
 - Run long-running chat generation in Messenger handlers rather than tying generation to the browser's streaming HTTP request.
 - Use authenticated, private Mercure subscriptions. Check the current user's ownership of the conversation or generation before granting access to its topic.
-- Persist conversation messages, generation status, and completed artifacts independently of live delivery. Reconstruct the interface from authorized persisted state after a reload or reconnect; hub history is not the source of truth.
+- Persist conversation messages, generation status, and completed inline chat output independently of live delivery. Reconstruct the interface from authorized persisted state after a reload or reconnect; hub history is not the source of truth.
 - Use Symfony UX and browser-side behavior to display streamed text, status, and completed results. Keep model-stream handling, event delivery, and rendering separate.
 - Keep database transactions short. Do not hold a write transaction while waiting for model output or publishing to the hub.
 
@@ -43,3 +43,7 @@ Adapt the useful patterns rather than importing re-search's full orchestrator, p
 - Topic authorization is part of financial-data isolation. An existing generation ID is not sufficient proof of permission.
 - Browser disconnection does not itself establish that a background generation has stopped. Cancellation and duplicate-delivery handling need explicit application behavior.
 - No streaming code, hub configuration, or application dependency has been installed at the time of this decision.
+
+## Subsequent decision
+
+[ADR 0014](0014-inline-chat-and-antv-charts.md) replaces separate artifacts with inline chat text, tables, and chart images. Private Mercure delivery and durable message/generation requirements remain. [ADR 0015](0015-sqlite-conversation-history.md) selects shared application SQLite persistence and five temporary chats per user plus saved chats, with queued/running work protected. Exact image persistence remains open.

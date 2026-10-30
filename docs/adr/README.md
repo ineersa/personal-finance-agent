@@ -17,6 +17,13 @@ ADRs record significant technical decisions, their context, and their consequenc
 | [0009](0009-castor-and-static-checks.md) | Accepted | Use Castor with concise reports, PHPStan strict rules, and mandatory Symfony LSP checks. |
 | [0010](0010-playwright-only-testing.md) | Accepted | Test application behavior only through Playwright, using visible browsers and agent-operated verification. |
 | [0011](0011-layered-rate-limiting.md) | Accepted | Apply per-user rate limits, coarse IP protection, upload quotas, and persistent shared AI budgets. |
+| [0012](0012-configurable-ai-providers.md) | Accepted | Configure local llama.cpp, z.ai, and DeepSeek integrations with chat provider, model, and reasoning selection. |
+| [0013](0013-symfony-ai-agent-runtime.md) | Accepted | Use Symfony AI's agent loop with bounded cross-user fiber concurrency in one Messenger consumer and a simple context handoff for late implementation. |
+| [0014](0014-inline-chat-and-antv-charts.md) | Accepted | Display chart images inline in chat using a Docker-hosted AntV MCP server and its documented free hosted renderer; remove the separate artifact workspace. |
+| [0015](0015-sqlite-conversation-history.md) | Accepted | Store conversations in the shared application SQLite database, with five temporary chats per user plus saved chats, protecting queued/running work. |
+| [0016](0016-local-markitdown-conversion.md) | Accepted | Convert PDF/XLSX locally with official MarkItDown MCP in Docker; parse CSV in PHP, leaving OCR backend selection unresolved. |
+| [0017](0017-exact-money-and-ecb-reporting.md) | Accepted | Preserve exact decimal money and present one configurable reporting currency using ECB reference rates. |
+| [0018](0018-finance-review-sql-and-jev.md) | Accepted | Approve editable drafts before analysis; use bounded owner-scoped SQL, Jev decision tasks, and isolated target-model history conversion. |
 
 ## Recording decisions
 
