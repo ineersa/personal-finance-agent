@@ -1,5 +1,6 @@
 services:
   php:
+    restart: unless-stopped
     env_file:
       - path: .env.prod.local
         required: true
