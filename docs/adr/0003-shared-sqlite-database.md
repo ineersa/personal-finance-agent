@@ -15,11 +15,12 @@ Use one shared SQLite application database, managed through Doctrine. Keep queue
 
 ### Access boundaries
 
-- Support `ROLE_ADMIN` for user CRUD and authorized reset operations.
+- Support `ROLE_ADMIN` for user CRUD, shared category management, and separately authorized future reset operations.
 - Support `ROLE_USER` for personal financial workflows.
 - Scope personal-data access to its owner through centralized query and authorization mechanisms. Role checks alone do not scope records.
 - Enforce ownership for direct record access, collection queries, aggregates, association selection, chat tools, and background processing.
 - Treat administrative maintenance permissions separately from access to personal financial records. Do not introduce an implicit ownership bypass.
+- Owner clarification, 2026-10-31: administration and ordinary-user workflows are separate. Deny administrators all finance, chat, and reporting-settings entry, including administrator-owned records and accounts carrying both roles. Use native Symfony controller authorization and EasyAdmin permissions, with the existing record voter and owner-scoped queries. Do not add a request guard or custom login-success handler.
 - Define reset scope and safeguards before implementation. Administrative permission is not permission to reset unrelated installations or reference projects.
 
 Source, Statement and Transaction inherit only an immutable user relationship/accessor from a mapped superclass; each declares its own ID. Personal foreign keys use `user_id`. Scoped repository queries cover lists, direct lookups and association choices. Symfony voter implementation for individual records and associations is deferred to actual CRUD in task 05; financial authorization must not permit an administrative bypass. Voters do not scope lists, and there is no flush listener, owner filter or mutable scope. Shared categories and currency rates have no user relationship. [Domain persistence](../domain-persistence.md) defines the calling contract and remaining HTTP/worker/raw-SQL enforcement obligations.

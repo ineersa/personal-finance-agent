@@ -41,7 +41,6 @@ final class UserCrudController extends AbstractCrudController
     {
         yield EmailField::new('email');
         yield ChoiceField::new('roles')->setChoices(['User' => 'ROLE_USER', 'Administrator' => 'ROLE_ADMIN'])->allowMultipleChoices();
-        yield ChoiceField::new('reportingCurrency');
         yield TextField::new('plainPassword', 'New password')->setFormType(PasswordType::class)->onlyOnForms()
             ->setRequired(Crud::PAGE_NEW === $pageName)
             ->setFormTypeOption('mapped', false)

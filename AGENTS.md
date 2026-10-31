@@ -6,6 +6,13 @@ Build a locally installable personal finance demo for the Symfony AI hackathon. 
 
 A finance UI preview and development tooling are implemented; authentication, financial workflows, and chat generation are not. Install dependencies or start services only within the current task's authorized scope.
 
+## Mandatory Symfony documentation search
+
+- Always search Symfony-specific documentation before producing or revising Symfony tasks or plans, making implementation decisions, or writing code. Familiarity and small task size are not exceptions.
+- Open `https://r.jina.ai/https://symfony.com/search?q=<URL-encoded query>` with `websearch_open`, then open and read the relevant Symfony or bundle documentation. Search snippets alone are insufficient.
+- Verify documented APIs, configuration, and extension points against the installed version and its vendor documentation or source. Check existing Symfony and bundle capabilities before adding replacement infrastructure; never invent an API or configuration option.
+- If required documentation is unavailable, report the blocker instead of guessing.
+
 ## Development rules
 
 - Keep changes small and limited to the requested scope. Use Symfony and existing project facilities before adding custom infrastructure.

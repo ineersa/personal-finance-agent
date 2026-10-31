@@ -16,6 +16,7 @@ security:
                 check_path: app_login
                 enable_csrf: true
                 default_target_path: app_home
+                always_use_default_target_path: true
             login_throttling: ~
             logout:
                 path: app_logout
@@ -23,4 +24,5 @@ security:
                 enable_csrf: true
     access_control:
         - { path: ^/login$, roles: PUBLIC_ACCESS }
-        - { path: ^/(admin|settings)(/|$), roles: ROLE_USER }
+        - { path: ^/settings(/|$), roles: IS_AUTHENTICATED_FULLY }
+        - { path: ^/home(/|$), roles: IS_AUTHENTICATED_FULLY }

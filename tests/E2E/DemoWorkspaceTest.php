@@ -5,7 +5,9 @@ declare(strict_types=1);
 namespace App\Tests\E2E;
 
 use App\Entity\Source;
+use App\Entity\Statement;
 use App\Entity\Transaction;
+use App\Entity\User;
 use App\Tests\Support\FinanceBrowserTest;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Console\Application;
@@ -32,15 +34,15 @@ final class DemoWorkspaceTest extends FinanceBrowserTest
         $page = $this->visit('/login');
         self::assertSame('rgb(17, 17, 18)', $page->evaluate('() => getComputedStyle(document.body).backgroundColor'));
         self::assertSame('rgb(17, 17, 18)', $page->getByLabel('Email', ['exact' => true])->evaluate('(input) => getComputedStyle(input).backgroundColor'));
-        self::assertSame('page', $page->getByRole('link', ['name' => 'Log in', 'exact' => true])->getAttribute('aria-current'));
+        self::assertSame(0, $page->locator('.app-sidebar, .composer-preview')->count());
         self::assertStringEndsWith('/favicon.svg', $page->locator('link[rel=icon]')->getAttribute('href'));
         $this->submitLogin($page, 'demo@test.com', 'demo');
         $page->getByRole('heading', ['name' => 'Make sense of your money.', 'exact' => true])->waitFor();
         self::assertSame('page', $page->getByRole('link', ['name' => 'Chat', 'exact' => true])->getAttribute('aria-current'));
         self::assertSame(0, $page->locator('a[href*="/planned/"]')->count());
-        self::assertSame(2, $page->locator('.app-nav [aria-disabled=true]')->count());
+        self::assertSame(0, $page->locator('.app-nav [aria-disabled=true]')->count());
         $page = $this->visit('/settings');
-        self::assertSame('Settings', trim($page->locator('.workspace-header')->textContent()));
+        self::assertSame('Settings', trim($page->locator('.workspace-header > span')->first()->textContent()));
         self::assertSame('page', $page->getByRole('link', ['name' => 'Settings', 'exact' => true])->getAttribute('aria-current'));
         self::assertNull($page->getByRole('link', ['name' => 'Chat', 'exact' => true])->getAttribute('aria-current'));
         self::assertSame('rgb(17, 17, 18)', $page->getByLabel('Reporting currency')->evaluate('(select) => getComputedStyle(select).backgroundColor'));
@@ -49,25 +51,25 @@ final class DemoWorkspaceTest extends FinanceBrowserTest
         $page = $this->visit('/settings');
         self::assertSame('EUR', $page->getByLabel('Reporting currency')->inputValue());
         foreach (['source', 'statement', 'transaction'] as $screen) {
-            $page = $this->visit('/admin/'.$screen);
-            self::assertStringEndsWith('/admin/'.$screen, $page->locator('.ea-sidebar-item-link[aria-current=page]')->getAttribute('href'));
+            $page = $this->visit('/home/'.$screen);
+            self::assertStringEndsWith('/home/'.$screen, $page->locator('.ea-sidebar-item-link[aria-current=page]')->getAttribute('href'));
             self::assertTrue($page->evaluate('() => document.body.classList.contains("ea-dark-scheme")'));
             self::assertSame('rgb(17, 17, 18)', $page->evaluate('() => getComputedStyle(document.body).backgroundColor'));
             self::assertStringEndsWith('/favicon.svg', $page->locator('link[rel="shortcut icon"]')->getAttribute('href'));
             self::assertStringNotContainsString('Admin private', $page->locator('body')->textContent());
         }
-        $page = $this->visit('/admin/transaction');
+        $page = $this->visit('/home/transaction');
         $this->assertPageContains('Synthetic October salary');
         $this->assertPageContains('Synthetic grocery purchase');
         self::assertStringNotContainsString('Synthetic incomplete draft', $page->locator('body')->textContent());
-        $page = $this->visit('/admin/statement');
+        $page = $this->visit('/home/statement');
         $this->assertPageContains('demo-october-2026.csv');
         self::assertSame(0, $page->locator('.action-new, .action-edit, .action-delete')->count());
         $foreign = $this->fixtures['admin_current'];
         self::assertInstanceOf(Source::class, $foreign);
-        $this->visit('/admin/source/'.$foreign->getId());
+        $this->visit('/home/source/'.$foreign->getId());
         self::assertSame(403, $this->getLastResponse()->getStatusCode());
-        $page = $this->visit('/admin/source');
+        $page = $this->visit('/home/source');
         $page->locator('.user-menu-wrapper:visible .user-details')->click();
         $this->submit(static fn () => $page->getByRole('button', ['name' => 'Log out', 'exact' => true])->click());
         $page->waitForURL('**/login');
@@ -81,7 +83,7 @@ final class DemoWorkspaceTest extends FinanceBrowserTest
             $page = $this->visit('/login');
             $page->setViewportSize($width, 900);
             $this->submitLogin($page, 'demo@test.com', 'demo');
-            $page = $this->visit('/admin/source');
+            $page = $this->visit('/home/source');
             $primary = $page->locator('.action-new');
             self::assertSame('rgb(237, 237, 238)', $primary->evaluate('(button) => getComputedStyle(button).backgroundColor'));
             self::assertSame('rgb(17, 17, 18)', $primary->evaluate('(button) => getComputedStyle(button).color'));
@@ -115,31 +117,80 @@ final class DemoWorkspaceTest extends FinanceBrowserTest
     {
         $page = $this->visit('/login');
         $this->submitLogin($page, 'admin@test.com', 'admin');
-        $page->getByRole('heading', ['name' => 'Make sense of your money.', 'exact' => true])->waitFor();
-        $page = $this->visit('/admin/category');
+        $page->waitForURL('**/home/user');
+        $page = $this->visit('/home/category');
         $this->assertPageContains('Groceries');
         // Assert the native active route and visible label independently of its icon.
         $current = $page->locator('.ea-sidebar-item-link[aria-current=page]');
         $menu = $page->evaluate('() => Array.from(document.querySelectorAll(".ea-sidebar-item-link")).map(link => ({label: link.querySelector(".ea-sidebar-item-label")?.textContent.trim(), href: link.getAttribute("href"), current: link.getAttribute("aria-current")}))');
         self::assertSame(1, $current->count(), 'Native menu selection: '.json_encode($menu, \JSON_THROW_ON_ERROR));
-        self::assertStringEndsWith('/admin/category', $current->getAttribute('href'));
+        self::assertStringEndsWith('/home/category', $current->getAttribute('href'));
         self::assertSame('Categories', trim($current->locator('.ea-sidebar-item-label')->textContent()));
         self::assertSame(1, $page->locator('.category-icon i.fa-cart-shopping')->count());
         self::assertSame('rgb(17, 17, 18)', $page->evaluate('() => getComputedStyle(document.body).backgroundColor'));
-        $page = $this->visit('/admin/source');
-        $this->assertPageContains('Admin private account');
+        $page = $this->visit('/home/source');
+        self::assertSame(403, $this->getLastResponse()->getStatusCode());
         self::assertStringNotContainsString('Demo current account', $page->locator('body')->textContent());
         $demo = $this->fixtures['demo_salary'];
         self::assertInstanceOf(Transaction::class, $demo);
         foreach (['', '/edit'] as $action) {
-            $page = $this->visit('/admin/transaction/'.$demo->getId().$action);
+            $page = $this->visit('/home/transaction/'.$demo->getId().$action);
             self::assertSame(403, $this->getLastResponse()->getStatusCode());
             self::assertStringNotContainsString('Synthetic October salary', $page->locator('body')->textContent());
         }
-        $page = $this->visit('/admin/user');
+        $page = $this->visit('/home/user');
         $this->assertPageContains('admin@test.com');
         $this->assertPageContains('demo@test.com');
-        $page = $this->visit('/admin/category/new');
+        $page = $this->visit('/home/category/new');
         self::assertSame('rgb(17, 17, 18)', $page->getByLabel('Name', ['exact' => true])->evaluate('(input) => getComputedStyle(input).backgroundColor'));
+        foreach ([1280, 390] as $width) {
+            $page->setViewportSize($width, 900);
+            foreach (['user', 'category'] as $screen) {
+                $page = $this->visit('/home/'.$screen);
+                self::assertSame(['Users', 'Categories'], $page->evaluate('() => Array.from(document.querySelectorAll(".ea-sidebar-item-label")).map(label => label.textContent.trim())'));
+                self::assertSame('pf', $page->locator('.app-brand:visible .brand-mark')->textContent());
+                self::assertSame('A little more clarity.', $page->locator('.app-brand:visible .brand-caption')->textContent());
+                self::assertEquals($width > 991 ? 252 : $width, $page->locator('.ea-sidebar')->evaluate('(sidebar) => sidebar.getBoundingClientRect().width'));
+                self::assertStringContainsString('Built with Symfony', $page->locator('.workspace-footer')->textContent());
+                self::assertSame(0, $page->locator('a[href$="/settings"], .composer-preview')->count());
+                self::assertTrue($page->evaluate('() => document.documentElement.scrollWidth <= window.innerWidth'));
+            }
+        }
+    }
+
+    public function testAdministratorCannotEnterOwnFinancesSettingsOrLegacyActions(): void
+    {
+        $administrator = $this->fixtures['administrator'];
+        self::assertInstanceOf(User::class, $administrator);
+        $administrator->setRoles(['ROLE_ADMIN', 'ROLE_USER']);
+        self::getContainer()->get(EntityManagerInterface::class)->flush();
+        $source = $this->fixtures['admin_current'];
+        $statement = $this->fixtures['admin_statement'];
+        $transaction = $this->fixtures['admin_transaction'];
+        self::assertInstanceOf(Source::class, $source);
+        self::assertInstanceOf(Statement::class, $statement);
+        self::assertInstanceOf(Transaction::class, $transaction);
+        $page = $this->visit('/settings');
+        $this->submitLogin($page, 'admin@test.com', 'admin');
+        $page->waitForURL('**/home/user');
+        foreach (['/settings', '/home/source', '/home/source/new', '/home/source/'.$source->getId(), '/home/source/'.$source->getId().'/edit', '/home/statement', '/home/statement/'.$statement->getId(), '/home/transaction', '/home/transaction/'.$transaction->getId().'/edit', '/home?routeName=admin_source_index', '/home?routeName=admin_transaction_index', '/home?routeName=app_settings'] as $path) {
+            $page = $this->visit($path);
+            self::assertSame(403, $this->getLastResponse()->getStatusCode(), $path);
+            self::assertStringNotContainsString('Admin private account', $page->locator('body')->textContent());
+        }
+        foreach (['/settings', '/home/source/new', '/home/source/'.$source->getId().'/edit', '/home/source/'.$source->getId().'/delete', '/home/transaction/'.$transaction->getId().'/edit', '/home?routeName=admin_source_new', '/home?routeName=app_settings'] as $path) {
+            $page = $this->visit('/home/category/new');
+            $page->getByLabel('Name', ['exact' => true])->fill('Rejected role-boundary submission');
+            $page->locator('form[name=Category]')->evaluate('(form, path) => { form.action = path; form.noValidate = true; }', $path);
+            $this->save($page);
+            self::assertSame(403, $this->getLastResponse()->getStatusCode(), $path);
+        }
+        $page = $this->visit('/home/user/'.$administrator->getId().'/edit');
+        self::assertSame(0, $page->locator('[name="User[reportingCurrency]"]')->count());
+        $page = $this->visit('/home/category');
+        self::assertStringNotContainsString('Rejected role-boundary submission', $page->locator('body')->textContent());
+        $connection = self::getContainer()->get(EntityManagerInterface::class)->getConnection();
+        self::assertSame('Admin private account', $connection->fetchOne('SELECT name FROM source WHERE id = ?', [$source->getId()]));
+        self::assertSame('USD', $connection->fetchOne('SELECT reporting_currency FROM user WHERE id = ?', [$administrator->getId()]));
     }
 }

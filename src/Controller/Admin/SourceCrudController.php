@@ -7,12 +7,15 @@ namespace App\Controller\Admin;
 use App\Entity\Source;
 use App\Entity\User;
 use App\Repository\SourceRepository;
+use App\Security\FinanceRecordVoter;
 use Doctrine\ORM\QueryBuilder;
 use EasyCorp\Bundle\EasyAdminBundle\Config\Crud;
 use EasyCorp\Bundle\EasyAdminBundle\Field\TextareaField;
 use EasyCorp\Bundle\EasyAdminBundle\Field\TextField;
+use Symfony\Component\Security\Http\Attribute\IsGranted;
 
 /** @extends OwnedCrudController<Source> */
+#[IsGranted(FinanceRecordVoter::ACCESS)]
 final class SourceCrudController extends OwnedCrudController
 {
     public function __construct(private readonly SourceRepository $sources)

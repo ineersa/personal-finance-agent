@@ -9,6 +9,7 @@ use App\Entity\User;
 use App\Enum\Direction;
 use App\Repository\SourceRepository;
 use App\Repository\TransactionRepository;
+use App\Security\FinanceRecordVoter;
 use Doctrine\ORM\QueryBuilder;
 use EasyCorp\Bundle\EasyAdminBundle\Config\Action;
 use EasyCorp\Bundle\EasyAdminBundle\Config\Actions;
@@ -18,8 +19,10 @@ use EasyCorp\Bundle\EasyAdminBundle\Field\ChoiceField;
 use EasyCorp\Bundle\EasyAdminBundle\Field\DateField;
 use EasyCorp\Bundle\EasyAdminBundle\Field\TextareaField;
 use EasyCorp\Bundle\EasyAdminBundle\Field\TextField;
+use Symfony\Component\Security\Http\Attribute\IsGranted;
 
 /** @extends OwnedCrudController<Transaction> */
+#[IsGranted(FinanceRecordVoter::ACCESS)]
 final class TransactionCrudController extends OwnedCrudController
 {
     public function __construct(private readonly TransactionRepository $transactions, private readonly SourceRepository $sources)

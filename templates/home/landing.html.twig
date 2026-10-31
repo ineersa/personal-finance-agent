@@ -1,0 +1,16 @@
+{% extends 'public.html.twig' %}
+{% block public_content %}
+    <section class="landing-intro" aria-labelledby="landing-heading">
+        <p class="eyebrow">Your finances, in perspective</p>
+        <h1 id="landing-heading">Make sense of your money.</h1>
+        <p>One place for your accounts, transactions, and financial questions.</p>
+        <a class="primary-button" href="{{ path('app_login') }}">Log in</a>
+        {% if app.environment in ['dev', 'test'] %}
+            <div class="demo-credentials">
+                <h2>Try the demo</h2>
+                <p>Email: <code>demo@test.com</code><br>Password: <code>demo</code></p>
+                <p>Synthetic data only. No bank connection required.</p>
+            </div>
+        {% endif %}
+    </section>
+{% endblock %}

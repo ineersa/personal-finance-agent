@@ -15,11 +15,11 @@ final class UserPasswordTest extends FinanceBrowserTest
         $email = 'password-lifecycle@example.test';
         $changedPassword = 'Changed-synthetic-password-05';
         $this->login('admin');
-        $page = $this->visit('/admin/user/new');
+        $page = $this->visit('/home/user/new');
         $page->getByLabel('Email', ['exact' => true])->fill($email);
         $page->getByLabel('New password', ['exact' => true])->fill(self::PASSWORD);
         $this->save($page);
-        $page = $this->visit('/admin/user');
+        $page = $this->visit('/home/user');
         $editUrl = $page->locator('tbody tr')->filter(['hasText' => $email])->locator('a.action-edit')->getAttribute('href');
         self::assertNotNull($editUrl);
         $originalHash = $this->storedPasswordHash($email);
@@ -59,7 +59,7 @@ final class UserPasswordTest extends FinanceBrowserTest
     public function testPasswordCharacterMinimumAndMultibyteByteMaximum(): void
     {
         $this->login('admin');
-        $page = $this->visit('/admin/user/new');
+        $page = $this->visit('/home/user/new');
         $page->getByLabel('Email', ['exact' => true])->fill('password-limits@example.test');
         $page->evaluate('() => document.querySelector("form[name=User]").noValidate = true');
         $this->save($page);
@@ -76,7 +76,7 @@ final class UserPasswordTest extends FinanceBrowserTest
         $this->save($page);
         $page->getByText('4096 bytes or less')->waitFor(['state' => 'visible', 'timeout' => 5000]);
         $this->assertPageContains('4096 bytes or less');
-        $page = $this->visit('/admin/user/'.$this->bobUser.'/edit');
+        $page = $this->visit('/home/user/'.$this->bobUser.'/edit');
         $originalHash = $this->storedPasswordHash('bob@example.test');
         $page->getByLabel('New password', ['exact' => true])->fill($oversized);
         $this->save($page);
@@ -85,7 +85,7 @@ final class UserPasswordTest extends FinanceBrowserTest
         self::assertSame($originalHash, $this->storedPasswordHash('bob@example.test'));
         // Twelve characters, even when multibyte, satisfy the character minimum.
         $accepted = str_repeat('界', 12);
-        $page = $this->visit('/admin/user/new');
+        $page = $this->visit('/home/user/new');
         $page->getByLabel('Email', ['exact' => true])->fill('password-limits@example.test');
         $page->getByLabel('New password', ['exact' => true])->fill($accepted);
         $this->save($page);

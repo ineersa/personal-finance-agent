@@ -7,6 +7,7 @@ namespace App\Controller\Admin;
 use App\Entity\Statement;
 use App\Entity\User;
 use App\Repository\StatementRepository;
+use App\Security\FinanceRecordVoter;
 use Doctrine\ORM\QueryBuilder;
 use EasyCorp\Bundle\EasyAdminBundle\Config\Action;
 use EasyCorp\Bundle\EasyAdminBundle\Config\Actions;
@@ -15,8 +16,10 @@ use EasyCorp\Bundle\EasyAdminBundle\Field\DateField;
 use EasyCorp\Bundle\EasyAdminBundle\Field\DateTimeField;
 use EasyCorp\Bundle\EasyAdminBundle\Field\IntegerField;
 use EasyCorp\Bundle\EasyAdminBundle\Field\TextField;
+use Symfony\Component\Security\Http\Attribute\IsGranted;
 
 /** @extends OwnedCrudController<Statement> */
+#[IsGranted(FinanceRecordVoter::ACCESS)]
 final class StatementCrudController extends OwnedCrudController
 {
     public function __construct(private readonly StatementRepository $statements)

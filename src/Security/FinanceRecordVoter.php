@@ -26,7 +26,7 @@ final class FinanceRecordVoter extends Voter
     protected function voteOnAttribute(string $attribute, mixed $subject, TokenInterface $token, ?Vote $vote = null): bool
     {
         $user = $token->getUser();
-        if (!$user instanceof User || null === $user->getId()) {
+        if (!$user instanceof User || null === $user->getId() || \in_array('ROLE_ADMIN', $token->getRoleNames(), true)) {
             return false;
         }
 

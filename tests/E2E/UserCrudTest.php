@@ -11,11 +11,11 @@ final class UserCrudTest extends FinanceBrowserTest
     public function testUserNewEditDetailDeleteAndBlankPasswordPreservation(): void
     {
         $this->login('admin');
-        $page = $this->visit('/admin/user/new');
+        $page = $this->visit('/home/user/new');
         $page->getByLabel('Email', ['exact' => true])->fill('created@example.test');
         $page->getByLabel('New password', ['exact' => true])->fill(self::PASSWORD);
         $this->save($page);
-        $page = $this->visit('/admin/user');
+        $page = $this->visit('/home/user');
         $this->assertPageContains('created@example.test');
         $userRow = $page->locator('tbody tr')->filter(['hasText' => 'created@example.test']);
         $userUrl = $userRow->locator('a.action-edit')->getAttribute('href');
@@ -32,7 +32,7 @@ final class UserCrudTest extends FinanceBrowserTest
         $this->openDeleteConfirmation($page);
         $this->submit(static fn () => $page->locator('#modal-action-confirmation-button')->click());
         $page->waitForLoadState();
-        $page = $this->visit('/admin/user');
+        $page = $this->visit('/home/user');
         self::assertStringNotContainsString('renamed@example.test', $page->locator('body')->textContent());
     }
 }

@@ -11,10 +11,10 @@ final class CategoryCrudTest extends FinanceBrowserTest
     public function testCategoryNewEditDetailAndDelete(): void
     {
         $this->login('admin');
-        $page = $this->visit('/admin/category/new');
+        $page = $this->visit('/home/category/new');
         $page->getByLabel('Name', ['exact' => true])->fill('New shared catalog entry');
         $this->save($page);
-        $page = $this->visit('/admin/category');
+        $page = $this->visit('/home/category');
         $this->assertPageContains('New shared catalog entry');
         $categoryRow = $page->locator('tbody tr')->filter(['hasText' => 'New shared catalog entry']);
         $categoryUrl = $categoryRow->locator('a.action-edit')->getAttribute('href');
@@ -28,7 +28,7 @@ final class CategoryCrudTest extends FinanceBrowserTest
         $this->openDeleteConfirmation($page);
         $this->submit(static fn () => $page->locator('#modal-action-confirmation-button')->click());
         $page->waitForLoadState();
-        $page = $this->visit('/admin/category');
+        $page = $this->visit('/home/category');
         self::assertStringNotContainsString('Edited shared catalog entry', $page->locator('body')->textContent());
     }
 }

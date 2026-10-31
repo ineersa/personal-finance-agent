@@ -6,46 +6,33 @@
     <div class="finance-app">
         <a class="skip-link" href="#main-content">Skip to content</a>
         <aside class="app-sidebar" aria-label="Workspace">
-            <a class="app-brand" href="{{ path('app_home') }}" aria-label="Personal finance home">
-                <span class="brand-mark" aria-hidden="true">pf</span>
-                <span>Personal finance<span class="brand-caption">A little more clarity.</span></span>
-            </a>
+            {{ include('chrome/brand.html.twig') }}
 
             <nav class="app-nav" aria-label="Main navigation">
                 <a class="nav-item {{ app.current_route == 'app_home' ? 'is-current' }}" href="{{ path('app_home') }}" {% if app.current_route == 'app_home' %}aria-current="page"{% endif %}><span>Chat</span><span class="nav-status" aria-hidden="true">Preview</span></a>
                 <span class="nav-label">Your finances</span>
-                {% if app.user %}
-                    <a class="nav-item" href="{{ path('admin') }}">Manage finances</a>
-                    <a class="nav-item {{ app.current_route == 'app_settings' ? 'is-current' }}" href="{{ path('app_settings') }}" {% if app.current_route == 'app_settings' %}aria-current="page"{% endif %}>Settings</a>
-                {% else %}
-                    <a class="nav-item {{ app.current_route == 'app_login' ? 'is-current' }}" href="{{ path('app_login') }}" {% if app.current_route == 'app_login' %}aria-current="page"{% endif %}>Log in</a>
-                {% endif %}
-                <span class="nav-item" aria-disabled="true">Upload <span class="nav-status">Unavailable</span></span>
-                <span class="nav-item" aria-disabled="true">Review <span class="nav-status">Unavailable</span></span>
+                <a class="nav-item" href="{{ ea_url().unsetAll().setController('App\\Controller\\Admin\\SourceCrudController').setAction('index') }}">Sources</a>
+                <a class="nav-item" href="{{ ea_url().unsetAll().setController('App\\Controller\\Admin\\StatementCrudController').setAction('index') }}">Statements</a>
+                <a class="nav-item" href="{{ ea_url().unsetAll().setController('App\\Controller\\Admin\\TransactionCrudController').setAction('index') }}">Transactions</a>
+                <a class="nav-item {{ app.current_route == 'app_settings' ? 'is-current' }}" href="{{ path('app_settings') }}" {% if app.current_route == 'app_settings' %}aria-current="page"{% endif %}>Settings</a>
             </nav>
-            {% if app.user %}
-                <form class="account-actions" action="{{ path('app_logout') }}" method="post">
-                    <span>{{ app.user.userIdentifier }}</span>
-                    <input type="hidden" name="_csrf_token" value="{{ csrf_token('logout') }}">
-                    <button class="secondary-button" type="submit">Log out</button>
-                </form>
-            {% endif %}
-
-            <div class="sidebar-note">
-                <span class="eyebrow">Work in progress</span>
-                <p>Manage sources and approved transactions. Chat, uploads, and draft review are not implemented yet.</p>
-            </div>
+            {{ include('chrome/note.html.twig') }}
         </aside>
 
         <div class="app-workspace">
             <header class="workspace-header">
                 <span>{% block workspace_title %}Finance chat{% endblock %}</span>
                 {% block workspace_status %}<span class="preview-badge">Chat preview</span>{% endblock %}
+                <form class="account-actions" action="{{ path('app_logout') }}" method="post">
+                    <span>{{ app.user.userIdentifier }}</span>
+                    <input type="hidden" name="_csrf_token" value="{{ csrf_token('logout') }}">
+                    <button class="secondary-button" type="submit">Log out</button>
+                </form>
             </header>
             <main id="main-content" class="workspace-main" tabindex="-1">
                 {% block workspace %}{% endblock %}
             </main>
-            <footer class="workspace-footer">Personal finance assistant <span aria-hidden="true">·</span> Built with Symfony</footer>
+            {{ include('chrome/footer.html.twig') }}
         </div>
     </div>
 {% endblock %}

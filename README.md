@@ -4,7 +4,7 @@ A planned personal finance demo for the Symfony AI hackathon, using Symfony, Sym
 
 ## Current status
 
-The application provides form login, owner-scoped source management, approved-transaction corrections, read-only statements, and a reporting-currency preference. Administrators manage user accounts and the shared category catalog, without access to other users' finances. The finance chat remains a responsive design preview with disabled controls. Uploads, draft approval, chat generation, currency conversion, and reset controls are not implemented yet.
+The application provides form login, owner-scoped source management, approved-transaction corrections, read-only statements, and a reporting-currency preference for ordinary users. Administrators manage only user accounts and the shared category catalog; they cannot enter financial screens or reporting settings, including for administrator-owned records. The signed-in finance chat remains a responsive design preview with disabled controls. Uploads, draft approval, chat generation, currency conversion, and reset controls are not implemented yet.
 
 The lockfile pins Symfony `8.2.x-dev`, Symfony AI `1.0.0-BETA1`, and EasyAdmin `5.8.0`. Symfony 8.2 has no released tag at this bootstrap revision; using its locked development branch is an explicit project decision. The Dockerfile pins FrankenPHP `1.13.2` with PHP `8.5.12` by image digest.
 
@@ -17,7 +17,7 @@ Use Linux amd64, Docker Engine, Docker Compose 2.24.4 or newer, Git, and host PH
 	vendor/bin/castor dev:stack:up
 ```
 
-Open the URL printed by `dev:stack:up`. Check that the page heading is **Make sense of your money.** and the dark design-preview layout appears. Each checkout gets a hostname such as `http://personal-finance-agent-<path-hash>.finance.localhost`. Do not set `HTTP_PORT` or `COMPOSE_PROJECT_NAME` for development.
+Open the URL printed by `dev:stack:up`. The public landing shows **Make sense of your money.**, a **Log in** link, and the ordinary demo credentials in dev/test. It does not show the signed-in workspace. Each checkout gets a hostname such as `http://personal-finance-agent-<path-hash>.finance.localhost`. Do not set `HTTP_PORT` or `COMPOSE_PROJECT_NAME` for development.
 
 A shared Caddy proxy publishes only `127.0.0.1:80`; application containers publish no host ports. Port 80 must be free. If another service owns it, startup fails; do not stop that service without authorization. Modern browsers resolve `*.localhost` to loopback. The saved [live-routing check](TESTING.md#isolated-live-stack) explicitly configures Chromium resolution inside tooling containers instead of relying on container DNS.
 
@@ -48,7 +48,9 @@ Load once into a database without the fixture identities. This task always uses 
 
 The dev/test-only fixtures provide **admin@test.com / admin** and **demo@test.com / demo**. Alice's password processor uses the configured Symfony password hasher. These intentionally public demo credentials are not production provisioning. The dataset includes shared categories with icons, separate owner sources, synthetic statement metadata, approved income/spending transactions, and an incomplete draft excluded from approved screens. It contains no uploaded files or real financial data.
 
-Open `/login` on the printed development URL. Use `/admin` for finance management and `/settings` for the signed-in user's reporting preference. Both workspaces offer a CSRF-protected **Log out** button. Public signup and password recovery are not implemented.
+Open `/login` on the printed development URL. Login always uses the role's entry page, not a saved protected-page target: ordinary users reach the chat workspace at `/`, while administrators reach Users at `/home/user`. Ordinary users manage finances at `/home/source`, `/home/statement`, and `/home/transaction`, with reporting preferences at `/settings`. Administrators can use only Users and Categories at `/home/user` and `/home/category`. The former `/admin` URLs are not aliases. Both workspaces offer CSRF-protected POST logout. Public signup and password recovery are not implemented.
+
+The workspace and management screens share branding, sidebar dimensions, navigation spacing, typography, and footer fragments. EasyAdmin retains its native search, actions, forms, and account dropdown. Its documented `Dashboard::setTheme()` configures the neutral palette, radius, and density; block overrides and unlayered CSS adapt the surrounding layout without a replacement frontend.
 
 Login uses Symfony's default throttling: five failed attempts per minute per username and client IP, with its broader IP limit. Forwarded client-IP headers are not trusted by default. Configure a verified deployment proxy explicitly before enabling those headers; the local proxy otherwise shares one observed client identity.
 

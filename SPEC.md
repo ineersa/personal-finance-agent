@@ -81,8 +81,9 @@ For late implementation, use the simple context handoff in [ADR 0013](docs/adr/0
 
 ## User roles
 
-- Users manage their own financial data, statement uploads, reviews, and conversations. They must not access another user's personal data.
-- Administrators can create, view, edit, and delete user accounts and perform authorized demo-reset operations. Reset scope and safeguards remain to be defined.
+- Ordinary users manage their own financial data, statement uploads, reviews, conversations, and reporting preferences. They must not access another user's personal data or user/category administration.
+- Administrators manage user accounts and the shared category catalog, not personal finances, chat, or reporting preferences. They must not enter those user workflows even for administrator-owned records or when an account also carries `ROLE_USER`. Authorized demo-reset operations remain planned; reset scope and safeguards are not yet defined.
+- Anonymous `/` is a public landing with a Log in call to action. In dev/test it displays only the ordinary demo credentials, not administrative credentials. Login always enters the appropriate role workspace instead of restoring a previously saved target. Native management routes use `/home`; ordinary users enter the chat workspace at `/`, while administrators enter `/home/user`.
 
 ## Demo proposal
 

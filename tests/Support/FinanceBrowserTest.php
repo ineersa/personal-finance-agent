@@ -41,7 +41,8 @@ abstract class FinanceBrowserTest extends PlaywrightTestCase
         $hasher = $container->get(UserPasswordHasherInterface::class);
         $alice = (new User())->setEmail('alice@example.test');
         $bob = (new User())->setEmail('bob@example.test');
-        $admin = (new User())->setEmail('admin@example.test')->setRoles(['ROLE_ADMIN']);
+        // Dual-role legacy rows must still be administration-only.
+        $admin = (new User())->setEmail('admin@example.test')->setRoles(['ROLE_ADMIN', 'ROLE_USER']);
         foreach ([$alice, $bob, $admin] as $user) {
             $user->setPassword($hasher->hashPassword($user, self::PASSWORD));
             $em->persist($user);
@@ -129,7 +130,7 @@ abstract class FinanceBrowserTest extends PlaywrightTestCase
     {
         $page = $this->getPage();
         // The bridge's last Symfony response may be a late subresource, not the document.
-        $document = $page->goto($this->getBaseUrl().'/admin/source/new');
+        $document = $page->goto($this->getBaseUrl().'/home/source/new');
         self::assertNotNull($document);
         self::assertSame(200, $document->status(), 'Source creation document: '.substr($page->locator('body')->textContent() ?? '', 0, 1600));
         self::assertStringEndsWith('/favicon.svg', $page->locator('link[rel="shortcut icon"]')->getAttribute('href') ?? '');
@@ -141,7 +142,11 @@ abstract class FinanceBrowserTest extends PlaywrightTestCase
     {
         $page = $this->visit('/login');
         $this->submitLogin($page, $name.'@example.test', self::PASSWORD);
-        $page->getByRole('heading', ['name' => 'Make sense of your money.', 'exact' => true])->waitFor();
+        if ('admin' === $name) {
+            $page->waitForURL('**/home/user');
+        } else {
+            $page->locator('.finance-app .chat-empty')->waitFor();
+        }
     }
 
     protected function submitLogin(PageInterface $page, string $email, string $password): void
