@@ -8,10 +8,19 @@ body.ea-dark-scheme {
     --text-muted: #a2a2aa;
     --form-control-bg: #111112;
     --form-control-border-color: #444449;
+    --button-primary-bg: #ededee;
+    --button-primary-color: #111112;
+    --button-primary-icon-color: inherit;
+    --button-primary-border-color: #ededee;
+    --button-primary-hover-bg: #d7d7da;
+    --button-primary-hover-color: #111112;
+    --button-primary-hover-border-color: #d7d7da;
+    --button-primary-active-bg: #c2c2c7;
+    --button-primary-active-color: #111112;
+    --button-primary-active-border-color: #c2c2c7;
     --sidebar-menu-active-item-bg: #222225;
     --sidebar-menu-active-item-color: #ededee;
     --sidebar-item-hover-bg: #222225;
 }
 body.ea { font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
-.finance-signout { margin-left: 12px; }
 .category-icon { display: inline-flex; gap: 8px; align-items: center; }

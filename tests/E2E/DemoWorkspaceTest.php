@@ -68,10 +68,47 @@ final class DemoWorkspaceTest extends FinanceBrowserTest
         $this->visit('/admin/source/'.$foreign->getId());
         self::assertSame(403, $this->getLastResponse()->getStatusCode());
         $page = $this->visit('/admin/source');
+        $page->locator('.user-menu-wrapper:visible .user-details')->click();
         $this->submit(static fn () => $page->getByRole('button', ['name' => 'Log out', 'exact' => true])->click());
         $page->waitForURL('**/login');
         $this->visit('/settings');
         $this->assertPageContains('Personal finance login');
+    }
+
+    public function testNativeAccountMenuLogsOutWithPostOnDesktopAndMobile(): void
+    {
+        foreach ([1280, 390] as $width) {
+            $page = $this->visit('/login');
+            $page->setViewportSize($width, 900);
+            $this->submitLogin($page, 'demo@test.com', 'demo');
+            $page = $this->visit('/admin/source');
+            $primary = $page->locator('.action-new');
+            self::assertSame('rgb(237, 237, 238)', $primary->evaluate('(button) => getComputedStyle(button).backgroundColor'));
+            self::assertSame('rgb(17, 17, 18)', $primary->evaluate('(button) => getComputedStyle(button).color'));
+            $menu = $page->locator('.user-menu-wrapper:visible');
+            self::assertSame(1, $menu->count());
+            $toggle = $menu->locator('.user-details');
+            self::assertSame('false', $toggle->getAttribute('aria-expanded'));
+            $toggle->click();
+            self::assertSame('true', $toggle->getAttribute('aria-expanded'));
+            self::assertSame('demo@test.com', trim($menu->locator('.dropdown-user-details .user-name')->textContent()));
+            self::assertSame(1, $menu->locator('a[href$="/settings"]')->count());
+            $form = $menu->locator('form[action$="/logout"]');
+            self::assertSame('post', $form->getAttribute('method'));
+            self::assertNotEmpty($form->locator('input[name="_csrf_token"]')->inputValue());
+            $logout = $menu->getByRole('button', ['name' => 'Log out', 'exact' => true]);
+            $this->submit(function () use ($logout): void {
+                $logout->click();
+                $request = $this->getLastRequest();
+                self::assertNotNull($request);
+                self::assertSame('POST', $request->getMethod());
+                self::assertSame('/logout', $request->getPathInfo());
+                self::assertNotEmpty($request->request->get('_csrf_token'));
+            });
+            $page->waitForURL('**/login');
+            $this->visit('/settings');
+            $this->assertPageContains('Personal finance login');
+        }
     }
 
     public function testAdminFixtureCatalogIconsAndNativeFinancePermissions(): void
