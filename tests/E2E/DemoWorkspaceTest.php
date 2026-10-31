@@ -39,6 +39,7 @@ final class DemoWorkspaceTest extends FinanceBrowserTest
         $this->submitLogin($page, 'demo@test.com', 'demo');
         $page->getByRole('heading', ['name' => 'Make sense of your money.', 'exact' => true])->waitFor();
         self::assertSame('page', $page->getByRole('link', ['name' => 'Chat', 'exact' => true])->getAttribute('aria-current'));
+        self::assertTrue($page->locator('.ea-sidebar')->getByText('Finance management', ['exact' => true])->isVisible());
         self::assertSame(0, $page->locator('a[href*="/planned/"]')->count());
         self::assertSame(0, $page->locator('.ea-sidebar [aria-disabled=true]')->count());
         $page = $this->visit('/home/settings');
