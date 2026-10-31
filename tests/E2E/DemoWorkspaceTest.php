@@ -81,7 +81,12 @@ final class DemoWorkspaceTest extends FinanceBrowserTest
         $page->getByRole('heading', ['name' => 'Make sense of your money.', 'exact' => true])->waitFor();
         $page = $this->visit('/admin/category');
         $this->assertPageContains('Groceries');
-        self::assertSame('page', $page->getByRole('link', ['name' => 'Categories', 'exact' => true])->getAttribute('aria-current'));
+        // Assert the native active route and visible label independently of its icon.
+        $current = $page->locator('.ea-sidebar-item-link[aria-current=page]');
+        $menu = $page->evaluate('() => Array.from(document.querySelectorAll(".ea-sidebar-item-link")).map(link => ({label: link.querySelector(".ea-sidebar-item-label")?.textContent.trim(), href: link.getAttribute("href"), current: link.getAttribute("aria-current")}))');
+        self::assertSame(1, $current->count(), 'Native menu selection: '.json_encode($menu, \JSON_THROW_ON_ERROR));
+        self::assertStringEndsWith('/admin/category', $current->getAttribute('href'));
+        self::assertSame('Categories', trim($current->locator('.ea-sidebar-item-label')->textContent()));
         self::assertSame(1, $page->locator('.category-icon i.fa-cart-shopping')->count());
         self::assertSame('rgb(17, 17, 18)', $page->evaluate('() => getComputedStyle(document.body).backgroundColor'));
         $page = $this->visit('/admin/source');
