@@ -92,7 +92,7 @@ final class DemoWorkspaceTest extends FinanceBrowserTest
             $toggle->click();
             self::assertSame('true', $toggle->getAttribute('aria-expanded'));
             self::assertSame('demo@test.com', trim($menu->locator('.dropdown-user-details .user-name')->textContent()));
-            self::assertSame(1, $menu->locator('a[href$="/settings"]')->count());
+            self::assertSame(1, $menu->getByRole('link', ['name' => 'Settings', 'exact' => false])->count());
             $form = $menu->locator('form[action$="/logout"]');
             self::assertSame('post', $form->getAttribute('method'));
             self::assertNotEmpty($form->locator('input[name="_csrf_token"]')->inputValue());
