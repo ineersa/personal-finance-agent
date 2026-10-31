@@ -1,0 +1,38 @@
+{% extends '@!EasyAdmin/layout.html.twig' %}
+
+{% block body_attr %}{{ parent() }} data-bs-theme="dark" style="color-scheme: dark"{% endblock %}
+{% block javascript_page_color_scheme %}
+    {# Keep the native dark classes without reading saved preferences or registering OS-theme listeners. #}
+    {% guard function csp_nonce %}
+        <script nonce="{{ csp_nonce('script') }}">document.body.classList.add('ea-dark-scheme');</script>
+    {% else %}
+        <script>document.body.classList.add('ea-dark-scheme');</script>
+    {% endguard %}
+{% endblock %}
+{% block wrapper %}
+    {# The native layout shares this captured fragment between both responsive headers. #}
+    {% set settings_dropdown = '' %}
+    {{ parent() }}
+{% endblock %}
+
+{% block header_logo %}{{ include('chrome/brand.html.twig') }}{% endblock %}
+{% block responsive_header_logo %}{{ include('chrome/brand.html.twig') }}{% endblock %}
+{% block content_footer %}{{ include('chrome/footer.html.twig') }}{% endblock %}
+{% block content_top_header %}
+    <span class="workspace-context">{{ is_granted('ROLE_ADMIN') ? 'Administration' : 'Your finances' }}</span>
+    {{ parent() }}
+{% endblock %}
+
+{% block user_menu %}
+    {{ parent() }}
+    <twig:ea:ActionMenu:ActionList:Divider />
+    <twig:ea:ActionMenu:ActionList:Content>
+        <form action="{{ path('app_logout') }}" method="post">
+            <input type="hidden" name="_csrf_token" value="{{ csrf_token('logout') }}">
+            <button type="submit" class="dropdown-item">
+                <twig:ea:Icon name="internal:sign-out" />
+                <span>Log out</span>
+            </button>
+        </form>
+    </twig:ea:ActionMenu:ActionList:Content>
+{% endblock %}

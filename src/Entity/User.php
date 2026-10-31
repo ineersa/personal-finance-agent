@@ -4,13 +4,17 @@ declare(strict_types=1);
 
 namespace App\Entity;
 
+use App\Enum\ReportingCurrency;
 use App\Repository\UserRepository;
 use Doctrine\ORM\Mapping as ORM;
+use Symfony\Bridge\Doctrine\Validator\Constraints\UniqueEntity;
 use Symfony\Component\Security\Core\User\PasswordAuthenticatedUserInterface;
 use Symfony\Component\Security\Core\User\UserInterface;
+use Symfony\Component\Validator\Constraints as Assert;
 
 #[ORM\Entity(repositoryClass: UserRepository::class)]
 #[ORM\UniqueConstraint(name: 'UNIQ_IDENTIFIER_EMAIL', fields: ['email'])]
+#[UniqueEntity('email')]
 class User implements UserInterface, PasswordAuthenticatedUserInterface
 {
     #[ORM\Id]
@@ -19,6 +23,9 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     private ?int $id = null;
 
     #[ORM\Column(length: 180)]
+    #[Assert\NotBlank]
+    #[Assert\Email]
+    #[Assert\Length(max: 180)]
     private string $email = '';
 
     /**
@@ -33,8 +40,8 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     #[ORM\Column]
     private string $password = '';
 
-    #[ORM\Column(length: 3, options: ['default' => 'USD'])]
-    private string $reportingCurrency = 'USD';
+    #[ORM\Column(length: 3, enumType: ReportingCurrency::class, options: ['default' => 'USD'])]
+    private ReportingCurrency $reportingCurrency = ReportingCurrency::USD;
 
     /**
      * Symfony's session-only password fingerprint, not the stored password hash.
@@ -60,12 +67,12 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
         return $this->email;
     }
 
-    public function getReportingCurrency(): string
+    public function getReportingCurrency(): ReportingCurrency
     {
         return $this->reportingCurrency;
     }
 
-    public function setReportingCurrency(string $currency): static
+    public function setReportingCurrency(ReportingCurrency $currency): static
     {
         $this->reportingCurrency = $currency;
 
@@ -95,8 +102,9 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     public function getRoles(): array
     {
         $roles = $this->roles;
-        // guarantee every user at least has ROLE_USER
-        $roles[] = 'ROLE_USER';
+        if (!\in_array('ROLE_ADMIN', $roles, true)) {
+            $roles[] = 'ROLE_USER';
+        }
 
         return array_values(array_unique($roles));
     }

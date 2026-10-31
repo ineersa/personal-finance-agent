@@ -38,6 +38,12 @@ function devCacheWarmup(): int
     return report('dev:cache:warmup', ['php', 'bin/console', 'cache:warmup', '--env=dev', '--no-interaction']);
 }
 
+#[AsTask(namespace: 'dev', name: 'fixtures:load', description: 'Append synthetic Alice fixtures to this checkout dev database. Never purges or overwrites existing accounts.')]
+function devFixturesLoad(): int
+{
+    return report('dev:fixtures:load', ['php', 'bin/console', 'hautelook:fixtures:load', '--env=dev', '--append', '--no-interaction']);
+}
+
 #[AsTask(namespace: 'test', name: 'database:prepare', description: 'Prepare only the fixed, owned SQLite browser-test database.')]
 function testDatabasePrepare(): int
 {
@@ -85,6 +91,19 @@ function browserStackUp(): int
 function browserStackStatus(): int
 {
     return developmentStack('browser', 'status');
+}
+
+/** @param list<string> $arguments */
+#[AsTask(namespace: 'browser', name: 'stack:console', description: 'Run Symfony console in this checkout\'s running isolated browser stack; pass arguments after --.')]
+function browserStackConsole(#[AsArgsAfterOptionEnd] array $arguments = []): int
+{
+    $command = ['exec', '-T', '--user', posix_getuid().':'.posix_getgid(), 'php', 'php', 'bin/console', ...$arguments];
+
+    return report('browser:stack:console', [...stackCommand('browser'), ...$command], runtime: false, operation: static function () use ($command): int {
+        stackRun('browser', $command);
+
+        return 0;
+    });
 }
 
 #[AsTask(namespace: 'browser', name: 'stack:stop', description: 'Stop only the isolated browser-test application without deleting storage.')]

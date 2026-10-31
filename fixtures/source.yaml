@@ -1,0 +1,7 @@
+App\Entity\Source:
+    demo_current:
+        __construct: ['@demo', 'Demo current account', 'Synthetic household account']
+    demo_card:
+        __construct: ['@demo', 'Demo credit card', 'Synthetic everyday spending card']
+    admin_current:
+        __construct: ['@administrator', 'Admin private account', 'Separate owner for isolation checks']
