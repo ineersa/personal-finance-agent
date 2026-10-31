@@ -5,9 +5,21 @@ declare(strict_types=1);
 namespace App\Tests\E2E;
 
 use App\Tests\Support\FinanceBrowserTest;
+use App\Tests\Support\SubmitsBrowserForms;
+use Playwright\Page\PageInterface;
 
 final class AuthenticationTest extends FinanceBrowserTest
 {
+    use SubmitsBrowserForms;
+
+    private const string PASSWORD = 'Synthetic-browser-password-05';
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+        self::getContainer()->get('cache.rate_limiter')->clear();
+    }
+
     public function testRealLoginLogoutAndProtectedPages(): void
     {
         $page = $this->visit('/home/source');
@@ -62,5 +74,12 @@ final class AuthenticationTest extends FinanceBrowserTest
         $this->submitLogin($page, 'alice@example.test', self::PASSWORD);
         $this->assertPageContains('Too many failed login attempts');
         self::assertTrue($page->getByRole('button', ['name' => 'Log in', 'exact' => true])->isVisible());
+    }
+
+    private function submitLogin(PageInterface $page, string $email, string $password): void
+    {
+        $page->getByLabel('Email', ['exact' => true])->fill($email);
+        $page->getByLabel('Password', ['exact' => true])->fill($password);
+        $this->submit(static fn () => $page->getByRole('button', ['name' => 'Log in', 'exact' => true])->click());
     }
 }

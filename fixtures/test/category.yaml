@@ -1,0 +1,3 @@
+App\Entity\Category:
+    regression_category:
+        __construct: ['Synthetic shared category']

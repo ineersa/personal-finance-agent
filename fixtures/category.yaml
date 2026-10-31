@@ -1,0 +1,9 @@
+App\Entity\Category:
+    groceries:
+        __construct: ['Groceries', 'Everyday food and household purchases', 'fa fa-cart-shopping']
+    housing:
+        __construct: ['Housing', 'Rent and utilities', 'fa fa-house']
+    subscriptions:
+        __construct: ['Subscriptions', 'Recurring digital services', 'fa fa-repeat']
+    salary:
+        __construct: ['Salary', 'Employment income', 'fa fa-briefcase']

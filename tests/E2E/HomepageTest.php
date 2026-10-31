@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Tests\E2E;
 
 use App\Tests\Support\FinanceBrowserTest;
+use Hautelook\AliceBundle\PhpUnit\FixtureStore;
 
 final class HomepageTest extends FinanceBrowserTest
 {
@@ -34,7 +35,8 @@ final class HomepageTest extends FinanceBrowserTest
 
     public function testSignedInWorkspaceAndNativeCrudShareBrandingAndGeometry(): void
     {
-        $this->login('alice');
+        $fixtures = FixtureStore::getFixtures();
+        $this->loginUser($fixtures['alice']);
         foreach ([1280, 390] as $width) {
             $this->getPage()->setViewportSize($width, 900);
             foreach (['/home/chat', '/home/settings', '/home/source', '/home/source/new'] as $path) {

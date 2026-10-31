@@ -9,28 +9,18 @@ use App\Entity\Statement;
 use App\Entity\Transaction;
 use App\Entity\User;
 use App\Tests\Support\FinanceBrowserTest;
+use App\Tests\Support\SubmitsBrowserForms;
 use Doctrine\ORM\EntityManagerInterface;
-use Symfony\Bundle\FrameworkBundle\Console\Application;
+use Hautelook\AliceBundle\PhpUnit\FixtureStore;
+use Playwright\Page\PageInterface;
 
 final class DemoWorkspaceTest extends FinanceBrowserTest
 {
-    /** @var array<string, object> */
-    private array $fixtures;
-
-    protected function setUp(): void
-    {
-        parent::setUp();
-        self::assertNotNull(self::$kernel);
-        // Native append loading stays inside DAMA's existing rollback transaction.
-        $this->fixtures = self::getContainer()->get('hautelook_alice.loader')->load(
-            new Application(self::$kernel),
-            self::getContainer()->get(EntityManagerInterface::class),
-            [], 'test', true, false, true,
-        );
-    }
+    use SubmitsBrowserForms;
 
     public function testDemoLoginSettingsAndFinanceRoutesShareDarkWorkspace(): void
     {
+        $fixtures = FixtureStore::getFixtures();
         $page = $this->visit('/login');
         self::assertSame('rgb(17, 17, 18)', $page->evaluate('() => getComputedStyle(document.body).backgroundColor'));
         self::assertSame('rgb(17, 17, 18)', $page->getByLabel('Email', ['exact' => true])->evaluate('(input) => getComputedStyle(input).backgroundColor'));
@@ -69,7 +59,7 @@ final class DemoWorkspaceTest extends FinanceBrowserTest
         $page = $this->visit('/home/statement');
         $this->assertPageContains('demo-october-2026.csv');
         self::assertSame(0, $page->locator('.action-new, .action-edit, .action-delete')->count());
-        $foreign = $this->fixtures['admin_current'];
+        $foreign = $fixtures['admin_current'];
         self::assertInstanceOf(Source::class, $foreign);
         $this->visit('/home/source/'.$foreign->getId());
         self::assertSame(403, $this->getLastResponse()->getStatusCode());
@@ -119,6 +109,7 @@ final class DemoWorkspaceTest extends FinanceBrowserTest
 
     public function testAdminFixtureCatalogIconsAndNativeFinancePermissions(): void
     {
+        $fixtures = FixtureStore::getFixtures();
         $page = $this->visit('/login');
         $this->submitLogin($page, 'admin@test.com', 'admin');
         $page->waitForURL('**/home/user');
@@ -127,8 +118,7 @@ final class DemoWorkspaceTest extends FinanceBrowserTest
         self::assertSame(0, $page->locator('.sidebar-note, .ea-sidebar-footer')->count());
         // Assert the native active route and visible label independently of its icon.
         $current = $page->locator('.ea-sidebar-item-link[aria-current=page]');
-        $menu = $page->evaluate('() => Array.from(document.querySelectorAll(".ea-sidebar-item-link")).map(link => ({label: link.querySelector(".ea-sidebar-item-label")?.textContent.trim(), href: link.getAttribute("href"), current: link.getAttribute("aria-current")}))');
-        self::assertSame(1, $current->count(), 'Native menu selection: '.json_encode($menu, \JSON_THROW_ON_ERROR));
+        self::assertSame(1, $current->count());
         self::assertStringEndsWith('/home/category', $current->getAttribute('href'));
         self::assertSame('Categories', trim($current->locator('.ea-sidebar-item-label')->textContent()));
         self::assertSame(1, $page->locator('.category-icon i.fa-cart-shopping')->count());
@@ -136,7 +126,7 @@ final class DemoWorkspaceTest extends FinanceBrowserTest
         $page = $this->visit('/home/source');
         self::assertSame(403, $this->getLastResponse()->getStatusCode());
         self::assertStringNotContainsString('Demo current account', $page->locator('body')->textContent());
-        $demo = $this->fixtures['demo_salary'];
+        $demo = $fixtures['demo_salary'];
         self::assertInstanceOf(Transaction::class, $demo);
         foreach (['', '/edit'] as $action) {
             $page = $this->visit('/home/transaction/'.$demo->getId().$action);
@@ -167,8 +157,8 @@ final class DemoWorkspaceTest extends FinanceBrowserTest
 
     public function testDarkOnlyManagementIgnoresSavedAndSystemLightPreferences(): void
     {
-        $page = $this->visit('/login');
-        $this->submitLogin($page, 'demo@test.com', 'demo');
+        $this->loginUser(FixtureStore::getFixtures()['demo']);
+        $page = $this->visit('/home/chat');
         foreach ([1280, 390] as $width) {
             $page->setViewportSize($width, 900);
             foreach (['light', 'auto'] as $preference) {
@@ -196,29 +186,28 @@ final class DemoWorkspaceTest extends FinanceBrowserTest
 
     public function testAdministratorCannotEnterOwnFinancesSettingsOrLegacyActions(): void
     {
-        $administrator = $this->fixtures['administrator'];
+        $fixtures = FixtureStore::getFixtures();
+        $administrator = $fixtures['admin'];
         self::assertInstanceOf(User::class, $administrator);
-        $administrator->setRoles(['ROLE_ADMIN', 'ROLE_USER']);
-        self::getContainer()->get(EntityManagerInterface::class)->flush();
-        $source = $this->fixtures['admin_current'];
-        $statement = $this->fixtures['admin_statement'];
-        $transaction = $this->fixtures['admin_transaction'];
+        $source = $fixtures['regression_admin_source'];
+        $statement = $fixtures['regression_admin_statement'];
+        $transaction = $fixtures['regression_admin_transaction'];
         self::assertInstanceOf(Source::class, $source);
         self::assertInstanceOf(Statement::class, $statement);
         self::assertInstanceOf(Transaction::class, $transaction);
-        $page = $this->visit('/home/settings');
-        $this->submitLogin($page, 'admin@test.com', 'admin');
+        $this->loginUser($administrator);
+        $page = $this->visit('/home/user');
         $page->waitForURL('**/home/user');
         foreach (['/home/chat', '/home/settings', '/home/source', '/home/source/new', '/home/source/'.$source->getId(), '/home/source/'.$source->getId().'/edit', '/home/statement', '/home/statement/'.$statement->getId(), '/home/transaction', '/home/transaction/'.$transaction->getId().'/edit', '/home?routeName=admin_source_index', '/home?routeName=admin_transaction_index', '/home?routeName=admin_chat', '/home?routeName=admin_settings'] as $path) {
             $page = $this->visit($path);
             self::assertSame(403, $this->getLastResponse()->getStatusCode(), $path);
-            self::assertStringNotContainsString('Admin private account', $page->locator('body')->textContent());
+            self::assertStringNotContainsString('Legacy administrator account', $page->locator('body')->textContent());
         }
         foreach (['/home/settings', '/home/source/new', '/home/source/'.$source->getId().'/edit', '/home/source/'.$source->getId().'/delete', '/home/transaction/'.$transaction->getId().'/edit', '/home?routeName=admin_source_new', '/home?routeName=admin_settings'] as $path) {
             $page = $this->visit('/home/category/new');
             $page->getByLabel('Name', ['exact' => true])->fill('Rejected role-boundary submission');
             $page->locator('form[name=Category]')->evaluate('(form, path) => { form.action = path; form.noValidate = true; }', $path);
-            $this->save($page);
+            $this->submit(static fn () => $page->locator('button[name="ea[newForm][btn]"], button[name="ea[editForm][btn]"]')->first()->click());
             self::assertSame(403, $this->getLastResponse()->getStatusCode(), $path);
         }
         $page = $this->visit('/home/user/'.$administrator->getId().'/edit');
@@ -226,7 +215,14 @@ final class DemoWorkspaceTest extends FinanceBrowserTest
         $page = $this->visit('/home/category');
         self::assertStringNotContainsString('Rejected role-boundary submission', $page->locator('body')->textContent());
         $connection = self::getContainer()->get(EntityManagerInterface::class)->getConnection();
-        self::assertSame('Admin private account', $connection->fetchOne('SELECT name FROM source WHERE id = ?', [$source->getId()]));
+        self::assertSame('Legacy administrator account', $connection->fetchOne('SELECT name FROM source WHERE id = ?', [$source->getId()]));
         self::assertSame('USD', $connection->fetchOne('SELECT reporting_currency FROM user WHERE id = ?', [$administrator->getId()]));
+    }
+
+    private function submitLogin(PageInterface $page, string $email, string $password): void
+    {
+        $page->getByLabel('Email', ['exact' => true])->fill($email);
+        $page->getByLabel('Password', ['exact' => true])->fill($password);
+        $this->submit(static fn () => $page->getByRole('button', ['name' => 'Log in', 'exact' => true])->click());
     }
 }
