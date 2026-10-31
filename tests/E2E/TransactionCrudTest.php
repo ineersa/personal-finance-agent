@@ -41,7 +41,7 @@ final class TransactionCrudTest extends FinanceBrowserTest
         self::assertSame('USD', $page->getByLabel('Currency', ['exact' => true])->inputValue());
     }
 
-    public function testForeignSourceIsNotSelectableAndForgedChoiceCannotBeSaved(): void
+    public function testSourceChoicesAreOwnerScopedAndInvalidSubmissionsCannotBeSaved(): void
     {
         $fixtures = FixtureStore::getFixtures();
         $this->loginUser($fixtures['demo']);
@@ -49,11 +49,14 @@ final class TransactionCrudTest extends FinanceBrowserTest
         self::assertSame((string) $fixtures['demo_current']->getId(), $page->locator('select[name="Transaction[source]"]')->inputValue());
         self::assertStringContainsString('Demo credit card', $page->locator('select[name="Transaction[source]"]')->textContent());
         self::assertStringNotContainsString('Admin private account', $page->locator('select[name="Transaction[source]"]')->textContent());
-        $page->evaluate('(id) => { const s = document.querySelector("select[name=\"Transaction[source]\"]"); s.add(new Option("Forged foreign source", id, true, true)); }', (string) $fixtures['admin_current']->getId());
-        $this->submit(static fn () => $page->locator('button[name="ea[newForm][btn]"], button[name="ea[editForm][btn]"]')->first()->click());
-        Expect::locator($page->getByText('The selected choice is invalid'))->toBeVisible();
-        $page = $this->visit('/home/transaction/'.$fixtures['demo_salary']->getId().'/edit');
-        self::assertSame((string) $fixtures['demo_current']->getId(), $page->locator('select[name="Transaction[source]"]')->inputValue());
+        foreach ([(string) $fixtures['admin_current']->getId(), ''] as $source) {
+            $page->evaluate('(id) => { const s = document.querySelector("select[name=\"Transaction[source]\"]"); s.closest("form").noValidate = true; s.add(new Option("Invalid source", id, true, true)); }', $source);
+            $this->submit(static fn () => $page->locator('button[name="ea[newForm][btn]"]')->first()->click());
+            self::assertLessThan(500, $this->getLastResponse()->getStatusCode());
+            Expect::locator($page->getByText('The selected choice is invalid'))->toBeVisible();
+            $page = $this->visit('/home/transaction/'.$fixtures['demo_salary']->getId().'/edit');
+            self::assertSame((string) $fixtures['demo_current']->getId(), $page->locator('select[name="Transaction[source]"]')->inputValue());
+        }
     }
 
     public function testAssociationNamesAreEscapedAndCategoryLinksRespectRole(): void

@@ -19,6 +19,8 @@ use EasyCorp\Bundle\EasyAdminBundle\Field\ChoiceField;
 use EasyCorp\Bundle\EasyAdminBundle\Field\DateField;
 use EasyCorp\Bundle\EasyAdminBundle\Field\TextareaField;
 use EasyCorp\Bundle\EasyAdminBundle\Field\TextField;
+use Symfony\Component\Form\Exception\TransformationFailedException;
+use Symfony\Component\Form\FormInterface;
 use Symfony\Component\Security\Http\Attribute\IsGranted;
 
 /** @extends OwnedCrudController<Transaction> */
@@ -54,6 +56,7 @@ final class TransactionCrudController extends OwnedCrudController
         yield ChoiceField::new('direction')->setChoices(['Credit' => Direction::Credit, 'Debit' => Direction::Debit])->setRequired(true);
         yield TextareaField::new('description')->setRequired(false)->setFormTypeOption('empty_data', '');
         yield AssociationField::new('source')->renderAsNativeWidget()->setFormTypeOption('choice_label', 'name')
+            ->setFormTypeOption('empty_data', static fn (FormInterface $form): never => throw new TransformationFailedException('A transaction source is required.'))
             ->setFormTypeOption('query_builder', fn (): QueryBuilder => $this->sources->queryForUser($this->owner()));
         yield AssociationField::new('category')->renderAsNativeWidget()->setFormTypeOption('choice_label', 'name')
             ->setRequired(false);
