@@ -16,7 +16,7 @@ final class SourceCrudTest extends FinanceBrowserTest
     {
         $fixtures = FixtureStore::getFixtures();
         $this->loginUser($fixtures['alice']);
-        $page = $this->getPage();
+        $page = $this->visit('/home/source');
         $document = $page->goto($this->getBaseUrl().'/home/source/new');
         self::assertNotNull($document);
         self::assertSame(200, $document->status());
@@ -52,7 +52,7 @@ final class SourceCrudTest extends FinanceBrowserTest
     {
         $fixtures = FixtureStore::getFixtures();
         $this->loginUser($fixtures['alice']);
-        $page = $this->getPage();
+        $page = $this->visit('/home/source');
         $document = $page->goto($this->getBaseUrl().'/home/source/new');
         self::assertNotNull($document);
         self::assertSame(200, $document->status());
