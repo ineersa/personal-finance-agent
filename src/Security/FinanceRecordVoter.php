@@ -30,8 +30,9 @@ final class FinanceRecordVoter extends Voter
             return false;
         }
 
-        // EasyAdmin checks entity metadata before createEntity() supplies the
-        // new record. Actual records still require ownership, including after binding.
+        // A null subject authorizes entry to the ordinary-user finance workspace,
+        // including settings, empty indexes and creation forms. EasyAdmin also
+        // checks this before createEntity(). Bound records still require ownership.
         return null === $subject || $this->owns($user, $subject);
     }
 
