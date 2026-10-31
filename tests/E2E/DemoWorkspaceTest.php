@@ -42,6 +42,9 @@ final class DemoWorkspaceTest extends FinanceBrowserTest
         self::assertTrue($page->locator('.ea-sidebar')->getByText('Finance management', ['exact' => true])->isVisible());
         self::assertSame(0, $page->locator('a[href*="/planned/"]')->count());
         self::assertSame(0, $page->locator('.ea-sidebar [aria-disabled=true]')->count());
+        self::assertSame(0, $page->locator('.sidebar-note, .ea-sidebar-footer')->count());
+        self::assertStringNotContainsString('Work in progress', $page->locator('.ea-sidebar')->textContent());
+        self::assertStringNotContainsString('Manage sources and approved transactions.', $page->locator('.ea-sidebar')->textContent());
         $page = $this->visit('/home/settings');
         self::assertSame('Settings', trim($page->getByRole('heading', ['level' => 1])->textContent()));
         self::assertSame('page', $page->getByRole('link', ['name' => 'Settings', 'exact' => true])->getAttribute('aria-current'));
@@ -121,6 +124,7 @@ final class DemoWorkspaceTest extends FinanceBrowserTest
         $page->waitForURL('**/home/user');
         $page = $this->visit('/home/category');
         $this->assertPageContains('Groceries');
+        self::assertSame(0, $page->locator('.sidebar-note, .ea-sidebar-footer')->count());
         // Assert the native active route and visible label independently of its icon.
         $current = $page->locator('.ea-sidebar-item-link[aria-current=page]');
         $menu = $page->evaluate('() => Array.from(document.querySelectorAll(".ea-sidebar-item-link")).map(link => ({label: link.querySelector(".ea-sidebar-item-label")?.textContent.trim(), href: link.getAttribute("href"), current: link.getAttribute("aria-current")}))');

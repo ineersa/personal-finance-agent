@@ -69,9 +69,6 @@ body.finance-page {
 .finance-public { flex-direction: column; }
 .app-brand { color: #ededee; text-decoration: none; font-size: 14px; line-height: 1.5; }
 .brand-mark { flex-shrink: 0; }
-.sidebar-note { margin-top: auto; padding: 48px 8px 0; }
-.sidebar-note .eyebrow { color: #a2a2aa; font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; }
-.sidebar-note p { color: #a2a2aa; font-size: 12px; line-height: 1.7; margin: 8px 0 0; }
 .finance-public .public-header { padding: 32px 28px; }
 .finance-public .public-main { display: grid; flex: 1; align-items: center; padding: 48px 24px 64px; }
 .finance-public .landing-intro { width: 100%; max-width: 640px; margin: 0 auto; text-align: center; }

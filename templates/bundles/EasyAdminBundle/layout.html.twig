@@ -17,7 +17,6 @@
 
 {% block header_logo %}{{ include('chrome/brand.html.twig') }}{% endblock %}
 {% block responsive_header_logo %}{{ include('chrome/brand.html.twig') }}{% endblock %}
-{% block sidebar_footer %}{{ include('chrome/note.html.twig') }}{% endblock %}
 {% block content_footer %}{{ include('chrome/footer.html.twig') }}{% endblock %}
 {% block content_top_header %}
     <span class="workspace-context">{{ is_granted('ROLE_ADMIN') ? 'Administration' : 'Your finances' }}</span>
