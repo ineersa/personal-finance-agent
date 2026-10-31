@@ -141,7 +141,7 @@ final class DemoWorkspaceTest extends FinanceBrowserTest
         $this->loginUser($administrator);
         $page = $this->visit('/home/user/'.$administrator->getId().'/edit');
         $page->locator('select[name="User[roles][]"]')->selectOption(['ROLE_ADMIN', 'ROLE_USER'], ['force' => true]);
-        $this->submit(static fn () => $page->locator('button[name="ea[editForm][btn]"]')->first()->click());
+        $this->submit(static fn () => $page->locator('button[name="ea[newForm][btn]"]')->first()->click());
         // Reauthenticate after changing roles so the token uses both persisted roles.
         $page = $this->visit('/login');
         $this->submitLogin($page, 'admin@test.com', 'admin');
