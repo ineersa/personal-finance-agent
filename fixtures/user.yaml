@@ -1,0 +1,9 @@
+# Synthetic dev/test data only. Passwords are hashed by the Alice processor.
+App\Entity\User:
+    demo:
+        email: demo@test.com
+        password: demo
+    administrator:
+        email: admin@test.com
+        password: admin
+        roles: [ROLE_ADMIN]

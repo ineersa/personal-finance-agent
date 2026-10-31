@@ -16,6 +16,7 @@ final class HomepageProfilerTest extends PlaywrightTestCase
         $client->enableProfiler();
         $this->visit('/');
         $this->assertPageContains('Make sense of your money.');
+        $this->assertPageContains('Try the demo');
 
         $profile = $client->getProfile();
         self::assertNotNull($profile);

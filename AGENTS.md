@@ -6,6 +6,13 @@ Build a locally installable personal finance demo for the Symfony AI hackathon. 
 
 A finance UI preview and development tooling are implemented; authentication, financial workflows, and chat generation are not. Install dependencies or start services only within the current task's authorized scope.
 
+## Mandatory Symfony documentation search
+
+- Always search Symfony-specific documentation before producing or revising Symfony tasks or plans, making implementation decisions, or writing code. Familiarity and small task size are not exceptions.
+- Open `https://r.jina.ai/https://symfony.com/search?q=<URL-encoded query>` with `websearch_open`, then open and read the relevant Symfony or bundle documentation. Search snippets alone are insufficient.
+- Verify documented APIs, configuration, and extension points against the installed version and its vendor documentation or source. Check existing Symfony and bundle capabilities before adding replacement infrastructure; never invent an API or configuration option.
+- If required documentation is unavailable, report the blocker instead of guessing.
+
 ## Development rules
 
 - Keep changes small and limited to the requested scope. Use Symfony and existing project facilities before adding custom infrastructure.
@@ -49,8 +56,11 @@ A finance UI preview and development tooling are implemented; authentication, fi
 
 ## Testing and browser verification
 
+- Quality over quantity. Never write tests merely to increase their count. Each test must have a specific purpose and cover distinct behavior, a failure mode, or a regression not already covered. Consolidate duplicate coverage and assert meaningful outcomes.
 - Test application behavior only through real Playwright browsers. Do not add unit, kernel-only, service-only, or API-only test suites. PHPUnit may be the PHP browser-suite harness, not a separate unit-testing layer.
-- Use the selected DAMA bundle and PHPUnit extension for rollback in intercepted same-process browser scenarios. `vendor/bin/castor test` prepares the fixed isolated SQLite database through Doctrine. Do not invent test application commands, endpoints, or schema; add fixtures and regression scenarios alongside actual features. DAMA does not isolate separate workers or network stacks.
+- Use Hautelook Alice's native `RefreshDatabaseTrait` for fixture-backed intercepted browser scenarios. Apply the documented DAMA `SkipDatabaseRollback` class attribute so Alice alone owns their fixture transactions; retain the installed DAMA bundle and extension for other intercepted scenarios. Read fixtures through `FixtureStore`, not deprecated static properties.
+- Use the same canonical development fixture definitions in `fixtures/*.yaml` for development and tests. Do not add a supplementary test dataset. Run tests only against isolated test-owned storage, never the development database.
+- `vendor/bin/castor test` prepares the fixed isolated SQLite database through Doctrine. Alice may purge and seed that test-owned database once before rolling back each fixture-backed case. Development and live-stack fixture loading stays native append-only; never purge owner data. Do not invent test application commands, endpoints, schema, or lifecycle glue. Neither Alice nor DAMA isolates separate workers or network stacks.
 - Agents must verify affected behavior themselves, run relevant saved browser scenarios, and add browser regression coverage for bug fixes. Main runs saved tests and QA commands directly through Castor and reads their reports. Do not delegate those commands to the browser subagent or ask the owner to perform checks an agent can run.
 - Launch the browser subagent only when actual browser interaction through the system-installed `playwright-cli` is needed. Load the `playwright-cli` skill and use that CLI directly. Do not use the browser subagent for test-suite execution, Bash scripting, Python scripts, environment setup, QA orchestration, or custom browser runners. If the system CLI or required tools are unavailable to it, report the blocker instead of building a substitute.
 - Run saved tests and exploratory sessions headlessly by default. Show a browser only when the owner explicitly asks: use `test --headed` or `check --headed` for saved tests, and the CLI's `--headed` flag for exploration. Only requested visible runs require display access; report missing access as a blocker for those runs.
