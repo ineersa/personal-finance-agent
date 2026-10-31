@@ -1,0 +1,55 @@
+# ADR 0020: Store statement files privately through Flysystem
+
+- Status: Accepted
+- Date: 2026-10-31
+
+## Context
+
+Statement bytes need persistent local storage outside the web root. The owner selected Flysystem with Symfony integration. Application access must verify the statement and source owner, without an administrator bypass.
+
+## Decision
+
+Use `league/flysystem-bundle` and its local adapter. Configure `statements.storage` with private file and directory visibility. Store bytes in `var/statements`, not `public/`, and metadata in the shared SQLite database. Use a random 128-bit hexadecimal key, independent of the original filename. Do not provide public storage URLs or symlinks.
+
+`StatementStorage` accepts a trusted user and source when writing, and a trusted user and statement when reading or deleting. It checks both ownership relationships, denies administrative users, and rejects stored keys outside the fixed hexadecimal format. Callers must resolve user and statement identifiers from trusted application context. Future workers must resolve records again, not accept a model-supplied key, path or URL.
+
+An authenticated download route resolves statements through the owner-scoped repository and voter before reading bytes. The statement list and detail page link to this route. Return an attachment with a sanitized basename, `application/octet-stream`, `nosniff`, and private non-storable caching. Ignore filename, path and URL query parameters. Missing files and invalid stored keys return 404, as do foreign or unknown statement identifiers. Administrative users receive 403 before record lookup.
+
+### Storage and container isolation
+
+The production Compose service retains `/app/var` in the project-owned `application_var` volume. This also preserves the adjacent SQLite metadata across container replacement. Future processing workers must mount the same volume, use the same storage configuration and run with compatible filesystem permissions. Do not expose this volume to a converter; converter staging remains task-specific work under ADR 0016.
+
+Development overrides the volume list with the checkout mount, keeping `var/statements` checkout-local. The test environment fixes storage at `var/browser/statements`. The live browser stack replaces the entire `var` directory with `var/browser-live`, so its files and database remain separate from development and intercepted tests. Cache clears do not remove statement storage.
+
+### Lifecycle contract for the upload workflow
+
+Task 07 owns upload validation, size limits, quota admission and metadata persistence. `store()` accepts only a server-side Symfony `File` after that admission and returns an unpersisted `Statement` with detected MIME type, byte count and SHA-256. The original filename is display metadata, not an authorization or duplicate-import key.
+
+Run storage operations outside database write transactions. A failed storage write attempts to remove its possible partial file and closes the input stream. If cleanup fails, propagate that failure rather than report success. After a successful write, the upload caller must commit metadata in a short transaction. If that commit fails, call `delete()` with the returned statement after rolling back. Coordinate quota reservation settlement in task 07; storage does not implement another quota counter.
+
+Do not delete bytes before the metadata transaction commits a separately authorized removal. If later file deletion fails, retain enough information for an explicit retry. No delete UI, automatic retention, entity callback or background recovery framework is introduced here. Process termination between filesystem and database steps can leave orphaned bytes; this bounded compensation is not an atomic filesystem/database transaction or crash-recovery guarantee.
+
+### Synthetic fixtures
+
+The native Alice `StatementFileProcessor` creates canonical synthetic CSV bytes for the statement definitions in `fixtures/statement.yaml`, in both development and tests. It fills the corresponding size, hash and storage key before persistence. Stable fixture-specific keys avoid accumulating files on repeated isolated fixture loads. One canonical filename contains hostile path and markup characters to exercise safe display and attachment headers. No personal bank file is committed.
+
+Existing metadata-only fixture rows are not converted into real uploads by a database migration. Their old keys have no bytes and download as unavailable. Do not purge development data to replace them.
+
+## Alternatives considered
+
+- Public files or direct storage URLs would bypass application ownership checks.
+- Original filenames as keys would mix untrusted display metadata with filesystem addressing.
+- A general storage or recovery framework is unnecessary for the selected local MVP.
+- Implementing uploads here would duplicate task 07. The owner explicitly kept storage and authorized download in task 06 and deferred upload and failed-write browser proof to task 07.
+
+## Consequences
+
+Downloads can be exercised through the browser before the upload workflow exists. Browser regressions cover canonical bytes, ownership denial, hostile filenames, path-like request inputs and private-root separation. These regressions do not establish upload admission, failed-write compensation, worker sharing or live-server file privacy. Verify those boundaries through their actual workflows rather than a test-only endpoint.
+
+The local adapter assumes the configured private root and its contents are controlled by the application, not an attacker with filesystem write access. Mounting storage into future workers and converters requires separate verification.
+
+## References
+
+- [Flysystem bundle configuration and injection](https://github.com/thephpleague/flysystem-bundle/blob/3.x/docs/1-getting-started.md).
+- [Symfony streamed responses](https://symfony.com/doc/current/components/http_foundation.html#streaming-a-response).
+- [Symfony file upload trust boundaries](https://symfony.com/doc/current/controller/upload_file.html).

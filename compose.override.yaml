@@ -10,7 +10,7 @@ services:
     environment:
       APP_ENV: dev
       APP_DEBUG: "1"
-    volumes:
+    volumes: !override
       - ./:/app
     ports: !reset []
     networks:

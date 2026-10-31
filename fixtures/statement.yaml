@@ -1,4 +1,4 @@
-# Metadata only. No uploaded files, parsing or downloadable statements are created.
+# StatementFileProcessor supplies canonical synthetic CSV bytes and their metadata.
 App\Entity\Statement:
     demo_statement:
         __construct:
@@ -15,7 +15,7 @@ App\Entity\Statement:
             - '@demo'
             - '@demo_card'
             - synthetic-demo-card-2026
-            - demo-card-2026.csv
+            - '../../../etc/passwd\hostile<script>.csv'
             - text/csv
             - 0
             - '0000000000000000000000000000000000000000000000000000000000000000'

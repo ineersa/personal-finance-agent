@@ -1,0 +1,16 @@
+flysystem:
+    storages:
+        statements.storage:
+            local:
+                directory: '%kernel.project_dir%/var/statements'
+            visibility: private
+            directory_visibility: private
+
+when@test:
+    flysystem:
+        storages:
+            statements.storage:
+                local:
+                    directory: '%kernel.project_dir%/var/browser/statements'
+                visibility: private
+                directory_visibility: private
