@@ -63,6 +63,7 @@ final class UserPasswordTest extends FinanceBrowserTest
         $page->getByLabel('Email', ['exact' => true])->fill('password-limits@example.test');
         $page->evaluate('() => document.querySelector("form[name=User]").noValidate = true');
         $this->save($page);
+        $page->getByText('This value should not be blank')->waitFor(['state' => 'visible', 'timeout' => 5000]);
         $this->assertPageContains('This value should not be blank');
         $page->getByLabel('New password', ['exact' => true])->fill(str_repeat('界', 11));
         $page->evaluate('() => document.querySelector("form[name=User]").noValidate = true');

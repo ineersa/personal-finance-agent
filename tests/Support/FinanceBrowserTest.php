@@ -11,6 +11,7 @@ use App\Entity\Transaction;
 use App\Entity\User;
 use App\Enum\Direction;
 use Doctrine\ORM\EntityManagerInterface;
+use Playwright\Assertions\Expect;
 use Playwright\Page\PageInterface;
 use Playwright\Symfony\Test\PlaywrightTestCase;
 use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
@@ -153,9 +154,9 @@ abstract class FinanceBrowserTest extends PlaywrightTestCase
 
     protected function save(PageInterface $page): void
     {
-        // submit() already awaits redirect navigation. Validation outcomes belong
-        // to the scenario, not a second global load event after an invalid POST.
         $this->submit(static fn () => $page->locator('button[name="ea[newForm][btn]"], button[name="ea[editForm][btn]"]')->first()->click());
+        // A fulfilled POST can return while the parser is still in the head.
+        Expect::locator($page->locator('body'))->toBeVisible();
     }
 
     /** @param callable(): void $action */
