@@ -36,7 +36,9 @@ final class RoutingTest extends TestCase
                     self::assertSame(200, $response->status());
                     self::assertSame('Make sense of your money.', $page->getByRole('heading', ['level' => 1])->textContent());
                     self::assertSame('rgb(17, 17, 18)', $page->evaluate('() => getComputedStyle(document.body).backgroundColor'));
-                    self::assertTrue($page->getByRole('button', ['name' => 'Send message', 'exact' => true])->isDisabled());
+                    self::assertTrue($page->getByRole('link', ['name' => 'Log in', 'exact' => true])->isVisible());
+                    self::assertSame(0, $page->locator('.app-sidebar, .composer-preview, textarea')->count());
+                    self::assertStringContainsString('demo@test.com', $page->locator('.demo-credentials')->textContent());
                     $page->evaluate('value => localStorage.setItem("routing-isolation", value)', (string) $index);
                 }
                 foreach ($urls as $index => $url) {

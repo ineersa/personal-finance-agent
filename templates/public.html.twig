@@ -1,0 +1,9 @@
+{% extends 'base.html.twig' %}
+{% block body_class %}finance-page{% endblock %}
+{% block body %}
+    <div class="finance-public">
+        <header class="public-header">{{ include('chrome/brand.html.twig') }}</header>
+        <main class="public-main">{% block public_content %}{% endblock %}</main>
+        {{ include('chrome/footer.html.twig') }}
+    </div>
+{% endblock %}

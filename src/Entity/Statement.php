@@ -46,6 +46,11 @@ class Statement extends UserRecord
         $this->transactions = new ArrayCollection();
     }
 
+    public function __toString(): string
+    {
+        return $this->originalFilename;
+    }
+
     public function getId(): ?int
     {
         return $this->id;

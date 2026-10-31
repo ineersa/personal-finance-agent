@@ -1,0 +1,49 @@
+App\Entity\Transaction:
+    demo_salary:
+        __construct: ['@demo', '@demo_statement', '@demo_current']
+        transactionDate: '<(new \DateTimeImmutable("2026-10-01"))>'
+        amount: '3200.00'
+        currency: USD
+        direction: '<(App\Enum\Direction::Credit)>'
+        description: Synthetic October salary
+        category: '@salary'
+        isDraft: false
+    demo_rent:
+        __construct: ['@demo', '@demo_statement', '@demo_current']
+        transactionDate: '<(new \DateTimeImmutable("2026-10-02"))>'
+        amount: '1100.00'
+        currency: USD
+        direction: '<(App\Enum\Direction::Debit)>'
+        description: Synthetic monthly rent
+        category: '@housing'
+        isDraft: false
+    demo_groceries:
+        __construct: ['@demo', '@demo_card_statement', '@demo_card']
+        transactionDate: '<(new \DateTimeImmutable("2026-10-03"))>'
+        amount: '67.45'
+        currency: EUR
+        direction: '<(App\Enum\Direction::Debit)>'
+        description: Synthetic grocery purchase
+        category: '@groceries'
+        isDraft: false
+    demo_subscription:
+        __construct: ['@demo', '@demo_card_statement', '@demo_card']
+        transactionDate: '<(new \DateTimeImmutable("2026-10-04"))>'
+        amount: '12.99'
+        currency: USD
+        direction: '<(App\Enum\Direction::Debit)>'
+        description: Synthetic music subscription
+        category: '@subscriptions'
+        isDraft: false
+    demo_draft:
+        __construct: ['@demo', '@demo_statement', '@demo_current']
+        description: Synthetic incomplete draft, excluded from approved records
+    admin_transaction:
+        __construct: ['@administrator', '@admin_statement', '@admin_current']
+        transactionDate: '<(new \DateTimeImmutable("2026-10-05"))>'
+        amount: '42.00'
+        currency: USD
+        direction: '<(App\Enum\Direction::Debit)>'
+        description: Admin private synthetic purchase
+        category: '@groceries'
+        isDraft: false
