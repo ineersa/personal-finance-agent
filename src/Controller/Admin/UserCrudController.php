@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace App\Controller\Admin;
 
 use App\Entity\User;
-use App\Finance\ReportingCurrencies;
 use EasyCorp\Bundle\EasyAdminBundle\Config\Action;
 use EasyCorp\Bundle\EasyAdminBundle\Config\Actions;
 use EasyCorp\Bundle\EasyAdminBundle\Config\Crud;
@@ -33,11 +32,16 @@ final class UserCrudController extends AbstractCrudController
         return $actions->add(Crud::PAGE_INDEX, Action::DETAIL)->disable(Action::BATCH_DELETE);
     }
 
+    public function configureCrud(Crud $crud): Crud
+    {
+        return $crud->setEntityPermission('ROLE_ADMIN')->setEntityLabelInPlural('Users')->setSearchFields(['email'])->setDefaultSort(['email' => 'ASC']);
+    }
+
     public function configureFields(string $pageName): iterable
     {
         yield EmailField::new('email');
         yield ChoiceField::new('roles')->setChoices(['User' => 'ROLE_USER', 'Administrator' => 'ROLE_ADMIN'])->allowMultipleChoices();
-        yield ChoiceField::new('reportingCurrency')->setChoices(ReportingCurrencies::choices());
+        yield ChoiceField::new('reportingCurrency');
         yield TextField::new('plainPassword', 'New password')->setFormType(PasswordType::class)->onlyOnForms()
             ->setRequired(Crud::PAGE_NEW === $pageName)
             ->setFormTypeOption('mapped', false)

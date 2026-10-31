@@ -1,10 +1,22 @@
-{% extends '@EasyAdmin/page/login.html.twig' %}
-
-{% block login_form_wrapper %}
-    {# Omit EasyAdmin's default hidden target so Symfony can honor a saved protected URL. #}
-    <form method="post" action="{{ path('app_login') }}">
-        <input type="hidden" name="_csrf_token" value="{{ csrf_token('authenticate') }}">
-        {{ block('login_form_credentials_wrapper') }}
-        <button type="submit" class="btn btn-primary btn-lg w-100">{{ _sign_in_label }}</button>
-    </form>
+{% extends 'application.html.twig' %}
+{% block title %}Log in · Personal finance{% endblock %}
+{% block workspace_title %}Log in{% endblock %}
+{% block workspace_status %}{% endblock %}
+{% block workspace %}
+    <section class="form-card">
+        <span class="eyebrow">Your workspace</span>
+        <h1>Personal finance login</h1>
+        <p>Sign in to manage your sources and approved transactions.</p>
+        {% if error %}
+            <p class="form-error" role="alert">{{ error.messageKey|trans(error.messageData, 'security') }}</p>
+        {% endif %}
+        <form class="finance-form" method="post" action="{{ path('app_login') }}">
+            <input type="hidden" name="_csrf_token" value="{{ csrf_token('authenticate') }}">
+            <label for="username">Email</label>
+            <input id="username" type="email" name="_username" value="{{ last_username }}" required autofocus autocomplete="username">
+            <label for="password">Password</label>
+            <input id="password" type="password" name="_password" required autocomplete="current-password">
+            <button class="primary-button" type="submit">Log in</button>
+        </form>
+    </section>
 {% endblock %}

@@ -38,6 +38,12 @@ function devCacheWarmup(): int
     return report('dev:cache:warmup', ['php', 'bin/console', 'cache:warmup', '--env=dev', '--no-interaction']);
 }
 
+#[AsTask(namespace: 'dev', name: 'fixtures:load', description: 'Append synthetic Alice fixtures to this checkout dev database. Never purges or overwrites existing accounts.')]
+function devFixturesLoad(): int
+{
+    return report('dev:fixtures:load', ['php', 'bin/console', 'hautelook:fixtures:load', '--env=dev', '--append', '--no-interaction']);
+}
+
 #[AsTask(namespace: 'test', name: 'database:prepare', description: 'Prepare only the fixed, owned SQLite browser-test database.')]
 function testDatabasePrepare(): int
 {

@@ -43,6 +43,7 @@ final class TransactionCrudController extends OwnedCrudController
 
     public function configureFields(string $pageName): iterable
     {
+        yield AssociationField::new('statement')->onlyOnDetail();
         yield DateField::new('transactionDate')->setRequired(true);
         // Never use MoneyField or NumberField: they coerce canonical decimal strings.
         yield TextField::new('amount')->setRequired(true);

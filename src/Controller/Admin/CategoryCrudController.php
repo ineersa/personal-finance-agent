@@ -36,13 +36,13 @@ final class CategoryCrudController extends AbstractCrudController
 
     public function configureCrud(Crud $crud): Crud
     {
-        return $crud->setEntityPermission('ROLE_ADMIN');
+        return $crud->setEntityPermission('ROLE_ADMIN')->setEntityLabelInPlural('Categories')->setSearchFields(['name', 'description'])->setDefaultSort(['name' => 'ASC'])->setPaginatorPageSize(50);
     }
 
     public function configureFields(string $pageName): iterable
     {
         yield TextField::new('name');
         yield TextareaField::new('description');
-        yield TextField::new('icon');
+        yield TextField::new('icon')->setHelp('Font Awesome classes, for example: fa fa-house.')->setTemplatePath('admin/field/category_icon.html.twig');
     }
 }

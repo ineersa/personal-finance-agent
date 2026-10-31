@@ -2,10 +2,6 @@
 # see https://symfony.com/doc/current/reference/configuration/framework.html
 framework:
     secret: '%env(APP_SECRET)%'
-    # No proxy is trusted by default. The local routing proxy preserves Host;
-    # forwarded client identity must not be accepted from arbitrary clients.
-    trusted_proxies: []
-    trusted_headers: []
 
     # Note that the session will be started ONLY if you read or write from it.
     session:

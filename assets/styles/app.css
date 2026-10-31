@@ -1,4 +1,4 @@
-/* Application-only styles. EasyAdmin and other base-template consumers stay untouched. */
+/* Shared application shell; EasyAdmin uses its native dark theme plus admin.css. */
 body.finance-page {
     margin: 0;
     background: #111112;
@@ -61,6 +61,19 @@ body.finance-page {
 .finance-app .workspace-footer { padding: 16px 24px; color: var(--muted); font-size: 11px; text-align: center; }
 .finance-app .workspace-footer span { margin: 0 6px; }
 .finance-app .visually-hidden { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; border: 0; }
+
+.finance-app .form-card { width: 100%; max-width: 560px; margin: 0 auto; padding: 32px; background: var(--surface); border: 1px solid var(--border); border-radius: 16px; }
+.finance-app .form-card h1 { margin: 8px 0 16px; font-size: 28px; font-weight: 500; letter-spacing: -0.03em; }
+.finance-app .form-card p { color: var(--muted); line-height: 1.7; }
+.finance-app .finance-form { display: grid; gap: 12px; margin-top: 24px; }
+.finance-app .finance-form label { display: block; margin-bottom: 6px; color: #ededee; }
+.finance-app .finance-form input:not([type=hidden]), .finance-app .finance-form select { display: block; width: 100%; padding: 12px; border: 1px solid #444449; border-radius: 8px; background: #111112; color: #ededee; font: inherit; color-scheme: dark; }
+.finance-app .finance-form input:focus, .finance-app .finance-form select:focus { outline: 2px solid #a2a2aa; outline-offset: 2px; }
+.finance-app .primary-button, .finance-app .secondary-button { padding: 10px 16px; border: 1px solid #444449; border-radius: 8px; font: inherit; cursor: pointer; }
+.finance-app .primary-button { margin-top: 12px; background: #ededee; color: #111112; }
+.finance-app .secondary-button { background: #222225; color: #ededee; }
+.finance-app .account-actions { display: grid; gap: 12px; margin-top: 32px; color: var(--muted); font-size: 12px; overflow-wrap: anywhere; }
+.finance-app .form-card .form-error, .finance-app .finance-form ul { color: #f4aaaa; }
 
 @media (max-width: 760px) {
     .finance-app { flex-direction: column; }

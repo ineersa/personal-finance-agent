@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Entity;
 
+use App\Enum\ReportingCurrency;
 use App\Repository\UserRepository;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Bridge\Doctrine\Validator\Constraints\UniqueEntity;
@@ -39,8 +40,8 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     #[ORM\Column]
     private string $password = '';
 
-    #[ORM\Column(length: 3, options: ['default' => 'USD'])]
-    private string $reportingCurrency = 'USD';
+    #[ORM\Column(length: 3, enumType: ReportingCurrency::class, options: ['default' => 'USD'])]
+    private ReportingCurrency $reportingCurrency = ReportingCurrency::USD;
 
     /**
      * Symfony's session-only password fingerprint, not the stored password hash.
@@ -66,12 +67,12 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
         return $this->email;
     }
 
-    public function getReportingCurrency(): string
+    public function getReportingCurrency(): ReportingCurrency
     {
         return $this->reportingCurrency;
     }
 
-    public function setReportingCurrency(string $currency): static
+    public function setReportingCurrency(ReportingCurrency $currency): static
     {
         $this->reportingCurrency = $currency;
 

@@ -8,6 +8,7 @@ use App\Entity\Source;
 use App\Entity\User;
 use App\Repository\SourceRepository;
 use Doctrine\ORM\QueryBuilder;
+use EasyCorp\Bundle\EasyAdminBundle\Config\Crud;
 use EasyCorp\Bundle\EasyAdminBundle\Field\TextareaField;
 use EasyCorp\Bundle\EasyAdminBundle\Field\TextField;
 
@@ -32,6 +33,11 @@ final class SourceCrudController extends OwnedCrudController
     {
         yield TextField::new('name');
         yield TextareaField::new('description');
+    }
+
+    public function configureCrud(Crud $crud): Crud
+    {
+        return parent::configureCrud($crud)->setEntityLabelInPlural('Sources')->setSearchFields(['name', 'description']);
     }
 
     protected function ownedQuery(User $user): QueryBuilder

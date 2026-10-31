@@ -20,6 +20,7 @@ services:
         resource: '../src/'
         exclude:
             - '../src/Entity/'
+            - '../src/DataFixtures/'
             - '../src/Doctrine/ExactDecimalType.php'
             - '../src/Doctrine/SqliteImmediateTransactionConnection.php'
             - '../src/Doctrine/SqliteImmediateTransactionDriver.php'
@@ -32,3 +33,12 @@ services:
 
     # add more service definitions when explicit configuration is needed
     # please note that last definitions always *replace* previous ones
+
+when@dev: &fixture_services
+    services:
+        App\DataFixtures\:
+            resource: '../src/DataFixtures/'
+            autowire: true
+            autoconfigure: true
+
+when@test: *fixture_services

@@ -17,11 +17,6 @@ final class SecurityController extends AbstractController
         return $this->render('security/login.html.twig', [
             'error' => $authentication->getLastAuthenticationError(),
             'last_username' => $authentication->getLastUsername(),
-            'page_title' => 'Personal finance login',
-            'username_label' => 'Email',
-            'password_label' => 'Password',
-            'sign_in_label' => 'Log in',
-            'csrf_token_intention' => 'authenticate',
         ]);
     }
 

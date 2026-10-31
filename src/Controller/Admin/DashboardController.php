@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Controller\Admin;
 
 use EasyCorp\Bundle\EasyAdminBundle\Attribute\AdminDashboard;
+use EasyCorp\Bundle\EasyAdminBundle\Config\Assets;
 use EasyCorp\Bundle\EasyAdminBundle\Config\Dashboard;
 use EasyCorp\Bundle\EasyAdminBundle\Config\MenuItem;
 use EasyCorp\Bundle\EasyAdminBundle\Config\UserMenu;
@@ -23,13 +24,18 @@ final class DashboardController extends AbstractDashboardController
 
     public function configureDashboard(): Dashboard
     {
-        return Dashboard::new()->setTitle('Personal finance')->setFaviconPath('favicon.svg');
+        return Dashboard::new()->setTitle('Personal finance')->setFaviconPath('favicon.svg')->setDefaultColorScheme('dark');
+    }
+
+    public function configureAssets(): Assets
+    {
+        return Assets::new()->addCssFile('styles/admin.css');
     }
 
     public function configureUserMenu(UserInterface $user): UserMenu
     {
         return parent::configureUserMenu($user)->disableLogoutLink()->setMenuItems([
-            MenuItem::linkToRoute('Settings and sign out', 'fa fa-gear', 'app_settings'),
+            MenuItem::linkToRoute('Settings', 'fa fa-gear', 'app_settings'),
         ]);
     }
 
@@ -39,8 +45,6 @@ final class DashboardController extends AbstractDashboardController
         yield MenuItem::linkTo(SourceCrudController::class, 'Sources', 'fa fa-wallet');
         yield MenuItem::linkTo(StatementCrudController::class, 'Statements (read-only)', 'fa fa-file');
         yield MenuItem::linkTo(TransactionCrudController::class, 'Approved transactions', 'fa fa-list');
-        yield MenuItem::linkToRoute('Upload (not implemented)', 'fa fa-upload', 'app_planned', ['page' => 'upload']);
-        yield MenuItem::linkToRoute('Review (not implemented)', 'fa fa-check', 'app_planned', ['page' => 'review']);
         yield MenuItem::linkToRoute('Settings', 'fa fa-gear', 'app_settings');
         yield MenuItem::section('Administration')->setPermission('ROLE_ADMIN');
         yield MenuItem::linkTo(CategoryCrudController::class, 'Categories', 'fa fa-tags')->setPermission('ROLE_ADMIN');

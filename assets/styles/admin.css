@@ -1,0 +1,17 @@
+/* Keep EasyAdmin's native components and dark theme in the workspace palette. */
+body.ea-dark-scheme {
+    --body-bg: #111112;
+    --sidebar-bg: #0c0c0d;
+    --sidebar-border-color: #2c2c30;
+    --content-bg: #19191b;
+    --text-color: #ededee;
+    --text-muted: #a2a2aa;
+    --form-control-bg: #111112;
+    --form-control-border-color: #444449;
+    --sidebar-menu-active-item-bg: #222225;
+    --sidebar-menu-active-item-color: #ededee;
+    --sidebar-item-hover-bg: #222225;
+}
+body.ea { font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+.finance-signout { margin-left: 12px; }
+.category-icon { display: inline-flex; gap: 8px; align-items: center; }

@@ -10,8 +10,10 @@ use App\Repository\StatementRepository;
 use Doctrine\ORM\QueryBuilder;
 use EasyCorp\Bundle\EasyAdminBundle\Config\Action;
 use EasyCorp\Bundle\EasyAdminBundle\Config\Actions;
+use EasyCorp\Bundle\EasyAdminBundle\Field\AssociationField;
 use EasyCorp\Bundle\EasyAdminBundle\Field\DateField;
 use EasyCorp\Bundle\EasyAdminBundle\Field\DateTimeField;
+use EasyCorp\Bundle\EasyAdminBundle\Field\IntegerField;
 use EasyCorp\Bundle\EasyAdminBundle\Field\TextField;
 
 /** @extends OwnedCrudController<Statement> */
@@ -34,6 +36,9 @@ final class StatementCrudController extends OwnedCrudController
     public function configureFields(string $pageName): iterable
     {
         yield TextField::new('originalFilename');
+        yield AssociationField::new('source');
+        yield TextField::new('mediaType')->onlyOnDetail();
+        yield IntegerField::new('byteSize')->onlyOnDetail();
         yield DateField::new('statementDate');
         yield DateTimeField::new('uploadedAt');
         yield DateTimeField::new('processedAt');

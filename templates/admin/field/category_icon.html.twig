@@ -1,0 +1,5 @@
+{% if field.value %}
+    <span class="category-icon"><i class="{{ field.value }}" aria-hidden="true"></i><span>{{ field.value }}</span></span>
+{% else %}
+    <span class="text-muted">No icon</span>
+{% endif %}

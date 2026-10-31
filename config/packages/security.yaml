@@ -23,4 +23,4 @@ security:
                 enable_csrf: true
     access_control:
         - { path: ^/login$, roles: PUBLIC_ACCESS }
-        - { path: ^/(admin|settings|planned)(/|$), roles: ROLE_USER }
+        - { path: ^/(admin|settings)(/|$), roles: ROLE_USER }

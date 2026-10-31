@@ -4,7 +4,7 @@
 
 [ADR 0010](docs/adr/0010-playwright-only-testing.md) selects Playwright as the only application behavior-testing approach. Do not add unit, kernel-only, service-only, or API-only suites. A PHP runner such as PHPUnit is only a harness for the real-browser suite, not a separate testing layer.
 
-Saved PHP Playwright scenarios cover the homepage, its explicit profiler request, and authentication and finance CRUD in `tests/E2E/`. `FinanceAccessTest` creates synthetic users and finance records inside DAMA's test transaction. It covers real form login/logout, rejected credentials, throttling, roles, owner isolation, source management, approved corrections, association forgery, reporting preferences, and rollback. Browser execution must be recorded separately; installing the harness or passing static checks is not proof of browser behavior. Workers, broker, and Mercure workflows do not exist yet.
+Saved PHP Playwright scenarios in `tests/E2E/` are organized by feature: authentication, ownership, source CRUD, transaction corrections, catalog/user CRUD, password forms, settings, and the homepage/profiler. `DemoWorkspaceTest` loads the same Alice dataset as development in append mode inside DAMA's transaction and exercises the known identities, dark presentation, navigation and financial isolation. Focused hostile-input scenarios arrange additional synthetic records through `tests/Support/FinanceBrowserTest.php`. Browser execution must be recorded separately; installing the harness or passing static checks is not proof of browser behavior. Workers, broker, and Mercure workflows do not exist yet.
 
 ## Prepare the tooling runtime
 
@@ -32,7 +32,7 @@ Castor sets the literal `PLAYWRIGHT_HEADLESS=true` for default tests and `false`
 
 The default suite uses intercepted Symfony requests, not a network application server. Test SQLite storage is `var/browser/application.db`, separate from development `var/app.db`; shared test files use `var/browser/share`. The test Doctrine configuration fixes the SQLite URL explicitly rather than resolving ambient `DATABASE_URL` overrides. SQLite does not support Doctrine's database-name suffix isolation. `test` invokes `test:database:prepare`, which creates the parent directory, rejects symlinked storage, and runs `doctrine:migrations:migrate --env=test --no-interaction --allow-no-migration` in the application runtime. SQLite creates a missing database file when Doctrine connects; pending application migrations establish or update its schema. The pinned DBAL 4 SQLite platform does not support `doctrine:database:create`. Preparation does not drop databases or reset data.
 
-DAMA is a development dependency, registered only in the test environment with its PHPUnit extension. The extension begins and rolls back a transaction for each same-process browser scenario. DBAL 4 requires no additional savepoint setting. `FinanceAccessTest` creates synthetic records against the [domain schema](docs/domain-persistence.md) and observes CRUD persistence, owner isolation and rollback through browser pages. The homepage scenarios verify browser/runtime setup only. Do not add a test application command, endpoint, or invented schema merely to test the test bundle. Do not use development data as fixtures.
+DAMA is a development dependency, registered only in the test environment with its PHPUnit extension. The extension begins and rolls back a transaction for each same-process browser scenario. DBAL 4 requires no additional savepoint setting. Feature scenarios create synthetic records against the [domain schema](docs/domain-persistence.md) and observe CRUD persistence, owner isolation and rollback through browser pages. Shared Alice definitions live in `fixtures/finance.yaml`; no test fixture loader purges existing data. The homepage scenarios verify browser/runtime setup only. Do not add a test application command, endpoint, or invented schema merely to test the test bundle. Do not use development data as fixtures.
 
 ### Isolated live stack
 
@@ -47,15 +47,14 @@ Use this path for exploratory checks and future direct-network PHP browser scena
 
 Castor layers `compose.browser.yaml` over the base and development files. The resulting stack uses its own checkout-scoped Compose project and `http://<checkout-id>.browser.finance.localhost` route through the shared loopback-only proxy. It publishes no host ports. Source is read-only; `var/browser-live` is mounted as the entire writable `/app/var`. Its SQLite URL points to `/app/var/browser/application.db`. Development keeps separate storage and a different hostname. Never reuse development worker, queue, or upload storage when adding background services. Stop only this stack; do not remove volumes or reset data as part of normal validation.
 
-For an isolated authentication or source-management exploration, prepare only the running browser stack's database and synthetic accounts:
+For isolated exploration, prepare only the running browser stack's database and append the synthetic Alice dataset once:
 
 ```sh
 	vendor/bin/castor browser:stack:console -- doctrine:migrations:migrate --no-interaction
-	vendor/bin/castor browser:stack:console -- app:demo:user explorer-admin@example.test --admin
-	vendor/bin/castor browser:stack:console -- app:demo:user explorer-user@example.test
+	vendor/bin/castor browser:stack:console -- hautelook:fixtures:load --append --no-interaction
 ```
 
-`browser:stack:console` runs native Symfony console arguments in this checkout's running browser Compose service as the host UID/GID. It uses the stack's test environment and dedicated `var/browser-live/browser/application.db`, not development data or the intercepted suite's database. Save each generated password privately before another invocation replaces the `var/qa/browser-stack-console/` report. Repeating creation never changes an existing account. No financial metadata or uploaded files are seeded by this command. Create test-owned sources through the UI; explore approved transactions through the saved fixture-backed scenarios until an actual upload/review workflow exists. Close the CLI browser session and stop the owned stack afterward.
+`browser:stack:console` uses the running browser stack's test environment and dedicated `var/browser-live/browser/application.db`, not development data or the intercepted suite's database. Use **admin@test.com / admin** or **demo@test.com / demo**. Append loading preserves existing records and fails on duplicate fixture identities; do not purge data to repeat it. The fixtures include synthetic financial metadata but no uploaded files. Close the CLI browser session and stop the owned stack afterward. For the actual development stack, use `vendor/bin/castor dev:fixtures:load` instead.
 
 For a saved direct-network regression, start two owned stacks, then pass their printed URLs as one positional comma-separated argument:
 

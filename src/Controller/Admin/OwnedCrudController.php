@@ -28,7 +28,7 @@ abstract class OwnedCrudController extends AbstractCrudController
 
     public function configureCrud(Crud $crud): Crud
     {
-        return $crud->setEntityPermission(FinanceRecordVoter::ACCESS);
+        return $crud->setEntityPermission(FinanceRecordVoter::ACCESS)->setDefaultSort(['id' => 'DESC'])->setPaginatorPageSize(50);
     }
 
     public function configureActions(Actions $actions): Actions

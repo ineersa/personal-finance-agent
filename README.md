@@ -35,19 +35,20 @@ Inspect or stop only the current checkout:
 
 Stopping a checkout unregisters its route but preserves its containers, data, other checkouts, and the shared proxy. Stop each owned stack before removing its worktree. `vendor/bin/castor dev:proxy:stop` stops the proxy only when no routes remain registered. It removes no volumes. The locked route registry lives in `finance-development/` inside the repository's common Git directory, shared across its worktrees. See [ADR 0019](docs/adr/0019-worktree-development-routing.md) for boundaries and limitations.
 
-## Create synthetic development accounts
+## Load synthetic development data
 
-Start the development stack first so it creates a private application secret. Apply migrations without resetting existing data, then create reserved-domain synthetic accounts:
+Start the development stack first so it creates a private application secret. Apply migrations, then append the Alice fixtures to this checkout's development database:
 
 ```sh
 	vendor/bin/castor app:console -- doctrine:migrations:migrate --no-interaction
-	vendor/bin/castor app:console -- app:demo:user admin@example.test --admin
-	vendor/bin/castor app:console -- app:demo:user alice@example.test
+	vendor/bin/castor dev:fixtures:load
 ```
 
-Each creation prints a random password once. Keep it private. Castor captures command output in ignored `var/qa/app-console/`; that report can contain the password until the next invocation replaces it. The command accepts only `@example.test` addresses in `dev` or `test`. Repeating an address changes nothing, including its password and roles. No default administrator password is committed. The command does not create financial records or reset any data.
+Load once into a database without the fixture identities. This task always uses native Hautelook Alice append mode. It does not purge existing records or overwrite existing accounts; repeated loads fail on unique email/storage-key constraints. Do not remove owner data to make a repeated load succeed.
 
-Open `/login` on the printed development URL. Use `/admin` for finance management and `/settings` for the signed-in user's reporting preference. Settings and sign out are also available from the EasyAdmin user menu. Public signup and password recovery are not implemented.
+The dev/test-only fixtures provide **admin@test.com / admin** and **demo@test.com / demo**. Alice's password processor uses the configured Symfony password hasher. These intentionally public demo credentials are not production provisioning. The dataset includes shared categories with icons, separate owner sources, synthetic statement metadata, approved income/spending transactions, and an incomplete draft excluded from approved screens. It contains no uploaded files or real financial data.
+
+Open `/login` on the printed development URL. Use `/admin` for finance management and `/settings` for the signed-in user's reporting preference. Both workspaces offer a CSRF-protected **Log out** button. Public signup and password recovery are not implemented.
 
 Login uses Symfony's default throttling: five failed attempts per minute per username and client IP, with its broader IP limit. Forwarded client-IP headers are not trusted by default. Configure a verified deployment proxy explicitly before enabling those headers; the local proxy otherwise shares one observed client identity.
 
@@ -72,7 +73,7 @@ Open <http://127.0.0.1:8081/>. Check that the same design-preview page renders w
 
 `.env.prod.local` is required runtime input, not an image build input. Do not commit it, print its contents, or use a real secret in the public `.env`. Private environment files, Composer credentials, development tooling directories, host dependencies, and generated host assets are excluded from the build context.
 
-The project-scoped `app_data` volume provides writable persistent `/app/var/data`; production's SQLite URL points there. Cache and asset metadata stay outside that volume so it does not hide image-built files. The application includes Doctrine migrations for users and financial records; image startup does not apply them or create accounts. Synthetic account creation is restricted to development and test environments. This is a local production-image proof, not the later HTTPS/server-deployment setup.
+The project-scoped `app_data` volume provides writable persistent `/app/var/data`; production's SQLite URL points there. Cache and asset metadata stay outside that volume so it does not hide image-built files. The application includes Doctrine migrations for users and financial records; image startup does not apply them or create accounts. Alice fixtures are available only in development and test environments. This is a local production-image proof, not the later HTTPS/server-deployment setup.
 
 Use the same project/port variables for production diagnostics and shutdown:
 
@@ -114,7 +115,7 @@ Use bounded Mate tasks after warming the relevant cache or recording local reque
 
 `mate:call` exposes all 11 installed selected official tools through their upstream JSON parameter schemas. Service results are limited to 10 per context, profile listings to 5, log searches/tail to 20, and dotenv listings to 200. `mate:collector TOKEN COLLECTOR` reads one targeted official profiler collector. Dev and test artifacts are separate named contexts; the saved profiler scenario enables collection for its own request without changing the collection policy. See [Mate instructions](mate/AGENT_INSTRUCTIONS.md) for filters and prerequisites. Missing artifacts fail rather than masquerading as empty results. Do not dump full profiler records into agent context. Mate-generated skills are disabled. `mate:discover` refreshes official extensions while preserving the curated Castor instructions and not retaining a newly generated editor-specific instruction file.
 
-The `test` task applies migrations to the fixed, separate SQLite test database without resetting existing data, then runs the saved browser scenarios headlessly by default. Use `vendor/bin/castor test --headed` only when the owner requests a visible browser. DAMA is registered only for test and its PHPUnit extension supplies per-test rollback for intercepted same-process scenarios. `FinanceAccessTest` creates synthetic entity fixtures and checks authentication, CRUD, ownership and rollback through browser pages. See [Testing](TESTING.md) for storage and real-stack limits.
+The `test` task applies migrations to the fixed, separate SQLite test database without resetting existing data, then runs the saved browser scenarios headlessly by default. Use `vendor/bin/castor test --headed` only when the owner requests a visible browser. DAMA is registered only for test and its PHPUnit extension supplies per-test rollback for intercepted same-process scenarios. Feature-named scenarios check authentication, CRUD, ownership and rollback through browser pages; `DemoWorkspaceTest` uses the shared Alice dataset. See [Testing](TESTING.md) for storage and real-stack limits.
 
 Monolog uses the web template's configuration unchanged: development writes to `var/log/dev.log`; test logs are buffered until an error; production uses an error-triggered buffer with JSON output on stderr. There is no custom logging lifecycle subscriber, correlation generator, sanitizer, or log rotation. Standard logging does not remove personal data: callers must keep financial content, model exchanges, credentials, and sensitive exception details out of logs. See [ADR 0007](docs/adr/0007-structured-monolog-logging.md).
 
@@ -131,7 +132,7 @@ Example questions:
 - "Show me my income growth over the past year."
 - "Show me my internet bills over the past year."
 
-The intended demo will be locally installable and include a demo user and synthetic financial history so judges can explore it without uploading personal statements. AI work and uploads will have configurable rate limits, quotas, and shared AI-budget controls.
+The development fixtures already provide known demo identities and synthetic financial records for manual CRUD checks without personal statements. The completed demo will add the remaining workflows below. AI work and uploads will have configurable rate limits, quotas, and shared AI-budget controls.
 
 PDF/XLSX conversion will run locally through official MarkItDown MCP in Docker; CSV will be parsed in PHP. Scanned-PDF/OCR support remains unresolved.
 
