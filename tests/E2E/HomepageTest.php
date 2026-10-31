@@ -37,7 +37,7 @@ final class HomepageTest extends FinanceBrowserTest
         $this->login('alice');
         foreach ([1280, 390] as $width) {
             $this->getPage()->setViewportSize($width, 900);
-            foreach (['/', '/settings', '/home/source', '/home/source/new'] as $path) {
+            foreach (['/home/chat', '/home/settings', '/home/source', '/home/source/new'] as $path) {
                 $page = $this->visit($path);
                 $brand = $page->locator('.app-brand:visible');
                 self::assertSame(1, $brand->count(), $path);
@@ -47,25 +47,45 @@ final class HomepageTest extends FinanceBrowserTest
                 self::assertStringContainsString('Built with Symfony', $page->locator('.workspace-footer')->textContent());
                 $geometry = $page->evaluate(<<<'JS'
                     () => {
-                        const sidebar = document.querySelector('.app-sidebar, .ea-sidebar');
-                        const header = document.querySelector('.workspace-header, .content-top');
-                        const nav = document.querySelector('.app-nav, .ea-sidebar-content');
+                        const sidebar = document.querySelector('.ea-sidebar');
+                        const header = document.querySelector('.content-top');
+                        const nav = document.querySelector('.ea-sidebar-content');
+                        const destination = link => {
+                            const url = new URL(link.href);
+                            // Native EasyAdmin links forward named application routes through the dashboard.
+                            if (url.pathname === '/home') {
+                                if (url.searchParams.get('routeName') === 'admin_chat') return '/home/chat';
+                                if (url.searchParams.get('routeName') === 'admin_settings') return '/home/settings';
+                            }
+                            return url.pathname;
+                        };
                         return {sidebarWidth: sidebar.getBoundingClientRect().width,
+                            availableWidth: document.body.getBoundingClientRect().width,
                             headerPadding: getComputedStyle(header).paddingLeft,
                             navColumns: getComputedStyle(nav).gridTemplateColumns.split(' ').length,
-                            links: Array.from(nav.querySelectorAll('a')).map(link => new URL(link.href).pathname)};
+                            links: Array.from(nav.querySelectorAll('a')).map(destination),
+                            current: Array.from(nav.querySelectorAll('a[aria-current=page]')).map(destination)};
                     }
                     JS);
-                self::assertEquals($width > 991 ? 252 : $width, $geometry['sidebarWidth'], $path);
+                // Native EasyAdmin reserves a stable scrollbar gutter outside the available document width.
+                self::assertEquals($width > 991 ? 252 : $geometry['availableWidth'], $geometry['sidebarWidth'], $path);
                 self::assertSame($width > 991 ? '36px' : '20px', $geometry['headerPadding'], $path);
                 if ($width < 992) {
                     self::assertSame(3, $geometry['navColumns'], $path);
                 }
-                self::assertSame(['/', '/home/source', '/home/statement', '/home/transaction', '/settings'], $geometry['links'], $path);
+                self::assertSame(['/home/chat', '/home/source', '/home/statement', '/home/transaction', '/home/settings'], $geometry['links'], $path);
+                self::assertSame([str_starts_with($path, '/home/source') ? '/home/source' : $path], $geometry['current'], $path);
                 self::assertTrue($page->evaluate('() => document.documentElement.scrollWidth <= window.innerWidth'), $path);
             }
+            $page->locator('.ea-sidebar-content')->getByRole('link', ['name' => 'Chat', 'exact' => true])->click();
+            $page->getByRole('heading', ['name' => 'Make sense of your money.', 'exact' => true])->waitFor();
+            self::assertSame('page', $page->getByRole('link', ['name' => 'Chat', 'exact' => true])->getAttribute('aria-current'));
+            $page = $this->visit('/home/source');
+            $page->locator('.ea-sidebar-content')->getByRole('link', ['name' => 'Settings', 'exact' => true])->click();
+            $page->getByLabel('Reporting currency')->waitFor();
+            self::assertSame('page', $page->getByRole('link', ['name' => 'Settings', 'exact' => true])->getAttribute('aria-current'));
         }
-        $page = $this->visit('/');
+        $page = $this->visit('/home/chat');
         self::assertTrue($page->getByRole('button', ['name' => 'Send message', 'exact' => true])->isDisabled());
         self::assertTrue($page->getByRole('textbox', ['name' => 'Your financial question'])->isDisabled());
     }

@@ -20,9 +20,11 @@ final class DashboardController extends AbstractDashboardController
 {
     public function index(): Response
     {
-        $controller = $this->isGranted('ROLE_ADMIN') ? UserCrudController::class : SourceCrudController::class;
+        if (!$this->isGranted('ROLE_ADMIN')) {
+            return $this->redirectToRoute('admin_chat');
+        }
 
-        return $this->redirect($this->container->get(AdminUrlGenerator::class)->unsetAll()->setController($controller)->generateUrl());
+        return $this->redirect($this->container->get(AdminUrlGenerator::class)->unsetAll()->setController(UserCrudController::class)->generateUrl());
     }
 
     public function configureDashboard(): Dashboard
@@ -40,7 +42,7 @@ final class DashboardController extends AbstractDashboardController
     public function configureUserMenu(UserInterface $user): UserMenu
     {
         return parent::configureUserMenu($user)->disableLogoutLink()->setMenuItems($this->isGranted('ROLE_ADMIN') ? [] : [
-            MenuItem::linkToRoute('Settings', null, 'app_settings'),
+            MenuItem::linkToRoute('Settings', null, 'admin_settings'),
         ]);
     }
 
@@ -54,11 +56,11 @@ final class DashboardController extends AbstractDashboardController
             return;
         }
 
-        yield MenuItem::linkToRoute('Chat', null, 'app_home');
+        yield MenuItem::linkToRoute('Chat', null, 'admin_chat');
         yield MenuItem::section('Your finances');
         yield MenuItem::linkTo(SourceCrudController::class, 'Sources');
         yield MenuItem::linkTo(StatementCrudController::class, 'Statements');
         yield MenuItem::linkTo(TransactionCrudController::class, 'Transactions');
-        yield MenuItem::linkToRoute('Settings', null, 'app_settings');
+        yield MenuItem::linkToRoute('Settings', null, 'admin_settings');
     }
 }

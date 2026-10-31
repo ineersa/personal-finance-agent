@@ -8,18 +8,18 @@ use App\Entity\User;
 use App\Enum\ReportingCurrency;
 use App\Security\FinanceRecordVoter;
 use Doctrine\ORM\EntityManagerInterface;
+use EasyCorp\Bundle\EasyAdminBundle\Attribute\AdminRoute;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\Form\Extension\Core\Type\EnumType;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
-use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\Security\Http\Attribute\CurrentUser;
 use Symfony\Component\Security\Http\Attribute\IsGranted;
 
 #[IsGranted(FinanceRecordVoter::ACCESS)]
 final class SettingsController extends AbstractController
 {
-    #[Route('/settings', name: 'app_settings', methods: ['GET', 'POST'])]
+    #[AdminRoute('/settings', name: 'settings', options: ['methods' => ['GET', 'POST']])]
     public function __invoke(Request $request, #[CurrentUser] User $user, EntityManagerInterface $entityManager): Response
     {
         $form = $this->createFormBuilder($user)
@@ -30,7 +30,7 @@ final class SettingsController extends AbstractController
             $entityManager->flush();
             $this->addFlash('success', 'Reporting currency saved. Original amounts are unchanged.');
 
-            return $this->redirectToRoute('app_settings');
+            return $this->redirectToRoute('admin_settings');
         }
 
         return $this->render('settings/index.html.twig', ['form' => $form]);

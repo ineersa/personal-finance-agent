@@ -24,5 +24,4 @@ security:
                 enable_csrf: true
     access_control:
         - { path: ^/login$, roles: PUBLIC_ACCESS }
-        - { path: ^/settings(/|$), roles: IS_AUTHENTICATED_FULLY }
         - { path: ^/home(/|$), roles: IS_AUTHENTICATED_FULLY }

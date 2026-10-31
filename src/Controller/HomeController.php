@@ -19,6 +19,10 @@ final class HomeController extends AbstractController
             return $this->redirect($adminUrl->unsetAll()->setController(UserCrudController::class)->generateUrl());
         }
 
-        return $this->render($this->getUser() ? 'home/index.html.twig' : 'home/landing.html.twig');
+        if (null !== $this->getUser()) {
+            return $this->redirectToRoute('admin_chat');
+        }
+
+        return $this->render('home/landing.html.twig');
     }
 }

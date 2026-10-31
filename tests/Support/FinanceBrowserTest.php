@@ -145,7 +145,7 @@ abstract class FinanceBrowserTest extends PlaywrightTestCase
         if ('admin' === $name) {
             $page->waitForURL('**/home/user');
         } else {
-            $page->locator('.finance-app .chat-empty')->waitFor();
+            $page->locator('.finance-chat .chat-empty')->waitFor();
         }
     }
 

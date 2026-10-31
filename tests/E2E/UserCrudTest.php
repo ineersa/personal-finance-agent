@@ -25,7 +25,7 @@ final class UserCrudTest extends FinanceBrowserTest
         // An empty new-password field must preserve the existing hash.
         $this->save($page);
         $this->login('renamed');
-        $this->visit('/settings');
+        $this->visit('/home/settings');
         $this->assertPageContains('Settings');
         $this->login('admin');
         $page->goto($userDetailUrl);

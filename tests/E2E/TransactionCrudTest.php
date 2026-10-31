@@ -22,12 +22,12 @@ final class TransactionCrudTest extends FinanceBrowserTest
         $page->getByLabel('Amount', ['exact' => true])->fill('1e20');
         $this->save($page);
         $this->assertPageContains('This value is not valid');
-        $page = $this->visit('/settings');
+        $page = $this->visit('/home/settings');
         self::assertSame('USD', $page->getByLabel('Reporting currency')->inputValue());
         $page->getByLabel('Reporting currency')->selectOption('EUR');
         $this->submit(static fn () => $page->getByRole('button', ['name' => 'Save preferences'])->click());
         $this->assertPageContains('Reporting currency saved');
-        $page = $this->visit('/settings');
+        $page = $this->visit('/home/settings');
         self::assertSame('EUR', $page->getByLabel('Reporting currency')->inputValue());
         $page = $this->visit('/home/transaction/'.$this->aliceTransaction.'/edit');
         self::assertSame('-000123456789012.123456789012345678', $page->getByLabel('Amount', ['exact' => true])->inputValue());

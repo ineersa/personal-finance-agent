@@ -15,34 +15,36 @@ final class AuthenticationTest extends FinanceBrowserTest
         $this->submitLogin($page, 'alice@example.test', 'incorrect-password');
         $this->assertPageContains('Invalid credentials');
         $this->submitLogin($page, 'alice@example.test', self::PASSWORD);
-        $page->locator('.finance-app .chat-empty')->waitFor();
+        $page->locator('.finance-chat .chat-empty')->waitFor();
         $page = $this->visit('/home/source');
         $this->assertPageContains('Alice account');
         self::assertStringNotContainsString('Bob secret account', $page->locator('body')->textContent());
-        $page = $this->visit('/settings');
+        $page = $this->visit('/home/settings');
+        $page->locator('.user-menu-wrapper:visible .user-details')->click();
         $this->submit(static fn () => $page->getByRole('button', ['name' => 'Log out', 'exact' => true])->click());
         $page->waitForURL('**/login');
-        $this->visit('/settings');
+        $this->visit('/home/settings');
         $this->assertPageContains('Personal finance login');
     }
 
     public function testLoginAlwaysUsesRoleEntryInsteadOfSavedSettingsTarget(): void
     {
-        $page = $this->visit('/settings');
+        $page = $this->visit('/home/settings');
         $this->submitLogin($page, 'alice@example.test', self::PASSWORD);
-        $page->locator('.finance-app .chat-empty')->waitFor();
-        self::assertSame('/', $page->evaluate('() => location.pathname'));
+        $page->locator('.finance-chat .chat-empty')->waitFor();
+        self::assertSame('/home/chat', $page->evaluate('() => location.pathname'));
+        $page->locator('.user-menu-wrapper:visible .user-details')->click();
         $this->submit(static fn () => $page->getByRole('button', ['name' => 'Log out', 'exact' => true])->click());
-        $page = $this->visit('/settings');
-        $page->evaluate('() => { const input = document.createElement("input"); input.type = "hidden"; input.name = "_target_path"; input.value = "/settings"; document.querySelector("form").append(input); }');
+        $page = $this->visit('/home/settings');
+        $page->evaluate('() => { const input = document.createElement("input"); input.type = "hidden"; input.name = "_target_path"; input.value = "/home/settings"; document.querySelector("form").append(input); }');
         $this->submitLogin($page, 'admin@example.test', self::PASSWORD);
         $page->waitForURL('**/home/user');
-        self::assertSame(0, $page->locator('.ea-sidebar-item-link[href$="/settings"], .composer-preview')->count());
+        self::assertSame(0, $page->locator('.ea-sidebar-item-link[href$="/home/settings"], .composer-preview')->count());
         foreach (['/', '/home'] as $entry) {
             $page = $this->visit($entry);
             $page->waitForURL('**/home/user');
         }
-        foreach (['/admin', '/admin/source', '/admin/user'] as $removed) {
+        foreach (['/admin', '/admin/source', '/admin/user', '/settings'] as $removed) {
             $this->visit($removed);
             self::assertSame(404, $this->getLastResponse()->getStatusCode());
         }

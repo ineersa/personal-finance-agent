@@ -1,5 +1,20 @@
 {% extends '@!EasyAdmin/layout.html.twig' %}
 
+{% block body_attr %}{{ parent() }} data-bs-theme="dark" style="color-scheme: dark"{% endblock %}
+{% block javascript_page_color_scheme %}
+    {# Keep the native dark classes without reading saved preferences or registering OS-theme listeners. #}
+    {% guard function csp_nonce %}
+        <script nonce="{{ csp_nonce('script') }}">document.body.classList.add('ea-dark-scheme');</script>
+    {% else %}
+        <script>document.body.classList.add('ea-dark-scheme');</script>
+    {% endguard %}
+{% endblock %}
+{% block wrapper %}
+    {# The native layout shares this captured fragment between both responsive headers. #}
+    {% set settings_dropdown = '' %}
+    {{ parent() }}
+{% endblock %}
+
 {% block header_logo %}{{ include('chrome/brand.html.twig') }}{% endblock %}
 {% block responsive_header_logo %}{{ include('chrome/brand.html.twig') }}{% endblock %}
 {% block sidebar_footer %}{{ include('chrome/note.html.twig') }}{% endblock %}

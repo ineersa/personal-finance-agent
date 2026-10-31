@@ -1,10 +1,12 @@
-{% extends 'application.html.twig' %}
+{% extends '@EasyAdmin/page/content.html.twig' %}
 
-{% block workspace %}
+{% block content_title %}Chat{% endblock %}
+{% block main %}
+    <div class="finance-chat">
     <section class="chat-empty" aria-labelledby="welcome-heading">
         <span class="intro-mark" aria-hidden="true">pf</span>
         <p class="eyebrow">Your finances, in perspective</p>
-        <h1 id="welcome-heading">Make sense of your money.</h1>
+        <h2 id="welcome-heading">Make sense of your money.</h2>
         <p class="intro-copy">A place to ask questions, spot patterns, and understand your everyday finances.</p>
 
         <div class="composer-preview" aria-describedby="preview-note">
@@ -26,4 +28,5 @@
             </ul>
         </div>
     </section>
+    </div>
 {% endblock %}

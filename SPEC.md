@@ -39,6 +39,8 @@ Provide a model-written read-only SQL analysis tool over limited, owner-scoped f
 
 ## Main interface
 
+Use the dark theme throughout the application and management screens. Do not offer a light or system-theme selector; saved appearance preferences and operating-system settings must not change the theme.
+
 Use a single chat containing text, tables, and inline chart images. There is no separate artifact workspace, gallery, editor, or generic artifact-management subsystem.
 
 Use a Docker-hosted AntV `mcp-server-chart` service with its documented free default hosted renderer. Aggregated chart labels and values leave the installation even when the chat model runs locally. [ADR 0014](docs/adr/0014-inline-chat-and-antv-charts.md) records this accepted trade-off and its boundaries.
@@ -83,7 +85,7 @@ For late implementation, use the simple context handoff in [ADR 0013](docs/adr/0
 
 - Ordinary users manage their own financial data, statement uploads, reviews, conversations, and reporting preferences. They must not access another user's personal data or user/category administration.
 - Administrators manage user accounts and the shared category catalog, not personal finances, chat, or reporting preferences. They must not enter those user workflows even for administrator-owned records or when an account also carries `ROLE_USER`. Authorized demo-reset operations remain planned; reset scope and safeguards are not yet defined.
-- Anonymous `/` is a public landing with a Log in call to action. In dev/test it displays only the ordinary demo credentials, not administrative credentials. Login always enters the appropriate role workspace instead of restoring a previously saved target. Native management routes use `/home`; ordinary users enter the chat workspace at `/`, while administrators enter `/home/user`.
+- Anonymous `/` is a public landing with a Log in call to action. In dev/test it displays only the ordinary demo credentials, not administrative credentials. Login always enters the appropriate role workspace instead of restoring a previously saved target. Protected pages use native EasyAdmin routes and layout under `/home`: ordinary users enter Chat at `/home/chat` and manage reporting preferences at `/home/settings`, while administrators enter `/home/user`. Public landing and login keep the public shell.
 
 ## Demo proposal
 
