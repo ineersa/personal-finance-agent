@@ -67,16 +67,19 @@ final class UserPasswordTest extends FinanceBrowserTest
         $page->getByLabel('New password', ['exact' => true])->fill(str_repeat('界', 11));
         $page->evaluate('() => document.querySelector("form[name=User]").noValidate = true');
         $this->save($page);
+        $page->getByText('12 characters or more')->waitFor(['state' => 'visible', 'timeout' => 5000]);
         $this->assertPageContains('12 characters or more');
         // 1,400 Unicode characters fit the character limit but exceed 4,096 bytes.
         $oversized = str_repeat('界', 1400);
         $page->getByLabel('New password', ['exact' => true])->fill($oversized);
         $this->save($page);
+        $page->getByText('4096 bytes or less')->waitFor(['state' => 'visible', 'timeout' => 5000]);
         $this->assertPageContains('4096 bytes or less');
         $page = $this->visit('/admin/user/'.$this->bobUser.'/edit');
         $originalHash = $this->storedPasswordHash('bob@example.test');
         $page->getByLabel('New password', ['exact' => true])->fill($oversized);
         $this->save($page);
+        $page->getByText('4096 bytes or less')->waitFor(['state' => 'visible', 'timeout' => 5000]);
         $this->assertPageContains('4096 bytes or less');
         self::assertSame($originalHash, $this->storedPasswordHash('bob@example.test'));
         // Twelve characters, even when multibyte, satisfy the character minimum.

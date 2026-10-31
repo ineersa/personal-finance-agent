@@ -34,6 +34,7 @@ final class TransactionCrudTest extends FinanceBrowserTest
         self::assertSame('USD', $page->getByLabel('Currency', ['exact' => true])->inputValue());
         $page->evaluate('(id) => { const s = document.querySelector("select[name=\"Transaction[source]\"]"); s.add(new Option("Forged foreign source", id, true, true)); }', (string) $this->bobSource);
         $this->save($page);
+        $page->getByText('The selected choice is invalid')->waitFor(['state' => 'visible', 'timeout' => 5000]);
         $this->assertPageContains('The selected choice is invalid');
         $page = $this->visit('/admin/transaction/'.$this->aliceTransaction.'/edit');
         self::assertSame((string) $this->aliceSource, $page->locator('select[name="Transaction[source]"]')->inputValue());

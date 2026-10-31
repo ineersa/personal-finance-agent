@@ -153,8 +153,9 @@ abstract class FinanceBrowserTest extends PlaywrightTestCase
 
     protected function save(PageInterface $page): void
     {
+        // submit() already awaits redirect navigation. Validation outcomes belong
+        // to the scenario, not a second global load event after an invalid POST.
         $this->submit(static fn () => $page->locator('button[name="ea[newForm][btn]"], button[name="ea[editForm][btn]"]')->first()->click());
-        $page->waitForLoadState();
     }
 
     /** @param callable(): void $action */
