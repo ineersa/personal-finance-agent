@@ -9,6 +9,7 @@ use App\Tests\Support\FinanceBrowserTest;
 use App\Tests\Support\SubmitsBrowserForms;
 use Doctrine\ORM\EntityManagerInterface;
 use Hautelook\AliceBundle\PhpUnit\FixtureStore;
+use Playwright\Assertions\Expect;
 use Playwright\Page\PageInterface;
 
 final class UserPasswordTest extends FinanceBrowserTest
@@ -22,7 +23,7 @@ final class UserPasswordTest extends FinanceBrowserTest
         $fixtures = FixtureStore::getFixtures();
         $email = 'password-lifecycle@example.test';
         $changedPassword = 'Changed-synthetic-password-05';
-        $this->loginUser($fixtures['admin']);
+        $this->loginUser($fixtures['administrator']);
         $page = $this->visit('/home/user/new');
         $page->getByLabel('Email', ['exact' => true])->fill($email);
         $page->getByLabel('New password', ['exact' => true])->fill(self::PASSWORD);
@@ -34,28 +35,28 @@ final class UserPasswordTest extends FinanceBrowserTest
         self::assertNotSame(self::PASSWORD, $originalHash);
         $page = $this->submitLogin('password-lifecycle@example.test', self::PASSWORD);
         $page->locator('.finance-chat .chat-empty')->waitFor();
-        $this->loginUser($fixtures['admin']);
+        $this->loginUser($fixtures['administrator']);
         $page->goto($editUrl);
         $page->getByLabel('Email', ['exact' => true])->fill('password-renamed@example.test');
         $this->submit(static fn () => $page->locator('button[name="ea[newForm][btn]"], button[name="ea[editForm][btn]"]')->first()->click());
         self::assertSame($originalHash, $this->storedPasswordHash('password-renamed@example.test'));
         $page = $this->submitLogin('password-renamed@example.test', self::PASSWORD);
         $page->locator('.finance-chat .chat-empty')->waitFor();
-        $this->loginUser($fixtures['admin']);
+        $this->loginUser($fixtures['administrator']);
         $page->goto($editUrl);
         // A valid password must not be hashed when another root field is invalid.
         $page->getByLabel('Email', ['exact' => true])->fill('invalid-email');
         $page->getByLabel('New password', ['exact' => true])->fill($changedPassword);
         $page->evaluate('() => document.querySelector("form[name=User]").noValidate = true');
         $this->submit(static fn () => $page->locator('button[name="ea[newForm][btn]"], button[name="ea[editForm][btn]"]')->first()->click());
-        $this->assertPageContains('This value is not a valid email address');
+        Expect::locator($page->getByText('This value is not a valid email address'))->toBeVisible();
         self::assertSame($originalHash, $this->storedPasswordHash('password-renamed@example.test'));
         $boundUser = self::getContainer()->get(EntityManagerInterface::class)->getRepository(User::class)->findOneBy(['email' => 'password-renamed@example.test']);
         self::assertInstanceOf(User::class, $boundUser);
         self::assertSame($originalHash, $boundUser->getPassword());
         $page = $this->submitLogin('password-renamed@example.test', self::PASSWORD);
         $page->locator('.finance-chat .chat-empty')->waitFor();
-        $this->loginUser($fixtures['admin']);
+        $this->loginUser($fixtures['administrator']);
         $page->goto($editUrl);
         $page->getByLabel('New password', ['exact' => true])->fill($changedPassword);
         $this->submit(static fn () => $page->locator('button[name="ea[newForm][btn]"], button[name="ea[editForm][btn]"]')->first()->click());
@@ -69,31 +70,36 @@ final class UserPasswordTest extends FinanceBrowserTest
     public function testPasswordCharacterMinimumAndMultibyteByteMaximum(): void
     {
         $fixtures = FixtureStore::getFixtures();
-        $this->loginUser($fixtures['admin']);
+        $this->loginUser($fixtures['administrator']);
         $page = $this->visit('/home/user/new');
         $page->getByLabel('Email', ['exact' => true])->fill('password-limits@example.test');
         $page->evaluate('() => document.querySelector("form[name=User]").noValidate = true');
         $this->submit(static fn () => $page->locator('button[name="ea[newForm][btn]"], button[name="ea[editForm][btn]"]')->first()->click());
-        $page->getByText('This value should not be blank')->waitFor(['state' => 'visible', 'timeout' => 5000]);
-        $this->assertPageContains('This value should not be blank');
+        Expect::locator($page->getByText('This value should not be blank'))->toBeVisible();
         $page->getByLabel('New password', ['exact' => true])->fill(str_repeat('界', 11));
         $page->evaluate('() => document.querySelector("form[name=User]").noValidate = true');
         $this->submit(static fn () => $page->locator('button[name="ea[newForm][btn]"], button[name="ea[editForm][btn]"]')->first()->click());
-        $page->getByText('12 characters or more')->waitFor(['state' => 'visible', 'timeout' => 5000]);
-        $this->assertPageContains('12 characters or more');
-        // 1,400 Unicode characters fit the character limit but exceed 4,096 bytes.
-        $oversized = str_repeat('界', 1400);
+        Expect::locator($page->getByText('12 characters or more'))->toBeVisible();
+        // These multibyte inputs differ by one byte at the actual byte limit.
+        $maximum = str_repeat('界', 1365).'a';
+        $oversized = $maximum.'b';
+        self::assertSame(4096, \strlen($maximum));
+        self::assertSame(4097, \strlen($oversized));
         $page->getByLabel('New password', ['exact' => true])->fill($oversized);
         $this->submit(static fn () => $page->locator('button[name="ea[newForm][btn]"], button[name="ea[editForm][btn]"]')->first()->click());
-        $page->getByText('4096 bytes or less')->waitFor(['state' => 'visible', 'timeout' => 5000]);
-        $this->assertPageContains('4096 bytes or less');
-        $page = $this->visit('/home/user/'.$fixtures['bob']->getId().'/edit');
-        $originalHash = $this->storedPasswordHash('bob@example.test');
+        Expect::locator($page->getByText('4096 bytes or less'))->toBeVisible();
+        $page = $this->visit('/home/user/'.$fixtures['demo']->getId().'/edit');
+        $originalHash = $this->storedPasswordHash('demo@test.com');
         $page->getByLabel('New password', ['exact' => true])->fill($oversized);
         $this->submit(static fn () => $page->locator('button[name="ea[newForm][btn]"], button[name="ea[editForm][btn]"]')->first()->click());
-        $page->getByText('4096 bytes or less')->waitFor(['state' => 'visible', 'timeout' => 5000]);
-        $this->assertPageContains('4096 bytes or less');
-        self::assertSame($originalHash, $this->storedPasswordHash('bob@example.test'));
+        Expect::locator($page->getByText('4096 bytes or less'))->toBeVisible();
+        self::assertSame($originalHash, $this->storedPasswordHash('demo@test.com'));
+        $page = $this->visit('/home/user/new');
+        $page->getByLabel('Email', ['exact' => true])->fill('password-byte-boundary@example.test');
+        $page->getByLabel('New password', ['exact' => true])->fill($maximum);
+        $this->submit(static fn () => $page->locator('button[name="ea[newForm][btn]"]')->first()->click());
+        $page = $this->visit('/home/user');
+        $this->assertPageContains('password-byte-boundary@example.test');
         // Twelve characters, even when multibyte, satisfy the character minimum.
         $accepted = str_repeat('界', 12);
         $page = $this->visit('/home/user/new');

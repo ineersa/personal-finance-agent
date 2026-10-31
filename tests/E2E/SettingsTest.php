@@ -16,7 +16,7 @@ final class SettingsTest extends FinanceBrowserTest
     public function testSettingsRejectUnsupportedCurrencyAndInvalidCsrf(): void
     {
         $fixtures = FixtureStore::getFixtures();
-        $this->loginUser($fixtures['alice']);
+        $this->loginUser($fixtures['demo']);
         $page = $this->visit('/home/settings');
         $page->evaluate('() => { const s = document.querySelector("select[name=\"form[reportingCurrency]\"]"); s.add(new Option("Unsupported", "XXX", true, true)); }');
         $this->submit(static fn () => $page->getByRole('button', ['name' => 'Save preferences'])->click());

@@ -15,7 +15,7 @@ final class CategoryCrudTest extends FinanceBrowserTest
     public function testCategoryNewEditDetailAndDelete(): void
     {
         $fixtures = FixtureStore::getFixtures();
-        $this->loginUser($fixtures['admin']);
+        $this->loginUser($fixtures['administrator']);
         $page = $this->visit('/home/category/new');
         $page->getByLabel('Name', ['exact' => true])->fill('New shared catalog entry');
         $this->submit(static fn () => $page->locator('button[name="ea[newForm][btn]"], button[name="ea[editForm][btn]"]')->first()->click());

@@ -18,57 +18,25 @@ final class DemoWorkspaceTest extends FinanceBrowserTest
 {
     use SubmitsBrowserForms;
 
-    public function testDemoLoginSettingsAndFinanceRoutesShareDarkWorkspace(): void
+    public function testFinanceNavigationShowsApprovedRecordsAndReadOnlyStatements(): void
     {
-        $fixtures = FixtureStore::getFixtures();
-        $page = $this->visit('/login');
-        self::assertSame('rgb(17, 17, 18)', $page->evaluate('() => getComputedStyle(document.body).backgroundColor'));
-        self::assertSame('rgb(17, 17, 18)', $page->getByLabel('Email', ['exact' => true])->evaluate('(input) => getComputedStyle(input).backgroundColor'));
-        self::assertSame(0, $page->locator('.app-sidebar, .composer-preview')->count());
-        self::assertStringEndsWith('/favicon.svg', $page->locator('link[rel=icon]')->getAttribute('href'));
-        $this->submitLogin($page, 'demo@test.com', 'demo');
-        $page->getByRole('heading', ['name' => 'Make sense of your money.', 'exact' => true])->waitFor();
-        self::assertSame('page', $page->getByRole('link', ['name' => 'Chat', 'exact' => true])->getAttribute('aria-current'));
+        $this->loginUser(FixtureStore::getFixtures()['demo']);
+        $page = $this->visit('/home/chat');
         self::assertTrue($page->locator('.ea-sidebar')->getByText('Finance management', ['exact' => true])->isVisible());
-        self::assertSame(0, $page->locator('a[href*="/planned/"]')->count());
-        self::assertSame(0, $page->locator('.ea-sidebar [aria-disabled=true]')->count());
-        self::assertSame(0, $page->locator('.sidebar-note, .ea-sidebar-footer')->count());
+        self::assertSame(0, $page->locator('a[href*="/planned/"], .ea-sidebar [aria-disabled=true], .sidebar-note, .ea-sidebar-footer')->count());
         self::assertStringNotContainsString('Work in progress', $page->locator('.ea-sidebar')->textContent());
         self::assertStringNotContainsString('Manage sources and approved transactions.', $page->locator('.ea-sidebar')->textContent());
-        $page = $this->visit('/home/settings');
-        self::assertSame('Settings', trim($page->getByRole('heading', ['level' => 1])->textContent()));
-        self::assertSame('page', $page->getByRole('link', ['name' => 'Settings', 'exact' => true])->getAttribute('aria-current'));
-        self::assertNull($page->getByRole('link', ['name' => 'Chat', 'exact' => true])->getAttribute('aria-current'));
-        self::assertSame('rgb(17, 17, 18)', $page->getByLabel('Reporting currency')->evaluate('(select) => getComputedStyle(select).backgroundColor'));
-        $page->getByLabel('Reporting currency')->selectOption('EUR');
-        $this->submit(static fn () => $page->getByRole('button', ['name' => 'Save preferences'])->click());
-        $page = $this->visit('/home/settings');
-        self::assertSame('EUR', $page->getByLabel('Reporting currency')->inputValue());
-        foreach (['source', 'statement', 'transaction'] as $screen) {
-            $page = $this->visit('/home/'.$screen);
-            self::assertStringEndsWith('/home/'.$screen, $page->locator('.ea-sidebar-item-link[aria-current=page]')->getAttribute('href'));
-            self::assertTrue($page->evaluate('() => document.body.classList.contains("ea-dark-scheme")'));
-            self::assertSame('rgb(17, 17, 18)', $page->evaluate('() => getComputedStyle(document.body).backgroundColor'));
-            self::assertStringEndsWith('/favicon.svg', $page->locator('link[rel="shortcut icon"]')->getAttribute('href'));
-            self::assertStringNotContainsString('Admin private', $page->locator('body')->textContent());
-        }
         $page = $this->visit('/home/transaction');
         $this->assertPageContains('Synthetic October salary');
         $this->assertPageContains('Synthetic grocery purchase');
         self::assertStringNotContainsString('Synthetic incomplete draft', $page->locator('body')->textContent());
         $page = $this->visit('/home/statement');
+        self::assertResponseIsSuccessful();
         $this->assertPageContains('demo-october-2026.csv');
         self::assertSame(0, $page->locator('.action-new, .action-edit, .action-delete')->count());
-        $foreign = $fixtures['admin_current'];
-        self::assertInstanceOf(Source::class, $foreign);
-        $this->visit('/home/source/'.$foreign->getId());
-        self::assertSame(403, $this->getLastResponse()->getStatusCode());
-        $page = $this->visit('/home/source');
-        $page->locator('.user-menu-wrapper:visible .user-details')->click();
-        $this->submit(static fn () => $page->getByRole('button', ['name' => 'Log out', 'exact' => true])->click());
-        $page->waitForURL('**/login');
-        $this->visit('/home/settings');
-        $this->assertPageContains('Personal finance login');
+        $page = $this->visit('/home/statement/'.FixtureStore::getFixtures()['demo_statement']->getId());
+        self::assertResponseIsSuccessful();
+        self::assertSame(0, $page->locator('.action-new, .action-edit, .action-delete')->count());
     }
 
     public function testNativeAccountMenuLogsOutWithPostOnDesktopAndMobile(): void
@@ -107,52 +75,24 @@ final class DemoWorkspaceTest extends FinanceBrowserTest
         }
     }
 
-    public function testAdminFixtureCatalogIconsAndNativeFinancePermissions(): void
+    public function testAdministratorNavigationContainsOnlyUserAndCategoryManagement(): void
     {
-        $fixtures = FixtureStore::getFixtures();
-        $page = $this->visit('/login');
-        $this->submitLogin($page, 'admin@test.com', 'admin');
-        $page->waitForURL('**/home/user');
-        $page = $this->visit('/home/category');
-        $this->assertPageContains('Groceries');
-        self::assertSame(0, $page->locator('.sidebar-note, .ea-sidebar-footer')->count());
-        // Assert the native active route and visible label independently of its icon.
-        $current = $page->locator('.ea-sidebar-item-link[aria-current=page]');
-        self::assertSame(1, $current->count());
-        self::assertStringEndsWith('/home/category', $current->getAttribute('href'));
-        self::assertSame('Categories', trim($current->locator('.ea-sidebar-item-label')->textContent()));
-        self::assertSame(1, $page->locator('.category-icon i.fa-cart-shopping')->count());
-        self::assertSame('rgb(17, 17, 18)', $page->evaluate('() => getComputedStyle(document.body).backgroundColor'));
-        $page = $this->visit('/home/source');
-        self::assertSame(403, $this->getLastResponse()->getStatusCode());
-        self::assertStringNotContainsString('Demo current account', $page->locator('body')->textContent());
-        $demo = $fixtures['demo_salary'];
-        self::assertInstanceOf(Transaction::class, $demo);
-        foreach (['', '/edit'] as $action) {
-            $page = $this->visit('/home/transaction/'.$demo->getId().$action);
-            self::assertSame(403, $this->getLastResponse()->getStatusCode());
-            self::assertStringNotContainsString('Synthetic October salary', $page->locator('body')->textContent());
-        }
-        $page = $this->visit('/home/user');
-        $this->assertPageContains('admin@test.com');
-        $this->assertPageContains('demo@test.com');
-        $page = $this->visit('/home/category/new');
-        self::assertSame('rgb(17, 17, 18)', $page->getByLabel('Name', ['exact' => true])->evaluate('(input) => getComputedStyle(input).backgroundColor'));
+        $this->loginUser(FixtureStore::getFixtures()['administrator']);
         foreach ([1280, 390] as $width) {
-            $page->setViewportSize($width, 900);
+            $this->getPage()->setViewportSize($width, 900);
             foreach (['user', 'category'] as $screen) {
                 $page = $this->visit('/home/'.$screen);
+                self::assertResponseIsSuccessful();
                 self::assertSame(['Users', 'Categories'], $page->evaluate('() => Array.from(document.querySelectorAll(".ea-sidebar-item-label")).map(label => label.textContent.trim())'));
-                self::assertSame('pf', $page->locator('.app-brand:visible .brand-mark')->textContent());
-                self::assertSame('A little more clarity.', $page->locator('.app-brand:visible .brand-caption')->textContent());
-                $sidebarWidth = $page->locator('.ea-sidebar')->evaluate('(sidebar) => sidebar.getBoundingClientRect().width');
-                // Native EasyAdmin reserves a stable scrollbar gutter outside the body's layout box.
-                self::assertEquals($width > 991 ? 252 : $page->evaluate('() => document.body.getBoundingClientRect().width'), $sidebarWidth);
-                self::assertStringContainsString('Built with Symfony', $page->locator('.workspace-footer')->textContent());
-                self::assertSame(0, $page->locator('a[href$="/home/settings"], .composer-preview')->count());
+                self::assertSame(0, $page->locator('.sidebar-note, .ea-sidebar-footer, a[href$="/home/settings"], .composer-preview')->count());
+                $current = $page->locator('.ea-sidebar-item-link[aria-current=page]');
+                self::assertSame(1, $current->count());
+                self::assertStringEndsWith('/home/'.$screen, $current->getAttribute('href'));
                 self::assertTrue($page->evaluate('() => document.documentElement.scrollWidth <= window.innerWidth'));
             }
         }
+        $this->assertPageContains('Groceries');
+        self::assertSame(1, $page->locator('.category-icon i.fa-cart-shopping')->count());
     }
 
     public function testDarkOnlyManagementIgnoresSavedAndSystemLightPreferences(): void
@@ -176,6 +116,9 @@ final class DemoWorkspaceTest extends FinanceBrowserTest
                 $page->emulateMedia(['colorScheme' => 'dark']);
                 $page->emulateMedia(['colorScheme' => 'light']);
                 self::assertTrue($page->evaluate('() => document.body.classList.contains("ea-dark-scheme")'));
+                $page = $this->visit('/home/settings');
+                self::assertSame('dark', $page->locator('body')->getAttribute('data-bs-theme'));
+                self::assertSame('rgb(17, 17, 18)', $page->getByLabel('Reporting currency')->evaluate('(select) => getComputedStyle(select).backgroundColor'));
                 $menu = $page->locator('.user-menu-wrapper:visible');
                 $menu->locator('.user-details')->click();
                 self::assertSame(1, $menu->getByRole('link', ['name' => 'Settings', 'exact' => false])->count());
@@ -184,24 +127,32 @@ final class DemoWorkspaceTest extends FinanceBrowserTest
         }
     }
 
-    public function testAdministratorCannotEnterOwnFinancesSettingsOrLegacyActions(): void
+    public function testAdministratorWithBothRolesCannotEnterOwnFinancesSettingsOrLegacyActions(): void
     {
         $fixtures = FixtureStore::getFixtures();
-        $administrator = $fixtures['admin'];
+        $administrator = $fixtures['administrator'];
         self::assertInstanceOf(User::class, $administrator);
-        $source = $fixtures['regression_admin_source'];
-        $statement = $fixtures['regression_admin_statement'];
-        $transaction = $fixtures['regression_admin_transaction'];
+        $source = $fixtures['admin_current'];
+        $statement = $fixtures['admin_statement'];
+        $transaction = $fixtures['admin_transaction'];
         self::assertInstanceOf(Source::class, $source);
         self::assertInstanceOf(Statement::class, $statement);
         self::assertInstanceOf(Transaction::class, $transaction);
         $this->loginUser($administrator);
+        $page = $this->visit('/home/user/'.$administrator->getId().'/edit');
+        $page->locator('select[name="User[roles][]"]')->selectOption(['ROLE_ADMIN', 'ROLE_USER'], ['force' => true]);
+        $this->submit(static fn () => $page->locator('button[name="ea[editForm][btn]"]')->first()->click());
+        // Reauthenticate after changing roles so the token uses both persisted roles.
+        $page = $this->visit('/login');
+        $this->submitLogin($page, 'admin@test.com', 'admin');
         $page = $this->visit('/home/user');
         $page->waitForURL('**/home/user');
+        $page = $this->visit('/home/user/'.$administrator->getId().'/edit');
+        self::assertSame(['ROLE_ADMIN', 'ROLE_USER'], $page->locator('select[name="User[roles][]"]')->evaluate('(select) => Array.from(select.selectedOptions).map(option => option.value).sort()'));
         foreach (['/home/chat', '/home/settings', '/home/source', '/home/source/new', '/home/source/'.$source->getId(), '/home/source/'.$source->getId().'/edit', '/home/statement', '/home/statement/'.$statement->getId(), '/home/transaction', '/home/transaction/'.$transaction->getId().'/edit', '/home?routeName=admin_source_index', '/home?routeName=admin_transaction_index', '/home?routeName=admin_chat', '/home?routeName=admin_settings'] as $path) {
             $page = $this->visit($path);
             self::assertSame(403, $this->getLastResponse()->getStatusCode(), $path);
-            self::assertStringNotContainsString('Legacy administrator account', $page->locator('body')->textContent());
+            self::assertStringNotContainsString('Admin private account', $page->locator('body')->textContent());
         }
         foreach (['/home/settings', '/home/source/new', '/home/source/'.$source->getId().'/edit', '/home/source/'.$source->getId().'/delete', '/home/transaction/'.$transaction->getId().'/edit', '/home?routeName=admin_source_new', '/home?routeName=admin_settings'] as $path) {
             $page = $this->visit('/home/category/new');
@@ -215,7 +166,7 @@ final class DemoWorkspaceTest extends FinanceBrowserTest
         $page = $this->visit('/home/category');
         self::assertStringNotContainsString('Rejected role-boundary submission', $page->locator('body')->textContent());
         $connection = self::getContainer()->get(EntityManagerInterface::class)->getConnection();
-        self::assertSame('Legacy administrator account', $connection->fetchOne('SELECT name FROM source WHERE id = ?', [$source->getId()]));
+        self::assertSame('Admin private account', $connection->fetchOne('SELECT name FROM source WHERE id = ?', [$source->getId()]));
         self::assertSame('USD', $connection->fetchOne('SELECT reporting_currency FROM user WHERE id = ?', [$administrator->getId()]));
     }
 

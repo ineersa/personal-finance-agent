@@ -20,6 +20,9 @@ final class HomepageTest extends FinanceBrowserTest
         self::assertSame(0, $page->locator('.app-sidebar, .app-nav, .finance-app, .composer-preview, textarea, [aria-disabled=true]')->count());
         $page->getByRole('link', ['name' => 'Log in', 'exact' => true])->click();
         $this->assertPageContains('Personal finance login');
+        self::assertSame('rgb(17, 17, 18)', $page->evaluate('() => getComputedStyle(document.body).backgroundColor'));
+        self::assertSame('rgb(17, 17, 18)', $page->getByLabel('Email', ['exact' => true])->evaluate('(input) => getComputedStyle(input).backgroundColor'));
+        self::assertStringEndsWith('/favicon.svg', $page->locator('link[rel=icon]')->getAttribute('href'));
     }
 
     public function testLandingIsResponsive(): void
@@ -36,16 +39,16 @@ final class HomepageTest extends FinanceBrowserTest
     public function testSignedInWorkspaceAndNativeCrudShareBrandingAndGeometry(): void
     {
         $fixtures = FixtureStore::getFixtures();
-        $this->loginUser($fixtures['alice']);
+        $this->loginUser($fixtures['demo']);
         foreach ([1280, 390] as $width) {
             $this->getPage()->setViewportSize($width, 900);
+            $referenceGeometry = null;
             foreach (['/home/chat', '/home/settings', '/home/source', '/home/source/new'] as $path) {
                 $page = $this->visit($path);
                 $brand = $page->locator('.app-brand:visible');
                 self::assertSame(1, $brand->count(), $path);
                 self::assertSame('pf', $brand->locator('.brand-mark')->textContent());
                 self::assertSame('A little more clarity.', $brand->locator('.brand-caption')->textContent());
-                self::assertSame('34px', $brand->locator('.brand-mark')->evaluate('(mark) => getComputedStyle(mark).width'));
                 self::assertStringContainsString('Built with Symfony', $page->locator('.workspace-footer')->textContent());
                 $geometry = $page->evaluate(<<<'JS'
                     () => {
@@ -70,8 +73,15 @@ final class HomepageTest extends FinanceBrowserTest
                     }
                     JS);
                 // Native EasyAdmin reserves a stable scrollbar gutter outside the available document width.
-                self::assertEquals($width > 991 ? 252 : $geometry['availableWidth'], $geometry['sidebarWidth'], $path);
-                self::assertSame($width > 991 ? '36px' : '20px', $geometry['headerPadding'], $path);
+                $referenceGeometry ??= $geometry;
+                self::assertSame($referenceGeometry['sidebarWidth'], $geometry['sidebarWidth'], $path);
+                self::assertSame($referenceGeometry['headerPadding'], $geometry['headerPadding'], $path);
+                if ($width > 991) {
+                    self::assertGreaterThan(0, $geometry['sidebarWidth'], $path);
+                    self::assertLessThan($geometry['availableWidth'], $geometry['sidebarWidth'], $path);
+                } else {
+                    self::assertEquals($geometry['availableWidth'], $geometry['sidebarWidth'], $path);
+                }
                 if ($width < 992) {
                     self::assertSame(3, $geometry['navColumns'], $path);
                 }

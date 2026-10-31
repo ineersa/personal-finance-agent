@@ -1,7 +1,0 @@
-App\Entity\Source:
-    alice_source:
-        __construct: ['@alice', 'Alice account']
-    bob_source:
-        __construct: ['@bob', 'Bob secret account']
-    regression_admin_source:
-        __construct: ['@admin', 'Legacy administrator account']

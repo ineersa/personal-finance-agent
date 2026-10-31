@@ -1,8 +1,0 @@
-# Metadata only; no real files or uploads.
-App\Entity\Statement:
-    alice_statement:
-        __construct: ['@alice', '@alice_source', synthetic-alice, alice-synthetic.csv, text/csv, 0, '0000000000000000000000000000000000000000000000000000000000000000']
-    bob_statement:
-        __construct: ['@bob', '@bob_source', synthetic-bob, bob-synthetic.csv, text/csv, 0, '0000000000000000000000000000000000000000000000000000000000000000']
-    regression_admin_statement:
-        __construct: ['@admin', '@regression_admin_source', synthetic-regression-admin, regression-admin.csv, text/csv, 0, '0000000000000000000000000000000000000000000000000000000000000000']

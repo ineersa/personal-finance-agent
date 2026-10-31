@@ -14,10 +14,10 @@ final class UserCrudTest extends FinanceBrowserTest
 
     private const string PASSWORD = 'Synthetic-browser-password-05';
 
-    public function testUserNewEditDetailDeleteAndBlankPasswordPreservation(): void
+    public function testAdministratorCreatesRenamesAndDeletesUser(): void
     {
         $fixtures = FixtureStore::getFixtures();
-        $this->loginUser($fixtures['admin']);
+        $this->loginUser($fixtures['administrator']);
         $page = $this->visit('/home/user/new');
         $page->getByLabel('Email', ['exact' => true])->fill('created@example.test');
         $page->getByLabel('New password', ['exact' => true])->fill(self::PASSWORD);
@@ -29,16 +29,9 @@ final class UserCrudTest extends FinanceBrowserTest
         $userDetailUrl = $userRow->locator('a.action-detail')->getAttribute('href');
         $page->goto($userUrl);
         $page->getByLabel('Email', ['exact' => true])->fill('renamed@example.test');
-        // An empty new-password field must preserve the existing hash.
         $this->submit(static fn () => $page->locator('button[name="ea[newForm][btn]"], button[name="ea[editForm][btn]"]')->first()->click());
-        $page = $this->visit('/login');
-        $page->getByLabel('Email', ['exact' => true])->fill('renamed@example.test');
-        $page->getByLabel('Password', ['exact' => true])->fill(self::PASSWORD);
-        $this->submit(static fn () => $page->getByRole('button', ['name' => 'Log in', 'exact' => true])->click());
-        $page->locator('.finance-chat .chat-empty')->waitFor();
-        $this->visit('/home/settings');
-        $this->assertPageContains('Settings');
-        $this->loginUser($fixtures['admin']);
+        $page->goto($userUrl);
+        self::assertSame('renamed@example.test', $page->getByLabel('Email', ['exact' => true])->inputValue());
         $page->goto($userDetailUrl);
         $page->locator('.action-delete')->click();
         $page->locator('#modal-action-confirmation-button')->waitFor(['state' => 'visible', 'timeout' => 5000]);
