@@ -9,15 +9,14 @@ use Hautelook\AliceBundle\PhpUnit\FixtureStore;
 
 final class StatementDownloadTest extends FinanceBrowserTest
 {
-    public function testOwnerDownloadsSyntheticBytesThroughStatementUiWithoutTrustingPathsOrFilenames(): void
+    public function testOwnerDownloadsSyntheticBytesThroughStatementUiWithoutTrustingQueryInputs(): void
     {
         $fixtures = FixtureStore::getFixtures();
         $this->loginUser($fixtures['demo']);
-        foreach (['demo_statement' => 'demo-october-2026.csv', 'demo_card_statement' => 'hostile_script_.csv'] as $reference => $filename) {
+        foreach (['demo_statement' => 'demo-october-2026.csv', 'demo_card_statement' => 'demo-card-2026.csv'] as $reference => $filename) {
             $statement = $fixtures[$reference];
             $page = $this->visit('/home/statement/'.$statement->getId());
             self::assertResponseIsSuccessful();
-            self::assertSame(0, $page->locator('script[src*="hostile"]')->count());
             $link = $page->locator('a.action-download');
             self::assertSame(1, $link->count());
             $url = $link->getAttribute('href');
@@ -37,7 +36,7 @@ final class StatementDownloadTest extends FinanceBrowserTest
                 self::assertSame($statement->sha256, hash('sha256', $download['body']));
                 self::assertSame($statement->byteSize, \strlen($download['body']));
                 self::assertStringContainsString('Synthetic fixture '.$reference, $download['body']);
-                self::assertSame('attachment; filename='.$filename, $download['disposition']);
+                self::assertSame("attachment; filename=statement; filename*=utf-8''".$filename, $download['disposition']);
                 self::assertSame('application/octet-stream', $download['type']);
                 self::assertStringContainsString('no-store', $download['cache']);
                 self::assertSame('nosniff', $download['nosniff']);

@@ -13,7 +13,7 @@ Use `league/flysystem-bundle` and its local adapter. Configure `statements.stora
 
 `StatementStorage` accepts a trusted user and source when writing, and a trusted user and statement when reading or deleting. It checks both ownership relationships, denies administrative users, and rejects stored keys outside the fixed hexadecimal format. Callers must resolve user and statement identifiers from trusted application context. Future workers must resolve records again, not accept a model-supplied key, path or URL.
 
-An authenticated download route resolves statements through the owner-scoped repository and voter before reading bytes. The statement list and detail page link to this route. Return an attachment with a sanitized basename, `application/octet-stream`, `nosniff`, and private non-storable caching. Ignore filename, path and URL query parameters. Missing files and invalid stored keys return 404, as do foreign or unknown statement identifiers. Administrative users receive 403 before record lookup.
+The finance-workspace voter gates the authenticated download route; the owner-scoped repository resolves both statement and source ownership before reading bytes. The statement list and detail page link to this route. Strip path components from the original filename and let Symfony's `HeaderUtils::makeDisposition()` quote and encode it, using `statement` as the ASCII fallback. Return `application/octet-stream`, `nosniff`, and private non-storable caching. Ignore filename, path and URL query parameters. Missing files and invalid stored keys return 404, as do foreign or unknown statement identifiers. Administrative users receive 403 before record lookup.
 
 ### Storage and container isolation
 
@@ -21,7 +21,7 @@ Production stores bytes in `/app/var/data/statements`, alongside SQLite metadata
 
 Owner review on 2026-11-01 corrected the initial whole-`var` mount before merge. This correction does not migrate or delete any existing volume. Preserve any previously created experimental volumes; moving owner data requires a separate verified migration.
 
-Development overrides the volume list with the checkout mount, keeping `var/statements` checkout-local. The test environment fixes storage at `var/browser/statements`. The live browser stack replaces the entire `var` directory with `var/browser-live`, so its files and database remain separate from development and intercepted tests. Cache clears do not remove statement storage.
+`STATEMENT_STORAGE_DIR` configures the private root, defaulting to `%kernel.project_dir%/var/statements` in `.env` and `%kernel.project_dir%/var/data/statements` in `.env.prod`. Development overrides the volume list with the checkout mount. The test environment fixes storage at `var/browser/statements`, regardless of that environment variable. The live browser stack replaces the entire `var` directory with `var/browser-live`, so its files and database remain separate from development and intercepted tests. Cache clears do not remove statement storage.
 
 ### Lifecycle contract for the upload workflow
 
@@ -33,7 +33,7 @@ Do not delete bytes before the metadata transaction commits a separately authori
 
 ### Synthetic fixtures
 
-The native Alice `StatementFileProcessor` creates canonical synthetic CSV bytes for the statement definitions in `fixtures/statement.yaml`, in both development and tests. It fills the corresponding size, hash and storage key before persistence. Stable fixture-specific keys avoid accumulating files on repeated isolated fixture loads. One canonical filename contains hostile path and markup characters to exercise safe display and attachment headers. No personal bank file is committed.
+The native Alice `StatementFileProcessor` creates canonical synthetic CSV bytes for the statement definitions in `fixtures/statement.yaml`, in both development and tests. It fills the corresponding size, hash and storage key before persistence. Stable fixture-specific keys avoid accumulating files on repeated isolated fixture loads. Demo filenames are ordinary synthetic statement names. No personal bank file is committed.
 
 Existing metadata-only fixture rows are not converted into real uploads by a database migration. Their old keys have no bytes and download as unavailable. Do not purge development data to replace them.
 
@@ -46,7 +46,7 @@ Existing metadata-only fixture rows are not converted into real uploads by a dat
 
 ## Consequences
 
-Downloads can be exercised through the browser before the upload workflow exists. Browser regressions cover canonical bytes, ownership denial, hostile filenames, path-like request inputs and private-root separation. These regressions do not establish upload admission, failed-write compensation, worker sharing or live-server file privacy. Verify those boundaries through their actual workflows rather than a test-only endpoint.
+Downloads can be exercised through the browser before the upload workflow exists. Browser regressions cover canonical bytes, ownership denial, path-like request inputs and private-root separation. The owner deferred hostile uploaded-filename coverage to task 07 so the shared demo fixtures do not contain attack strings. These regressions do not establish upload admission, hostile uploaded-filename handling, failed-write compensation, worker sharing or live-server file privacy. Verify those boundaries through their actual workflows rather than a test-only endpoint.
 
 The local adapter assumes the configured private root and its contents are controlled by the application, not an attacker with filesystem write access. Mounting storage into future workers and converters requires separate verification.
 

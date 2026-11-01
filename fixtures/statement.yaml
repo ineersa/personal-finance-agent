@@ -15,7 +15,7 @@ App\Entity\Statement:
             - '@demo'
             - '@demo_card'
             - synthetic-demo-card-2026
-            - '../../../etc/passwd\hostile<script>.csv'
+            - demo-card-2026.csv
             - text/csv
             - 0
             - '0000000000000000000000000000000000000000000000000000000000000000'

@@ -41,7 +41,7 @@ function stackProject(string $mode): string
 
 function stackUrl(string $mode): string
 {
-    return 'http://'.checkoutId().('dev' === $mode ? '' : '.'.$mode).'.finance.localhost';
+    return 'http://'.checkoutId().('browser' === $mode ? '.browser' : '').'.finance.localhost';
 }
 
 /** @param list<string> $command */
@@ -57,10 +57,6 @@ function developmentProcess(array $command): string
 /** @return list<string> */
 function stackCommand(string $mode): array
 {
-    if ('production' === $mode) {
-        return ['docker', 'compose', '--project-name', stackProject($mode), '-f', 'compose.yaml', '-f', 'compose.prod.yaml', '-f', 'compose.production-probe.yaml'];
-    }
-
     return ['docker', 'compose', '--project-name', stackProject($mode), '-f', 'compose.yaml', '-f', 'compose.override.yaml', ...('browser' === $mode ? ['-f', 'compose.browser.yaml'] : [])];
 }
 
@@ -125,7 +121,7 @@ function proxyAddress(): string
     return $address;
 }
 
-function ensureProxy(string $state, ?string $image = null): void
+function ensureProxy(string $state): void
 {
     if (!assertProxyOwner('network', developmentNetwork())) {
         developmentProcess(['docker', 'network', 'create', '--label', 'finance.proxy.owner='.posix_getuid(), developmentNetwork()]);
@@ -136,7 +132,7 @@ function ensureProxy(string $state, ?string $image = null): void
         return;
     }
     // Reuse the application image's Caddy binary; no application or Docker socket is mounted.
-    developmentProcess(['docker', 'run', '-d', '--name', proxyName(), '--label', 'finance.proxy.owner='.posix_getuid(), '--network', developmentNetwork(), '--publish', '127.0.0.1:80:80', '--volume', $state.':/etc/pfa:ro', '--env', 'XDG_CONFIG_HOME=/tmp/config', '--env', 'XDG_DATA_HOME=/tmp/data', '--no-healthcheck', $image ?? 'pfa-'.checkoutId().'-php:dev', 'frankenphp', 'run', '--config', '/etc/pfa/Caddyfile']);
+    developmentProcess(['docker', 'run', '-d', '--name', proxyName(), '--label', 'finance.proxy.owner='.posix_getuid(), '--network', developmentNetwork(), '--publish', '127.0.0.1:80:80', '--volume', $state.':/etc/pfa:ro', '--env', 'XDG_CONFIG_HOME=/tmp/config', '--env', 'XDG_DATA_HOME=/tmp/data', '--no-healthcheck', 'pfa-'.checkoutId().'-php:dev', 'frankenphp', 'run', '--config', '/etc/pfa/Caddyfile']);
 }
 
 /** @param array<string, string> $routes */
@@ -205,12 +201,9 @@ function developmentStack(string $mode, string $action): int
                 if ('browser' === $mode && !is_dir(\dirname(__DIR__).'/var/browser-live/browser')) {
                     mkdir(\dirname(__DIR__).'/var/browser-live/browser', 0700, true);
                 }
-                if ('production' === $mode) {
-                    productionProbeStorage();
-                }
                 stackRun($mode, ['build']);
                 writeProxyConfig($state, $routes);
-                ensureProxy($state, 'production' === $mode ? toolingImage() : null);
+                ensureProxy($state);
                 stackRun($mode, ['up', '-d', '--wait']);
                 $routes[$hostname] = stackProject($mode).':8080';
             } else {

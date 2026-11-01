@@ -49,16 +49,17 @@ final readonly class StatementStorage
     /** @return resource */
     public function read(User $owner, Statement $statement)
     {
-        return $this->storage->readStream($this->key($owner, $statement));
+        return $this->storage->readStream($this->authorizedKey($owner, $statement));
     }
 
     // Also compensates a failed metadata commit after store(). No entity callbacks.
     public function delete(User $owner, Statement $statement): void
     {
-        $this->storage->delete($this->key($owner, $statement));
+        $this->storage->delete($this->authorizedKey($owner, $statement));
     }
 
-    private function key(User $owner, Statement $statement): string
+    // Enforce ownership and key format for HTTP callers and workers alike.
+    private function authorizedKey(User $owner, Statement $statement): string
     {
         $this->assertOwner($owner, $statement->getUser());
         $this->assertOwner($owner, $statement->source->getUser());
