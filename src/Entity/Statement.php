@@ -9,6 +9,7 @@ use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
 
 #[ORM\Entity]
+#[ORM\UniqueConstraint(name: 'UNIQ_STATEMENT_STORED_FILENAME', columns: ['stored_filename'])]
 class Statement extends UserRecord
 {
     #[ORM\Id]
@@ -25,8 +26,8 @@ class Statement extends UserRecord
         #[ORM\ManyToOne(inversedBy: 'statements')]
         #[ORM\JoinColumn(nullable: false)]
         public Source $source,
-        #[ORM\Column(length: 255, unique: true)]
-        public string $storageKey,
+        #[ORM\Column(length: 255)]
+        public string $storedFilename,
         #[ORM\Column(length: 255)]
         public string $originalFilename,
         #[ORM\Column(length: 100)]

@@ -25,6 +25,7 @@ ADRs record significant technical decisions, their context, and their consequenc
 | [0017](0017-exact-money-and-ecb-reporting.md) | Accepted | Preserve exact decimal money and present one configurable reporting currency using ECB reference rates. |
 | [0018](0018-finance-review-sql-and-jev.md) | Accepted | Approve editable drafts before analysis; use bounded owner-scoped SQL, Jev decision tasks, and isolated target-model history conversion. |
 | [0019](0019-worktree-development-routing.md) | Accepted | Route checkout-scoped development and live-browser stacks through a shared loopback Caddy proxy. |
+| [0020](0020-private-statement-storage.md) | Accepted | Store private statement bytes through local Flysystem storage and owner-authorized application downloads. |
 
 ## Recording decisions
 

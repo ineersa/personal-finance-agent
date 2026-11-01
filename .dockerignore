@@ -6,6 +6,7 @@ vendor
 var
 .env*
 !.env
+!.env.prod
 auth.json
 .playwright-cli
 /public/assets
