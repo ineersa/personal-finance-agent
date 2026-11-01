@@ -21,20 +21,27 @@ final class StatementDownloadTest extends FinanceBrowserTest
             $link = $page->locator('a.action-download');
             self::assertSame(1, $link->count());
             $url = $link->getAttribute('href');
-            $download = $page->evaluate(<<<'JS'
+            // Exercise both EasyAdmin's wrapped link and the direct controller route.
+            foreach ([$url, '/home/statement/'.$statement->getId().'/download'] as $url) {
+                $download = $page->evaluate(<<<'JS'
                 async (url) => {
-                    const response = await fetch(url + '?path=../../etc/passwd&url=file:///etc/passwd&filename=../../etc/passwd');
+                    const requestUrl = new URL(url, window.location.href);
+                    requestUrl.searchParams.set('path', '../../etc/passwd');
+                    requestUrl.searchParams.set('url', 'file:///etc/passwd');
+                    requestUrl.searchParams.set('filename', '../../etc/passwd');
+                    const response = await fetch(requestUrl);
                     return {status: response.status, body: await response.text(), disposition: response.headers.get('content-disposition'), type: response.headers.get('content-type'), cache: response.headers.get('cache-control'), nosniff: response.headers.get('x-content-type-options')};
                 }
                 JS, $url);
-            self::assertSame(200, $download['status']);
-            self::assertSame($statement->sha256, hash('sha256', $download['body']));
-            self::assertSame($statement->byteSize, \strlen($download['body']));
-            self::assertStringContainsString('Synthetic fixture '.$reference, $download['body']);
-            self::assertSame('attachment; filename='.$filename, $download['disposition']);
-            self::assertSame('application/octet-stream', $download['type']);
-            self::assertStringContainsString('no-store', $download['cache']);
-            self::assertSame('nosniff', $download['nosniff']);
+                self::assertSame(200, $download['status'], 'Owner download from '.$url);
+                self::assertSame($statement->sha256, hash('sha256', $download['body']));
+                self::assertSame($statement->byteSize, \strlen($download['body']));
+                self::assertStringContainsString('Synthetic fixture '.$reference, $download['body']);
+                self::assertSame('attachment; filename='.$filename, $download['disposition']);
+                self::assertSame('application/octet-stream', $download['type']);
+                self::assertStringContainsString('no-store', $download['cache']);
+                self::assertSame('nosniff', $download['nosniff']);
+            }
             foreach (['/statements/'.$statement->storageKey, '/var/statements/'.$statement->storageKey, '/var/browser/statements/'.$statement->storageKey, '/home/statement/not-a-statement/download', '/home/statement/%2E%2E%2Fetc%2Fpasswd/download'] as $path) {
                 self::assertSame(404, $page->evaluate('async path => (await fetch(path)).status', $path), $path);
             }
