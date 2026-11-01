@@ -6,6 +6,15 @@ flysystem:
             visibility: private
             directory_visibility: private
 
+when@prod:
+    flysystem:
+        storages:
+            statements.storage:
+                local:
+                    directory: '%kernel.project_dir%/var/data/statements'
+                visibility: private
+                directory_visibility: private
+
 when@test:
     flysystem:
         storages:

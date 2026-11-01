@@ -11,8 +11,6 @@ services:
       COMPOSER_CACHE_DIR: /tmp/composer/cache
       XDG_CONFIG_HOME: /tmp/caddy-config
       XDG_DATA_HOME: /tmp/caddy-data
-    volumes:
-      - application_var:/app/var
     ports:
       - "127.0.0.1:${HTTP_PORT:-8080}:8080"
     healthcheck:
@@ -21,6 +19,3 @@ services:
       timeout: 5s
       start_period: 15s
       retries: 3
-
-volumes:
-  application_var:

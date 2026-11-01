@@ -9,7 +9,7 @@ Statement bytes need persistent local storage outside the web root. The owner se
 
 ## Decision
 
-Use `league/flysystem-bundle` and its local adapter. Configure `statements.storage` with private file and directory visibility. Store bytes in `var/statements`, not `public/`, and metadata in the shared SQLite database. Use a random 128-bit hexadecimal key, independent of the original filename. Do not provide public storage URLs or symlinks.
+Use `league/flysystem-bundle` and its local adapter. Configure `statements.storage` with private file and directory visibility. Store bytes outside `public/` and metadata in the shared SQLite database. Use a random 128-bit hexadecimal key, independent of the original filename. Do not provide public storage URLs or symlinks.
 
 `StatementStorage` accepts a trusted user and source when writing, and a trusted user and statement when reading or deleting. It checks both ownership relationships, denies administrative users, and rejects stored keys outside the fixed hexadecimal format. Callers must resolve user and statement identifiers from trusted application context. Future workers must resolve records again, not accept a model-supplied key, path or URL.
 
@@ -17,7 +17,9 @@ An authenticated download route resolves statements through the owner-scoped rep
 
 ### Storage and container isolation
 
-The production Compose service retains `/app/var` in the project-owned `application_var` volume. This also preserves the adjacent SQLite metadata across container replacement. Future processing workers must mount the same volume, use the same storage configuration and run with compatible filesystem permissions. Do not expose this volume to a converter; converter staging remains task-specific work under ADR 0016.
+Production stores bytes in `/app/var/data/statements`, alongside SQLite metadata in the existing project-owned `app_data` volume mounted at `/app/var/data`. Never persist all of `/app/var`: a reused volume would obscure the rebuilt image's compiled Symfony cache with stale route and service definitions. Cache and compiled assets stay in the image, outside the data mount. Future processing workers must mount the same data volume, use the same storage configuration and run with compatible filesystem permissions. Do not expose this volume to a converter; converter staging remains task-specific work under ADR 0016.
+
+Owner review on 2026-11-01 corrected the initial whole-`var` mount before merge. This correction does not migrate or delete any existing volume. Preserve any previously created experimental volumes; moving owner data requires a separate verified migration.
 
 Development overrides the volume list with the checkout mount, keeping `var/statements` checkout-local. The test environment fixes storage at `var/browser/statements`. The live browser stack replaces the entire `var` directory with `var/browser-live`, so its files and database remain separate from development and intercepted tests. Cache clears do not remove statement storage.
 
@@ -53,3 +55,5 @@ The local adapter assumes the configured private root and its contents are contr
 - [Flysystem bundle configuration and injection](https://github.com/thephpleague/flysystem-bundle/blob/3.x/docs/1-getting-started.md).
 - [Symfony streamed responses](https://symfony.com/doc/current/components/http_foundation.html#streaming-a-response).
 - [Symfony file upload trust boundaries](https://symfony.com/doc/current/controller/upload_file.html).
+- [Symfony deployment and cache warmup](https://symfony.com/doc/current/deployment.html).
+- [Docker volume persistence and mount masking](https://docs.docker.com/engine/storage/volumes/).
