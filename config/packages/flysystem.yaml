@@ -1,0 +1,14 @@
+parameters:
+    statement_storage_directory: '%env(resolve:STATEMENT_STORAGE_DIR)%'
+
+flysystem:
+    storages:
+        statements.storage:
+            local:
+                directory: '%statement_storage_directory%'
+            visibility: private
+            directory_visibility: private
+
+when@test:
+    parameters:
+        statement_storage_directory: '%kernel.project_dir%/var/browser/statements'

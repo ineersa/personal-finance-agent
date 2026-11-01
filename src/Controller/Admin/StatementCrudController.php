@@ -11,6 +11,7 @@ use App\Security\FinanceRecordVoter;
 use Doctrine\ORM\QueryBuilder;
 use EasyCorp\Bundle\EasyAdminBundle\Config\Action;
 use EasyCorp\Bundle\EasyAdminBundle\Config\Actions;
+use EasyCorp\Bundle\EasyAdminBundle\Config\Crud;
 use EasyCorp\Bundle\EasyAdminBundle\Field\AssociationField;
 use EasyCorp\Bundle\EasyAdminBundle\Field\DateField;
 use EasyCorp\Bundle\EasyAdminBundle\Field\DateTimeField;
@@ -33,7 +34,14 @@ final class StatementCrudController extends OwnedCrudController
 
     public function configureActions(Actions $actions): Actions
     {
-        return parent::configureActions($actions)->disable(Action::NEW, Action::EDIT, Action::DELETE);
+        $download = Action::new('download', 'Download')
+            ->linkToRoute('app_statement_download', static fn (Statement $statement): array => ['id' => $statement->getId()])
+            ->setHtmlAttributes(['data-turbo' => 'false']);
+
+        return parent::configureActions($actions)
+            ->add(Crud::PAGE_INDEX, $download)
+            ->add(Crud::PAGE_DETAIL, $download)
+            ->disable(Action::NEW, Action::EDIT, Action::DELETE);
     }
 
     public function configureFields(string $pageName): iterable
