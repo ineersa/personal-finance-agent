@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "4b60ed3fbe04ebc56bfcaddeb8ba0f3d",
+    "content-hash": "8554bf0bff80a83657c677ee09934d41",
     "packages": [
         {
             "name": "composer/semver",
@@ -14713,6 +14713,7 @@
         "symfony/rate-limiter": 20,
         "symfony/runtime": 20,
         "symfony/twig-bundle": 20,
+        "symfony/uid": 20,
         "symfony/web-profiler-bundle": 20,
         "symfony/yaml": 20
     },

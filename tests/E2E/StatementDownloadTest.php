@@ -41,7 +41,7 @@ final class StatementDownloadTest extends FinanceBrowserTest
                 self::assertStringContainsString('no-store', $download['cache']);
                 self::assertSame('nosniff', $download['nosniff']);
             }
-            foreach (['/statements/'.$statement->storageKey, '/var/statements/'.$statement->storageKey, '/var/browser/statements/'.$statement->storageKey, '/home/statement/not-a-statement/download', '/home/statement/%2E%2E%2Fetc%2Fpasswd/download'] as $path) {
+            foreach (['/statements/'.$statement->storedFilename, '/var/statements/'.$statement->storedFilename, '/var/browser/statements/'.$statement->storedFilename, '/home/statement/not-a-statement/download', '/home/statement/%2E%2E%2Fetc%2Fpasswd/download'] as $path) {
                 self::assertSame(404, $page->evaluate('async path => (await fetch(path)).status', $path), $path);
             }
         }

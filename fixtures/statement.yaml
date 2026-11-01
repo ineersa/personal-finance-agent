@@ -4,7 +4,7 @@ App\Entity\Statement:
         __construct:
             - '@demo'
             - '@demo_current'
-            - synthetic-demo-october-2026
+            - a19abfd3-cbb5-4ead-8be0-a8ed2b99be01
             - demo-october-2026.csv
             - text/csv
             - 0
@@ -14,7 +14,7 @@ App\Entity\Statement:
         __construct:
             - '@demo'
             - '@demo_card'
-            - synthetic-demo-card-2026
+            - a19abfd3-cbb5-4ead-8be0-a8ed2b99be02
             - demo-card-2026.csv
             - text/csv
             - 0
@@ -24,7 +24,7 @@ App\Entity\Statement:
         __construct:
             - '@administrator'
             - '@admin_current'
-            - synthetic-admin-october-2026
+            - a19abfd3-cbb5-4ead-8be0-a8ed2b99be03
             - admin-october-2026.csv
             - text/csv
             - 0

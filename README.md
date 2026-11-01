@@ -44,7 +44,7 @@ Start the development stack first so it creates a private application secret. Ap
 	vendor/bin/castor dev:fixtures:load
 ```
 
-Load once into a database without the fixture identities. This task always uses native Hautelook Alice append mode. It does not purge existing records or overwrite existing accounts; repeated loads fail on unique email/storage-key constraints. Do not remove owner data to make a repeated load succeed.
+Load once into a database without the fixture identities. This task always uses native Hautelook Alice append mode. It does not purge existing records or overwrite existing accounts; repeated loads fail on unique email/stored-filename constraints. Do not remove owner data to make a repeated load succeed.
 
 Development and tests use the same canonical fixture definitions in `fixtures/*.yaml`, with no supplementary test dataset. Tests load these definitions into isolated test storage, never the development database. The fixtures provide **admin@test.com / admin** and **demo@test.com / demo**. Alice's password processor uses the configured Symfony password hasher. These intentionally public demo credentials are not production provisioning. The dataset includes shared categories with icons, separate owner sources, synthetic statements, approved income/spending transactions, and an incomplete draft excluded from approved screens. Alice's statement processor creates synthetic CSV bytes for owner-authorized downloads from the statement screens. It contains no real financial data. Upload and processing workflows are not implemented.
 

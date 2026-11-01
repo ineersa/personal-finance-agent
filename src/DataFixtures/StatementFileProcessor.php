@@ -22,11 +22,10 @@ final readonly class StatementFileProcessor implements ProcessorInterface
             return;
         }
         $content = "date,description,amount,currency\n2026-10-01,Synthetic fixture {$id},12.34,EUR\n";
-        $object->storageKey = substr(hash('sha256', 'synthetic-statement-'.$id), 0, 32);
         $object->byteSize = \strlen($content);
         $object->sha256 = hash('sha256', $content);
         $object->mediaType = 'text/csv';
-        $this->storage->write($object->storageKey, $content);
+        $this->storage->write($object->storedFilename, $content);
     }
 
     public function postProcess(string $id, object $object): void

@@ -7,6 +7,7 @@ namespace App\Storage;
 use League\Flysystem\FilesystemOperator;
 use Symfony\Component\DependencyInjection\Attribute\Target;
 use Symfony\Component\HttpFoundation\File\File;
+use Symfony\Component\Uid\Uuid;
 
 final readonly class StatementStorage
 {
@@ -16,7 +17,7 @@ final readonly class StatementStorage
 
     public function store(File $file): string
     {
-        $filename = bin2hex(random_bytes(16));
+        $filename = Uuid::v4()->toRfc4122();
         $stream = fopen($file->getPathname(), 'rb');
         if (false === $stream) {
             throw new \RuntimeException('Cannot open statement file.');
@@ -50,8 +51,8 @@ final readonly class StatementStorage
 
     private function assertFilename(string $filename): void
     {
-        if (1 !== preg_match('/\A[a-f0-9]{32}\z/', $filename)) {
-            throw new \InvalidArgumentException('Invalid statement storage key.');
+        if (1 !== preg_match('/\A[a-zA-Z0-9][a-zA-Z0-9._-]{0,254}\z/', $filename)) {
+            throw new \InvalidArgumentException('Invalid stored filename.');
         }
     }
 }
