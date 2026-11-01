@@ -38,21 +38,11 @@ final readonly class StatementStorage
     /** @return resource */
     public function read(string $filename)
     {
-        $this->assertFilename($filename);
-
         return $this->storage->readStream($filename);
     }
 
     public function delete(string $filename): void
     {
-        $this->assertFilename($filename);
         $this->storage->delete($filename);
-    }
-
-    private function assertFilename(string $filename): void
-    {
-        if (1 !== preg_match('/\A[a-zA-Z0-9][a-zA-Z0-9._-]{0,254}\z/', $filename)) {
-            throw new \InvalidArgumentException('Invalid stored filename.');
-        }
     }
 }
