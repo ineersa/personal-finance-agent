@@ -25,7 +25,7 @@ final class StatementDownloadController extends AbstractController
     {
         $statement = $statements->findForUser($owner, $id) ?? throw $this->createNotFoundException();
         try {
-            $stream = $storage->read($owner, $statement);
+            $stream = $storage->read($statement->storageKey);
         } catch (UnableToReadFile|\InvalidArgumentException) {
             throw $this->createNotFoundException('Statement file is unavailable.');
         }
