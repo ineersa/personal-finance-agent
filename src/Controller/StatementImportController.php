@@ -72,7 +72,9 @@ final class StatementImportController extends AbstractController
             try {
                 $lock = $lifecycle->acquire();
             } catch (ImportException $error) {
-                throw new \Symfony\Component\HttpKernel\Exception\ConflictHttpException($error->getMessage());
+                $this->addFlash('danger', $error->getMessage());
+
+                return $this->redirectToRoute('admin_statement_processing', ['id' => $id]);
             }
             try {
                 $connection = $entityManager->getConnection();

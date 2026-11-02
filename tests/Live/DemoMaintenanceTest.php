@@ -43,6 +43,8 @@ final class DemoMaintenanceTest extends TestCase
                 $page->goto($url.'/home/statement/'.$id);
                 $this->deleteThroughModal($page);
                 $page->getByText('Deletion refused: wait for this import to finish.', ['exact' => false])->waitFor();
+                self::assertSame($url.'/home/statement/'.$id, $page->url(), 'Busy deletion must return to the retained statement, not an exception page.');
+                self::assertStringContainsString('Deletion refused', $page->getByRole('alert')->textContent());
                 self::assertSame(200, $page->goto($url.'/home/statement/'.$id)?->status());
                 $page->goto($url.'/home/settings/reset');
                 $page->getByRole('checkbox')->check();

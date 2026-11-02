@@ -17,7 +17,6 @@
         <div id="import-live-subscription" data-turbo-permanent>
             {{ turbo_stream_from('https://finance.localhost/users/' ~ app.user.id ~ '/imports', private: true) }}
         </div>
-        <div id="import-notification" class="import-notification" data-turbo-permanent aria-live="polite"></div>
     {% endif %}
 {% endblock %}
 

@@ -22,7 +22,7 @@ final class StatementImportTest extends TestCase
                 $this->login($page, $url, 'demo@test.com', 'demo');
                 $page->goto($url.'/home/transaction');
                 $approvedRows = $page->locator('tbody')->textContent();
-                self::assertStringContainsString('Synthetic September salary', $approvedRows);
+                self::assertStringContainsString('PAYROLL LANTERN LABS', $approvedRows);
                 $manifest = json_decode((string) file_get_contents(\dirname(__DIR__, 2).'/resources/demo-statements/expected.json'), true, flags: \JSON_THROW_ON_ERROR);
                 $labels = ['demo_current' => 'Maple Harbour Chequing · 7318', 'demo_card' => 'Maple Harbour Rewards Visa · 4826', 'demo_usd' => 'Maple Harbour US Dollar · 9054'];
                 $saved = [];
@@ -41,8 +41,7 @@ final class StatementImportTest extends TestCase
                     $page->evaluate('() => { window.importPageProbe = "sse-only"; }');
                     $page->locator('[data-processing-status]')->filter(['hasText' => 'Import complete'])->waitFor(['timeout' => 120000]);
                     self::assertSame('sse-only', $page->evaluate('() => window.importPageProbe'), 'Completion must update the current document without a page refresh.');
-                    $page->locator('#import-notification a')->waitFor();
-                    self::assertTrue($page->locator('#import-notification a')->isVisible());
+                    self::assertSame(0, $page->locator('#import-notification')->count(), 'Import completion must not render a global toast.');
                     $page->goto($processingUrl);
                     self::assertSame('completed', $page->locator('[data-processing-status]')->getAttribute('data-status'));
                     $rows = $page->locator('[data-draft-results] tbody tr');
@@ -108,37 +107,6 @@ final class StatementImportTest extends TestCase
                 } finally {
                     $admin->close();
                 }
-            } finally {
-                $context->close();
-            }
-        });
-    }
-
-    public function testCompletionToastSurvivesNavigationToAnotherWorkspacePage(): void
-    {
-        $this->withBrowser(function (BrowserInterface $browser, string $url): void {
-            $context = $browser->newContext();
-            try {
-                $page = $context->newPage();
-                $this->login($page, $url, 'demo@test.com', 'demo');
-                $page->goto($url.'/home/statement-upload');
-                $page->locator('turbo-mercure-stream-source[connected]')->waitFor(['state' => 'attached']);
-                $page->getByLabel('Source', ['exact' => true])->selectOption(['label' => 'Maple Harbour Rewards Visa · 4826']);
-                $page->getByLabel('CSV statement', ['exact' => true])->setInputFiles(\dirname(__DIR__, 2).'/resources/demo-statements/credit/2026-10.csv');
-                $page->getByRole('checkbox')->check();
-                $page->getByRole('button', ['name' => 'Upload and prepare drafts'])->click();
-                $page->waitForURL('**/home/statement-processing/*');
-                $processingUrl = $page->url();
-                $page->getByRole('link', ['name' => 'Sources', 'exact' => true])->click();
-                $page->waitForURL('**/home/source');
-                $page->locator('#import-notification a[href="'.parse_url($processingUrl, \PHP_URL_PATH).'"]')->waitFor(['timeout' => 120000]);
-                self::assertSame($url.'/home/source', $page->url());
-                self::assertStringContainsString('Import complete. Draft transactions are saved for review.', $page->locator('#import-notification')->textContent());
-                self::assertSame(1, $page->locator('turbo-mercure-stream-source')->count());
-                $page->locator('#import-notification a')->click();
-                $page->waitForURL($processingUrl);
-                self::assertSame('completed', $page->locator('[data-processing-status]')->getAttribute('data-status'));
-                self::assertSame(17, $page->locator('[data-draft-results] tbody tr')->count());
             } finally {
                 $context->close();
             }

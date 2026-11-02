@@ -18,13 +18,16 @@ use Doctrine\ORM\QueryBuilder;
 use EasyCorp\Bundle\EasyAdminBundle\Config\Action;
 use EasyCorp\Bundle\EasyAdminBundle\Config\Actions;
 use EasyCorp\Bundle\EasyAdminBundle\Config\Crud;
+use EasyCorp\Bundle\EasyAdminBundle\Config\KeyValueStore;
+use EasyCorp\Bundle\EasyAdminBundle\Context\AdminContext;
 use EasyCorp\Bundle\EasyAdminBundle\Field\AssociationField;
 use EasyCorp\Bundle\EasyAdminBundle\Field\ChoiceField;
 use EasyCorp\Bundle\EasyAdminBundle\Field\DateField;
 use EasyCorp\Bundle\EasyAdminBundle\Field\DateTimeField;
 use EasyCorp\Bundle\EasyAdminBundle\Field\IntegerField;
 use EasyCorp\Bundle\EasyAdminBundle\Field\TextField;
-use Symfony\Component\HttpKernel\Exception\ConflictHttpException;
+use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\Security\Core\Exception\AccessDeniedException;
 use Symfony\Component\Security\Http\Attribute\IsGranted;
 
 /** @extends OwnedCrudController<Statement> */
@@ -71,6 +74,17 @@ final class StatementCrudController extends OwnedCrudController
         yield DateTimeField::new('processedAt');
     }
 
+    public function delete(AdminContext $context): KeyValueStore|Response
+    {
+        try {
+            return parent::delete($context);
+        } catch (ImportException $error) {
+            $this->addFlash('danger', $error->getMessage());
+
+            return $this->redirectToRoute('admin_statement_detail', ['entityId' => $context->getEntity()->getPrimaryKeyValue()]);
+        }
+    }
+
     public function deleteEntity(EntityManagerInterface $entityManager, object $entityInstance): void
     {
         $this->denyAccessUnlessGranted(FinanceRecordVoter::ACCESS, $entityInstance);
@@ -80,23 +94,23 @@ final class StatementCrudController extends OwnedCrudController
         try {
             $lock = $this->lifecycle->acquire(true);
         } catch (ImportException $error) {
-            throw new ConflictHttpException($error->getMessage());
+            throw new ImportException($error->getMessage());
         }
         try {
             $entityManager->refresh($entityInstance);
             $this->denyAccessUnlessGranted(FinanceRecordVoter::ACCESS, $entityInstance);
             if (\in_array($entityInstance->processingStatus, [ProcessingStatus::Queued, ProcessingStatus::Running], true)) {
-                throw new ConflictHttpException('Deletion refused: wait for this import to finish.');
+                throw new ImportException('Deletion refused: wait for this import to finish.');
             }
             $this->storage->delete($entityInstance->storedFilename);
             $entityManager->wrapInTransaction(static function () use ($entityManager, $entityInstance): void {
                 $entityManager->createQuery('DELETE FROM '.Transaction::class.' record WHERE record.statement = :statement')->setParameter('statement', $entityInstance)->execute();
                 $entityManager->remove($entityInstance);
             });
-        } catch (ConflictHttpException $error) {
+        } catch (ImportException|AccessDeniedException $error) {
             throw $error;
         } catch (\Throwable) {
-            throw new ConflictHttpException('Deletion incomplete. The original file may already be removed. Check storage and database availability before retrying.');
+            throw new ImportException('Deletion incomplete. The original file may already be removed. Check storage and database availability before retrying.');
         } finally {
             $lock->release();
         }

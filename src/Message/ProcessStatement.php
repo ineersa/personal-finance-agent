@@ -6,7 +6,7 @@ namespace App\Message;
 
 final readonly class ProcessStatement
 {
-    public function __construct(public int $statementId, public int $ownerId, public string $storedFilename)
+    public function __construct(public int $statementId, public int $ownerId, public ?string $storedFilename = null)
     {
     }
 }

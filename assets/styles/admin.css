@@ -21,15 +21,6 @@
 .import-table td:nth-child(3) { text-align: right; font-variant-numeric: tabular-nums; }
 .import-retry { margin: 0 0 2rem; }
 .demo-reset-settings { margin: 2rem 0; }
-.import-notification .alert { border-radius: 14px; padding: 1.25rem 3rem 1.25rem 1.25rem; box-shadow: 0 12px 36px #0006; margin: 0; }
-.import-notification a { display: block; margin-top: .5rem; overflow-wrap: anywhere; }
-.import-notification {
-    position: fixed;
-    right: 1rem;
-    bottom: 1rem;
-    z-index: 1100;
-    max-width: min(28rem, calc(100vw - 2rem));
-}
 :root, .ea-dark-scheme { --ea-primary-foreground: #111112; }
 body.ea-dark-scheme {
     --body-bg: #111112;

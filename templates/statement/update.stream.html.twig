@@ -1,7 +1,1 @@
 <turbo-stream action="replace" target="statement-processing-{{ statement.id }}"><template>{{ include('statement/_results.html.twig') }}</template></turbo-stream>
-<turbo-stream action="update" target="import-notification"><template>
-    <twig:ea:Alert variant="{{ statement.processingStatus.value == 'completed' ? 'success' : 'danger' }}" withDismissButton>
-        {{ statement.processingStatus.value == 'completed' ? 'Import complete. Draft transactions are saved for review.' : 'Import failed. Open the statement for details and retry options.' }}
-        <a href="{{ path('admin_statement_processing', {id: statement.id}) }}">{{ statement.originalFilename }} — View status and drafts</a>
-    </twig:ea:Alert>
-</template></turbo-stream>
