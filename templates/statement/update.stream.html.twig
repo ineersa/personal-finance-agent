@@ -1,9 +1,7 @@
 <turbo-stream action="replace" target="statement-processing-{{ statement.id }}"><template>{{ include('statement/_results.html.twig') }}</template></turbo-stream>
-<turbo-stream action="replace" target="import-notification"><template>
-    <div id="import-notification" class="import-notification" data-turbo-permanent aria-live="polite">
-        <twig:ea:Alert variant="{{ statement.processingStatus.value == 'completed' ? 'success' : 'danger' }}" withDismissButton>
-            {{ statement.processingStatus.value == 'completed' ? 'Statement drafts are ready.' : 'Statement processing failed.' }}
-            <a href="{{ path('admin_statement_processing', {id: statement.id}) }}">{{ statement.originalFilename }} — View status and drafts</a>
-        </twig:ea:Alert>
-    </div>
+<turbo-stream action="update" target="import-notification"><template>
+    <twig:ea:Alert variant="{{ statement.processingStatus.value == 'completed' ? 'success' : 'danger' }}" withDismissButton>
+        {{ statement.processingStatus.value == 'completed' ? 'Statement drafts are ready.' : 'Statement processing failed.' }}
+        <a href="{{ path('admin_statement_processing', {id: statement.id}) }}">{{ statement.originalFilename }} — View status and drafts</a>
+    </twig:ea:Alert>
 </template></turbo-stream>

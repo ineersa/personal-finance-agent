@@ -41,6 +41,7 @@ final class StatementImportTest extends TestCase
                     $page->evaluate('() => { window.importPageProbe = "sse-only"; }');
                     $page->locator('[data-processing-status]')->filter(['hasText' => 'completed'])->waitFor(['timeout' => 120000]);
                     self::assertSame('sse-only', $page->evaluate('() => window.importPageProbe'), 'Completion must update the current document without a page refresh.');
+                    $page->locator('#import-notification a')->waitFor();
                     self::assertTrue($page->locator('#import-notification a')->isVisible());
                     $page->goto($processingUrl);
                     self::assertSame('completed', $page->locator('[data-processing-status]')->textContent());
