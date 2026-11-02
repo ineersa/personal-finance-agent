@@ -14,6 +14,7 @@ use EasyCorp\Bundle\EasyAdminBundle\Config\Crud;
 use EasyCorp\Bundle\EasyAdminBundle\Field\ChoiceField;
 use EasyCorp\Bundle\EasyAdminBundle\Field\TextareaField;
 use EasyCorp\Bundle\EasyAdminBundle\Field\TextField;
+use Symfony\Component\Form\Extension\Core\Type\EnumType;
 use Symfony\Component\Security\Http\Attribute\IsGranted;
 
 /** @extends OwnedCrudController<Source> */
@@ -39,7 +40,8 @@ final class SourceCrudController extends OwnedCrudController
         yield TextField::new('name');
         yield TextareaField::new('description');
         yield TextField::new('currency')->setHelp('Three-letter statement currency, for example CAD or USD. Required before CSV processing.')->setRequired(false);
-        yield ChoiceField::new('instrumentKind', 'Instrument kind')->setChoices(['Bank account' => InstrumentKind::BankAccount, 'Credit card' => InstrumentKind::CreditCard, 'Other' => InstrumentKind::Other])->renderAsNativeWidget();
+        yield ChoiceField::new('instrumentKind', 'Instrument kind')->setFormType(EnumType::class)->setFormTypeOption('class', InstrumentKind::class)
+            ->setChoices(['Bank account' => InstrumentKind::BankAccount, 'Credit card' => InstrumentKind::CreditCard, 'Other' => InstrumentKind::Other])->renderAsNativeWidget();
     }
 
     public function configureCrud(Crud $crud): Crud
