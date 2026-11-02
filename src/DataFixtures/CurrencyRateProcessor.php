@@ -36,7 +36,7 @@ final readonly class CurrencyRateProcessor implements ProcessorInterface
                 $rows[] = [$date, $currency, $rate];
             }
         }
-        // Native Alice post-processing avoids ORM's date-object composite-ID hashing.
+        // Bulk native Alice post-processing avoids thousands of ORM fixture objects.
         // Parse/expand before writing; participate in any existing fixture transaction.
         $this->connection->transactional(static function (Connection $connection) use ($rows): void {
             foreach (array_chunk($rows, 250) as $batch) {
