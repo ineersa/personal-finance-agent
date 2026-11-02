@@ -99,11 +99,27 @@ final class DemoMaintenanceTest extends TestCase
                 $page->goto($url.'/home/statement/'.$saved['id']);
                 $uploadDownload = $page->locator('.action-download')->getAttribute('href');
 
+                // Existing isolated stacks can predate the canonical export. Establish the
+                // baseline through the real reset UI, not assumptions or direct fixture writes.
+                $this->resetThroughSettings($page, $url);
+                $this->login($page, $url, 'demo@test.com', 'demo');
+                self::assertSame(404, $page->goto($url.'/home/statement-processing/'.$saved['id'])?->status());
+                self::assertSame(404, $page->evaluate('async url => (await fetch(url)).status', $uploadDownload));
+                $page->goto($url.'/home/statement');
+                self::assertStringContainsString('69', $page->locator('.list-pagination-counter')->textContent(), 'Initial browser reset must restore canonical history before deletion checks.');
+                $page->goto($url.'/home/transaction');
+                self::assertStringContainsString('733', $page->locator('.list-pagination-counter')->textContent(), 'Initial browser reset must restore canonical approved transactions.');
+                $this->login($adminPage, $url, 'admin@test.com', 'admin');
+                $this->login($stalePage, $url, 'demo@test.com', 'demo');
+
                 // Follow a real approved row to its statement, then prove linked-row removal.
                 $page->goto($url.'/home/transaction?query=USD');
-                $transaction = $page->locator('tbody tr a.action-detail')->first()->getAttribute('href');
+                $approvedUsdRows = $page->locator('tbody tr a.action-detail');
+                self::assertGreaterThan(0, $approvedUsdRows->count(), 'Canonical demo history must expose approved USD transactions before following a detail link.');
+                $transaction = $approvedUsdRows->first()->getAttribute('href');
                 self::assertNotNull($transaction);
                 $page->goto($transaction);
+                self::assertSame(1, $page->locator('a[href*="/home/statement/"]')->count(), 'The approved transaction detail must link to its source statement.');
                 $statement = $page->locator('a[href*="/home/statement/"]')->first()->getAttribute('href');
                 self::assertNotNull($statement);
                 $processing = $url.'/home/statement-processing/'.basename($statement);
@@ -128,10 +144,9 @@ final class DemoMaintenanceTest extends TestCase
                 $page->goto($url.'/home/settings');
                 $page->getByLabel('Reporting currency')->selectOption('EUR');
                 $page->getByRole('button', ['name' => 'Save preferences'])->click();
-                $page->getByRole('link', ['name' => 'Reset demo data…'])->click();
-                $page->getByRole('checkbox')->check();
-                $page->getByRole('button', ['name' => 'Delete all data and restore demo'])->click();
-                $page->waitForURL('**/login');
+                $page->getByText('Reporting currency saved. Original amounts are unchanged.')->waitFor();
+                self::assertSame('EUR', $page->getByLabel('Reporting currency')->inputValue());
+                $this->resetThroughSettings($page, $url);
                 $stalePage->goto($url.'/home/source');
                 $stalePage->waitForURL('**/login');
                 $adminPage->goto($url.'/home/user');
@@ -159,6 +174,16 @@ final class DemoMaintenanceTest extends TestCase
                 $context->close();
             }
         });
+    }
+
+    private function resetThroughSettings(PageInterface $page, string $url): void
+    {
+        $page->goto($url.'/home/settings');
+        self::assertSame(1, $page->getByRole('link', ['name' => 'Reset demo data…'])->count(), 'Explicit local-demo reset enablement is required.');
+        $page->getByRole('link', ['name' => 'Reset demo data…'])->click();
+        $page->getByRole('checkbox')->check();
+        $page->getByRole('button', ['name' => 'Delete all data and restore demo'])->click();
+        $page->waitForURL('**/login');
     }
 
     private function postNativeDelete(PageInterface $page, string $target): int
