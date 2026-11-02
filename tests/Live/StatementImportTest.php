@@ -55,7 +55,7 @@ final class StatementImportTest extends TestCase
                 $page->getByLabel('Amount', ['exact' => true])->fill('123.4500');
                 $page->getByLabel('Currency', ['exact' => true])->fill('USD');
                 $page->getByRole('combobox', ['name' => 'Direction', 'exact' => true])->click();
-                $page->getByRole('option', ['name' => 'Debit', 'exact' => true])->click();
+                $page->getByRole('listbox', ['name' => 'Direction', 'exact' => true])->getByRole('option', ['name' => 'Debit', 'exact' => true])->click();
                 $page->getByLabel('Description', ['exact' => true])->fill('Reviewed October transaction');
                 $page->getByLabel('Source', ['exact' => true])->selectOption(['label' => 'Maple Harbour US Dollar · 9054']);
                 $page->getByLabel('Category', ['exact' => true])->selectOption(['label' => 'Groceries']);
