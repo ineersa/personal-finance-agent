@@ -322,7 +322,7 @@ function browserLifecycleTest(bool $workerFailure = false): int
             $container = 'pfa-qa-worker-failure-'.bin2hex(random_bytes(6));
             $browser = new Process(runtimeCommand(['env', 'FINANCE_IMPORT_URL='.stackUrl('browser'), 'FINANCE_PROXY_IP='.proxyAddress(), 'php', 'vendor/bin/phpunit', 'tests/Live/StatementLifecycleTest.php', '--filter', 'testExhaustedWorkerFailure', '--fail-on-empty-test-suite'], $container, false, true), $root, timeout: 150);
             $execution = TaskExecution::$current ?? throw new \LogicException('Missing task execution.');
-            $queueCount = static function (): int {
+            $queueCount = /** @phpstan-impure */ static function (): int {
                 $code = <<<'CODE'
                     require 'vendor/autoload.php';
                     if (!is_file('/app/var/queue/broker.db')) { throw new RuntimeException('Missing isolated broker database.'); }
@@ -337,7 +337,7 @@ function browserLifecycleTest(bool $workerFailure = false): int
 
                 return (int) trim($query->getOutput());
             };
-            $count = static function (string $where): int {
+            $count = /** @phpstan-impure */ static function (string $where): int {
                 $query = new Process([...stackCommand('browser'), 'exec', '-T', 'php', 'php', 'bin/console', 'doctrine:query:dql', 'SELECT COUNT(record.id) FROM App\\Entity\\Statement record WHERE '.$where, '--hydrate=single-scalar', '--no-ansi'], \dirname(__DIR__), stackEnvironment('browser'), timeout: 30);
                 runTaskProcess($query);
                 if (1 !== preg_match('/(?:int\((\d+)\)|string\(\d+\) "(\d+)")/', $query->getOutput(), $match)) {
