@@ -201,7 +201,8 @@ final class DemoWorkspaceTest extends FinanceBrowserTest
         $page->getByLabel('Password', ['exact' => true])->fill($password);
         $this->submit(static fn () => $page->getByRole('button', ['name' => 'Log in', 'exact' => true])->click());
         $errors = $page->locator('.form-error[role="alert"]');
-        self::assertSame(0, $errors->count(), implode('; ', $errors->allTextContents()));
+        $errorCount = $errors->count();
+        self::assertSame(0, $errorCount, $errorCount > 0 ? $errors->first()->textContent() : '');
         $this->assertNavigationPath($page, 'admin@test.com' === $email ? '/home/user' : '/home/chat');
     }
 }
