@@ -27,7 +27,11 @@ Raw SQL `SUM` or `CAST` can still coerce textual values; SQL-based money aggrega
 - Use public ECB HTTPS feeds; no paid FX provider or API key is required. Local rate caching/import in the existing application SQLite database is appropriate, without selecting a scheduler or new service.
 - Aim for roughly the last three years of historical coverage initially. This is sufficient initial coverage, not an exact retention/deletion threshold. Exact history windows and backfill mechanics remain open.
 
-ECB reference valuation is not the bank's actual execution rate or fees. Missing dates/weekends, rounding, scale, and handling unavailable rates remain implementation choices. Do not silently substitute today's rate, zero, or dropped records as an approved fallback.
+ECB reference valuation is not the bank's actual execution rate or fees. Fill missing calendar dates with each currency's previous available rate, including weekends and holidays. Never fill dates before that currency's first available reference rate. Unstored dates fail conversion explicitly.
+
+The manual `app:currency:import` command downloads the public historical feed and upserts the last three years through today, preserving older stored rows. EUR stays implicit. Run it through `vendor/bin/castor app:console -- app:currency:import`; no scheduler is installed.
+
+Conversion keeps multiplication exact and divides to at least 20 fractional decimal places (or the input amount's scale if greater). This is finite calculation precision, not a promise of exact repeating quotients. Reuse existing `format_currency` for display; do not add a separate display-rounding layer.
 
 ## Alternatives considered
 
@@ -38,8 +42,8 @@ ECB reference valuation is not the bank's actual execution rate or fees. Missing
 ## Consequences
 
 - Verify database round trips, aggregation, conversion, and presentation with known exact values before claiming monetary correctness.
-- Feed parsing, rounding/scale, missing-day behavior, cache/import, and backfill integration remain implementation details.
-- The schema provides textual amount/rate storage only. No FX importer, scheduler, conversion or precision-preserving SQL aggregate is implemented.
+- The importer and converter have no browser consumer yet; their runtime integration and exact-value browser verification remain outstanding.
+- No scheduler, financial-query integration or precision-preserving SQL aggregate is implemented.
 
 ## References
 
