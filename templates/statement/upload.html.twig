@@ -1,0 +1,15 @@
+{% extends '@EasyAdmin/page/content.html.twig' %}
+{% form_theme form with ['@EasyAdmin/crud/form_theme.html.twig'] only %}
+{% block content_title %}Upload CSV statement{% endblock %}
+{% block main %}
+    <p>Maximum 10 MiB. Select the account or card that owns this statement. Set its currency and instrument kind in Sources first.</p>
+    <p>Processing sends representative CSV rows and transaction details to <strong>{{ providerHost }}</strong> using Jev. This is separate from your chat provider. Private descriptions, dates and amounts can leave this installation. Uploaded bytes remain in private local storage.</p>
+    <p>Supported now: UTF-8 comma-separated CSV, ISO dates and separate unsigned debit/credit columns. Processing creates drafts only; nothing is automatically approved or included in financial analysis.</p>
+    {{ form_start(form) }}
+        {{ form_errors(form) }}
+        {{ form_row(form.source) }}
+        {{ form_row(form.file) }}
+        {{ form_row(form.providerConsent) }}
+        <button class="btn btn-primary" type="submit">Upload and prepare drafts</button>
+    {{ form_end(form) }}
+{% endblock %}

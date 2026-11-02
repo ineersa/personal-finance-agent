@@ -27,6 +27,8 @@ Configure extraction provider/model independently of chat through settings/envir
 
 Scanned/image-only PDF support and an existing OCR backend remain unresolved; ordinary conversion is not proof of automatic/free OCR. Do not build a custom OCR engine/pipeline. Subsequent AI extraction follows the configured provider's data-transfer policy. [ADR 0016](docs/adr/0016-local-markitdown-conversion.md) records the local conversion boundary.
 
+While an ordinary user's workspace is open, deliver import completion/failure through private Mercure updates. Update the processing view and show a dismissible completion/failure notice linking to the owned status/drafts page, including after navigation elsewhere in the workspace. Reuse native Symfony UX Turbo and EasyAdmin components. Persisted statement status remains authoritative after closing or reopening the browser; no durable notification inbox or operating-system notifications are required.
+
 ## Finance semantics and reporting
 
 A source is a bank account, card, or other financial account instrument, not a merchant. Keep one transaction date exactly from the statement, original amount/currency, credit/debit direction, and category. Direction alone does not distinguish income, refunds, or own-account transfers; no complex accounting or inferred tax policy is selected.

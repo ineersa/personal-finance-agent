@@ -63,7 +63,28 @@ function stackCommand(string $mode): array
 /** @return array<string, string> */
 function stackEnvironment(string $mode): array
 {
-    return ['FINANCE_CHECKOUT_ID' => checkoutId(), 'FINANCE_PROJECT' => stackProject($mode), 'FINANCE_NETWORK' => developmentNetwork(), 'LOCAL_UID' => (string) posix_getuid(), 'LOCAL_GID' => (string) posix_getgid()];
+    $directory = \dirname(__DIR__).'/var/tooling';
+    if (is_link($directory)) {
+        throw new \RuntimeException('Refusing symlinked runtime secrets.');
+    }
+    if (!is_dir($directory)) {
+        mkdir($directory, 0700, true);
+    }
+    $secret = $directory.'/mercure-'.$mode.'.key';
+    if (is_link($secret)) {
+        throw new \RuntimeException('Refusing symlinked Mercure secret.');
+    }
+    if (!is_file($secret)) {
+        $file = fopen($secret, 'xb');
+        if (false === $file) {
+            throw new \RuntimeException('Cannot create Mercure secret.');
+        }
+        chmod($secret, 0600);
+        fwrite($file, bin2hex(random_bytes(32)));
+        fclose($file);
+    }
+
+    return ['FINANCE_CHECKOUT_ID' => checkoutId(), 'FINANCE_PROJECT' => stackProject($mode), 'FINANCE_NETWORK' => developmentNetwork(), 'FINANCE_PUBLIC_URL' => stackUrl($mode), 'MERCURE_JWT_SECRET' => trim((string) file_get_contents($secret)), 'LOCAL_UID' => (string) posix_getuid(), 'LOCAL_GID' => (string) posix_getgid()];
 }
 
 /** @param list<string> $arguments */
@@ -201,6 +222,13 @@ function developmentStack(string $mode, string $action): int
                 if ('browser' === $mode && !is_dir(\dirname(__DIR__).'/var/browser-live/browser')) {
                     mkdir(\dirname(__DIR__).'/var/browser-live/browser', 0700, true);
                 }
+                $queue = \dirname(__DIR__).'/var/'.('browser' === $mode ? 'browser-live/' : '').'queue';
+                if (is_link($queue)) {
+                    throw new \RuntimeException('Refusing symlinked queue storage.');
+                }
+                if (!is_dir($queue)) {
+                    mkdir($queue, 0700, true);
+                }
                 stackRun($mode, ['build']);
                 writeProxyConfig($state, $routes);
                 ensureProxy($state);
@@ -249,6 +277,22 @@ function developmentStackStatus(): int
 function developmentStackStop(): int
 {
     return developmentStack('dev', 'stop');
+}
+
+#[AsTask(namespace: 'browser', name: 'imports:test', description: 'Run real-network upload scenarios against this checkout’s isolated stack; hosted Jev calls are paid.')]
+function browserImportsTest(bool $replay = false, bool $privacy = false, bool $boundary = false): int
+{
+    if ((int) $replay + (int) $privacy + (int) $boundary > 1) {
+        throw new \InvalidArgumentException('Select only one verification mode.');
+    }
+    $arguments = ['--filter', $replay ? 'testPreviouslyCompletedImportsRemainUnchangedAfterOperatorRedelivery' : 'testThreeSourceUploads|testMalformedUpload|testCompletionToast'];
+    $file = 'tests/Live/StatementImportTest.php';
+    if ($privacy || $boundary) {
+        $arguments = [];
+        $file = $privacy ? 'tests/Live/ImportPrivacyTest.php' : 'tests/Live/UploadBoundaryTest.php';
+    }
+
+    return report('browser:imports:test', ['env', 'FINANCE_IMPORT_URL='.stackUrl('browser'), 'FINANCE_IMPORT_REPLAY='.($replay ? '1' : '0'), 'FINANCE_PROXY_IP='.proxyAddress(), 'php', 'vendor/bin/phpunit', $file, ...$arguments, '--fail-on-empty-test-suite', '--log-junit', 'var/qa/browser-imports-test/junit.xml'], networked: true);
 }
 
 #[AsTask(namespace: 'browser', name: 'routes:test', description: 'Verify comma-separated live stack URLs in a real tooling-container browser.')]

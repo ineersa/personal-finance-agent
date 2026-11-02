@@ -1,6 +1,8 @@
 # yaml-language-server: $schema=../schema.json
 twig:
     file_name_pattern: '*.twig'
+    globals:
+        import_updates_enabled: '%env(bool:IMPORT_UPDATES_ENABLED)%'
 
 when@test:
     twig:

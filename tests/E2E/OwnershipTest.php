@@ -17,7 +17,7 @@ final class OwnershipTest extends FinanceBrowserTest
         $fixtures = FixtureStore::getFixtures();
         $this->loginUser($fixtures['demo']);
         foreach ([
-            'source' => ['Demo current account', 'Admin private account'],
+            'source' => ['Maple Harbour Chequing · 7318', 'Admin private account'],
             'transaction' => ['Synthetic September salary', 'Admin private synthetic purchase'],
             'statement' => ['demo-september-2026.csv', 'admin-september-2026.csv'],
         ] as $screen => [$own, $foreign]) {

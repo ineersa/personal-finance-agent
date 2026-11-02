@@ -90,7 +90,7 @@ function demoMonthlyRows(string $source, int $month, string $period): array
         $add(15, 'PAYROLL LANTERN LABS', 286000 + intdiv($month, 6) * 8500, 'credit', 'salary', 'income', 'other_recurring');
         $add(18, 'TRANSFER TO OWN DEMO USD ACCOUNT', 40000 + $variation(3, 8000), 'debit', 'transfers', 'own_account_transfer');
         $add(21, 'LOAN PAYMENT monthly', 18500, 'debit', 'loans', 'expense', 'recurring_bill');
-        $add(24, 'INVESTMENT CONTRIBUTION monthly', 27500, 'debit', 'savings', 'own_account_transfer', 'other_recurring');
+        $add(24, 'TRANSFER TO OWN INVESTMENT ACCOUNT monthly contribution', 27500, 'debit', 'savings', 'own_account_transfer', 'other_recurring');
         $add(27, 'MONTHLY ACCOUNT FEE', 1195, 'debit', 'fees', 'expense', 'recurring_bill');
         $add(28, 'INTEREST PAID', 35 + $variation(4, 90), 'credit', 'other_income', 'income', 'other_recurring');
     } elseif ('credit' === $source) {

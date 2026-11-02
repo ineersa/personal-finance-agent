@@ -13,6 +13,12 @@
     {# The native layout shares this captured fragment between both responsive headers. #}
     {% set settings_dropdown = '' %}
     {{ parent() }}
+    {% if import_updates_enabled and app.user and not is_granted('ROLE_ADMIN') %}
+        <div id="import-live-subscription" data-turbo-permanent>
+            {{ turbo_stream_from('https://finance.localhost/users/' ~ app.user.id ~ '/imports', private: true) }}
+        </div>
+        <div id="import-notification" class="import-notification" data-turbo-permanent aria-live="polite"></div>
+    {% endif %}
 {% endblock %}
 
 {% block header_logo %}{{ include('chrome/brand.html.twig') }}{% endblock %}

@@ -92,6 +92,6 @@ final class SourceCrudTest extends FinanceBrowserTest
 
         $this->assertPageContains('This record is still referenced and was not deleted');
         $this->visit('/home/source');
-        $this->assertPageContains('Demo current account');
+        $this->assertPageContains('Maple Harbour Chequing · 7318');
     }
 }

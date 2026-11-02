@@ -18,11 +18,13 @@
         "doctrine/doctrine-migrations-bundle": "^4.0",
         "doctrine/orm": "^3.7",
         "easycorp/easyadmin-bundle": "^5.8",
+        "fabpot/amphp-sqlite3": "dev-development",
+        "ineersa/sqlite-queue": "dev-main",
         "league/flysystem-bundle": "^3.0",
         "symfony/ai-agent": "~1.0.0@beta",
-        "symfony/ai-decision-platform": "1.0.0-BETA1",
+        "symfony/ai-decision-platform": "~1.0.0@beta",
         "symfony/ai-platform": "~1.0.0@beta",
-        "symfony/ai-type-safe-platform": "1.0.0-BETA1",
+        "symfony/ai-type-safe-platform": "~1.0.0@beta",
         "symfony/asset": "8.2.*@dev",
         "symfony/asset-mapper": "8.2.*@dev",
         "symfony/console": "8.2.*@dev",
@@ -30,15 +32,22 @@
         "symfony/flex": "^2.10",
         "symfony/framework-bundle": "8.2.*@dev",
         "symfony/lock": "8.2.*@dev",
+        "symfony/mercure-bundle": "^0.6.1",
+        "symfony/messenger": "8.2.*@dev",
         "symfony/monolog-bundle": "^4.1",
         "symfony/rate-limiter": "8.2.*@dev",
         "symfony/runtime": "8.2.*@dev",
         "symfony/security-bundle": "8.2.*",
         "symfony/twig-bundle": "8.2.*@dev",
         "symfony/uid": "8.2.*@dev",
+        "symfony/ux-turbo": "^3.6",
         "symfony/yaml": "8.2.*@dev",
         "twig/twig": "^3.24"
     },
+    "repositories": [
+        {"type": "vcs", "url": "https://github.com/ineersa/sqlite-queue", "only": ["ineersa/sqlite-queue"]},
+        {"type": "vcs", "url": "https://github.com/ineersa/amp-sqlite3", "only": ["fabpot/amphp-sqlite3"]}
+    ],
     "config": {
         "allow-plugins": {
             "symfony/flex": true,

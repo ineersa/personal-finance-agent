@@ -39,7 +39,7 @@ final class AuthenticationTest extends FinanceBrowserTest
         $this->submitLogin($page, 'demo@test.com', self::PASSWORD);
         $page->locator('.finance-chat .chat-empty')->waitFor();
         $page = $this->visit('/home/source');
-        $this->assertPageContains('Demo current account');
+        $this->assertPageContains('Maple Harbour Chequing · 7318');
         self::assertStringNotContainsString('Admin private account', $page->locator('body')->textContent());
         $page = $this->visit('/home/settings');
         $page->locator('.user-menu-wrapper:visible .user-details')->click();

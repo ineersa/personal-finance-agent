@@ -47,7 +47,7 @@ final class TransactionCrudTest extends FinanceBrowserTest
         $this->loginUser($fixtures['demo']);
         $page = $this->visit('/home/transaction/'.$fixtures['demo_salary']->getId().'/edit');
         self::assertSame((string) $fixtures['demo_current']->getId(), $page->locator('select[name="Transaction[source]"]')->inputValue());
-        self::assertStringContainsString('Demo credit card', $page->locator('select[name="Transaction[source]"]')->textContent());
+        self::assertStringContainsString('Maple Harbour Rewards Visa · 4826', $page->locator('select[name="Transaction[source]"]')->textContent());
         self::assertStringNotContainsString('Admin private account', $page->locator('select[name="Transaction[source]"]')->textContent());
         foreach ([(string) $fixtures['admin_current']->getId(), ''] as $source) {
             $page->evaluate('(id) => { const s = document.querySelector("select[name=\"Transaction[source]\"]"); s.closest("form").noValidate = true; s.add(new Option("Invalid source", id, true, true)); }', $source);

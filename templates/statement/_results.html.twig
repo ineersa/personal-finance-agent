@@ -1,0 +1,21 @@
+<section id="statement-processing-{{ statement.id }}">
+    <p>{{ statement.originalFilename }} — {{ statement.source.name }}</p>
+    <p>Status: <strong data-processing-status>{{ statement.processingStatus.value }}</strong></p>
+    {% if statement.processingStatus.value == 'completed' %}
+        <twig:ea:Alert variant="success">Drafts are ready. <a href="#draft-results">View draft results</a>. They still require review before approval.</twig:ea:Alert>
+    {% elseif statement.processingStatus.value in ['queued', 'running'] %}
+        <p role="status">Processing is in progress. Live updates appear while your workspace is open. You can also return from Statements later.</p>
+    {% endif %}
+    {% if statement.processingError %}<p role="alert">{{ statement.processingError }}</p>{% endif %}
+    <p>
+        <a class="btn btn-secondary" href="{{ path('admin_statement_processing', {id: statement.id}) }}">Refresh processing status</a>
+        <a class="btn btn-secondary" href="{{ path('app_statement_download', {id: statement.id}) }}" data-turbo="false">Download original</a>
+        <a href="{{ path('admin_statement_upload') }}">Upload another statement</a>
+    </p>
+    <h2 id="draft-results">Draft results ({{ drafts|length }})</h2>
+    <p>These rows are unapproved and excluded from financial analysis. Editing and approval follow in the draft review workflow. Unknown interpretations require review; transfer and card-payment meanings exclude movements from spending and income without requiring a matched pair.</p>
+    <div class="table-responsive"><table class="table" data-draft-results>
+        <thead><tr><th>Date</th><th>Description</th><th>Amount</th><th>Currency</th><th>Direction</th><th>Category</th><th>Meaning</th><th>Recurrence</th></tr></thead>
+        <tbody>{% for row in drafts %}<tr><td>{{ row.transactionDate|date('Y-m-d') }}</td><td>{{ row.description }}</td><td>{{ row.amount }}</td><td>{{ row.currency }}</td><td>{{ row.direction.value }}</td><td>{{ row.category ? row.category.name : 'Uncategorized' }}</td><td>{{ row.meaning.value }}</td><td>{{ row.recurrence.value }}</td></tr>{% endfor %}</tbody>
+    </table></div>
+</section>

@@ -13,6 +13,7 @@ use EasyCorp\Bundle\EasyAdminBundle\Config\Action;
 use EasyCorp\Bundle\EasyAdminBundle\Config\Actions;
 use EasyCorp\Bundle\EasyAdminBundle\Config\Crud;
 use EasyCorp\Bundle\EasyAdminBundle\Field\AssociationField;
+use EasyCorp\Bundle\EasyAdminBundle\Field\ChoiceField;
 use EasyCorp\Bundle\EasyAdminBundle\Field\DateField;
 use EasyCorp\Bundle\EasyAdminBundle\Field\DateTimeField;
 use EasyCorp\Bundle\EasyAdminBundle\Field\IntegerField;
@@ -34,11 +35,16 @@ final class StatementCrudController extends OwnedCrudController
 
     public function configureActions(Actions $actions): Actions
     {
+        $upload = Action::new('uploadCsv', 'Upload CSV')->linkToRoute('admin_statement_upload')->createAsGlobalAction();
+        $processing = Action::new('processing', 'Processing and drafts')->linkToRoute('admin_statement_processing', static fn (Statement $statement): array => ['id' => $statement->getId()]);
         $download = Action::new('download', 'Download')
             ->linkToRoute('app_statement_download', static fn (Statement $statement): array => ['id' => $statement->getId()])
             ->setHtmlAttributes(['data-turbo' => 'false']);
 
         return parent::configureActions($actions)
+            ->add(Crud::PAGE_INDEX, $upload)
+            ->add(Crud::PAGE_INDEX, $processing)
+            ->add(Crud::PAGE_DETAIL, $processing)
             ->add(Crud::PAGE_INDEX, $download)
             ->add(Crud::PAGE_DETAIL, $download)
             ->disable(Action::NEW, Action::EDIT, Action::DELETE);
@@ -47,6 +53,7 @@ final class StatementCrudController extends OwnedCrudController
     public function configureFields(string $pageName): iterable
     {
         yield TextField::new('originalFilename');
+        yield ChoiceField::new('processingStatus');
         yield AssociationField::new('source');
         yield TextField::new('mediaType')->onlyOnDetail();
         yield IntegerField::new('byteSize')->onlyOnDetail();
