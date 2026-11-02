@@ -43,6 +43,11 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     #[ORM\Column(length: 3, enumType: ReportingCurrency::class, options: ['default' => 'USD'])]
     private ReportingCurrency $reportingCurrency = ReportingCurrency::USD;
 
+    #[ORM\Column(options: ['default' => 'en_US'])]
+    #[Assert\NotBlank]
+    #[Assert\Locale]
+    private string $moneyLocale = 'en_US';
+
     /**
      * Symfony's session-only password fingerprint, not the stored password hash.
      * Database passwords use the configured Symfony auto hasher.
@@ -75,6 +80,18 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     public function setReportingCurrency(ReportingCurrency $currency): static
     {
         $this->reportingCurrency = $currency;
+
+        return $this;
+    }
+
+    public function getMoneyLocale(): string
+    {
+        return $this->moneyLocale;
+    }
+
+    public function setMoneyLocale(string $locale): static
+    {
+        $this->moneyLocale = $locale;
 
         return $this;
     }

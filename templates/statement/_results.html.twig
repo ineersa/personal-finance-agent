@@ -41,7 +41,7 @@
             <p>Review the saved results below. Editing and approval are not available yet; these transactions remain drafts.</p>
             <div class="table-responsive import-table" role="region" aria-label="Draft transactions" tabindex="0"><table class="table" data-draft-results>
                 <thead><tr><th scope="col">Date</th><th scope="col">Description</th><th scope="col">Amount</th><th scope="col">Currency</th><th scope="col">Direction</th><th scope="col">Category</th><th scope="col">Transaction type</th><th scope="col">Recurrence</th></tr></thead>
-                <tbody>{% for row in drafts %}<tr><td>{{ row.transactionDate|date('Y-m-d') }}</td><td>{{ row.description }}</td><td>{{ row.amount }}</td><td>{{ row.currency }}</td><td>{{ row.direction.value }}</td><td>{{ row.category ? row.category.name : 'Uncategorized' }}</td><td data-meaning="{{ row.meaning.value }}">{{ meanings[row.meaning.value] }}</td><td data-recurrence="{{ row.recurrence.value }}">{{ recurrences[row.recurrence.value] }}</td></tr>{% endfor %}</tbody>
+                <tbody>{% for row in drafts %}<tr><td>{{ row.transactionDate|date('Y-m-d') }}</td><td>{{ row.description }}</td><td>{{ row.amount is not null and row.currency is not null ? row.amount|format_currency(row.currency, locale: statement.user.moneyLocale) : row.amount }}</td><td>{{ row.currency }}</td><td>{{ row.direction.value }}</td><td>{{ row.category ? row.category.name : 'Uncategorized' }}</td><td data-meaning="{{ row.meaning.value }}">{{ meanings[row.meaning.value] }}</td><td data-recurrence="{{ row.recurrence.value }}">{{ recurrences[row.recurrence.value] }}</td></tr>{% endfor %}</tbody>
             </table></div>
         </section>
     {% endif %}

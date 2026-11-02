@@ -51,7 +51,7 @@ final class TransactionCrudController extends OwnedCrudController
         yield AssociationField::new('statement')->onlyOnDetail();
         yield DateField::new('transactionDate')->setRequired(true);
         // Never use MoneyField or NumberField: they coerce canonical decimal strings.
-        yield TextField::new('amount')->setRequired(true);
+        yield TextField::new('amount')->setRequired(true)->setTemplatePath('admin/field/money.html.twig');
         yield TextField::new('currency')->setRequired(true);
         yield ChoiceField::new('direction')->setChoices(['Credit' => Direction::Credit, 'Debit' => Direction::Debit])->setRequired(true);
         yield TextareaField::new('description')->setRequired(false)->setFormTypeOption('empty_data', '');

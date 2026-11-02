@@ -20,6 +20,8 @@ Keep authorization, validation, short database writes, basic processing failure 
 
 PHP reads CSV records and preserves exact original decimal amounts, dates, currency and direction. Jev selects column roles from a bounded sample of complete rows, with explicit descriptions of each candidate role and separate presence/support questions. Missing fields remain missing; trusted source context can supply currency and instrument kind. A model-selected account identifier never authorizes access to a source.
 
+Bundle number-format selection from labelled examples and its evidence-sufficiency question into that same mapping request. Parse original amounts with the selected ICU convention, preserving decimal text rather than storing ICU's floating-point result. The user's money locale controls display only, not CSV interpretation. Parse dates and datetimes with PHP's native parser; do not ask Jev for a date format or try a fixed list of date formats.
+
 Use Jev separately for transaction meaning, category and recurrence. Choice always selects an option; pair it with evidence-sufficiency questions and retain unknown/unresolved outcomes. Do not treat probability thresholds tuned on a few examples as established accuracy. Use compatible Symfony AI facilities, keep credentials server-side, and disclose the actual external destination. The initial hosted experiment sent only invented data. Do not log personal financial payloads, despite the upstream development skill's payload-logging suggestion.
 
 PDF/XLSX conversion and configured LLM row extraction remain governed by ADRs 0016 and 0018. Jev is not an arbitrary-field generator or OCR engine.

@@ -42,7 +42,9 @@ final class StatementImportTest extends TestCase
                 $rows = $page->locator('[data-draft-results] tbody tr');
                 self::assertSame(\count($statement['rows']), $rows->count());
                 self::assertSame($statement['rows'][0]['description'], $rows->first()->locator('td')->nth(1)->textContent());
-                self::assertSame($statement['rows'][0]['amount'], $rows->first()->locator('td')->nth(2)->textContent());
+                $amount = (new \NumberFormatter('en_US', \NumberFormatter::CURRENCY))->formatCurrency((float) $statement['rows'][0]['amount'], 'CAD');
+                self::assertNotFalse($amount);
+                self::assertSame($amount, $rows->first()->locator('td')->nth(2)->textContent());
                 $id = basename((string) parse_url($page->url(), \PHP_URL_PATH));
                 $page->goto($url.'/home/transaction');
                 self::assertSame($approvedRows, $page->locator('tbody')->textContent(), 'Drafts must not change approved transactions.');

@@ -10,7 +10,7 @@ use Doctrine\Migrations\AbstractMigration;
 /**
  * Auto-generated Migration: Please modify to your needs!
  */
-final class Version20261102190715 extends AbstractMigration
+final class Version20261102192801 extends AbstractMigration
 {
     public function getDescription(): string
     {
@@ -33,6 +33,7 @@ final class Version20261102190715 extends AbstractMigration
         $this->addSql('ALTER TABLE source ADD COLUMN instrument_kind VARCHAR(255) DEFAULT \'other\' NOT NULL');
         $this->addSql('ALTER TABLE statement ADD COLUMN processing_status VARCHAR(255) DEFAULT \'completed\' NOT NULL');
         $this->addSql('ALTER TABLE statement ADD COLUMN processing_error CLOB DEFAULT NULL');
+        $this->addSql('ALTER TABLE user ADD COLUMN money_locale VARCHAR(255) DEFAULT \'en_US\' NOT NULL');
     }
 
     public function down(Schema $schema): void
@@ -61,5 +62,11 @@ final class Version20261102190715 extends AbstractMigration
         $this->addSql('CREATE UNIQUE INDEX UNIQ_STATEMENT_STORED_FILENAME ON statement (stored_filename)');
         $this->addSql('CREATE INDEX IDX_C0DB5176A76ED395 ON statement (user_id)');
         $this->addSql('CREATE INDEX IDX_C0DB5176953C1C61 ON statement (source_id)');
+        $this->addSql('CREATE TEMPORARY TABLE __temp__user AS SELECT id, email, roles, password, reporting_currency FROM user');
+        $this->addSql('DROP TABLE user');
+        $this->addSql('CREATE TABLE user (id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, email VARCHAR(180) NOT NULL, roles CLOB NOT NULL, password VARCHAR(255) NOT NULL, reporting_currency VARCHAR(3) DEFAULT \'USD\' NOT NULL)');
+        $this->addSql('INSERT INTO user (id, email, roles, password, reporting_currency) SELECT id, email, roles, password, reporting_currency FROM __temp__user');
+        $this->addSql('DROP TABLE __temp__user');
+        $this->addSql('CREATE UNIQUE INDEX UNIQ_IDENTIFIER_EMAIL ON user (email)');
     }
 }

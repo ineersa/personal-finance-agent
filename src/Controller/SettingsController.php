@@ -12,6 +12,7 @@ use EasyCorp\Bundle\EasyAdminBundle\Attribute\AdminRoute;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\Form\Exception\TransformationFailedException;
 use Symfony\Component\Form\Extension\Core\Type\EnumType;
+use Symfony\Component\Form\Extension\Core\Type\LocaleType;
 use Symfony\Component\Form\FormInterface;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -30,11 +31,15 @@ final class SettingsController extends AbstractController
                 'choice_label' => static fn (ReportingCurrency $currency): string => $currency->value,
                 'empty_data' => static fn (FormInterface $form): never => throw new TransformationFailedException('A reporting currency is required.'),
             ])
+            ->add('moneyLocale', LocaleType::class, [
+                'label' => 'Money locale',
+                'help' => 'Controls how amounts are displayed. CSV number formats are detected separately; stored amounts and the interface language are unchanged.',
+            ])
             ->getForm();
         $form->handleRequest($request);
         if ($form->isSubmitted() && $form->isValid()) {
             $entityManager->flush();
-            $this->addFlash('success', 'Reporting currency saved. Original amounts are unchanged.');
+            $this->addFlash('success', 'Preferences saved. Original amounts are unchanged.');
 
             return $this->redirectToRoute('admin_settings');
         }

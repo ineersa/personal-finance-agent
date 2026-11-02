@@ -43,6 +43,8 @@ Store editable drafts and approved records in one transaction table with an `isD
 
 Show finances in one user-configurable reporting currency stored on User, USD by default, limited to ECB feed currencies with EUR as the implicit base. Use transaction-date reference rates where available, initially aiming for roughly three years of history without a fixed retention threshold. Preserve original values; reporting conversion is not the bank's actual FX/fees. Use decimal strings and BCMath, with SQLite-safe storage/aggregation and rounding/missing-rate behavior still to verify. See [ADR 0017](docs/adr/0017-exact-money-and-ecb-reporting.md).
 
+Store a separate money locale on User, defaulting to `en_US`, selectable in Settings, for money display formatting. Changing it does not rewrite stored amounts or change the interface language. Detect CSV number formatting independently: bundle a format choice from labelled examples and an evidence question with the existing Jev column/header mapping request. Reject unresolved formats rather than guessing from the user's locale or currency. Validate the original amounts with native ICU and preserve exact decimal strings for storage. Parse original dates and datetimes with PHP's native parser, not a fixed list of formats or a Jev date-format question.
+
 Provide a model-written read-only SQL analysis tool over limited, owner-scoped finance tables with externally enforced access restrictions and bounded execution/output. Supply schema/field semantics in prompts, but never rely on prompts or ORM filters to secure arbitrary SQL. Money calculations must preserve precision, not rely on model arithmetic. SQL MCP and unrestricted database access are not selected.
 
 ## Main interface

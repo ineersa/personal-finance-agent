@@ -17,7 +17,7 @@ This policy replaces the earlier broad coverage requirements. It does not remove
 | Homepage | Public landing and login link |
 | Authentication | Login and logout |
 | Chat preview | Existing placeholder view; generation is not implemented |
-| Settings | Save and reload reporting currency |
+| Settings | Save and reload reporting currency and money locale; verify localized money display |
 | Sources | Create, list, edit, detail, delete |
 | Transactions | List, detail, edit and reload |
 | Categories | Administrator create, list, edit, detail, delete |

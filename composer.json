@@ -42,6 +42,7 @@
         "symfony/uid": "8.2.*@dev",
         "symfony/ux-turbo": "^3.6",
         "symfony/yaml": "8.2.*@dev",
+        "twig/intl-extra": "^3.0",
         "twig/twig": "^3.24"
     },
     "repositories": [

@@ -97,8 +97,8 @@ final readonly class CsvParser
     }
 
     /**
-     * @param non-empty-list<list<string>>                                                                 $rows
-     * @param array{date: int, description: int, debit: int, credit: int, currency: ?int, hasHeader: bool} $mapping
+     * @param non-empty-list<list<string>>                                                                                       $rows
+     * @param array{date: int, description: int, debit: int, credit: int, currency: ?int, hasHeader: bool, numberLocale: string} $mapping
      *
      * @return list<ParsedTransactionDTO>
      */
@@ -110,10 +110,14 @@ final readonly class CsvParser
         if ([] === $rows) {
             throw new ImportException('The CSV has no transaction rows.');
         }
-        $dates = self::dates(array_map(static fn (array $row): string => $row[$mapping['date']], $rows));
-        $amounts = self::amounts(array_map(static fn (array $row): string => '' !== $row[$mapping['debit']] ? $row[$mapping['debit']] : $row[$mapping['credit']], $rows));
+        $formatter = new \NumberFormatter($mapping['numberLocale'], \NumberFormatter::DECIMAL);
+        $grouping = 'fr_FR' === $mapping['numberLocale'] ? [' ', "\u{00A0}", "\u{202F}"] : [(string) $formatter->getSymbol(\NumberFormatter::GROUPING_SEPARATOR_SYMBOL)];
         $parsed = [];
         foreach ($rows as $index => $row) {
+            $date = date_parse($row[$mapping['date']]);
+            if ($date['error_count'] > 0 || $date['warning_count'] > 0 || false === $date['year'] || false === $date['month'] || false === $date['day'] || isset($date['relative'])) {
+                throw new ImportException('Expected a valid absolute date or datetime in CSV record '.($index + 1).'.');
+            }
             $debit = $row[$mapping['debit']];
             $credit = $row[$mapping['credit']];
             $description = $row[$mapping['description']];
@@ -123,64 +127,20 @@ final readonly class CsvParser
             if ('' === $description || ('' === $debit) === ('' === $credit)) {
                 throw new ImportException('Invalid description or debit/credit values in CSV record '.($index + 1).'.');
             }
-            $parsed[] = new ParsedTransactionDTO($index + 1, new \DateTimeImmutable($dates[$index]), $description, $amounts[$index], $currency, '' !== $debit ? Direction::Debit : Direction::Credit);
+            $amount = '' !== $debit ? $debit : $credit;
+            $position = 0;
+            if (false === $formatter->parse($amount, \NumberFormatter::TYPE_DOUBLE, $position) || $position !== mb_strlen($amount)) {
+                throw new ImportException('Invalid amount for the detected number format in CSV record '.($index + 1).'.');
+            }
+            // Normalize the original text, not ICU's floating-point result.
+            $amount = str_replace($grouping, '', $amount);
+            $amount = str_replace((string) $formatter->getSymbol(\NumberFormatter::DECIMAL_SEPARATOR_SYMBOL), '.', $amount);
+            if (1 !== preg_match('/\A[0-9]+(?:\.[0-9]+)?\z/D', $amount)) {
+                throw new ImportException('Expected an unsigned decimal amount in CSV record '.($index + 1).'.');
+            }
+            $parsed[] = new ParsedTransactionDTO($index + 1, new \DateTimeImmutable($row[$mapping['date']]), $description, $amount, $currency, '' !== $debit ? Direction::Debit : Direction::Credit);
         }
 
         return $parsed;
-    }
-
-    /** @param non-empty-array<int, string> $values
-     * @return array<int, string>
-     */
-    private static function dates(#[\SensitiveParameter] array $values): array
-    {
-        $interpretations = [];
-        foreach (['Y-m-d', 'Y/m/d', 'd/m/Y', 'm/d/Y', 'd.m.Y', 'd-m-Y', 'm-d-Y', 'd M Y', 'M d, Y', 'd F Y', 'F d, Y'] as $format) {
-            $dates = [];
-            foreach ($values as $index => $value) {
-                $date = \DateTimeImmutable::createFromFormat('!'.$format, $value);
-                if (false === $date || false !== \DateTimeImmutable::getLastErrors()) {
-                    continue 2;
-                }
-                $dates[$index] = $date->format('Y-m-d');
-            }
-            $interpretations[implode('|', $dates)] = $dates;
-        }
-        if (1 !== \count($interpretations)) {
-            throw new ImportException('CSV dates are invalid or ambiguous. Export dates with a four-digit year and an unambiguous day/month order.');
-        }
-
-        return array_values($interpretations)[0];
-    }
-
-    /** @param non-empty-array<int, string> $values
-     * @return array<int, string>
-     */
-    private static function amounts(#[\SensitiveParameter] array $values): array
-    {
-        $interpretations = [];
-        foreach (['en_US', 'de_DE', 'fr_FR', 'de_CH'] as $locale) {
-            $formatter = new \NumberFormatter($locale, \NumberFormatter::DECIMAL);
-            $amounts = [];
-            foreach ($values as $index => $value) {
-                $position = 0;
-                // ICU validates locale syntax; never use its floating-point result as money.
-                if (false === $formatter->parse($value, \NumberFormatter::TYPE_DOUBLE, $position) || $position !== mb_strlen($value)) {
-                    continue 2;
-                }
-                $amount = str_replace((string) $formatter->getSymbol(\NumberFormatter::GROUPING_SEPARATOR_SYMBOL), '', $value);
-                $amount = str_replace((string) $formatter->getSymbol(\NumberFormatter::DECIMAL_SEPARATOR_SYMBOL), '.', $amount);
-                if (1 !== preg_match('/\A[0-9]+(?:\.[0-9]+)?\z/D', $amount)) {
-                    continue 2;
-                }
-                $amounts[$index] = $amount;
-            }
-            $interpretations[implode('|', $amounts)] = $amounts;
-        }
-        if (1 !== \count($interpretations)) {
-            throw new ImportException('CSV amounts are invalid or their decimal/grouping separators are ambiguous. Export amounts with a consistent, unambiguous number format.');
-        }
-
-        return array_values($interpretations)[0];
     }
 }
