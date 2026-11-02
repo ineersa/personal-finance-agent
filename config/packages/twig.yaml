@@ -3,6 +3,7 @@ twig:
     file_name_pattern: '*.twig'
     globals:
         import_updates_enabled: '%env(bool:IMPORT_UPDATES_ENABLED)%'
+        import_topic: '@App\Import\ImportTopic'
 
 when@test:
     twig:

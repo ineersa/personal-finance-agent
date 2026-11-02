@@ -14,7 +14,7 @@ use Twig\Environment;
 
 final readonly class ImportUpdates
 {
-    public function __construct(private HubInterface $hub, private Environment $twig, private LoggerInterface $logger, #[Autowire('%env(bool:IMPORT_UPDATES_ENABLED)%')] private bool $enabled)
+    public function __construct(private HubInterface $hub, private Environment $twig, private LoggerInterface $logger, private ImportTopic $topic, #[Autowire('%env(bool:IMPORT_UPDATES_ENABLED)%')] private bool $enabled)
     {
     }
 
@@ -26,7 +26,7 @@ final readonly class ImportUpdates
         }
         // Status is already durable. A notification failure must never fail or repeat the import.
         try {
-            $this->hub->publish(new Update('https://finance.localhost/users/'.$statement->getUser()->getId().'/imports', $this->twig->render('statement/update.stream.html.twig', ['statement' => $statement, 'drafts' => $drafts]), true));
+            $this->hub->publish(new Update($this->topic->forUser($statement->getUser()), $this->twig->render('statement/update.stream.html.twig', ['statement' => $statement, 'drafts' => $drafts]), true));
         } catch (\Throwable) {
             $this->logger->warning('Statement live update unavailable.', ['statement_id' => $statement->getId()]);
         }

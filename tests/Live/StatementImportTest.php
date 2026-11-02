@@ -13,6 +13,72 @@ use Playwright\PlaywrightFactory;
 /** Real web, broker, worker and hosted Jev; never kernel-intercepted or fixture-transaction wrapped. */
 final class StatementImportTest extends TestCase
 {
+    public function testSubscriptionOpeningAfterCompletionCatchesUpWithoutReload(): void
+    {
+        $this->withBrowser(function (BrowserInterface $browser, string $url): void {
+            $context = $browser->newContext();
+            $path = tempnam(sys_get_temp_dir(), 'import-gap-');
+            self::assertNotFalse($path);
+            rename($path, $path.'.csv');
+            $path .= '.csv';
+            file_put_contents($path, "Date,Debit,Credit,Description\n2026-10-01,1.00,,Coffee\n2026-10-02,,2.00,Dinner refund\n");
+            try {
+                $page = $context->newPage();
+                $this->login($page, $url, 'demo@test.com', 'demo');
+                // Delay only the processing document's connection, not the real worker or hub.
+                $page->addInitScript(<<<'JS'
+                    if (location.pathname.includes('/statement-processing/')) {
+                        const NativeEventSource = window.EventSource;
+                        window.EventSource = class extends EventTarget {
+                            constructor(url, options) {
+                                super();
+                                window.releaseImportSubscription = () => {
+                                    this.source = new NativeEventSource(url, options);
+                                    for (const type of ['open', 'error', 'message']) {
+                                        this.source.addEventListener(type, event => this.dispatchEvent(type === 'message'
+                                            ? new MessageEvent(type, {data: event.data}) : new Event(type)));
+                                    }
+                                };
+                            }
+                            close() { this.source?.close(); }
+                        };
+                    }
+                    JS);
+                $page->goto($url.'/home/statement-upload');
+                $page->getByLabel('Source', ['exact' => true])->selectOption(['label' => 'Maple Harbour Chequing · 7318']);
+                $page->getByLabel('CSV statement', ['exact' => true])->setInputFiles($path);
+                $page->getByRole('checkbox')->check();
+                $page->getByRole('button', ['name' => 'Upload and prepare drafts'])->click();
+                $page->waitForURL('**/home/statement-processing/*');
+                self::assertContains($page->locator('[data-processing-status]')->getAttribute('data-status'), ['queued', 'running'], 'The document must capture an active state before delaying its subscription.');
+                $page->evaluate('() => { window.importPageProbe = "missed-event"; }');
+                $probe = $context->newPage();
+                try {
+                    $deadline = time() + 120;
+                    do {
+                        $probe->goto($page->url());
+                        if ('completed' === $probe->locator('[data-processing-status]')->getAttribute('data-status')) {
+                            break;
+                        }
+                        usleep(250000);
+                    } while (time() < $deadline);
+                    self::assertSame('completed', $probe->locator('[data-processing-status]')->getAttribute('data-status'));
+                } finally {
+                    $probe->close();
+                }
+                // Reload just the native stream source after its terminal event is already gone.
+                $page->evaluate('() => window.releaseImportSubscription()');
+                $page->locator('[data-processing-status][data-status="completed"]')->waitFor();
+                self::assertSame('missed-event', $page->evaluate('() => window.importPageProbe'));
+                self::assertSame(2, $page->locator('[data-draft-results] tbody tr')->count());
+                self::assertSame(0, $page->locator('#import-notification')->count());
+            } finally {
+                unlink($path);
+                $context->close();
+            }
+        });
+    }
+
     public function testThreeSourceUploadsPreserveFactsAndPersistOnlyDrafts(): void
     {
         $this->withBrowser(function (BrowserInterface $browser, string $url): void {

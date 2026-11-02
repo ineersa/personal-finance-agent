@@ -62,6 +62,7 @@ services:
 
 ###> symfony/mercure-bundle ###
   mercure:
+    profiles: !reset []
     ports: !reset []
     environment:
       MERCURE_EXTRA_DIRECTIVES: |

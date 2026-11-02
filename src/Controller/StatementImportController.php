@@ -76,6 +76,16 @@ final class StatementImportController extends AbstractController
         }
         $drafts = $transactions->queryForUser($owner)->andWhere('record.statement = :statement')->andWhere('record.isDraft = true')->setParameter('statement', $statement)->orderBy('record.id', 'ASC')->getQuery()->getResult();
 
+        if ('GET' === $request->getMethod() && str_contains((string) $request->headers->get('Accept'), 'text/vnd.turbo-stream.html')) {
+            $response = \in_array($statement->processingStatus, [ProcessingStatus::Completed, ProcessingStatus::Failed], true)
+                ? $this->render('statement/update.stream.html.twig', ['statement' => $statement, 'drafts' => $drafts])
+                : new Response(status: Response::HTTP_NO_CONTENT);
+            $response->headers->set('Content-Type', 'text/vnd.turbo-stream.html');
+            $response->headers->set('Cache-Control', 'no-store, private');
+
+            return $response;
+        }
+
         $response = $this->render('statement/processing.html.twig', ['statement' => $statement, 'drafts' => $drafts, 'retryForm' => $form]);
         $response->headers->set('Cache-Control', 'no-store, private');
 

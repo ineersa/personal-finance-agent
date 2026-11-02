@@ -62,6 +62,8 @@ The reporting-currency choices are EUR and the ECB reference-feed currencies ver
 
 Select production files explicitly so Compose does not load the development override. The `frankenphp_prod` image contains the application, locked production dependencies, and compiled AssetMapper/EasyAdmin assets. It does not mount source or host `vendor/`. It runs as UID/GID 1000 with `APP_ENV=prod` and debug disabled. Production uses `restart: unless-stopped`; development does not restart automatically.
 
+This production-image preview leaves `IMPORT_UPDATES_ENABLED=0`. The optional Mercure hub belongs to the `live-updates` Compose profile and is not started by the commands below, so an empty Mercure key cannot break preview startup. Development Castor stacks enable the hub and generate their own private key. Enabling production live updates separately requires an external HTTPS hub/public route, `IMPORT_UPDATES_ENABLED=1`, matching publisher/subscriber signing keys and issuer, and a configured secure subscriber cookie; the preview commands do not provide that deployment.
+
 Use a separate project and free port to run alongside development. These commands build the production image, generate a private runtime environment file if absent, and start the production configuration:
 
 ```sh
@@ -89,6 +91,8 @@ docker compose -f compose.yaml -f compose.prod.yaml down
 ```
 
 Keep the data volume; do not use `down -v`. Before returning to the default development project, unset `COMPOSE_PROJECT_NAME` and `HTTP_PORT`, or restore that development stack's values.
+
+For an isolated startup check, run `vendor/bin/castor prod:smoke`. It builds the same production configuration, verifies only PHP is enabled, allocates a loopback port automatically, and waits for the application health check. It uses a checkout-owned project and private generated runtime environment, then stops that project without removing its data volume. It does not migrate, seed or reset a database, and never reads `.env.prod.local` contents into its report.
 
 ## Development checks and diagnostics
 

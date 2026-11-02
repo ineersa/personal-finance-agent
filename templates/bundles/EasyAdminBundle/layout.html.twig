@@ -15,7 +15,7 @@
     {{ parent() }}
     {% if import_updates_enabled and app.user and not is_granted('ROLE_ADMIN') %}
         <div id="import-live-subscription" data-turbo-permanent>
-            {{ turbo_stream_from('https://finance.localhost/users/' ~ app.user.id ~ '/imports', private: true) }}
+            {{ turbo_stream_from(import_topic.forUser(app.user), private: true) }}
         </div>
     {% endif %}
 {% endblock %}
