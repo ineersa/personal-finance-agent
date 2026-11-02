@@ -40,7 +40,7 @@ final class UploadBoundaryTest extends TestCase
                     if (10 * 1024 * 1024 === $size) {
                         $page->waitForURL('**/home/statement-processing/*');
                         $page->locator('[data-processing-status]')->filter(['hasText' => 'failed'])->waitFor(['timeout' => 30000]);
-                        self::assertStringContainsString('consistent comma-separated columns', $page->getByRole('alert')->textContent());
+                        self::assertStringContainsString('consistent comma-separated columns', $page->locator('[id^="statement-processing-"]')->getByRole('alert')->textContent());
                         self::assertSame(0, $page->locator('[data-draft-results] tbody tr')->count());
                     } else {
                         $page->getByText('The file is too large', ['exact' => false])->waitFor();
