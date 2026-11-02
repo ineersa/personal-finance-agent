@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace App\Command;
 
 use App\Entity\User;
-use App\Message\ProcessStatement;
+use App\Message\ProcessStatementMessage;
 use App\Repository\StatementRepository;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\Console\Attribute\Argument;
@@ -35,7 +35,7 @@ final readonly class DispatchStatementCommand
 
             return Command::FAILURE;
         }
-        $this->bus->dispatch(new ProcessStatement($statementId, $owner->getId() ?? throw new \LogicException('Owner is not persisted.'), $statement->storedFilename));
+        $this->bus->dispatch(new ProcessStatementMessage($statementId, $owner->getId() ?? throw new \LogicException('Owner is not persisted.'), $statement->storedFilename));
         $io->success('Statement identifier dispatched.');
 
         return Command::SUCCESS;

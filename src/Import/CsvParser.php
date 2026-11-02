@@ -15,7 +15,7 @@ final readonly class CsvParser
     {
     }
 
-    /** @return list<ParsedTransaction> */
+    /** @return list<ParsedTransactionDTO> */
     public function parse(#[\SensitiveParameter] string $content, string $currency, InstrumentKind $instrument): array
     {
         if ('' === $content || \strlen($content) > 10 * 1024 * 1024 || 1 !== preg_match('//u', $content) || str_contains($content, "\0")) {
@@ -133,7 +133,7 @@ final readonly class CsvParser
             if (1 !== preg_match('/\A[0-9]+(?:\.[0-9]+)?\z/D', $amount)) {
                 throw new ImportException('Expected an unsigned decimal amount in CSV record '.($index + 1).'.');
             }
-            $parsed[] = new ParsedTransaction($index + 1, $date, $description, $amount, $currency, '' !== $debit ? Direction::Debit : Direction::Credit);
+            $parsed[] = new ParsedTransactionDTO($index + 1, $date, $description, $amount, $currency, '' !== $debit ? Direction::Debit : Direction::Credit);
         }
         if ([] === $parsed) {
             throw new ImportException('The CSV has no transaction rows.');

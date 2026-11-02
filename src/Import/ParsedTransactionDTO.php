@@ -8,7 +8,7 @@ use App\Enum\Direction;
 use App\Enum\RecurrenceKind;
 use App\Enum\TransactionMeaning;
 
-final readonly class ParsedTransaction
+final readonly class ParsedTransactionDTO
 {
     public function __construct(
         public int $rowNumber,

@@ -13,7 +13,7 @@ use App\Import\ImportException;
 use App\Import\ImportLifecycle;
 use App\Import\ImportUpdates;
 use App\Import\TransactionInterpreter;
-use App\Message\ProcessStatement;
+use App\Message\ProcessStatementMessage;
 use App\Repository\StatementRepository;
 use App\Storage\StatementStorage;
 use Doctrine\ORM\EntityManagerInterface;
@@ -26,7 +26,7 @@ final readonly class ProcessStatementHandler
     {
     }
 
-    public function __invoke(ProcessStatement $message): void
+    public function __invoke(ProcessStatementMessage $message): void
     {
         if (!isset($message->storedFilename)) {
             return;
@@ -39,19 +39,23 @@ final readonly class ProcessStatementHandler
         }
     }
 
-    private function process(ProcessStatement $message): void
+    private function process(ProcessStatementMessage $message): void
     {
         $owner = $this->entityManager->find(User::class, $message->ownerId);
-        if (null === $owner || \in_array('ROLE_ADMIN', $owner->getRoles(), true)) {
+        if (null === $owner) {
             return;
         }
         $statement = $this->statements->findForUser($owner, $message->statementId);
         if (null === $statement || $statement->storedFilename !== $message->storedFilename || $statement->source->getUser()->getId() !== $owner->getId()) {
             return;
         }
-        $connection = $this->entityManager->getConnection();
+        if (\in_array('ROLE_ADMIN', $owner->getRoles(), true)) {
+            $this->statements->transition($message->statementId, $message->ownerId, $statement->storedFilename, ProcessingStatus::Queued, ProcessingStatus::Failed, 'Processing refused: the owner no longer has access to personal finances.');
+
+            return;
+        }
         // Atomic single-winner claim; redeliveries of running/completed/failed statements are no-ops.
-        if (1 !== $connection->executeStatement("UPDATE statement SET processing_status = 'running', processing_error = NULL WHERE id = ? AND user_id = ? AND processing_status = 'queued' AND stored_filename = ?", [$message->statementId, $message->ownerId, $message->storedFilename])) {
+        if (!$this->statements->transition($message->statementId, $message->ownerId, $statement->storedFilename, ProcessingStatus::Queued, ProcessingStatus::Running)) {
             return;
         }
         $statement->processingStatus = ProcessingStatus::Running;
@@ -94,7 +98,7 @@ final readonly class ProcessStatementHandler
             });
         } catch (\Throwable $error) {
             $safeError = $error instanceof ImportException ? $error->getMessage() : 'Processing failed. No draft results were accepted. Retry after checking storage, source configuration and provider availability.';
-            $connection->executeStatement("UPDATE statement SET processing_status = 'failed', processing_error = ? WHERE id = ? AND user_id = ? AND stored_filename = ?", [$safeError, $message->statementId, $message->ownerId, $message->storedFilename]);
+            $this->statements->transition($message->statementId, $message->ownerId, $statement->storedFilename, ProcessingStatus::Running, ProcessingStatus::Failed, $safeError);
             $statement->processingStatus = ProcessingStatus::Failed;
             $statement->processingError = $safeError;
             // Do not log exception chains: provider/storage exceptions can expose personal data.

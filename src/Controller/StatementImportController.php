@@ -9,12 +9,10 @@ use App\Entity\User;
 use App\Enum\ProcessingStatus;
 use App\Import\ImportException;
 use App\Import\StatementUpload;
-use App\Message\ProcessStatement;
 use App\Repository\SourceRepository;
 use App\Repository\StatementRepository;
 use App\Repository\TransactionRepository;
 use App\Security\FinanceRecordVoter;
-use Doctrine\ORM\EntityManagerInterface;
 use EasyCorp\Bundle\EasyAdminBundle\Attribute\AdminRoute;
 use Symfony\Bridge\Doctrine\Form\Type\EntityType;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -25,7 +23,6 @@ use Symfony\Component\Form\FormError;
 use Symfony\Component\HttpFoundation\File\UploadedFile;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
-use Symfony\Component\Messenger\MessageBusInterface;
 use Symfony\Component\Security\Http\Attribute\CurrentUser;
 use Symfony\Component\Security\Http\Attribute\IsGranted;
 use Symfony\Component\Validator\Constraints as Assert;
@@ -63,35 +60,19 @@ final class StatementImportController extends AbstractController
     }
 
     #[AdminRoute('/statement-processing/{id}', name: 'statement_processing', options: ['methods' => ['GET', 'POST'], 'requirements' => ['id' => '\d+']])]
-    public function processing(int $id, Request $request, #[CurrentUser] User $owner, StatementRepository $statements, TransactionRepository $transactions, EntityManagerInterface $entityManager, MessageBusInterface $bus, \App\Import\ImportLifecycle $lifecycle): Response
+    public function processing(int $id, Request $request, #[CurrentUser] User $owner, StatementRepository $statements, TransactionRepository $transactions, StatementUpload $uploads): Response
     {
         $statement = $statements->findForUser($owner, $id) ?? throw $this->createNotFoundException();
         $form = $this->createFormBuilder()->getForm();
         $form->handleRequest($request);
         if ($form->isSubmitted() && $form->isValid() && ProcessingStatus::Failed === $statement->processingStatus) {
             try {
-                $lock = $lifecycle->acquire();
+                $uploads->retry($owner, $statement);
             } catch (ImportException $error) {
                 $this->addFlash('danger', $error->getMessage());
-
-                return $this->redirectToRoute('admin_statement_processing', ['id' => $id]);
             }
-            try {
-                $connection = $entityManager->getConnection();
-                // Retry only failed operations without persisted rows; a completed import is never duplicated.
-                $claimed = $connection->executeStatement("UPDATE statement SET processing_status = 'queued', processing_error = NULL WHERE id = ? AND user_id = ? AND stored_filename = ? AND processing_status = 'failed' AND NOT EXISTS (SELECT 1 FROM financial_transaction WHERE statement_id = ?)", [$id, $owner->getId(), $statement->storedFilename, $id]);
-                if (1 === $claimed) {
-                    try {
-                        $bus->dispatch(new ProcessStatement($id, $owner->getId() ?? throw new \LogicException('Owner missing.'), $statement->storedFilename));
-                    } catch (\Throwable) {
-                        $connection->executeStatement("UPDATE statement SET processing_status = 'failed', processing_error = ? WHERE id = ? AND processing_status = 'queued'", ['The processing queue is unavailable. Retry when the broker is running.', $id]);
-                    }
-                }
 
-                return $this->redirectToRoute('admin_statement_processing', ['id' => $id]);
-            } finally {
-                $lock->release();
-            }
+            return $this->redirectToRoute('admin_statement_processing', ['id' => $id]);
         }
         $drafts = $transactions->queryForUser($owner)->andWhere('record.statement = :statement')->andWhere('record.isDraft = true')->setParameter('statement', $statement)->orderBy('record.id', 'ASC')->getQuery()->getResult();
 

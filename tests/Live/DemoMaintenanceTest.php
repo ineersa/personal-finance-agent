@@ -50,7 +50,22 @@ final class DemoMaintenanceTest extends TestCase
                 $page->getByRole('checkbox')->check();
                 $page->getByRole('button', ['name' => 'Delete all data and restore demo'])->click();
                 $page->getByText('Reset refused: an import is queued or running.', ['exact' => false])->waitFor();
-                file_put_contents(\dirname(__DIR__, 2).'/var/qa/maintenance-import.json', json_encode(['id' => $id], \JSON_THROW_ON_ERROR));
+                // Promote only after admission while the isolated worker is stopped.
+                $admin = $browser->newContext();
+                try {
+                    $adminPage = $admin->newPage();
+                    $this->login($adminPage, $url, 'admin@test.com', 'admin');
+                    $adminPage->goto($url.'/home/user');
+                    $ownerId = $adminPage->locator('tbody tr:has-text("demo@test.com")')->getAttribute('data-id');
+                    self::assertNotNull($ownerId);
+                    $adminPage->goto($url.'/home/user/'.$ownerId.'/edit');
+                    $adminPage->locator('select[name="User[roles][]"]')->selectOption(['ROLE_ADMIN', 'ROLE_USER'], ['force' => true]);
+                    $adminPage->locator('button[name="ea[newForm][btn]"]')->first()->click();
+                    $adminPage->waitForURL('**/home/user');
+                    file_put_contents(\dirname(__DIR__, 2).'/var/qa/maintenance-import.json', json_encode(['id' => $id, 'ownerId' => $ownerId], \JSON_THROW_ON_ERROR));
+                } finally {
+                    $admin->close();
+                }
             } finally {
                 if (is_file($path)) {
                     unlink($path);
@@ -68,11 +83,21 @@ final class DemoMaintenanceTest extends TestCase
             $admin = $browser->newContext();
             try {
                 $page = $context->newPage();
-                $this->login($page, $url, 'demo@test.com', 'demo');
-                $stalePage = $stale->newPage();
-                $this->login($stalePage, $url, 'demo@test.com', 'demo');
                 $adminPage = $admin->newPage();
                 $this->login($adminPage, $url, 'admin@test.com', 'admin');
+                $saved = json_decode((string) file_get_contents(\dirname(__DIR__, 2).'/var/qa/maintenance-import.json'), true, flags: \JSON_THROW_ON_ERROR);
+                // Castor has synchronously consumed the queued message while this owner was admin.
+                $adminPage->goto($url.'/home/user/'.$saved['ownerId'].'/edit');
+                $adminPage->locator('select[name="User[roles][]"]')->selectOption(['ROLE_USER'], ['force' => true]);
+                $adminPage->locator('button[name="ea[newForm][btn]"]')->first()->click();
+                $adminPage->waitForURL('**/home/user');
+                $this->login($page, $url, 'demo@test.com', 'demo');
+                $page->goto($url.'/home/statement-processing/'.$saved['id']);
+                self::assertSame('failed', $page->locator('[data-processing-status]')->getAttribute('data-status'));
+                self::assertStringContainsString('the owner no longer has access to personal finances', $page->locator('body')->textContent());
+                self::assertSame(0, $page->locator('[data-draft-results] tbody tr')->count());
+                $stalePage = $stale->newPage();
+                $this->login($stalePage, $url, 'demo@test.com', 'demo');
                 self::assertSame(403, $adminPage->goto($url.'/home/settings/reset')?->status());
                 $email = 'maintenance-'.bin2hex(random_bytes(6)).'@example.test';
                 $adminPage->goto($url.'/home/user/new');

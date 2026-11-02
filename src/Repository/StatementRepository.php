@@ -6,6 +6,7 @@ namespace App\Repository;
 
 use App\Entity\Statement;
 use App\Entity\User;
+use App\Enum\ProcessingStatus;
 use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\QueryBuilder;
 
@@ -37,5 +38,17 @@ final readonly class StatementRepository
             ->setParameter('id', $id)
             ->getQuery()
             ->getOneOrNullResult();
+    }
+
+    public function transition(int $id, int $ownerId, string $filename, ProcessingStatus $from, ProcessingStatus $to, ?string $error = null, bool $withoutTransactions = false): bool
+    {
+        $sql = 'UPDATE statement SET processing_status = ?, processing_error = ? WHERE id = ? AND user_id = ? AND stored_filename = ? AND processing_status = ? AND source_id IN (SELECT id FROM source WHERE user_id = ?)';
+        $parameters = [$to->value, $error, $id, $ownerId, $filename, $from->value, $ownerId];
+        if ($withoutTransactions) {
+            $sql .= ' AND NOT EXISTS (SELECT 1 FROM financial_transaction WHERE statement_id = ?)';
+            $parameters[] = $id;
+        }
+
+        return 1 === $this->entityManager->getConnection()->executeStatement($sql, $parameters);
     }
 }

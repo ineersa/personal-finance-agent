@@ -8,7 +8,8 @@ use App\Entity\Source;
 use App\Entity\Statement;
 use App\Entity\User;
 use App\Enum\ProcessingStatus;
-use App\Message\ProcessStatement;
+use App\Message\ProcessStatementMessage;
+use App\Repository\StatementRepository;
 use App\Storage\StatementStorage;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\HttpFoundation\File\UploadedFile;
@@ -16,7 +17,7 @@ use Symfony\Component\Messenger\MessageBusInterface;
 
 final readonly class StatementUpload
 {
-    public function __construct(private StatementStorage $storage, private EntityManagerInterface $entityManager, private MessageBusInterface $bus, private ImportLifecycle $lifecycle)
+    public function __construct(private StatementStorage $storage, private EntityManagerInterface $entityManager, private MessageBusInterface $bus, private ImportLifecycle $lifecycle, private StatementRepository $statements)
     {
     }
 
@@ -25,6 +26,21 @@ final readonly class StatementUpload
         $lock = $this->lifecycle->acquire();
         try {
             return $this->storeAndDispatch($owner, $source, $file);
+        } finally {
+            $lock->release();
+        }
+    }
+
+    public function retry(User $owner, Statement $statement): void
+    {
+        $lock = $this->lifecycle->acquire();
+        try {
+            if (\in_array('ROLE_ADMIN', $owner->getRoles(), true) || $statement->getUser()->getId() !== $owner->getId() || $statement->source->getUser()->getId() !== $owner->getId()) {
+                throw new ImportException('The statement is not available.');
+            }
+            if ($this->statements->transition($statement->getId() ?? throw new \LogicException('Statement missing.'), $owner->getId() ?? throw new \LogicException('Owner missing.'), $statement->storedFilename, ProcessingStatus::Failed, ProcessingStatus::Queued, withoutTransactions: true)) {
+                $this->dispatch($statement, $owner);
+            }
         } finally {
             $lock->release();
         }
@@ -66,15 +82,21 @@ final readonly class StatementUpload
             }
             throw new ImportException('Statement metadata could not be saved. Stored bytes were removed; no processing job was created.');
         }
-        try {
-            $id = $statement->getId() ?? throw new \LogicException('Statement ID missing after persistence.');
-            $this->bus->dispatch(new ProcessStatement($id, $owner->getId(), $statement->storedFilename));
-        } catch (\Throwable) {
-            // Publication is outside the database transaction; retained owned metadata exposes the failure.
-            $this->entityManager->getConnection()->executeStatement("UPDATE statement SET processing_status = 'failed', processing_error = ? WHERE id = ? AND user_id = ? AND stored_filename = ? AND processing_status = 'queued'", ['The processing queue was unavailable. Retry processing when the broker is running.', $statement->getId(), $owner->getId(), $statement->storedFilename]);
-            $this->entityManager->refresh($statement);
-        }
+        $this->dispatch($statement, $owner);
 
         return $statement;
+    }
+
+    private function dispatch(Statement $statement, User $owner): void
+    {
+        $id = $statement->getId() ?? throw new \LogicException('Statement missing.');
+        $ownerId = $owner->getId() ?? throw new \LogicException('Owner missing.');
+        try {
+            $this->bus->dispatch(new ProcessStatementMessage($id, $ownerId, $statement->storedFilename));
+        } catch (\Throwable) {
+            // A worker may already have claimed or completed this import.
+            $this->statements->transition($id, $ownerId, $statement->storedFilename, ProcessingStatus::Queued, ProcessingStatus::Failed, 'The processing queue is unavailable. Retry when the broker is running.');
+            $this->entityManager->refresh($statement);
+        }
     }
 }

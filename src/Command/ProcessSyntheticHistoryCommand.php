@@ -8,7 +8,7 @@ use App\Entity\Source;
 use App\Entity\Statement;
 use App\Entity\Transaction;
 use App\Enum\ProcessingStatus;
-use App\Message\ProcessStatement;
+use App\Message\ProcessStatementMessage;
 use App\MessageHandler\ProcessStatementHandler;
 use App\Storage\StatementStorage;
 use Doctrine\ORM\EntityManagerInterface;
@@ -65,7 +65,7 @@ final class ProcessSyntheticHistoryCommand extends Command
             if (null === $id || null === $owner) {
                 throw new \LogicException('Missing persisted identifiers.');
             }
-            ($this->handler)(new ProcessStatement($id, $owner, $statement->storedFilename));
+            ($this->handler)(new ProcessStatementMessage($id, $owner, $statement->storedFilename));
             $this->em->refresh($statement);
             if (ProcessingStatus::Completed !== $statement->processingStatus) {
                 throw new \RuntimeException('Synthetic processing failed: '.$entry['file'].' '.$statement->processingError);

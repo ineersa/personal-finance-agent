@@ -22,7 +22,7 @@ class Transaction extends UserRecord
     public function __construct(
         User $user,
         #[ORM\ManyToOne(inversedBy: 'transactions')]
-        #[ORM\JoinColumn(nullable: false)]
+        #[ORM\JoinColumn(nullable: false, onDelete: 'CASCADE')]
         public Statement $statement,
         #[ORM\ManyToOne]
         #[ORM\JoinColumn(nullable: false)]

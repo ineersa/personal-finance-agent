@@ -17,10 +17,10 @@ final readonly class TransactionInterpreter
     }
 
     /**
-     * @param list<ParsedTransaction> $transactions Only rows from one authorized source
-     * @param array<string, string>   $categories   Shared category names and descriptions
+     * @param list<ParsedTransactionDTO> $transactions Only rows from one authorized source
+     * @param array<string, string>      $categories   Shared category names and descriptions
      *
-     * @return list<ParsedTransaction>
+     * @return list<ParsedTransactionDTO>
      */
     public function interpret(#[\SensitiveParameter] array $transactions, InstrumentKind $instrument, array $categories): array
     {
@@ -64,7 +64,7 @@ final readonly class TransactionInterpreter
                 if (null === $meaning || null === $recurrence) {
                     throw new ImportException('Jev selected an unsupported transaction interpretation.');
                 }
-                $result[] = new ParsedTransaction($transaction->rowNumber, $transaction->date, $transaction->description, $transaction->amount, $transaction->currency, $transaction->direction, $category, $meaning, $recurrence);
+                $result[] = new ParsedTransactionDTO($transaction->rowNumber, $transaction->date, $transaction->description, $transaction->amount, $transaction->currency, $transaction->direction, $category, $meaning, $recurrence);
             }
         }
 

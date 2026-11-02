@@ -316,6 +316,16 @@ function browserMaintenanceTest(bool $confirmReset = false): int
         try {
             stackRun('browser', ['stop', 'worker']);
             $exit = report('browser:maintenance:busy', [...$command, '--filter', 'testBusyImports', '--fail-on-empty-test-suite'], networked: true);
+            if (0 === $exit) {
+                // Consume deterministically while the browser-promoted owner has no finance access.
+                // An empty provider key also makes accidental interpretation fail before any HTTP call.
+                $consumer = ['exec', '-T', '--user', posix_getuid().':'.posix_getgid(), 'php', 'env', 'JEV_API_KEY=', 'php', 'bin/console', 'messenger:consume', 'statement_import', '--limit=1', '--time-limit=30', '--no-interaction', '-v'];
+                $exit = report('browser:maintenance:promoted-owner', [...stackCommand('browser'), ...$consumer], runtime: false, operation: static function () use ($consumer): int {
+                    stackRun('browser', $consumer);
+
+                    return 0;
+                });
+            }
         } finally {
             stackRun('browser', ['up', '-d', '--wait', 'worker']);
         }

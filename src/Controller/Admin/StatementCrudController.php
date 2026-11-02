@@ -5,14 +5,13 @@ declare(strict_types=1);
 namespace App\Controller\Admin;
 
 use App\Entity\Statement;
-use App\Entity\Transaction;
 use App\Entity\User;
 use App\Enum\ProcessingStatus;
 use App\Import\ImportException;
 use App\Import\ImportLifecycle;
 use App\Repository\StatementRepository;
 use App\Security\FinanceRecordVoter;
-use App\Storage\StatementStorage;
+use App\Storage\StatementFileCleanup;
 use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\QueryBuilder;
 use EasyCorp\Bundle\EasyAdminBundle\Config\Action;
@@ -34,7 +33,7 @@ use Symfony\Component\Security\Http\Attribute\IsGranted;
 #[IsGranted(FinanceRecordVoter::ACCESS)]
 final class StatementCrudController extends OwnedCrudController
 {
-    public function __construct(private readonly StatementRepository $statements, private readonly ImportLifecycle $lifecycle, private readonly StatementStorage $storage)
+    public function __construct(private readonly StatementRepository $statements, private readonly ImportLifecycle $lifecycle, private readonly StatementFileCleanup $cleanup)
     {
     }
 
@@ -102,15 +101,19 @@ final class StatementCrudController extends OwnedCrudController
             if (\in_array($entityInstance->processingStatus, [ProcessingStatus::Queued, ProcessingStatus::Running], true)) {
                 throw new ImportException('Deletion refused: wait for this import to finish.');
             }
-            $this->storage->delete($entityInstance->storedFilename);
-            $entityManager->wrapInTransaction(static function () use ($entityManager, $entityInstance): void {
-                $entityManager->createQuery('DELETE FROM '.Transaction::class.' record WHERE record.statement = :statement')->setParameter('statement', $entityInstance)->execute();
+            $entityManager->wrapInTransaction(function () use ($entityManager, $entityInstance): void {
+                $this->cleanup->schedule($entityInstance->storedFilename);
                 $entityManager->remove($entityInstance);
             });
+            try {
+                $this->cleanup->drain();
+            } catch (\Throwable) {
+                $this->addFlash('warning', 'Statement records were deleted. File cleanup is pending; an operator can retry app:statement:cleanup.');
+            }
         } catch (ImportException|AccessDeniedException $error) {
             throw $error;
         } catch (\Throwable) {
-            throw new ImportException('Deletion incomplete. The original file may already be removed. Check storage and database availability before retrying.');
+            throw new ImportException('Statement deletion could not be committed. The original file was retained. Check database availability before retrying.');
         } finally {
             $lock->release();
         }

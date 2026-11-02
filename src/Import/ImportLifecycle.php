@@ -4,19 +4,15 @@ declare(strict_types=1);
 
 namespace App\Import;
 
-use Symfony\Component\DependencyInjection\Attribute\Autowire;
+use Symfony\Component\DependencyInjection\Attribute\Target;
 use Symfony\Component\Lock\LockFactory;
 use Symfony\Component\Lock\SharedLockInterface;
-use Symfony\Component\Lock\Store\FlockStore;
 
 // Shared across the checkout's web and worker containers, outside statement cleanup.
 final readonly class ImportLifecycle
 {
-    private LockFactory $factory;
-
-    public function __construct(#[Autowire('%statement_storage_directory%')] string $directory)
+    public function __construct(#[Target('statement_lifecycle')] private LockFactory $factory)
     {
-        $this->factory = new LockFactory(new FlockStore(\dirname($directory).'/import-locks'));
     }
 
     public function acquire(bool $exclusive = false): SharedLockInterface

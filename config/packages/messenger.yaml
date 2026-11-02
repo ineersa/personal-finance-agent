@@ -10,7 +10,7 @@ framework:
                 retry_strategy:
                     max_retries: 0
         routing:
-            App\Message\ProcessStatement: statement_import
+            App\Message\ProcessStatementMessage: statement_import
 
 sqlite_queue:
     redeliver_timeout: 300
