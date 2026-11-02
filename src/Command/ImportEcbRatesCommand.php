@@ -21,7 +21,7 @@ final class ImportEcbRatesCommand extends Command
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
         $count = $this->importer->import();
-        $output->writeln(sprintf('Stored %d calendar-day currency rates. Older stored history was preserved.', $count));
+        $output->writeln(\sprintf('Stored %d calendar-day currency rates. Older stored history was preserved.', $count));
 
         return Command::SUCCESS;
     }

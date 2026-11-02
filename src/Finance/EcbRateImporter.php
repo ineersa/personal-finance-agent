@@ -39,7 +39,7 @@ final readonly class EcbRateImporter
                     continue;
                 }
                 $value = $rate->getAttribute('rate');
-                if (1 !== preg_match('/\A\d+(?:\.\d+)?\z/D', $value) || 0 >= bccomp($value, '0', strlen($value))) {
+                if (1 !== preg_match('/\A\d+(?:\.\d+)?\z/D', $value) || 0 >= bccomp($value, '0', \strlen($value))) {
                     throw new \RuntimeException('Invalid ECB reference rate.');
                 }
                 $history[$day][$currency] = $value;
@@ -62,12 +62,12 @@ final readonly class EcbRateImporter
             $date = $day->format('Y-m-d');
             $previous = array_replace($previous, $history[$date] ?? []);
             // One short write transaction per calendar day, after downloading and parsing.
-            $this->connection->transactional(function (Connection $connection) use ($date, $previous): void {
+            $this->connection->transactional(static function (Connection $connection) use ($date, $previous): void {
                 foreach ($previous as $currency => $rate) {
                     $connection->executeStatement('INSERT INTO currency_rate (day, currency, units_per_eur) VALUES (?, ?, ?) ON CONFLICT (day, currency) DO UPDATE SET units_per_eur = excluded.units_per_eur', [$date, $currency, $rate]);
                 }
             });
-            $count += count($previous);
+            $count += \count($previous);
         }
 
         return $count;

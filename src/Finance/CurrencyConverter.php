@@ -39,7 +39,7 @@ final readonly class CurrencyConverter
         }
         $rate = $this->connection->fetchOne('SELECT units_per_eur FROM currency_rate WHERE day = ? AND currency = ?', [$day->format('Y-m-d'), $currency->value]);
         if (!\is_string($rate)) {
-            throw new \RuntimeException(sprintf('No %s reference rate stored for %s. Import ECB history covering this date.', $currency->value, $day->format('Y-m-d')));
+            throw new \RuntimeException(\sprintf('No %s reference rate stored for %s. Import ECB history covering this date.', $currency->value, $day->format('Y-m-d')));
         }
 
         return $rate;
