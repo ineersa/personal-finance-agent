@@ -25,7 +25,7 @@ final class CurrencyRateCrudTest extends FinanceBrowserTest
         $page = $this->visit('/home/currency-rate/new');
         $page->getByLabel('Date', ['exact' => true])->fill($date);
         $page->getByLabel('Currency', ['exact' => true])->selectOption('USD');
-        $page->getByLabel('Units per EUR', ['exact' => true])->fill('1.12345678901234567890');
+        $page->getByLabel('Rate', ['exact' => true])->fill('1.12345678901234567890');
         $this->submit(static fn () => $page->locator('button[name="ea[newForm][btn]"], button[name="ea[editForm][btn]"]')->first()->click());
 
         $page = $this->visit('/home/currency-rate');
@@ -42,8 +42,8 @@ final class CurrencyRateCrudTest extends FinanceBrowserTest
         self::assertStringContainsString($date, $row->textContent());
 
         $page->goto($editUrl);
-        self::assertSame('1.12345678901234567890', $page->getByLabel('Units per EUR', ['exact' => true])->inputValue());
-        $page->getByLabel('Units per EUR', ['exact' => true])->fill('1.23456789012345678901');
+        self::assertSame('1.12345678901234567890', $page->getByLabel('Rate', ['exact' => true])->inputValue());
+        $page->getByLabel('Rate', ['exact' => true])->fill('1.23456789012345678901');
         $this->submit(static fn () => $page->locator('button[name="ea[newForm][btn]"], button[name="ea[editForm][btn]"]')->first()->click());
         $page->goto($detailUrl);
         $this->assertPageContains('1.23456789012345678901');

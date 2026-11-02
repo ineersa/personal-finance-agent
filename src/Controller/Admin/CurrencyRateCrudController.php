@@ -70,7 +70,7 @@ final class CurrencyRateCrudController extends AbstractCrudController
     {
         yield DateField::new('day', 'Date')->setFormat('yyyy-MM-dd')->setFormTypeOption('input', 'datetime_immutable');
         yield ChoiceField::new('currency')->setChoices(CurrencyRate::currencyChoices())->renderAsNativeWidget();
-        yield TextField::new('unitsPerEur', 'Units per EUR')->setHelp('Positive decimal string; EUR itself has the implicit rate 1.');
+        yield TextField::new('rate', 'Rate')->setHelp('Positive decimal string; EUR itself has the implicit rate 1.');
         yield BooleanField::new('isProvisional', 'Provisional')->renderAsSwitch(false);
     }
 }

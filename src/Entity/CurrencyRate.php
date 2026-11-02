@@ -5,11 +5,12 @@ declare(strict_types=1);
 namespace App\Entity;
 
 use App\Enum\ReportingCurrency;
+use App\Repository\CurrencyRateRepository;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Bridge\Doctrine\Validator\Constraints\UniqueEntity;
 use Symfony\Component\Validator\Constraints as Assert;
 
-#[ORM\Entity]
+#[ORM\Entity(repositoryClass: CurrencyRateRepository::class)]
 #[ORM\UniqueConstraint(name: 'uniq_currency_rate_day_currency', columns: ['day', 'currency'])]
 #[UniqueEntity(fields: ['day', 'currency'])]
 class CurrencyRate
@@ -29,7 +30,7 @@ class CurrencyRate
         #[ORM\Column(type: 'exact_decimal')]
         #[Assert\NotBlank]
         #[Assert\Regex(pattern: '/\A(?=[0-9.]*[1-9])[0-9]+(?:\.[0-9]+)?\z/D', message: 'Enter a positive plain decimal rate.')]
-        public string $unitsPerEur,
+        public string $rate,
         #[ORM\Column(options: ['default' => false])]
         public bool $isProvisional = false,
     ) {
