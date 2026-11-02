@@ -71,7 +71,7 @@ final class DemoWorkspaceTest extends FinanceBrowserTest
                 self::assertNotNull($request);
                 self::assertSame('POST', $request->getMethod());
                 self::assertSame('/logout', $request->getPathInfo());
-                self::assertNotEmpty($request->request->get('_csrf_token'));
+                self::assertGreaterThanOrEqual(24, \strlen((string) $request->request->get('_csrf_token')), 'The native CSRF controller must generate a double-submit token.');
                 $response = $this->getLastResponse();
                 self::assertNotNull($response);
                 self::assertTrue($response->isRedirect(), 'Logout response status: '.$response->getStatusCode());
@@ -190,7 +190,6 @@ final class DemoWorkspaceTest extends FinanceBrowserTest
             'request_method' => $this->getLastRequest()?->getMethod(),
             'request_path' => $this->getLastRequest()?->getPathInfo(),
         ], \JSON_THROW_ON_ERROR);
-        file_put_contents(\dirname(__DIR__, 2).'/var/qa/auth-navigation.jsonl', $diagnostic."\n", \FILE_APPEND);
         self::assertSame($expected, parse_url($page->url(), \PHP_URL_PATH), $diagnostic);
     }
 
@@ -199,7 +198,14 @@ final class DemoWorkspaceTest extends FinanceBrowserTest
         self::assertSame('false', $page->locator('form[action$="/login"]')->getAttribute('data-turbo'));
         $page->getByLabel('Email', ['exact' => true])->fill($email);
         $page->getByLabel('Password', ['exact' => true])->fill($password);
-        $this->submit(static fn () => $page->getByRole('button', ['name' => 'Log in', 'exact' => true])->click());
+        $this->submit(function () use ($page): void {
+            $page->getByRole('button', ['name' => 'Log in', 'exact' => true])->click();
+            $request = $this->getLastRequest();
+            self::assertNotNull($request);
+            self::assertSame('POST', $request->getMethod());
+            self::assertSame('/login', $request->getPathInfo());
+            self::assertGreaterThanOrEqual(24, \strlen((string) $request->request->get('_csrf_token')), 'The native CSRF controller must generate a double-submit token.');
+        });
         $errors = $page->locator('.form-error[role="alert"]');
         $errorCount = $errors->count();
         self::assertSame(0, $errorCount, $errorCount > 0 ? $errors->first()->textContent() : '');

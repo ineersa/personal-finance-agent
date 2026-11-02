@@ -34,7 +34,7 @@
     <twig:ea:ActionMenu:ActionList:Divider />
     <twig:ea:ActionMenu:ActionList:Content>
         <form action="{{ path('app_logout') }}" method="post" data-turbo="false">
-            <input type="hidden" name="_csrf_token" value="{{ csrf_token('logout') }}">
+            <input type="hidden" name="_csrf_token" value="{{ csrf_token('logout') }}" data-controller="csrf-protection">
             <button type="submit" class="dropdown-item">
                 <twig:ea:Icon name="internal:sign-out" />
                 <span>Log out</span>
