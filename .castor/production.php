@@ -7,7 +7,7 @@ namespace AppTasks;
 use Castor\Attribute\AsTask;
 use Symfony\Component\Process\Process;
 
-#[AsTask(name: 'prod:smoke', description: 'Build and start a checkout-owned production preview without optional live updates.')]
+#[AsTask(namespace: 'prod', name: 'smoke', description: 'Build and start a checkout-owned production preview without optional live updates.')]
 function productionSmoke(): void
 {
     exit(report('prod:smoke', [], runtime: false, operation: static function (): int {
