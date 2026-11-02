@@ -24,6 +24,7 @@ A finance UI preview and development tooling are implemented; authentication, fi
 - Do not commit credentials, uploaded bank statements, personal financial fixtures, database files, or raw model/provider payloads containing personal data.
 - Enforce personal-data ownership across HTTP endpoints, EasyAdmin, background handlers, chat tools, and event subscriptions. Roles alone do not scope records.
 - Keep database write transactions short. Do not hold one open during model calls, parsing, or broker communication.
+- Generate migrations with Doctrine tooling through Castor against verified isolated task-owned storage. Do not hand-author migration classes or SQL. Read generated output and verify the schema changes before applying it; report unexpected destructive diffs instead of bypassing the generator. Preserve already-applied owner/production migration history.
 - Treat uploaded content and model output as untrusted. Do not inject unescaped output into HTML or execute model-generated JavaScript without an explicitly approved isolation design.
 - Do not reset demo data, remove volumes, or stop unrelated containers without explicit authorization and a verified target.
 - Follow [ADR 0021](docs/adr/0021-fixtures-first-jev-import.md): enforce the 10 MiB upload limit; other upload/AI quotas and budget accounting are deferred. Retain ownership, login protection and short writes.

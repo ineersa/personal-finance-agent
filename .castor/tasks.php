@@ -181,8 +181,25 @@ function appComposer(#[AsArgsAfterOptionEnd] array $arguments = []): int
 
 /** @param list<string> $arguments */
 #[AsTask(namespace: 'app', name: 'console', description: 'Run the Symfony application console; pass its arguments after --.')]
-function appConsole(#[AsArgsAfterOptionEnd] array $arguments = []): int
+function appConsole(#[AsArgsAfterOptionEnd] array $arguments = [], string $isolatedDatabase = ''): int
 {
+    if ('' !== $isolatedDatabase) {
+        if (1 !== preg_match('/\A[a-z0-9-]+\z/D', $isolatedDatabase)) {
+            throw new \InvalidArgumentException('Use a lowercase diagnostic database identifier.');
+        }
+        $relative = 'var/browser/'.$isolatedDatabase;
+        foreach (['var', 'var/browser', $relative, $relative.'/application.db'] as $path) {
+            if (is_link(\dirname(__DIR__).'/'.$path)) {
+                throw new \RuntimeException('Refusing symlinked diagnostic storage.');
+            }
+        }
+        if (!is_dir(\dirname(__DIR__).'/'.$relative)) {
+            mkdir(\dirname(__DIR__).'/'.$relative, 0700, true);
+        }
+
+        return report('app:console', ['env', 'DATABASE_URL=sqlite:////app/'.$relative.'/application.db', 'php', 'bin/console', '--env=dev', ...$arguments]);
+    }
+
     return report('app:console', ['php', 'bin/console', ...$arguments]);
 }
 

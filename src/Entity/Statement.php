@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Entity;
 
+use App\Enum\ProcessingStatus;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
@@ -42,6 +43,10 @@ class Statement extends UserRecord
         public ?\DateTimeImmutable $processedAt = null,
         #[ORM\Column(type: 'date_immutable', nullable: true)]
         public ?\DateTimeImmutable $statementDate = null,
+        #[ORM\Column(enumType: ProcessingStatus::class, options: ['default' => 'completed'])]
+        public ProcessingStatus $processingStatus = ProcessingStatus::Completed,
+        #[ORM\Column(type: 'text', nullable: true)]
+        public ?string $processingError = null,
     ) {
         parent::__construct($user);
         $this->transactions = new ArrayCollection();
