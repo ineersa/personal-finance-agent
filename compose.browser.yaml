@@ -9,3 +9,19 @@ services:
     volumes: !override
       - .:/app:ro
       - ./var/browser-live:/app/var
+  broker:
+    environment:
+      APP_ENV: test
+      APP_DEBUG: '1'
+      APP_SECRET: browser-synthetic-only
+    volumes: !override
+      - .:/app:ro
+      - ./var/browser-live:/app/var
+  worker:
+    environment:
+      APP_ENV: test
+      APP_DEBUG: '1'
+      APP_SECRET: browser-synthetic-only
+    volumes: !override
+      - .:/app:ro
+      - ./var/browser-live:/app/var

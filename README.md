@@ -62,6 +62,8 @@ The reporting-currency choices are EUR and the ECB reference-feed currencies ver
 
 Select production files explicitly so Compose does not load the development override. The `frankenphp_prod` image contains the application, locked production dependencies, and compiled AssetMapper/EasyAdmin assets. It does not mount source or host `vendor/`. It runs as UID/GID 1000 with `APP_ENV=prod` and debug disabled. Production uses `restart: unless-stopped`; development does not restart automatically.
 
+This production-image preview leaves `IMPORT_UPDATES_ENABLED=0`. The optional Mercure hub belongs to the `live-updates` Compose profile and is not started by the commands below, so an empty Mercure key cannot break preview startup. Development Castor stacks enable the hub and generate their own private key. Enabling production live updates separately requires an external HTTPS hub/public route, `IMPORT_UPDATES_ENABLED=1`, matching publisher/subscriber signing keys and issuer, and a configured secure subscriber cookie; the preview commands do not provide that deployment.
+
 Use a separate project and free port to run alongside development. These commands build the production image, generate a private runtime environment file if absent, and start the production configuration:
 
 ```sh
@@ -90,6 +92,8 @@ docker compose -f compose.yaml -f compose.prod.yaml down
 
 Keep the data volume; do not use `down -v`. Before returning to the default development project, unset `COMPOSE_PROJECT_NAME` and `HTTP_PORT`, or restore that development stack's values.
 
+For an isolated startup check, run `vendor/bin/castor prod:smoke`. It builds the same production configuration, verifies only PHP is enabled, allocates a loopback port automatically, and waits for the application health check. It uses a checkout-owned project and private generated runtime environment, then stops that project without removing its data volume. It does not migrate, seed or reset a database, and never reads `.env.prod.local` contents into its report.
+
 ## Development checks and diagnostics
 
 Follow [Testing](TESTING.md#prepare-the-tooling-runtime) for the one-time dependency bootstrap. After that, use host Castor for preparation, QA, and Mate. Castor selects the authoritative Docker runtime; do not choose between host and container PHP or prefix commands with another runner. The production target does not contain Node.js, Symfony CLI, or development Composer packages.
@@ -103,7 +107,7 @@ Follow [Testing](TESTING.md#prepare-the-tooling-runtime) for the one-time depend
 
 Castor prints one JSON summary per invoked task and stores diagnostics under ignored `var/qa/`. `qa:static` runs Composer validation, a read-only formatting check, strict PHPStan level 6, and complete runtime-aware Symfony Language Tools analysis. CS Fixer uses the selected sqlite-queue rules except for the approved `call_type: self` assertion policy, and retains risky Symfony rules and strict types. PHPStan follows that reference's production/tooling scope, not its tests. Browser tests receive style checks and real-browser execution, not a claimed PHPStan pass. The task workflow runs `castor check` during the CODE-REVIEW transition as the sole combined static/browser gate. It runs both groups even if either fails. Read its stdout report for child summaries; do not invoke it prematurely during task-start.
 
-Pass native PHPUnit selectors after `--`, for example `vendor/bin/castor test -- --filter='testHomepage$' tests/E2E/HomepageTest.php`. Multiple files, regex filters, groups, suites, and listing flags use PHPUnit's own syntax; `check` always runs the full suite. Use `app:composer -- COMMAND OPTIONS` for application Composer and `app:console -- COMMAND OPTIONS` for Symfony console commands. Bare `castor composer` manages Castor itself, not the application. See [Testing](TESTING.md#command-contract) for examples.
+Pass native PHPUnit selectors after `--`, for example `vendor/bin/castor test -- tests/E2E/HomepageTest.php`; `check` always runs the full suite. Keep one happy-path scenario per view/action and obtain owner permission for special-case testing. Use `app:composer -- COMMAND OPTIONS` for application Composer and `app:console -- COMMAND OPTIONS` for Symfony console commands. Bare `castor composer` manages Castor itself, not the application. See [Testing](TESTING.md#running-tests) for commands and scope.
 
 Use bounded Mate tasks after warming the relevant cache or recording local requests:
 

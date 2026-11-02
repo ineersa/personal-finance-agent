@@ -20,6 +20,13 @@ function composerInstall(#[AsArgsAfterOptionEnd] array $arguments = []): int
     return report('composer:install', ['composer', 'install', '--no-interaction', '--no-progress', ...$arguments]);
 }
 
+/** @param list<string> $arguments */
+#[AsTask(namespace: 'composer', name: 'require', description: 'Require dependencies through the authoritative runtime; pass native Composer arguments after --.')]
+function composerRequire(#[AsArgsAfterOptionEnd] array $arguments = []): int
+{
+    return report('composer:require', ['composer', 'require', '--no-interaction', '--no-progress', ...$arguments]);
+}
+
 #[AsTask(namespace: 'browser', name: 'install', description: 'Install the pinned Chromium browser without launching it.')]
 function browserInstall(): int
 {

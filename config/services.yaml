@@ -7,6 +7,10 @@
 # Put parameters here that don't need to change on each machine where the app is deployed
 # https://symfony.com/doc/current/best_practices.html#use-parameters-for-application-configuration
 parameters:
+    env(JEV_API_KEY): ''
+    env(JEV_BASE_URL): 'https://api.typesafe.ai'
+    env(JEV_MODEL): 'jev-1.14.0'
+    env(LOCAL_DEMO_RESET_ENABLED): '0'
 
 services:
     # default configuration for services in *this* file
@@ -31,11 +35,37 @@ services:
             # Wrap the native driver before connection-caching/test middleware.
             - { name: doctrine.middleware, connection: default, priority: 1000 }
 
-    # add more service definitions when explicit configuration is needed
-    # please note that last definitions always *replace* previous ones
+    # Native client without framework tracing: statement payloads must not enter profiler collectors.
+    app.jev.http_client:
+        class: Symfony\Contracts\HttpClient\HttpClientInterface
+        factory: ['Symfony\Component\HttpClient\HttpClient', 'create']
+        autoconfigure: false
+        arguments:
+            $defaultOptions: { timeout: 30, max_duration: 60 }
+
+    app.jev.model_catalog:
+        class: Symfony\AI\Platform\Bridge\TypeSafe\ModelCatalog
+        arguments:
+            $additionalModels:
+                '%env(JEV_MODEL)%':
+                    class: Symfony\AI\Platform\Bridge\TypeSafe\Jev
+                    capabilities: []
+
+    app.jev.platform:
+        class: Symfony\AI\Platform\Platform
+        factory: ['Symfony\AI\Platform\Bridge\TypeSafe\Factory', 'createPlatform']
+        arguments:
+            $apiKey: '%env(JEV_API_KEY)%'
+            $httpClient: '@app.jev.http_client'
+            $modelCatalog: '@app.jev.model_catalog'
+            $baseUrl: '%env(JEV_BASE_URL)%'
 
 when@dev: &fixture_services
     services:
+        App\Demo\DemoReset:
+            autowire: true
+            arguments:
+                $loader: '@hautelook_alice.loader'
         App\DataFixtures\:
             resource: '../src/DataFixtures/'
             autowire: true

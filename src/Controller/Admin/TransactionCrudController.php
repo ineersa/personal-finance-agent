@@ -51,10 +51,12 @@ final class TransactionCrudController extends OwnedCrudController
         yield AssociationField::new('statement')->onlyOnDetail();
         yield DateField::new('transactionDate')->setRequired(true);
         // Never use MoneyField or NumberField: they coerce canonical decimal strings.
-        yield TextField::new('amount')->setRequired(true);
+        yield TextField::new('amount')->setRequired(true)->setTemplatePath('admin/field/money.html.twig');
         yield TextField::new('currency')->setRequired(true);
         yield ChoiceField::new('direction')->setChoices(['Credit' => Direction::Credit, 'Debit' => Direction::Debit])->setRequired(true);
         yield TextareaField::new('description')->setRequired(false)->setFormTypeOption('empty_data', '');
+        yield ChoiceField::new('meaning')->onlyOnDetail();
+        yield ChoiceField::new('recurrence')->onlyOnDetail();
         yield AssociationField::new('source')->renderAsNativeWidget()->setFormTypeOption('choice_label', 'name')
             ->setFormTypeOption('empty_data', static fn (FormInterface $form): never => throw new TransformationFailedException('A transaction source is required.'))
             ->setFormTypeOption('query_builder', fn (): QueryBuilder => $this->sources->queryForUser($this->owner()));

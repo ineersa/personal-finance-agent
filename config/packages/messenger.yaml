@@ -1,0 +1,16 @@
+framework:
+    messenger:
+        transports:
+            statement_import:
+                dsn: 'sqlite-queue://statement-imports'
+                options:
+                    endpoint: '%kernel.project_dir%/var/queue/broker.sock'
+                    timeout: 10
+                serializer: messenger.transport.native_php_serializer
+                retry_strategy:
+                    max_retries: 0
+        routing:
+            App\Message\ProcessStatementMessage: statement_import
+
+sqlite_queue:
+    redeliver_timeout: 300

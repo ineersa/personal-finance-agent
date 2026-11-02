@@ -12,7 +12,7 @@ use Symfony\Component\Process\Process;
  * @param list<string>           $command
  * @param (\Closure(): int)|null $operation
  */
-function report(string $task, array $command, bool $runtime = true, bool $headed = false, ?\Closure $operation = null, string $artifact = '', bool $networked = false): int
+function report(string $task, array $command, bool $runtime = true, bool $headed = false, ?\Closure $operation = null, string $artifact = '', bool $networked = false, bool $jev = false): int
 {
     $root = \dirname(__DIR__);
     $relative = 'var/qa/'.str_replace(':', '-', $task);
@@ -67,7 +67,7 @@ function report(string $task, array $command, bool $runtime = true, bool $headed
             }
         } else {
             if (null !== $container) {
-                $command = runtimeCommand($command, $container, $headed, $networked);
+                $command = runtimeCommand($command, $container, $headed, $networked, $jev);
                 $result['command'] = $command;
                 $result['runtime_container'] = $container;
                 $save();
@@ -155,7 +155,7 @@ function phpstan(): int
 #[AsTask(namespace: 'lsp', name: 'check')]
 function lspCheck(): int
 {
-    return report('lsp:check', ['symfony', 'lsp:check', '--format=json', '--environment=dev']);
+    return report('lsp:check', ['symfony', 'lsp:check', '--format=json', '--environment=dev', ...(\Castor\output()->isVerbose() ? ['--verbose'] : [])]);
 }
 
 /** @param list<string> $arguments */
@@ -181,8 +181,25 @@ function appComposer(#[AsArgsAfterOptionEnd] array $arguments = []): int
 
 /** @param list<string> $arguments */
 #[AsTask(namespace: 'app', name: 'console', description: 'Run the Symfony application console; pass its arguments after --.')]
-function appConsole(#[AsArgsAfterOptionEnd] array $arguments = []): int
+function appConsole(#[AsArgsAfterOptionEnd] array $arguments = [], string $isolatedDatabase = ''): int
 {
+    if ('' !== $isolatedDatabase) {
+        if (1 !== preg_match('/\A[a-z0-9-]+\z/D', $isolatedDatabase)) {
+            throw new \InvalidArgumentException('Use a lowercase diagnostic database identifier.');
+        }
+        $relative = 'var/browser/'.$isolatedDatabase;
+        foreach (['var', 'var/browser', $relative, $relative.'/application.db'] as $path) {
+            if (is_link(\dirname(__DIR__).'/'.$path)) {
+                throw new \RuntimeException('Refusing symlinked diagnostic storage.');
+            }
+        }
+        if (!is_dir(\dirname(__DIR__).'/'.$relative)) {
+            mkdir(\dirname(__DIR__).'/'.$relative, 0700, true);
+        }
+
+        return report('app:console', ['env', 'DATABASE_URL=sqlite:////app/'.$relative.'/application.db', 'STATEMENT_STORAGE_DIR=/app/'.$relative.'/statements', 'IMPORT_UPDATES_ENABLED=0', 'php', 'bin/console', '--env=dev', ...$arguments]);
+    }
+
     return report('app:console', ['php', 'bin/console', ...$arguments]);
 }
 

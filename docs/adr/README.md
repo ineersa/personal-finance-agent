@@ -16,7 +16,7 @@ ADRs record significant technical decisions, their context, and their consequenc
 | [0008](0008-mate-development-tools.md) | Accepted | Use Mate with the official Symfony and Monolog extensions for development diagnostics. |
 | [0009](0009-castor-and-static-checks.md) | Accepted | Use Castor with concise reports, PHPStan strict rules, and mandatory Symfony LSP checks. |
 | [0010](0010-playwright-only-testing.md) | Accepted | Test application behavior only through Playwright, using visible browsers and agent-operated verification. |
-| [0011](0011-layered-rate-limiting.md) | Accepted | Apply per-user rate limits, coarse IP protection, upload quotas, and persistent shared AI budgets. |
+| [0011](0011-layered-rate-limiting.md) | Superseded by 0021 | Original per-user limits, upload quotas and shared AI budgets; implementation deferred. |
 | [0012](0012-configurable-ai-providers.md) | Accepted | Configure local llama.cpp, z.ai, and DeepSeek integrations with chat provider, model, and reasoning selection. |
 | [0013](0013-symfony-ai-agent-runtime.md) | Accepted | Use Symfony AI's agent loop with bounded cross-user fiber concurrency in one Messenger consumer and a simple context handoff for late implementation. |
 | [0014](0014-inline-chat-and-antv-charts.md) | Accepted | Display chart images inline in chat using a Docker-hosted AntV MCP server and its documented free hosted renderer; remove the separate artifact workspace. |
@@ -26,6 +26,7 @@ ADRs record significant technical decisions, their context, and their consequenc
 | [0018](0018-finance-review-sql-and-jev.md) | Accepted | Approve editable drafts before analysis; use bounded owner-scoped SQL, Jev decision tasks, and isolated target-model history conversion. |
 | [0019](0019-worktree-development-routing.md) | Accepted | Route checkout-scoped development and live-browser stacks through a shared loopback Caddy proxy. |
 | [0020](0020-private-statement-storage.md) | Accepted | Store private statement bytes through local Flysystem storage and owner-authorized application downloads. |
+| [0021](0021-fixtures-first-jev-import.md) | Accepted | Prepare synthetic monthly inputs, use Jev for CSV decisions, separate meaning/recurrence and defer quotas beyond the 10 MiB file limit. |
 
 ## Recording decisions
 
