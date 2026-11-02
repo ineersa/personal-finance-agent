@@ -146,7 +146,7 @@ final class StatementImportTest extends TestCase
                         continue;
                     }
                     self::assertSame(2, $rows->count(), 'A quoted newline must not swallow the following transaction.');
-                    foreach ([["Coffee\nwith \"oat\" milk", '1.00', '2026-10-01', 'debit'], ['Dinner refund', '2.00', '2026-10-02', 'credit']] as $index => [$description, $amount, $date, $direction]) {
+                    foreach ([["Coffee\nwith \"oat\" milk", '1.00', '2026-10-01', 'Debit'], ['Dinner refund', '2.00', '2026-10-02', 'Credit']] as $index => [$description, $amount, $date, $direction]) {
                         $cells = $rows->nth($index)->locator('td');
                         self::assertSame($date, $cells->nth(0)->textContent());
                         self::assertSame($description, $cells->nth(1)->textContent());
