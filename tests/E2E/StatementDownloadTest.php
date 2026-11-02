@@ -23,9 +23,20 @@ final class StatementDownloadTest extends FinanceBrowserTest
         $unresolved = $fixtures['history_usd_2024_11'];
         $page = $this->visit('/home/statement-processing/'.$unresolved->getId());
         self::assertResponseIsSuccessful();
-        self::assertStringContainsString('Draft transactions requiring review: 1.', $page->locator('body')->textContent());
+        self::assertStringContainsString('Draft transactions requiring review: 1', $page->locator('body')->textContent());
         self::assertSame(1, $page->locator('[data-draft-results] tbody tr')->count());
-        self::assertStringContainsString('unknown', $page->locator('[data-draft-results] tbody tr')->textContent());
+        self::assertStringContainsString('Needs review', $page->locator('[data-draft-results] tbody tr')->textContent());
+        self::assertSame('unknown', $page->locator('[data-meaning]')->getAttribute('data-meaning'));
+        self::assertSame('Import complete', $page->locator('[data-processing-status]')->textContent());
+        self::assertStringContainsString('1 unapproved draft transaction', $page->locator('.import-summary')->textContent());
+        self::assertStringContainsString('Editing and approval are not available yet', $page->locator('.import-drafts')->textContent());
+        self::assertSame(0, $page->getByRole('link', ['name' => 'Refresh processing status'])->count());
+        foreach ([1280, 390] as $width) {
+            $page->setViewportSize($width, 900);
+            self::assertTrue($page->evaluate('() => document.documentElement.scrollWidth <= window.innerWidth'));
+            self::assertSame('auto', $page->locator('.import-table')->evaluate('(element) => getComputedStyle(element).overflowX'));
+            self::assertSame('16px', $page->locator('.import-summary')->evaluate('(element) => getComputedStyle(element).borderRadius'));
+        }
     }
 
     public function testOwnerDownloadsSyntheticBytesThroughStatementUiWithoutTrustingQueryInputs(): void

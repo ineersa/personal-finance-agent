@@ -1,25 +1,39 @@
-<section id="statement-processing-{{ statement.id }}">
-    <p>{{ statement.originalFilename }} — {{ statement.source.name }}</p>
-    <p>Status: <strong data-processing-status>{{ statement.processingStatus.value }}</strong></p>
-    {% if statement.processingStatus.value == 'completed' %}
-        {% if drafts is not empty %}
-            <twig:ea:Alert variant="success">Draft transactions requiring review: {{ drafts|length }}. <a href="#draft-results">View draft results</a>.</twig:ea:Alert>
+{% set status = statement.processingStatus.value %}
+{% set meanings = {expense: 'Expense', income: 'Income', refund: 'Refund', own_account_transfer: 'Own-account transfer', credit_card_payment: 'Credit-card payment', unknown: 'Needs review'} %}
+{% set recurrences = {recurring_bill: 'Recurring bill', subscription: 'Subscription', other_recurring: 'Other recurring', non_recurring: 'Not recurring', unknown: 'Not determined'} %}
+<section id="statement-processing-{{ statement.id }}" class="import-results" data-import-state="{{ status }}">
+    <header class="import-summary">
+        <p class="import-eyebrow">{{ statement.source.name }}</p>
+        <h2 data-processing-status data-status="{{ status }}">{{ {completed: 'Import complete', queued: 'Import queued', running: 'Import in progress', failed: 'Import failed'}[status] }}</h2>
+        <p class="import-filename">{{ statement.originalFilename }}</p>
+        {% if status == 'completed' %}
+            {% if drafts is not empty %}
+                <p class="import-outcome"><strong>{{ drafts|length }} unapproved draft {{ drafts|length == 1 ? 'transaction' : 'transactions' }}</strong></p>
+                <p>Your file has been processed. These drafts are saved, but are not included in your financial totals.</p>
+                <a class="btn btn-primary" href="#draft-results">View {{ drafts|length }} draft {{ drafts|length == 1 ? 'transaction' : 'transactions' }}</a>
+            {% else %}
+                <p class="import-outcome">Processing completed. No drafts remain for review.</p>
+            {% endif %}
+        {% elseif status in ['queued', 'running'] %}
+            <p role="status">{{ status == 'queued' ? 'Your file is waiting to be processed.' : 'Your file is being read and categorized.' }} This page updates automatically. You can leave and return from Statements.</p>
         {% else %}
-            <twig:ea:Alert variant="success">Processing completed. No drafts remain for review.</twig:ea:Alert>
+            <p>Your file could not be processed. No completed results are available for this attempt.</p>
+            {% if retryForm is not defined %}<a class="btn btn-primary" href="{{ path('admin_statement_processing', {id: statement.id}) }}">Open retry options</a>{% endif %}
         {% endif %}
-    {% elseif statement.processingStatus.value in ['queued', 'running'] %}
-        <p role="status">Processing is in progress. Live updates appear while your workspace is open. You can also return from Statements later.</p>
+        {% if statement.processingError %}<p class="import-error" role="alert">{{ statement.processingError }}</p>{% endif %}
+    </header>
+    <nav class="import-actions" aria-label="Statement actions">
+        <a class="btn btn-secondary" href="{{ path('app_statement_download', {id: statement.id}) }}" data-turbo="false">Download original CSV</a>
+        <a class="btn btn-secondary" href="{{ path('admin_statement_upload') }}">Upload another statement</a>
+    </nav>
+    {% if status == 'completed' and drafts is not empty %}
+        <section class="import-drafts" aria-labelledby="draft-results">
+            <h3 id="draft-results">Draft transactions requiring review: {{ drafts|length }}</h3>
+            <p>Review the saved results below. Editing and approval are not available yet; these transactions remain drafts.</p>
+            <div class="table-responsive import-table" role="region" aria-label="Draft transactions" tabindex="0"><table class="table" data-draft-results>
+                <thead><tr><th scope="col">Date</th><th scope="col">Description</th><th scope="col">Amount</th><th scope="col">Currency</th><th scope="col">Direction</th><th scope="col">Category</th><th scope="col">Transaction type</th><th scope="col">Recurrence</th></tr></thead>
+                <tbody>{% for row in drafts %}<tr><td>{{ row.transactionDate|date('Y-m-d') }}</td><td>{{ row.description }}</td><td>{{ row.amount }}</td><td>{{ row.currency }}</td><td>{{ row.direction.value }}</td><td>{{ row.category ? row.category.name : 'Uncategorized' }}</td><td data-meaning="{{ row.meaning.value }}">{{ meanings[row.meaning.value] }}</td><td data-recurrence="{{ row.recurrence.value }}">{{ recurrences[row.recurrence.value] }}</td></tr>{% endfor %}</tbody>
+            </table></div>
+        </section>
     {% endif %}
-    {% if statement.processingError %}<p role="alert">{{ statement.processingError }}</p>{% endif %}
-    <p>
-        <a class="btn btn-secondary" href="{{ path('admin_statement_processing', {id: statement.id}) }}">Refresh processing status</a>
-        <a class="btn btn-secondary" href="{{ path('app_statement_download', {id: statement.id}) }}" data-turbo="false">Download original</a>
-        <a href="{{ path('admin_statement_upload') }}">Upload another statement</a>
-    </p>
-    <h2 id="draft-results">Draft results ({{ drafts|length }})</h2>
-    <p>These rows are unapproved and excluded from financial analysis. Editing and approval follow in the draft review workflow. Unknown interpretations require review; transfer and card-payment meanings exclude movements from spending and income without requiring a matched pair.</p>
-    <div class="table-responsive"><table class="table" data-draft-results>
-        <thead><tr><th>Date</th><th>Description</th><th>Amount</th><th>Currency</th><th>Direction</th><th>Category</th><th>Meaning</th><th>Recurrence</th></tr></thead>
-        <tbody>{% for row in drafts %}<tr><td>{{ row.transactionDate|date('Y-m-d') }}</td><td>{{ row.description }}</td><td>{{ row.amount }}</td><td>{{ row.currency }}</td><td>{{ row.direction.value }}</td><td>{{ row.category ? row.category.name : 'Uncategorized' }}</td><td>{{ row.meaning.value }}</td><td>{{ row.recurrence.value }}</td></tr>{% endfor %}</tbody>
-    </table></div>
 </section>

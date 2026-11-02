@@ -1,10 +1,10 @@
 {% extends '@EasyAdmin/page/content.html.twig' %}
 {% form_theme retryForm with ['@EasyAdmin/crud/form_theme.html.twig'] only %}
-{% block content_title %}Statement processing{% endblock %}
+{% block content_title %}Statement import{% endblock %}
 {% block main %}
     {{ include('statement/_results.html.twig') }}
     {% if statement.processingStatus.value == 'failed' %}
-        {{ form_start(retryForm) }}
+        {{ form_start(retryForm, {attr: {class: 'import-retry'}}) }}
             {{ form_errors(retryForm) }}
             <button class="btn btn-primary" type="submit">Retry processing</button>
         {{ form_end(retryForm) }}

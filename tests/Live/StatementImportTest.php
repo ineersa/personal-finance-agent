@@ -39,12 +39,12 @@ final class StatementImportTest extends TestCase
                     $page->waitForURL('**/home/statement-processing/*');
                     $processingUrl = $page->url();
                     $page->evaluate('() => { window.importPageProbe = "sse-only"; }');
-                    $page->locator('[data-processing-status]')->filter(['hasText' => 'completed'])->waitFor(['timeout' => 120000]);
+                    $page->locator('[data-processing-status]')->filter(['hasText' => 'Import complete'])->waitFor(['timeout' => 120000]);
                     self::assertSame('sse-only', $page->evaluate('() => window.importPageProbe'), 'Completion must update the current document without a page refresh.');
                     $page->locator('#import-notification a')->waitFor();
                     self::assertTrue($page->locator('#import-notification a')->isVisible());
                     $page->goto($processingUrl);
-                    self::assertSame('completed', $page->locator('[data-processing-status]')->textContent());
+                    self::assertSame('completed', $page->locator('[data-processing-status]')->getAttribute('data-status'));
                     $rows = $page->locator('[data-draft-results] tbody tr');
                     self::assertSame(\count($statement['rows']), $rows->count());
                     foreach ($statement['rows'] as $index => $expected) {
@@ -57,7 +57,7 @@ final class StatementImportTest extends TestCase
                             'credit' => Direction::Credit->value,
                             'debit' => Direction::Debit->value,
                         }, $cells->nth(4)->textContent());
-                        self::assertSame($expected['meaning'], $cells->nth(6)->textContent());
+                        self::assertSame($expected['meaning'], $cells->nth(6)->getAttribute('data-meaning'));
                     }
                     $page->reload();
                     self::assertSame(\count($statement['rows']), $page->locator('[data-draft-results] tbody tr')->count());
@@ -91,9 +91,12 @@ final class StatementImportTest extends TestCase
                 $page->getByRole('button', ['name' => 'Upload and prepare drafts'])->click();
                 $page->waitForURL('**/home/statement-processing/*');
                 $processingUrl = $page->url();
-                $page->locator('[data-processing-status]')->filter(['hasText' => 'failed'])->waitFor(['timeout' => 30000]);
+                $page->locator('[data-processing-status]')->filter(['hasText' => 'Import failed'])->waitFor(['timeout' => 30000]);
                 $page->reload();
                 self::assertSame(0, $page->locator('[data-draft-results] tbody tr')->count());
+                self::assertSame('Import failed', $page->locator('[data-processing-status]')->textContent());
+                self::assertTrue($page->getByRole('button', ['name' => 'Retry processing'])->isVisible());
+                self::assertSame(0, $page->getByRole('link', ['name' => 'Refresh processing status'])->count());
                 self::assertStringContainsString('consistent comma-separated columns', $page->getByRole('alert')->textContent());
                 $admin = $browser->newContext();
                 try {
@@ -130,11 +133,11 @@ final class StatementImportTest extends TestCase
                 $page->waitForURL('**/home/source');
                 $page->locator('#import-notification a[href="'.parse_url($processingUrl, \PHP_URL_PATH).'"]')->waitFor(['timeout' => 120000]);
                 self::assertSame($url.'/home/source', $page->url());
-                self::assertStringContainsString('Statement drafts are ready.', $page->locator('#import-notification')->textContent());
+                self::assertStringContainsString('Import complete. Draft transactions are saved for review.', $page->locator('#import-notification')->textContent());
                 self::assertSame(1, $page->locator('turbo-mercure-stream-source')->count());
                 $page->locator('#import-notification a')->click();
                 $page->waitForURL($processingUrl);
-                self::assertSame('completed', $page->locator('[data-processing-status]')->textContent());
+                self::assertSame('completed', $page->locator('[data-processing-status]')->getAttribute('data-status'));
                 self::assertSame(17, $page->locator('[data-draft-results] tbody tr')->count());
             } finally {
                 $context->close();
@@ -156,7 +159,7 @@ final class StatementImportTest extends TestCase
                 foreach ($saved as $statement) {
                     self::assertStringStartsWith($url.'/home/statement-processing/', $statement['url']);
                     $page->goto($statement['url']);
-                    self::assertSame('completed', $page->locator('[data-processing-status]')->textContent());
+                    self::assertSame('completed', $page->locator('[data-processing-status]')->getAttribute('data-status'));
                     self::assertSame($statement['count'], $page->locator('[data-draft-results] tbody tr')->count());
                 }
             } finally {

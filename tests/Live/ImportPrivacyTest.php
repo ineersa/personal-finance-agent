@@ -117,7 +117,7 @@ final class ImportPrivacyTest extends TestCase
         $page->getByRole('checkbox')->check();
         $page->getByRole('button', ['name' => 'Upload and prepare drafts'])->click();
         $page->waitForURL('**/home/statement-processing/*');
-        $page->locator('[data-processing-status]')->filter(['hasText' => 'completed'])->waitFor(['timeout' => 120000]);
+        $page->locator('[data-processing-status]')->filter(['hasText' => 'Import complete'])->waitFor(['timeout' => 120000]);
         $page->locator('#import-notification a')->waitFor();
         self::assertGreaterThan(0, $page->locator('[data-draft-results] tbody tr')->count());
 

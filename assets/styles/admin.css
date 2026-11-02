@@ -1,4 +1,27 @@
 /* Keep EasyAdmin's native components and dark theme in the workspace palette. */
+.import-results { display: grid; gap: 1.5rem; min-width: 0; padding-bottom: 2rem; }
+.import-summary { padding: clamp(1.25rem, 3vw, 2rem); border: 1px solid #444449; border-radius: 16px; background: #19191b; }
+.import-summary h2 { margin: 0 0 .5rem; font-size: clamp(1.5rem, 3vw, 2rem); font-weight: 650; }
+.import-summary p { margin: 0 0 1rem; max-width: 70ch; }
+.import-summary p:last-child { margin-bottom: 0; }
+.import-summary .import-eyebrow { color: #a2a2aa; font-size: .85rem; margin-bottom: .5rem; }
+.import-filename { overflow-wrap: anywhere; color: #a2a2aa; }
+.import-outcome { font-size: 1.1rem; }
+.import-results[data-import-state="completed"] .import-summary { border-left: 4px solid #73c994; }
+.import-results[data-import-state="failed"] .import-summary { border-left: 4px solid #ed9494; }
+.import-error { color: #ed9494; overflow-wrap: anywhere; }
+.import-actions { display: flex; flex-wrap: wrap; gap: .75rem; }
+.import-drafts { min-width: 0; }
+.import-drafts h3 { font-size: 1.2rem; margin: 0 0 .75rem; }
+.import-drafts > p { color: #a2a2aa; margin-bottom: 1.25rem; max-width: 75ch; }
+.import-table { border: 1px solid #444449; border-radius: 12px; overflow-x: auto; }
+.import-table table { margin-bottom: 0; min-width: 960px; }
+.import-table th, .import-table td { padding: .9rem 1rem; vertical-align: top; }
+.import-table td:nth-child(2) { min-width: 16rem; max-width: 28rem; white-space: normal; overflow-wrap: anywhere; }
+.import-table td:nth-child(3) { text-align: right; font-variant-numeric: tabular-nums; }
+.import-retry { margin: 0 0 2rem; }
+.import-notification .alert { border-radius: 14px; padding: 1.25rem 3rem 1.25rem 1.25rem; box-shadow: 0 12px 36px #0006; margin: 0; }
+.import-notification a { display: block; margin-top: .5rem; overflow-wrap: anywhere; }
 .import-notification {
     position: fixed;
     right: 1rem;
