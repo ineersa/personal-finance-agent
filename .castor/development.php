@@ -295,6 +295,38 @@ function browserImportsTest(bool $replay = false, bool $privacy = false, bool $b
     return report('browser:imports:test', ['env', 'FINANCE_IMPORT_URL='.stackUrl('browser'), 'FINANCE_IMPORT_REPLAY='.($replay ? '1' : '0'), 'FINANCE_PROXY_IP='.proxyAddress(), 'php', 'vendor/bin/phpunit', $file, ...$arguments, '--fail-on-empty-test-suite', '--log-junit', 'var/qa/browser-imports-test/junit.xml'], networked: true);
 }
 
+#[AsTask(namespace: 'browser', name: 'maintenance:test', description: 'Destructively verify reset/delete on the isolated browser stack only; restores canonical fixtures.')]
+function browserMaintenanceTest(bool $confirmReset = false): int
+{
+    if (!$confirmReset) {
+        throw new \InvalidArgumentException('Pass --confirm-reset to authorize replacing all isolated browser-stack data. Development data is never targeted.');
+    }
+    $root = \dirname(__DIR__);
+    foreach ([$root.'/var', $root.'/var/browser-live', $root.'/var/browser-live/browser', $root.'/var/browser-live/browser/application.db'] as $path) {
+        if (is_link($path)) {
+            throw new \RuntimeException('Refusing symlinked maintenance-test storage.');
+        }
+    }
+    if (!is_file($root.'/var/browser-live/browser/application.db')) {
+        throw new \RuntimeException('Initialize the isolated browser-stack database before destructive verification.');
+    }
+
+    return report('browser:maintenance:test', ['vendor/bin/castor', 'browser:maintenance:test', '--confirm-reset'], runtime: false, operation: static function (): int {
+        $command = ['env', 'FINANCE_DEMO_RESET_CONFIRM=1', 'FINANCE_IMPORT_URL='.stackUrl('browser'), 'FINANCE_PROXY_IP='.proxyAddress(), 'php', 'vendor/bin/phpunit', 'tests/Live/DemoMaintenanceTest.php'];
+        try {
+            stackRun('browser', ['stop', 'worker']);
+            $exit = report('browser:maintenance:busy', [...$command, '--filter', 'testBusyImports', '--fail-on-empty-test-suite'], networked: true);
+        } finally {
+            stackRun('browser', ['up', '-d', '--wait', 'worker']);
+        }
+        if (0 !== $exit) {
+            return $exit;
+        }
+
+        return report('browser:maintenance:restore', [...$command, '--filter', 'testNativeDelete', '--fail-on-empty-test-suite'], networked: true);
+    });
+}
+
 #[AsTask(namespace: 'browser', name: 'routes:test', description: 'Verify comma-separated live stack URLs in a real tooling-container browser.')]
 function browserRoutesTest(#[AsArgument] string $urls = '', string $absent = ''): int
 {

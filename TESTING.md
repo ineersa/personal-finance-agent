@@ -68,6 +68,20 @@ For isolated exploration, prepare only the running browser stack's database and 
 
 ### Real CSV upload and worker verification
 
+#### Explicit local demo maintenance
+
+`LOCAL_DEMO_RESET_ENABLED=1` in an ignored dev/test environment-local file enables the Settings reset only for `demo@test.com` without administrator roles. Production always hides and denies it, even with the flag set. The confirmation form validates consent and CSRF before invoking the installed native Alice loader in DELETE purge mode. This is the explicit owner-approved exception to append-only demo loading; `dev:fixtures:load` remains append-only. The action replaces all users and mapped financial data with `fixtures/*.yaml`, preserves SQLite AUTOINCREMENT sequences, removes noncanonical files from the private statement adapter's root, and uses native logout. Environment files, provider keys and separate broker storage are not purged. Existing sessions refer to deleted user IDs and must authenticate again.
+
+Reset and native EasyAdmin statement deletion take an exclusive Symfony Flock lock. Upload admission, retry and processing take shared locks across web/worker containers; contention fails without waiting. Reset checks queued/running statements across all users. Deletion checks the selected owned statement, removes all linked approved/draft rows, and deletes its stored CSV. An incomplete storage/database operation reports failure; these filesystem and database operations are not one atomic transaction. Statement messages carry immutable stored-filename identity as well as owner/statement IDs, and old identifier-only messages are ignored. Republish any genuinely queued legacy imports through the existing owned operator command after deploying this change; never rewrite database statuses to bypass the busy guard.
+
+Run destructive proof only against the isolated browser stack, after its migrations/canonical fixture initialization:
+
+```sh
+vendor/bin/castor browser:maintenance:test --confirm-reset
+```
+
+This task never targets the development preview. It stops only the isolated worker for deterministic queued-import reset/delete refusals, always restarts that worker, then verifies native confirmed deletion and database-wide reset through Chromium. It uses canonical fixtures, a temporary malformed CSV (no provider call), ordinary browser account creation and settings changes. It checks consent/CSRF refusals, administrator/foreign-owner denial, linked approved-row deletion, inaccessible downloads, fixture counts, restored CAD preference and invalidation of already-authenticated sessions. It replaces all isolated browser data and invalidates identifiers saved by earlier import/replay scenarios; run those scenarios again afterward if needed. No owner-preview reset is part of verification.
+
 The development and browser stacks start the native sqlite-queue broker and stock `messenger:consume statement_import --keepalive=5` worker. Browser services share only `var/browser-live`: the application database is `browser/application.db`, private uploads are `browser/statements`, and broker SQLite/socket are `queue/broker.db` and `queue/broker.sock`. The broker owns its schema. Its 300-second reservation is renewed by Messenger; no provider call or broker publication runs inside an application write transaction.
 
 Export `JEV_API_KEY` before starting the stack, or configure the appropriate ignored environment-local file. Compose passes an exported key to web and worker without embedding it in command arguments. Only synthetic data should be used for this verification. The upload form discloses the configured destination and requires consent. These are paid live provider calls, not replayed responses.

@@ -20,6 +20,7 @@
 .import-table td:nth-child(2) { min-width: 16rem; max-width: 28rem; white-space: normal; overflow-wrap: anywhere; }
 .import-table td:nth-child(3) { text-align: right; font-variant-numeric: tabular-nums; }
 .import-retry { margin: 0 0 2rem; }
+.demo-reset-settings { margin: 2rem 0; }
 .import-notification .alert { border-radius: 14px; padding: 1.25rem 3rem 1.25rem 1.25rem; box-shadow: 0 12px 36px #0006; margin: 0; }
 .import-notification a { display: block; margin-top: .5rem; overflow-wrap: anywhere; }
 .import-notification {

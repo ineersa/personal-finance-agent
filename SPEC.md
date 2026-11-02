@@ -29,6 +29,10 @@ Scanned/image-only PDF support and an existing OCR backend remain unresolved; or
 
 While an ordinary user's workspace is open, deliver import completion/failure through private Mercure updates. Update the processing view and show a dismissible completion/failure notice linking to the owned status/drafts page, including after navigation elsewhere in the workspace. Reuse native Symfony UX Turbo and EasyAdmin components. Persisted statement status remains authoritative after closing or reopening the browser; no durable notification inbox or operating-system notifications are required.
 
+For repeated local demo imports, Settings may expose an explicitly enabled database-wide reset. It is available only in dev/test to the canonical demo operator, requires confirmation and CSRF validation, restores the canonical fixture accounts/history/categories/sources, removes uploaded statement files, and signs the operator out. Environment files and API keys remain untouched. Refuse reset while any user's import is queued/running, and coordinate reset with import admission, retries and workers. Production must hide and deny this action. Normal development fixture loading remains append-only.
+
+Owners may delete a statement through EasyAdmin's native confirmed delete action. Delete its private CSV and every linked approved/draft transaction together; refuse queued/running imports. Recheck ownership server-side, including direct requests, and report incomplete cleanup rather than claiming success.
+
 ## Finance semantics and reporting
 
 A source is a bank account, card, or other financial account instrument, not a merchant. Keep one transaction date exactly from the statement, original amount/currency, credit/debit direction, and category. Direction alone does not distinguish income, refunds, or own-account transfers; no complex accounting or inferred tax policy is selected.

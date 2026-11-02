@@ -22,7 +22,7 @@ use Symfony\Component\Security\Http\Attribute\IsGranted;
 final class SettingsController extends AbstractController
 {
     #[AdminRoute('/settings', name: 'settings', options: ['methods' => ['GET', 'POST']])]
-    public function __invoke(Request $request, #[CurrentUser] User $user, EntityManagerInterface $entityManager): Response
+    public function __invoke(Request $request, #[CurrentUser] User $user, EntityManagerInterface $entityManager, \App\Demo\DemoReset $reset): Response
     {
         $form = $this->createFormBuilder($user)
             ->add('reportingCurrency', EnumType::class, [
@@ -39,6 +39,6 @@ final class SettingsController extends AbstractController
             return $this->redirectToRoute('admin_settings');
         }
 
-        return $this->render('settings/index.html.twig', ['form' => $form]);
+        return $this->render('settings/index.html.twig', ['form' => $form, 'canResetDemo' => $reset->isAllowed($user)]);
     }
 }

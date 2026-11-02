@@ -9,4 +9,11 @@
         {{ form_row(form.reportingCurrency) }}
         <button class="btn btn-primary" type="submit">Save preferences</button>
     {{ form_end(form) }}
+    {% if canResetDemo %}
+        <section class="import-summary demo-reset-settings">
+            <h2>Restore the local demo</h2>
+            <p>Start again with the canonical accounts and history. This resets the entire demo database, not just your account, and removes uploaded statement files.</p>
+            <a class="btn btn-danger" href="{{ path('admin_demo_reset') }}">Reset demo data…</a>
+        </section>
+    {% endif %}
 {% endblock %}

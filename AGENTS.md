@@ -27,6 +27,7 @@ A finance UI preview and development tooling are implemented; authentication, fi
 - Generate migrations with Doctrine tooling through Castor against verified isolated task-owned storage. Do not hand-author migration classes or SQL. Read generated output and verify the schema changes before applying it; report unexpected destructive diffs instead of bypassing the generator. Preserve already-applied owner/production migration history.
 - Treat uploaded content and model output as untrusted. Do not inject unescaped output into HTML or execute model-generated JavaScript without an explicitly approved isolation design.
 - Do not reset demo data, remove volumes, or stop unrelated containers without explicit authorization and a verified target.
+- The owner-authorized Settings reset is the sole local demo purge exception: explicitly enabled dev/test only, canonical demo operator, confirmed CSRF-protected action, database-wide canonical Alice reload and private statement cleanup. Keep `dev:fixtures:load` append-only. Never invoke the destructive action on an owner's preview for verification; use isolated browser storage.
 - Follow [ADR 0021](docs/adr/0021-fixtures-first-jev-import.md): enforce the 10 MiB upload limit; other upload/AI quotas and budget accounting are deferred. Retain ownership, login protection and short writes.
 - Do not introduce the deferred quota subsystem in the fixtures-first import slice. Keep existing financial data readable.
 

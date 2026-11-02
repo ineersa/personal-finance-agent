@@ -1,0 +1,18 @@
+{% extends '@EasyAdmin/page/content.html.twig' %}
+{% form_theme form with ['@EasyAdmin/crud/form_theme.html.twig'] only %}
+{% block content_title %}Reset local demo data{% endblock %}
+{% block main %}
+    <section class="import-summary">
+        <h2>This affects every account</h2>
+        <p>All users, settings, sources, categories, statements and transactions will be replaced with the canonical demo fixtures. Uploaded CSV files will be removed. Environment files and API keys are not changed.</p>
+        <p>Reset is refused while any import is queued or running. You will be signed out; sign in again with demo@test.com / demo.</p>
+        {{ form_start(form) }}
+            {{ form_errors(form) }}
+            {{ form_row(form.confirm) }}
+            <div class="import-actions">
+                <button class="btn btn-danger" type="submit">Delete all data and restore demo</button>
+                <a class="btn btn-secondary" href="{{ path('admin_settings') }}">Cancel</a>
+            </div>
+        {{ form_end(form) }}
+    </section>
+{% endblock %}
