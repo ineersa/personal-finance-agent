@@ -8,7 +8,7 @@
             "file": "chequing\/2024-11.csv",
             "source_fixture": "demo_current",
             "currency": "CAD",
-            "purpose": "history_pending_pipeline",
+            "purpose": "history_input",
             "expected_totals": {
                 "spending_debits": "1880.76",
                 "refund_credits": "0.00",
@@ -121,7 +121,7 @@
             "file": "credit\/2024-11.csv",
             "source_fixture": "demo_card",
             "currency": "CAD",
-            "purpose": "history_pending_pipeline",
+            "purpose": "history_input",
             "expected_totals": {
                 "spending_debits": "1245.49",
                 "refund_credits": "77.28",
@@ -306,7 +306,7 @@
             "file": "usd\/2024-11.csv",
             "source_fixture": "demo_usd",
             "currency": "USD",
-            "purpose": "history_pending_pipeline",
+            "purpose": "history_input",
             "expected_totals": {
                 "spending_debits": "248.09",
                 "refund_credits": "25.00",
@@ -374,7 +374,7 @@
             "file": "chequing\/2024-12.csv",
             "source_fixture": "demo_current",
             "currency": "CAD",
-            "purpose": "history_pending_pipeline",
+            "purpose": "history_input",
             "expected_totals": {
                 "spending_debits": "1878.00",
                 "refund_credits": "0.00",
@@ -487,7 +487,7 @@
             "file": "credit\/2024-12.csv",
             "source_fixture": "demo_card",
             "currency": "CAD",
-            "purpose": "history_pending_pipeline",
+            "purpose": "history_input",
             "expected_totals": {
                 "spending_debits": "964.82",
                 "refund_credits": "0.00",
@@ -654,7 +654,7 @@
             "file": "usd\/2024-12.csv",
             "source_fixture": "demo_usd",
             "currency": "USD",
-            "purpose": "history_pending_pipeline",
+            "purpose": "history_input",
             "expected_totals": {
                 "spending_debits": "12.45",
                 "refund_credits": "0.00",
@@ -704,7 +704,7 @@
             "file": "chequing\/2025-01.csv",
             "source_fixture": "demo_current",
             "currency": "CAD",
-            "purpose": "history_pending_pipeline",
+            "purpose": "history_input",
             "expected_totals": {
                 "spending_debits": "1866.70",
                 "refund_credits": "0.00",
@@ -817,7 +817,7 @@
             "file": "credit\/2025-01.csv",
             "source_fixture": "demo_card",
             "currency": "CAD",
-            "purpose": "history_pending_pipeline",
+            "purpose": "history_input",
             "expected_totals": {
                 "spending_debits": "977.13",
                 "refund_credits": "0.00",
@@ -984,7 +984,7 @@
             "file": "usd\/2025-01.csv",
             "source_fixture": "demo_usd",
             "currency": "USD",
-            "purpose": "history_pending_pipeline",
+            "purpose": "history_input",
             "expected_totals": {
                 "spending_debits": "12.45",
                 "refund_credits": "0.00",
@@ -1034,7 +1034,7 @@
             "file": "chequing\/2025-02.csv",
             "source_fixture": "demo_current",
             "currency": "CAD",
-            "purpose": "history_pending_pipeline",
+            "purpose": "history_input",
             "expected_totals": {
                 "spending_debits": "1866.00",
                 "refund_credits": "0.00",
@@ -1147,7 +1147,7 @@
             "file": "credit\/2025-02.csv",
             "source_fixture": "demo_card",
             "currency": "CAD",
-            "purpose": "history_pending_pipeline",
+            "purpose": "history_input",
             "expected_totals": {
                 "spending_debits": "909.31",
                 "refund_credits": "160.32",
@@ -1323,7 +1323,7 @@
             "file": "usd\/2025-02.csv",
             "source_fixture": "demo_usd",
             "currency": "USD",
-            "purpose": "history_pending_pipeline",
+            "purpose": "history_input",
             "expected_totals": {
                 "spending_debits": "12.45",
                 "refund_credits": "0.00",
@@ -1373,7 +1373,7 @@
             "file": "chequing\/2025-03.csv",
             "source_fixture": "demo_current",
             "currency": "CAD",
-            "purpose": "history_pending_pipeline",
+            "purpose": "history_input",
             "expected_totals": {
                 "spending_debits": "1867.44",
                 "refund_credits": "0.00",
@@ -1486,7 +1486,7 @@
             "file": "credit\/2025-03.csv",
             "source_fixture": "demo_card",
             "currency": "CAD",
-            "purpose": "history_pending_pipeline",
+            "purpose": "history_input",
             "expected_totals": {
                 "spending_debits": "905.03",
                 "refund_credits": "0.00",
@@ -1653,7 +1653,7 @@
             "file": "usd\/2025-03.csv",
             "source_fixture": "demo_usd",
             "currency": "USD",
-            "purpose": "history_pending_pipeline",
+            "purpose": "history_input",
             "expected_totals": {
                 "spending_debits": "303.95",
                 "refund_credits": "25.00",
@@ -1721,7 +1721,7 @@
             "file": "chequing\/2025-04.csv",
             "source_fixture": "demo_current",
             "currency": "CAD",
-            "purpose": "history_pending_pipeline",
+            "purpose": "history_input",
             "expected_totals": {
                 "spending_debits": "1879.95",
                 "refund_credits": "0.00",
@@ -1834,7 +1834,7 @@
             "file": "credit\/2025-04.csv",
             "source_fixture": "demo_card",
             "currency": "CAD",
-            "purpose": "history_pending_pipeline",
+            "purpose": "history_input",
             "expected_totals": {
                 "spending_debits": "963.85",
                 "refund_credits": "0.00",
@@ -2001,7 +2001,7 @@
             "file": "usd\/2025-04.csv",
             "source_fixture": "demo_usd",
             "currency": "USD",
-            "purpose": "history_pending_pipeline",
+            "purpose": "history_input",
             "expected_totals": {
                 "spending_debits": "12.45",
                 "refund_credits": "0.00",
@@ -2051,7 +2051,7 @@
             "file": "chequing\/2025-05.csv",
             "source_fixture": "demo_current",
             "currency": "CAD",
-            "purpose": "history_pending_pipeline",
+            "purpose": "history_input",
             "expected_totals": {
                 "spending_debits": "1831.57",
                 "refund_credits": "0.00",
@@ -2164,7 +2164,7 @@
             "file": "credit\/2025-05.csv",
             "source_fixture": "demo_card",
             "currency": "CAD",
-            "purpose": "history_pending_pipeline",
+            "purpose": "history_input",
             "expected_totals": {
                 "spending_debits": "1107.08",
                 "refund_credits": "113.24",
@@ -2340,7 +2340,7 @@
             "file": "usd\/2025-05.csv",
             "source_fixture": "demo_usd",
             "currency": "USD",
-            "purpose": "history_pending_pipeline",
+            "purpose": "history_input",
             "expected_totals": {
                 "spending_debits": "12.45",
                 "refund_credits": "0.00",
@@ -2390,7 +2390,7 @@
             "file": "chequing\/2025-06.csv",
             "source_fixture": "demo_current",
             "currency": "CAD",
-            "purpose": "history_pending_pipeline",
+            "purpose": "history_input",
             "expected_totals": {
                 "spending_debits": "1887.55",
                 "refund_credits": "0.00",
@@ -2503,7 +2503,7 @@
             "file": "credit\/2025-06.csv",
             "source_fixture": "demo_card",
             "currency": "CAD",
-            "purpose": "history_pending_pipeline",
+            "purpose": "history_input",
             "expected_totals": {
                 "spending_debits": "1062.93",
                 "refund_credits": "0.00",
@@ -2670,7 +2670,7 @@
             "file": "usd\/2025-06.csv",
             "source_fixture": "demo_usd",
             "currency": "USD",
-            "purpose": "history_pending_pipeline",
+            "purpose": "history_input",
             "expected_totals": {
                 "spending_debits": "12.45",
                 "refund_credits": "0.00",
@@ -2720,7 +2720,7 @@
             "file": "chequing\/2025-07.csv",
             "source_fixture": "demo_current",
             "currency": "CAD",
-            "purpose": "history_pending_pipeline",
+            "purpose": "history_input",
             "expected_totals": {
                 "spending_debits": "1888.40",
                 "refund_credits": "0.00",
@@ -2833,7 +2833,7 @@
             "file": "credit\/2025-07.csv",
             "source_fixture": "demo_card",
             "currency": "CAD",
-            "purpose": "history_pending_pipeline",
+            "purpose": "history_input",
             "expected_totals": {
                 "spending_debits": "1125.14",
                 "refund_credits": "0.00",
@@ -3000,7 +3000,7 @@
             "file": "usd\/2025-07.csv",
             "source_fixture": "demo_usd",
             "currency": "USD",
-            "purpose": "history_pending_pipeline",
+            "purpose": "history_input",
             "expected_totals": {
                 "spending_debits": "261.59",
                 "refund_credits": "25.00",
@@ -3068,7 +3068,7 @@
             "file": "chequing\/2025-08.csv",
             "source_fixture": "demo_current",
             "currency": "CAD",
-            "purpose": "history_pending_pipeline",
+            "purpose": "history_input",
             "expected_totals": {
                 "spending_debits": "1835.03",
                 "refund_credits": "0.00",
@@ -3181,7 +3181,7 @@
             "file": "credit\/2025-08.csv",
             "source_fixture": "demo_card",
             "currency": "CAD",
-            "purpose": "history_pending_pipeline",
+            "purpose": "history_input",
             "expected_totals": {
                 "spending_debits": "1030.70",
                 "refund_credits": "103.41",
@@ -3357,7 +3357,7 @@
             "file": "usd\/2025-08.csv",
             "source_fixture": "demo_usd",
             "currency": "USD",
-            "purpose": "history_pending_pipeline",
+            "purpose": "history_input",
             "expected_totals": {
                 "spending_debits": "12.45",
                 "refund_credits": "0.00",
@@ -3407,7 +3407,7 @@
             "file": "chequing\/2025-09.csv",
             "source_fixture": "demo_current",
             "currency": "CAD",
-            "purpose": "history_pending_pipeline",
+            "purpose": "history_input",
             "expected_totals": {
                 "spending_debits": "1892.49",
                 "refund_credits": "0.00",
@@ -3520,7 +3520,7 @@
             "file": "credit\/2025-09.csv",
             "source_fixture": "demo_card",
             "currency": "CAD",
-            "purpose": "history_pending_pipeline",
+            "purpose": "history_input",
             "expected_totals": {
                 "spending_debits": "873.06",
                 "refund_credits": "0.00",
@@ -3687,7 +3687,7 @@
             "file": "usd\/2025-09.csv",
             "source_fixture": "demo_usd",
             "currency": "USD",
-            "purpose": "history_pending_pipeline",
+            "purpose": "history_input",
             "expected_totals": {
                 "spending_debits": "12.45",
                 "refund_credits": "0.00",
@@ -3737,7 +3737,7 @@
             "file": "chequing\/2025-10.csv",
             "source_fixture": "demo_current",
             "currency": "CAD",
-            "purpose": "history_pending_pipeline",
+            "purpose": "history_input",
             "expected_totals": {
                 "spending_debits": "1821.38",
                 "refund_credits": "0.00",
@@ -3850,7 +3850,7 @@
             "file": "credit\/2025-10.csv",
             "source_fixture": "demo_card",
             "currency": "CAD",
-            "purpose": "history_pending_pipeline",
+            "purpose": "history_input",
             "expected_totals": {
                 "spending_debits": "1019.00",
                 "refund_credits": "0.00",
@@ -4017,7 +4017,7 @@
             "file": "usd\/2025-10.csv",
             "source_fixture": "demo_usd",
             "currency": "USD",
-            "purpose": "history_pending_pipeline",
+            "purpose": "history_input",
             "expected_totals": {
                 "spending_debits": "12.45",
                 "refund_credits": "0.00",
@@ -4067,7 +4067,7 @@
             "file": "chequing\/2025-11.csv",
             "source_fixture": "demo_current",
             "currency": "CAD",
-            "purpose": "history_pending_pipeline",
+            "purpose": "history_input",
             "expected_totals": {
                 "spending_debits": "1840.62",
                 "refund_credits": "0.00",
@@ -4180,7 +4180,7 @@
             "file": "credit\/2025-11.csv",
             "source_fixture": "demo_card",
             "currency": "CAD",
-            "purpose": "history_pending_pipeline",
+            "purpose": "history_input",
             "expected_totals": {
                 "spending_debits": "1097.09",
                 "refund_credits": "69.66",
@@ -4365,7 +4365,7 @@
             "file": "usd\/2025-11.csv",
             "source_fixture": "demo_usd",
             "currency": "USD",
-            "purpose": "history_pending_pipeline",
+            "purpose": "history_input",
             "expected_totals": {
                 "spending_debits": "309.64",
                 "refund_credits": "25.00",
@@ -4433,7 +4433,7 @@
             "file": "chequing\/2025-12.csv",
             "source_fixture": "demo_current",
             "currency": "CAD",
-            "purpose": "history_pending_pipeline",
+            "purpose": "history_input",
             "expected_totals": {
                 "spending_debits": "1837.12",
                 "refund_credits": "0.00",
@@ -4546,7 +4546,7 @@
             "file": "credit\/2025-12.csv",
             "source_fixture": "demo_card",
             "currency": "CAD",
-            "purpose": "history_pending_pipeline",
+            "purpose": "history_input",
             "expected_totals": {
                 "spending_debits": "1033.53",
                 "refund_credits": "0.00",
@@ -4713,7 +4713,7 @@
             "file": "usd\/2025-12.csv",
             "source_fixture": "demo_usd",
             "currency": "USD",
-            "purpose": "history_pending_pipeline",
+            "purpose": "history_input",
             "expected_totals": {
                 "spending_debits": "12.45",
                 "refund_credits": "0.00",
@@ -4763,7 +4763,7 @@
             "file": "chequing\/2026-01.csv",
             "source_fixture": "demo_current",
             "currency": "CAD",
-            "purpose": "history_pending_pipeline",
+            "purpose": "history_input",
             "expected_totals": {
                 "spending_debits": "1822.25",
                 "refund_credits": "0.00",
@@ -4876,7 +4876,7 @@
             "file": "credit\/2026-01.csv",
             "source_fixture": "demo_card",
             "currency": "CAD",
-            "purpose": "history_pending_pipeline",
+            "purpose": "history_input",
             "expected_totals": {
                 "spending_debits": "933.67",
                 "refund_credits": "0.00",
@@ -5043,7 +5043,7 @@
             "file": "usd\/2026-01.csv",
             "source_fixture": "demo_usd",
             "currency": "USD",
-            "purpose": "history_pending_pipeline",
+            "purpose": "history_input",
             "expected_totals": {
                 "spending_debits": "12.45",
                 "refund_credits": "0.00",
@@ -5093,7 +5093,7 @@
             "file": "chequing\/2026-02.csv",
             "source_fixture": "demo_current",
             "currency": "CAD",
-            "purpose": "history_pending_pipeline",
+            "purpose": "history_input",
             "expected_totals": {
                 "spending_debits": "1877.71",
                 "refund_credits": "0.00",
@@ -5206,7 +5206,7 @@
             "file": "credit\/2026-02.csv",
             "source_fixture": "demo_card",
             "currency": "CAD",
-            "purpose": "history_pending_pipeline",
+            "purpose": "history_input",
             "expected_totals": {
                 "spending_debits": "1035.08",
                 "refund_credits": "143.68",
@@ -5382,7 +5382,7 @@
             "file": "usd\/2026-02.csv",
             "source_fixture": "demo_usd",
             "currency": "USD",
-            "purpose": "history_pending_pipeline",
+            "purpose": "history_input",
             "expected_totals": {
                 "spending_debits": "12.45",
                 "refund_credits": "0.00",
@@ -5432,7 +5432,7 @@
             "file": "chequing\/2026-03.csv",
             "source_fixture": "demo_current",
             "currency": "CAD",
-            "purpose": "history_pending_pipeline",
+            "purpose": "history_input",
             "expected_totals": {
                 "spending_debits": "1881.51",
                 "refund_credits": "0.00",
@@ -5545,7 +5545,7 @@
             "file": "credit\/2026-03.csv",
             "source_fixture": "demo_card",
             "currency": "CAD",
-            "purpose": "history_pending_pipeline",
+            "purpose": "history_input",
             "expected_totals": {
                 "spending_debits": "932.01",
                 "refund_credits": "0.00",
@@ -5712,7 +5712,7 @@
             "file": "usd\/2026-03.csv",
             "source_fixture": "demo_usd",
             "currency": "USD",
-            "purpose": "history_pending_pipeline",
+            "purpose": "history_input",
             "expected_totals": {
                 "spending_debits": "256.48",
                 "refund_credits": "25.00",
@@ -5780,7 +5780,7 @@
             "file": "chequing\/2026-04.csv",
             "source_fixture": "demo_current",
             "currency": "CAD",
-            "purpose": "history_pending_pipeline",
+            "purpose": "history_input",
             "expected_totals": {
                 "spending_debits": "1898.44",
                 "refund_credits": "0.00",
@@ -5893,7 +5893,7 @@
             "file": "credit\/2026-04.csv",
             "source_fixture": "demo_card",
             "currency": "CAD",
-            "purpose": "history_pending_pipeline",
+            "purpose": "history_input",
             "expected_totals": {
                 "spending_debits": "911.25",
                 "refund_credits": "0.00",
@@ -6060,7 +6060,7 @@
             "file": "usd\/2026-04.csv",
             "source_fixture": "demo_usd",
             "currency": "USD",
-            "purpose": "history_pending_pipeline",
+            "purpose": "history_input",
             "expected_totals": {
                 "spending_debits": "12.45",
                 "refund_credits": "0.00",
@@ -6110,7 +6110,7 @@
             "file": "chequing\/2026-05.csv",
             "source_fixture": "demo_current",
             "currency": "CAD",
-            "purpose": "history_pending_pipeline",
+            "purpose": "history_input",
             "expected_totals": {
                 "spending_debits": "1823.80",
                 "refund_credits": "0.00",
@@ -6223,7 +6223,7 @@
             "file": "credit\/2026-05.csv",
             "source_fixture": "demo_card",
             "currency": "CAD",
-            "purpose": "history_pending_pipeline",
+            "purpose": "history_input",
             "expected_totals": {
                 "spending_debits": "1060.83",
                 "refund_credits": "143.41",
@@ -6399,7 +6399,7 @@
             "file": "usd\/2026-05.csv",
             "source_fixture": "demo_usd",
             "currency": "USD",
-            "purpose": "history_pending_pipeline",
+            "purpose": "history_input",
             "expected_totals": {
                 "spending_debits": "12.45",
                 "refund_credits": "0.00",
@@ -6449,7 +6449,7 @@
             "file": "chequing\/2026-06.csv",
             "source_fixture": "demo_current",
             "currency": "CAD",
-            "purpose": "history_pending_pipeline",
+            "purpose": "history_input",
             "expected_totals": {
                 "spending_debits": "1851.83",
                 "refund_credits": "0.00",
@@ -6562,7 +6562,7 @@
             "file": "credit\/2026-06.csv",
             "source_fixture": "demo_card",
             "currency": "CAD",
-            "purpose": "history_pending_pipeline",
+            "purpose": "history_input",
             "expected_totals": {
                 "spending_debits": "931.43",
                 "refund_credits": "0.00",
@@ -6729,7 +6729,7 @@
             "file": "usd\/2026-06.csv",
             "source_fixture": "demo_usd",
             "currency": "USD",
-            "purpose": "history_pending_pipeline",
+            "purpose": "history_input",
             "expected_totals": {
                 "spending_debits": "12.45",
                 "refund_credits": "0.00",
@@ -6779,7 +6779,7 @@
             "file": "chequing\/2026-07.csv",
             "source_fixture": "demo_current",
             "currency": "CAD",
-            "purpose": "history_pending_pipeline",
+            "purpose": "history_input",
             "expected_totals": {
                 "spending_debits": "1825.19",
                 "refund_credits": "0.00",
@@ -6892,7 +6892,7 @@
             "file": "credit\/2026-07.csv",
             "source_fixture": "demo_card",
             "currency": "CAD",
-            "purpose": "history_pending_pipeline",
+            "purpose": "history_input",
             "expected_totals": {
                 "spending_debits": "964.87",
                 "refund_credits": "0.00",
@@ -7059,7 +7059,7 @@
             "file": "usd\/2026-07.csv",
             "source_fixture": "demo_usd",
             "currency": "USD",
-            "purpose": "history_pending_pipeline",
+            "purpose": "history_input",
             "expected_totals": {
                 "spending_debits": "218.05",
                 "refund_credits": "25.00",
@@ -7127,7 +7127,7 @@
             "file": "chequing\/2026-08.csv",
             "source_fixture": "demo_current",
             "currency": "CAD",
-            "purpose": "history_pending_pipeline",
+            "purpose": "history_input",
             "expected_totals": {
                 "spending_debits": "1894.89",
                 "refund_credits": "0.00",
@@ -7240,7 +7240,7 @@
             "file": "credit\/2026-08.csv",
             "source_fixture": "demo_card",
             "currency": "CAD",
-            "purpose": "history_pending_pipeline",
+            "purpose": "history_input",
             "expected_totals": {
                 "spending_debits": "1004.31",
                 "refund_credits": "144.93",
@@ -7416,7 +7416,7 @@
             "file": "usd\/2026-08.csv",
             "source_fixture": "demo_usd",
             "currency": "USD",
-            "purpose": "history_pending_pipeline",
+            "purpose": "history_input",
             "expected_totals": {
                 "spending_debits": "12.45",
                 "refund_credits": "0.00",
@@ -7466,7 +7466,7 @@
             "file": "chequing\/2026-09.csv",
             "source_fixture": "demo_current",
             "currency": "CAD",
-            "purpose": "history_pending_pipeline",
+            "purpose": "history_input",
             "expected_totals": {
                 "spending_debits": "1846.13",
                 "refund_credits": "0.00",
@@ -7579,7 +7579,7 @@
             "file": "credit\/2026-09.csv",
             "source_fixture": "demo_card",
             "currency": "CAD",
-            "purpose": "history_pending_pipeline",
+            "purpose": "history_input",
             "expected_totals": {
                 "spending_debits": "1041.84",
                 "refund_credits": "0.00",
@@ -7746,7 +7746,7 @@
             "file": "usd\/2026-09.csv",
             "source_fixture": "demo_usd",
             "currency": "USD",
-            "purpose": "history_pending_pipeline",
+            "purpose": "history_input",
             "expected_totals": {
                 "spending_debits": "12.45",
                 "refund_credits": "0.00",

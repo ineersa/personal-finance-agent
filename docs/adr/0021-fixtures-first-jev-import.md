@@ -38,7 +38,7 @@ Set the canonical demo user's reporting preference to CAD. Keep the application-
 
 Prepare 24 fixed completed months, November 2024 through October 2026, for CAD chequing, CAD credit and USD bank accounts. Reserve October 2026 (one file per source) for upload scenarios. The preceding 69 files are historical candidates. Use wholly invented merchants, amounts, identifiers and sequences, preserving bank-export patterns without reversible pseudonymization or personal source rows.
 
-The Castor generator writes CSV inputs and known expected outcomes, not model results. Historical records become canonical Alice fixtures only after processing through the real pipeline and reviewing the outcomes. Until that exists, keep historical inputs explicitly pending. Existing small hand-authored Alice examples remain compatibility scaffolding with matching statement bytes, not a claim of Jev processing. Development and browser scenarios continue to use the same `fixtures/*.yaml`; do not introduce a second test dataset or purging development loader.
+The Castor generator writes CSV inputs and known expected outcomes, not model results. Historical records become canonical Alice fixtures only after processing through the real pipeline and reviewing the outcomes. The completed export replaces owner-demo placeholder examples and retains separate-owner security records. Development and browser scenarios continue to use the same `fixtures/*.yaml`; do not introduce a second test dataset or purging development loader. The one-off export invokes the actual processing handler in isolated storage without broker dispatch; production uploads still produce drafts. See [Testing](../../TESTING.md#reviewed-synthetic-history) for the export boundary, uncertainty review and reproduction commands.
 
 ## Alternatives considered
 
@@ -51,4 +51,4 @@ The Castor generator writes CSV inputs and known expected outcomes, not model re
 
 Provider charges, storage growth and concurrent work are not application-budgeted in this MVP slice. Operators must supervise use until deferred controls are implemented. This trade-off is explicit, not an assurance of bounded resource use.
 
-The prepared corpus enables evaluation of refunds, transfers, recurring bills, annual subscriptions, variable utilities and ambiguous references. It does not establish general CSV accuracy. Actual upload, worker, Jev integration and historical fixture finalization still require runtime verification.
+The processed corpus enables evaluation of refunds, transfers, recurring bills, annual subscriptions, variable utilities and ambiguous references. It does not establish general CSV accuracy. The reviewed export retains unresolved meaning/category as drafts and does not overwrite uncertain recurrence with generated expectations. Saved browser scenarios remain required for runtime upload, worker and private live-update verification; fixture loading alone does not prove those integrations.

@@ -97,7 +97,7 @@ Provide synthetic financial fixtures and a demo user so judges can explore the a
 
 The canonical demo user's reporting preference is CAD; the application-wide default for new users remains USD.
 
-Prepare 24 fixed completed months (November 2024–October 2026) for CAD chequing, CAD credit and a USD account, using wholly invented identities, merchants, amounts and sequences. Reserve the latest month as one unprocessed upload file per source; process and review preceding history through the actual pipeline before exporting canonical Alice fixtures. Generated expected labels are evaluation targets, not Jev results. Keep existing small hand-authored Alice examples as compatibility scaffolding until historical export exists. Include subscriptions, recurring income, variable bills, refunds, transfers and ambiguous references.
+Prepare 24 fixed completed months (November 2024–October 2026) for CAD chequing, CAD credit and a USD account, using wholly invented identities, merchants, amounts and sequences. Reserve the latest month as one unprocessed upload file per source; process and review preceding history through the actual pipeline before exporting canonical Alice fixtures. Generated expected labels are evaluation targets, not Jev results. Historical exports replace the small owner-demo placeholder examples while preserving separate-owner security records and unresolved model judgments. Include subscriptions, recurring income, variable bills, refunds, transfers and ambiguous references.
 
 Support restoring the demo to a known state. A manual reset and a scheduled reset were proposed; the mechanism and schedule remain undecided. Any reset must be limited to demo data and clearly communicate that demo edits will be lost.
 

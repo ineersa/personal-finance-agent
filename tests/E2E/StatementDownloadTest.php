@@ -13,8 +13,9 @@ final class StatementDownloadTest extends FinanceBrowserTest
     {
         $fixtures = FixtureStore::getFixtures();
         $this->loginUser($fixtures['demo']);
-        foreach (['demo_statement' => 'demo-september-2026.csv', 'demo_card_statement' => 'demo-card-2026.csv'] as $reference => $filename) {
+        foreach (['demo_statement' => 'chequing/2026-09.csv', 'demo_card_statement' => 'credit/2026-09.csv'] as $reference => $canonicalPath) {
             $statement = $fixtures[$reference];
+            $filename = $statement->originalFilename;
             $page = $this->visit('/home/statement/'.$statement->getId());
             self::assertResponseIsSuccessful();
             $link = $page->locator('a.action-download');
@@ -35,7 +36,7 @@ final class StatementDownloadTest extends FinanceBrowserTest
                 self::assertSame(200, $download['status'], 'Owner download from '.$url);
                 self::assertSame($statement->sha256, hash('sha256', $download['body']));
                 self::assertSame($statement->byteSize, \strlen($download['body']));
-                $canonical = file_get_contents(\dirname(__DIR__, 2).'/resources/demo-statements/examples/'.$reference.'.csv');
+                $canonical = file_get_contents(\dirname(__DIR__, 2).'/resources/demo-statements/'.$canonicalPath);
                 self::assertSame($canonical, $download['body']);
                 self::assertSame("attachment; filename=statement; filename*=utf-8''".$filename, $download['disposition']);
                 self::assertSame('application/octet-stream', $download['type']);

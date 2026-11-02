@@ -6,6 +6,18 @@ namespace AppTasks;
 
 use Castor\Attribute\AsTask;
 
+#[AsTask(namespace: 'demo', name: 'history:process', description: 'Process the 69 synthetic history files through the real handler in fixed isolated export storage; paid Jev calls.')]
+function demoHistoryProcess(bool $export = false): int
+{
+    foreach (['var', 'var/browser', 'var/browser/history-final', 'var/browser/history-final/application.db', 'var/browser/history-final/statements'] as $path) {
+        if (is_link(\dirname(__DIR__).'/'.$path)) {
+            throw new \RuntimeException('Refusing symlinked history export storage.');
+        }
+    }
+
+    return report('demo:history:process', ['env', 'DATABASE_URL=sqlite:////app/var/browser/history-final/application.db', 'STATEMENT_STORAGE_DIR=/app/var/browser/history-final/statements', 'IMPORT_UPDATES_ENABLED=0', 'php', 'bin/console', 'app:demo:process-history', '--env=dev', '--no-interaction', ...($export ? ['--export'] : [])], jev: true);
+}
+
 #[AsTask(namespace: 'demo', name: 'statements:inspect', description: 'Paid Jev diagnostic using only the three committed synthetic holdouts; no database writes.')]
 function demoStatementsInspect(): int
 {
@@ -61,7 +73,7 @@ function demoStatementsGenerate(): int
                     $expectedTotals[$key] = intdiv($totals[$key], 100).'.'.str_pad((string) ($totals[$key] % 100), 2, '0', \STR_PAD_LEFT);
                 }
                 $expectedTotals['unresolved_rows'] = $totals['unresolved_rows'];
-                $manifest['statements'][] = ['file' => $relative, 'source_fixture' => ['chequing' => 'demo_current', 'credit' => 'demo_card', 'usd' => 'demo_usd'][$source], 'currency' => 'usd' === $source ? 'USD' : 'CAD', 'purpose' => 23 === $month ? 'upload_holdout' : 'history_pending_pipeline', 'expected_totals' => $expectedTotals, 'rows' => $rows];
+                $manifest['statements'][] = ['file' => $relative, 'source_fixture' => ['chequing' => 'demo_current', 'credit' => 'demo_card', 'usd' => 'demo_usd'][$source], 'currency' => 'usd' === $source ? 'USD' : 'CAD', 'purpose' => 23 === $month ? 'upload_holdout' : 'history_input', 'expected_totals' => $expectedTotals, 'rows' => $rows];
             }
         }
         file_put_contents($root.'/expected.json', json_encode($manifest, \JSON_PRETTY_PRINT | \JSON_THROW_ON_ERROR)."\n");

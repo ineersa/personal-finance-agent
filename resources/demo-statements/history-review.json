@@ -1,0 +1,257 @@
+{
+    "statements": 69,
+    "approved": 733,
+    "unresolved": 25,
+    "meaning_discrepancies": [
+        {
+            "file": "credit\/2025-05.csv",
+            "row": 13,
+            "actual": "unknown",
+            "expected": "expense"
+        },
+        {
+            "file": "credit\/2026-08.csv",
+            "row": 13,
+            "actual": "unknown",
+            "expected": "expense"
+        }
+    ],
+    "category_discrepancies": [
+        {
+            "file": "usd\/2024-11.csv",
+            "row": 6,
+            "actual": null,
+            "expected": "uncategorized"
+        },
+        {
+            "file": "chequing\/2024-12.csv",
+            "row": 9,
+            "actual": "Own-account Transfers",
+            "expected": "savings"
+        },
+        {
+            "file": "usd\/2024-12.csv",
+            "row": 4,
+            "actual": null,
+            "expected": "uncategorized"
+        },
+        {
+            "file": "chequing\/2025-01.csv",
+            "row": 9,
+            "actual": "Own-account Transfers",
+            "expected": "savings"
+        },
+        {
+            "file": "usd\/2025-01.csv",
+            "row": 4,
+            "actual": null,
+            "expected": "uncategorized"
+        },
+        {
+            "file": "chequing\/2025-02.csv",
+            "row": 9,
+            "actual": "Own-account Transfers",
+            "expected": "savings"
+        },
+        {
+            "file": "usd\/2025-02.csv",
+            "row": 4,
+            "actual": null,
+            "expected": "uncategorized"
+        },
+        {
+            "file": "chequing\/2025-03.csv",
+            "row": 9,
+            "actual": "Own-account Transfers",
+            "expected": "savings"
+        },
+        {
+            "file": "usd\/2025-03.csv",
+            "row": 6,
+            "actual": null,
+            "expected": "uncategorized"
+        },
+        {
+            "file": "usd\/2025-04.csv",
+            "row": 4,
+            "actual": null,
+            "expected": "uncategorized"
+        },
+        {
+            "file": "usd\/2025-05.csv",
+            "row": 4,
+            "actual": null,
+            "expected": "uncategorized"
+        },
+        {
+            "file": "chequing\/2025-06.csv",
+            "row": 9,
+            "actual": "Own-account Transfers",
+            "expected": "savings"
+        },
+        {
+            "file": "usd\/2025-06.csv",
+            "row": 4,
+            "actual": null,
+            "expected": "uncategorized"
+        },
+        {
+            "file": "chequing\/2025-07.csv",
+            "row": 9,
+            "actual": "Own-account Transfers",
+            "expected": "savings"
+        },
+        {
+            "file": "usd\/2025-07.csv",
+            "row": 6,
+            "actual": null,
+            "expected": "uncategorized"
+        },
+        {
+            "file": "chequing\/2025-08.csv",
+            "row": 9,
+            "actual": "Own-account Transfers",
+            "expected": "savings"
+        },
+        {
+            "file": "usd\/2025-08.csv",
+            "row": 4,
+            "actual": null,
+            "expected": "uncategorized"
+        },
+        {
+            "file": "chequing\/2025-09.csv",
+            "row": 9,
+            "actual": "Own-account Transfers",
+            "expected": "savings"
+        },
+        {
+            "file": "usd\/2025-09.csv",
+            "row": 4,
+            "actual": null,
+            "expected": "uncategorized"
+        },
+        {
+            "file": "chequing\/2025-10.csv",
+            "row": 9,
+            "actual": "Own-account Transfers",
+            "expected": "savings"
+        },
+        {
+            "file": "usd\/2025-10.csv",
+            "row": 4,
+            "actual": null,
+            "expected": "uncategorized"
+        },
+        {
+            "file": "chequing\/2025-11.csv",
+            "row": 9,
+            "actual": "Own-account Transfers",
+            "expected": "savings"
+        },
+        {
+            "file": "usd\/2025-11.csv",
+            "row": 6,
+            "actual": null,
+            "expected": "uncategorized"
+        },
+        {
+            "file": "chequing\/2025-12.csv",
+            "row": 9,
+            "actual": "Own-account Transfers",
+            "expected": "savings"
+        },
+        {
+            "file": "usd\/2025-12.csv",
+            "row": 4,
+            "actual": null,
+            "expected": "uncategorized"
+        },
+        {
+            "file": "usd\/2026-01.csv",
+            "row": 4,
+            "actual": null,
+            "expected": "uncategorized"
+        },
+        {
+            "file": "usd\/2026-02.csv",
+            "row": 4,
+            "actual": null,
+            "expected": "uncategorized"
+        },
+        {
+            "file": "chequing\/2026-03.csv",
+            "row": 9,
+            "actual": "Own-account Transfers",
+            "expected": "savings"
+        },
+        {
+            "file": "usd\/2026-03.csv",
+            "row": 6,
+            "actual": null,
+            "expected": "uncategorized"
+        },
+        {
+            "file": "chequing\/2026-04.csv",
+            "row": 9,
+            "actual": "Own-account Transfers",
+            "expected": "savings"
+        },
+        {
+            "file": "usd\/2026-04.csv",
+            "row": 4,
+            "actual": null,
+            "expected": "uncategorized"
+        },
+        {
+            "file": "usd\/2026-05.csv",
+            "row": 4,
+            "actual": null,
+            "expected": "uncategorized"
+        },
+        {
+            "file": "usd\/2026-06.csv",
+            "row": 4,
+            "actual": null,
+            "expected": "uncategorized"
+        },
+        {
+            "file": "chequing\/2026-07.csv",
+            "row": 9,
+            "actual": "Own-account Transfers",
+            "expected": "savings"
+        },
+        {
+            "file": "usd\/2026-07.csv",
+            "row": 6,
+            "actual": null,
+            "expected": "uncategorized"
+        },
+        {
+            "file": "chequing\/2026-08.csv",
+            "row": 9,
+            "actual": "Own-account Transfers",
+            "expected": "savings"
+        },
+        {
+            "file": "usd\/2026-08.csv",
+            "row": 4,
+            "actual": null,
+            "expected": "uncategorized"
+        },
+        {
+            "file": "chequing\/2026-09.csv",
+            "row": 9,
+            "actual": "Own-account Transfers",
+            "expected": "savings"
+        },
+        {
+            "file": "usd\/2026-09.csv",
+            "row": 4,
+            "actual": null,
+            "expected": "uncategorized"
+        }
+    ],
+    "recurrence_discrepancies": 433,
+    "corrections": []
+}

@@ -22,11 +22,14 @@ final readonly class StatementFileProcessor implements ProcessorInterface
             return;
         }
         // Fixture IDs are trusted definitions, never request paths or uploaded filenames.
-        $filename = match ($id) {
-            'demo_statement', 'demo_card_statement', 'admin_statement' => $id.'.csv',
-            default => throw new \LogicException('No canonical bytes for statement fixture '.$id),
-        };
-        $content = file_get_contents(\dirname(__DIR__, 2).'/resources/demo-statements/examples/'.$filename);
+        if ('admin_statement' === $id) {
+            $filename = 'examples/admin_statement.csv';
+        } elseif (1 === preg_match('/\Ahistory-(chequing|credit|usd)-(20[0-9]{2}-[0-9]{2})\.csv\z/D', $object->originalFilename, $matches)) {
+            $filename = $matches[1].'/'.$matches[2].'.csv';
+        } else {
+            throw new \LogicException('No canonical bytes for statement fixture '.$id);
+        }
+        $content = file_get_contents(\dirname(__DIR__, 2).'/resources/demo-statements/'.$filename);
         if (false === $content) {
             throw new \RuntimeException('Cannot read canonical statement fixture bytes.');
         }

@@ -18,7 +18,7 @@ final class TransactionCrudTest extends FinanceBrowserTest
         $fixtures = FixtureStore::getFixtures();
         $this->loginUser($fixtures['demo']);
         $page = $this->visit('/home/transaction/'.$fixtures['demo_salary']->getId().'/edit');
-        self::assertSame('3200.00', $page->getByLabel('Amount', ['exact' => true])->inputValue());
+        self::assertSame($fixtures['demo_salary']->amount, $page->getByLabel('Amount', ['exact' => true])->inputValue());
         foreach (['+00123456789012.12345678', '-000123456789012.123456789012345678'] as $amount) {
             $page->getByLabel('Amount', ['exact' => true])->fill($amount);
             $page->getByLabel('Description', ['exact' => true])->fill('Edited approved transaction');

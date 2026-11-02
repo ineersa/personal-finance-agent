@@ -82,17 +82,16 @@ The saved scenarios upload the three October holdouts through Chromium, wait on 
 
 The checkout-scoped hub is reached through the same application origin and publishes no host port. Only the signed-in ordinary user's exact import topic is granted by the native Mercure authorization cookie. Administrators are not subscribed. An ignored, mode-specific random signing key is created under `var/tooling` with mode `0600`; do not print it. Local HTTP uses the hub's explicit prefix-less cookie option, without enabling anonymous subscribers or playground mode. Logout clears subscriber cookies. The native Turbo stream source owns EventSource connection/reconnection and is preserved across Turbo navigation; no custom subscription controller is added.
 
-After a successful baseline run, use `vendor/bin/castor browser:imports:test --privacy` for the separate ordinary-owner denial scenario. It creates a synthetic user through administrator browser forms, checks hub denial for another owner's topic, checks statement denial and forged source submission, then deletes the created user on success. A failed scenario can leave that synthetic user for inspection. Use `--boundary` to verify the real PHP upload boundary: exactly 10 MiB reaches the worker parser, while one extra byte is rejected on the upload form. Its intentionally malformed content avoids provider charges; this does not prove successful classification of a 10 MiB statement.
+After a successful baseline run, use `vendor/bin/castor browser:imports:test --privacy` for the separate ordinary-owner isolation scenario. It creates a unique synthetic user and source through browser forms. A mixed-topic EventSource must receive its own user's real import updates before and after another owner's import, but not that owner's private payload. HTTP 200 alone is not evidence of private access: Mercure filters updates against the subscriber's granted matchers. The scenario also checks statement denial and forged source submission. It retains the isolated user and referenced imports for inspection. Use `--boundary` to verify the real PHP upload boundary: exactly 10 MiB reaches the worker parser, while one extra byte is rejected on the upload form. Its intentionally malformed content avoids provider charges; this does not prove successful classification of a 10 MiB statement.
 
-Successful uploads record their processing URLs and expected counts in ignored `var/qa/statement-imports.json`. For each saved identifier, republish using the operator command, then inspect the native transport count before replay assertions:
+Successful uploads record their processing URLs and expected counts in ignored `var/qa/statement-imports.json`. For each saved identifier, republish using the operator command, verify worker receipt using bounded owned worker logs, then run replay assertions:
 
 ```sh
 vendor/bin/castor browser:stack:console -- app:statement:dispatch STATEMENT_ID demo@test.com
-vendor/bin/castor browser:stack:console -- messenger:stats statement_import
 vendor/bin/castor browser:imports:test --replay
 ```
 
-Verify the broker has delivered the republished messages before interpreting unchanged browser results as redelivery evidence. The handler atomically claims only queued statements; completed/running/failed deliveries do not create rows. Failed imports can be retried from their owned processing page. A worker crash can leave a running statement requiring operator attention; broader crash recovery is deferred. Failed storage writes, metadata compensation and competing retry requests still need distinct browser evidence; the saved happy/failure scenarios do not prove those boundaries.
+`messenger:stats statement_import` is not delivery proof: this transport does not implement message counts, and Symfony can exit successfully while reporting that the count is unavailable. Verify worker receipt before interpreting unchanged browser results as redelivery evidence. The handler atomically claims only queued statements; completed/running/failed deliveries do not create rows. Failed imports can be retried from their owned processing page. A worker crash can leave a running statement requiring operator attention; broader crash recovery is deferred. Failed storage writes, metadata compensation and competing retry requests still need distinct browser evidence; the saved happy/failure scenarios do not prove those boundaries.
 
 `app:console --isolated-database=IDENTIFIER -- ...` runs native Doctrine diagnostics against `var/browser/IDENTIFIER/application.db` in the development configuration, never the fixed intercepted-test database. Use a new identifier for a fresh baseline. Do not run this option with an explicit `--env=test`, whose configuration intentionally fixes its own database URL. Existing isolated databases that recorded superseded unmerged migrations must not be treated as current-schema proof or repaired by changing owner migration history.
 
@@ -111,6 +110,23 @@ For a saved direct-network regression, start two owned stacks, then pass their p
 For worktree-isolation verification, start stacks from two task-managed worktrees, run the routing scenario against both URLs, stop one checkout, and confirm the other URL still renders through Playwright. Inspect the stopped checkout's route failure too. Preserve evidence before rerunning a task because its report directory is reused. Stop each owned stack before task-worktree removal; the shared proxy stays running until `dev:proxy:stop` succeeds with no registered routes.
 
 Use `browser:routes:test "$SURVIVING_URL" --absent="$STOPPED_URL"` to save the survivor and exact unregistered HTTP 404 assertions together. Omit the positional argument when all supplied routes are expected absent; pass at least two distinct URLs across both lists. Follow the [routing lifecycle regression procedures](docs/development-routing-regressions.md) to verify cleanup while the proxy is stopped, persisted configuration after restart, and SIGTERM cancellation during a controlled subprocess. Process and registry probes corroborate browser assertions; they do not replace them.
+
+## Reviewed synthetic history
+
+Canonical Alice fixtures contain 69 processed monthly statements (November 2024–September 2026) and 758 demo transactions: 733 approved and 25 unresolved drafts, plus the separate administrator security records. The three October CSVs remain upload holdouts. Stable references such as `demo_salary` now identify actual September history rows, not additional placeholder records. Statement bytes come from the committed monthly CSVs; Alice's processor writes them to the configured private storage and verifies metadata from their contents.
+
+The one-off export used native migrations and append-only Alice loading in `var/browser/history-final/application.db`, with its own statements directory. `demo:history:process` invoked the real `ProcessStatementHandler` directly, including storage verification, CSV/Jev interpretation and draft persistence. It did not exercise broker transport; saved live upload scenarios cover that boundary separately. To reproduce on a fresh checkout:
+
+```sh
+vendor/bin/castor app:console --isolated-database=history-final -- doctrine:migrations:migrate --no-interaction
+vendor/bin/castor app:console --isolated-database=history-final -- hautelook:fixtures:load --append --no-interaction
+vendor/bin/castor demo:history:process
+vendor/bin/castor demo:history:process --export
+```
+
+The first processing run incurs hosted Jev charges; completed export records are reused on subsequent runs. Inspect ignored `var/browser/history-final/results.json` before export. Export checks exact facts against the invented input manifest, applies Symfony's approved validation group, and approves only known meanings with categories that agree with the expected finance boundary. This is synthetic fixture preparation, not production auto-approval. No provider payloads or credentials are exported.
+
+`resources/demo-statements/history-review.json` records the review: no factual mismatches or label corrections; 23 opaque USD references remain uncategorized/unknown drafts, and two theatre purchases retain unknown meaning. Sixteen investment transfers selected Own-account Transfers rather than the expected Savings & Investments category; both describe the explicit owned-account movement, so the model labels were retained. All 433 recurrence disagreements were retained, including unknowns where a single month did not establish a schedule. No transfer pairing or cross-month recurrence inference was added. Development fixture loading remains append-only; do not load these fixture definitions over an existing owner's history expecting an update or reset.
 
 ## Agent verification workflow
 

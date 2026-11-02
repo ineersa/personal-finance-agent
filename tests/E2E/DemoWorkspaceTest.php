@@ -26,13 +26,16 @@ final class DemoWorkspaceTest extends FinanceBrowserTest
         self::assertSame(0, $page->locator('a[href*="/planned/"], .ea-sidebar [aria-disabled=true], .sidebar-note, .ea-sidebar-footer')->count());
         self::assertStringNotContainsString('Work in progress', $page->locator('.ea-sidebar')->textContent());
         self::assertStringNotContainsString('Manage sources and approved transactions.', $page->locator('.ea-sidebar')->textContent());
-        $page = $this->visit('/home/transaction');
-        $this->assertPageContains('Synthetic September salary');
-        $this->assertPageContains('Synthetic grocery purchase');
-        self::assertStringNotContainsString('Synthetic incomplete draft', $page->locator('body')->textContent());
+        $fixtures = FixtureStore::getFixtures();
+        foreach (['demo_salary', 'demo_groceries'] as $reference) {
+            $this->visit('/home/transaction?query='.rawurlencode($fixtures[$reference]->description));
+            $this->assertPageContains($fixtures[$reference]->description);
+        }
+        $page = $this->visit('/home/transaction?query='.rawurlencode($fixtures['demo_draft']->description));
+        self::assertSame(0, $page->locator('tbody tr[data-id]')->count());
         $page = $this->visit('/home/statement');
         self::assertResponseIsSuccessful();
-        $this->assertPageContains('demo-september-2026.csv');
+        $this->assertPageContains('history-');
         self::assertSame(0, $page->locator('.action-new, .action-edit, .action-delete')->count());
         $page = $this->visit('/home/statement/'.FixtureStore::getFixtures()['demo_statement']->getId());
         self::assertResponseIsSuccessful();
