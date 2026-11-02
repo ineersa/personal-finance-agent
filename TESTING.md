@@ -23,9 +23,9 @@ This policy replaces the earlier broad coverage requirements. It does not remove
 | Categories | Administrator create, list, edit, detail, delete |
 | Users | Administrator create, list, edit email/password, verify login, detail, delete |
 | Statements | List, detail, download |
-| Live import | Upload one canonical CSV, observe drafts, save and reload corrections, approve one transaction, delete that uploaded statement |
+| Live import | Upload one canonical CSV, edit and reload a draft row, delete another row, approve all remaining statement rows, delete that uploaded statement |
 
-The first nine scenarios are in `tests/E2E/`. The single real-network import journey is in `tests/Live/`. It calls the configured Jev provider and uses the actual worker, broker, and Mercure stack. It verifies that saved drafts do not change the approved transaction list, then approves one row and reloads its corrections through the existing transaction editor. It does not cover invalid submissions, repeat approval, ownership attacks, failure/retry, redelivery, quotas, hostile input, or concurrent processing. Those require separate permission. Reset remains untested by owner instruction.
+The first nine scenarios are in `tests/E2E/`. The single real-network import journey is in `tests/Live/`. It calls the configured Jev provider and uses the actual worker, broker, and Mercure stack. It verifies that edited drafts do not change the approved transaction list, deletes one draft through native confirmation, then approves the remaining statement rows and reloads corrections through the transaction editor. It does not cover invalid submissions, repeat approval, ownership attacks, failure/retry, redelivery, quotas, hostile input, or concurrent processing. Those require separate permission. Reset remains untested by owner instruction.
 
 ## Prepare the tooling runtime
 

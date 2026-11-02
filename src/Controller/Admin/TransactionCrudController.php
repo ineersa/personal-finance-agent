@@ -10,10 +10,13 @@ use App\Enum\Direction;
 use App\Repository\SourceRepository;
 use App\Repository\TransactionRepository;
 use App\Security\FinanceRecordVoter;
+use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\QueryBuilder;
 use EasyCorp\Bundle\EasyAdminBundle\Config\Action;
 use EasyCorp\Bundle\EasyAdminBundle\Config\Actions;
 use EasyCorp\Bundle\EasyAdminBundle\Config\Crud;
+use EasyCorp\Bundle\EasyAdminBundle\Config\KeyValueStore;
+use EasyCorp\Bundle\EasyAdminBundle\Context\AdminContext;
 use EasyCorp\Bundle\EasyAdminBundle\Field\AssociationField;
 use EasyCorp\Bundle\EasyAdminBundle\Field\ChoiceField;
 use EasyCorp\Bundle\EasyAdminBundle\Field\DateField;
@@ -21,6 +24,8 @@ use EasyCorp\Bundle\EasyAdminBundle\Field\TextareaField;
 use EasyCorp\Bundle\EasyAdminBundle\Field\TextField;
 use Symfony\Component\Form\Exception\TransformationFailedException;
 use Symfony\Component\Form\FormInterface;
+use Symfony\Component\HttpFoundation\RedirectResponse;
+use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Security\Http\Attribute\IsGranted;
 
 /** @extends OwnedCrudController<Transaction> */
@@ -43,7 +48,10 @@ final class TransactionCrudController extends OwnedCrudController
 
     public function configureActions(Actions $actions): Actions
     {
-        return parent::configureActions($actions)->disable(Action::NEW, Action::DELETE);
+        return parent::configureActions($actions)
+            ->update(Crud::PAGE_INDEX, Action::DELETE, static fn (Action $action): Action => $action->displayIf(static fn (Transaction $transaction): bool => $transaction->isDraft))
+            ->update(Crud::PAGE_DETAIL, Action::DELETE, static fn (Action $action): Action => $action->displayIf(static fn (Transaction $transaction): bool => $transaction->isDraft))
+            ->disable(Action::NEW);
     }
 
     public function configureFields(string $pageName): iterable
@@ -64,8 +72,38 @@ final class TransactionCrudController extends OwnedCrudController
             ->setRequired(false);
     }
 
+    public function delete(AdminContext $context): KeyValueStore|Response
+    {
+        $transaction = $context->getEntity()->getInstance();
+        $response = parent::delete($context);
+        if ($transaction instanceof Transaction && $transaction->isDraft) {
+            return $this->redirectToRoute('admin_statement_processing', ['id' => $transaction->statement->getId()]);
+        }
+
+        return $response;
+    }
+
+    public function deleteEntity(EntityManagerInterface $entityManager, object $entityInstance): void
+    {
+        if (!$entityInstance instanceof Transaction || !$entityInstance->isDraft) {
+            throw $this->createAccessDeniedException('Only unapproved drafts can be deleted.');
+        }
+        $this->denyAccessUnlessGranted(FinanceRecordVoter::ACCESS, $entityInstance);
+        parent::deleteEntity($entityManager, $entityInstance);
+    }
+
     protected function ownedQuery(User $user): QueryBuilder
     {
         return $this->transactions->queryForUser($user)->andWhere('record.isDraft = false');
+    }
+
+    protected function getRedirectResponseAfterSave(AdminContext $context, string $action): RedirectResponse
+    {
+        $transaction = $context->getEntity()->getInstance();
+        if ($transaction instanceof Transaction && $transaction->isDraft) {
+            return $this->redirectToRoute('admin_statement_processing', ['id' => $transaction->statement->getId()]);
+        }
+
+        return parent::getRedirectResponseAfterSave($context, $action);
     }
 }

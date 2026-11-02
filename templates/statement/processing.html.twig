@@ -1,8 +1,24 @@
 {% extends '@EasyAdmin/page/content.html.twig' %}
-{% form_theme retryForm with ['@EasyAdmin/crud/form_theme.html.twig'] only %}
+{% form_theme workflowForm with ['@EasyAdmin/crud/form_theme.html.twig'] only %}
 {% block content_title %}Statement import{% endblock %}
 {% block main %}
-    <div {{ stimulus_controller('import-catch-up', {url: path('admin_statement_processing', {id: statement.id})}) }}>
-    {{ include('statement/_results.html.twig') }}
+    {# Keep CSRF forms and the native confirmation trigger outside streamed results. #}
+    {{ form_start(workflowForm, {attr: {id: 'statement-workflow-' ~ statement.id}}) }}
+        {{ form_errors(workflowForm) }}
+        {{ form_widget(workflowForm._token) }}
+    {{ form_end(workflowForm, {render_rest: false}) }}
+    {% if approvalErrors is not empty %}
+        <ul role="alert">
+            {% for error in approvalErrors %}
+                <li><a href="{{ path('admin_transaction_edit', {entityId: error.id}) }}">Edit draft #{{ error.id }}</a>, {{ error.field }}: {{ error.message }}</li>
+            {% endfor %}
+        </ul>
+    {% endif %}
+    <div data-controller="draft-delete">
+        <button type="button" hidden data-draft-delete-target="confirmation" data-action-confirmation="true" data-action-confirmation-message="Permanently delete this unapproved draft transaction?" data-action-variant="danger" data-bs-toggle="modal" data-bs-target="#modal-action-confirmation">Delete</button>
+        <div {{ stimulus_controller('import-catch-up', {url: path('admin_statement_processing', {id: statement.id})}) }}>
+            {{ include('statement/_results.html.twig') }}
+        </div>
     </div>
+    {{ include('@EasyAdmin/crud/includes/_action_confirmation_modal.html.twig') }}
 {% endblock %}
