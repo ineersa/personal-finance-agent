@@ -9,6 +9,25 @@ use Hautelook\AliceBundle\PhpUnit\FixtureStore;
 
 final class StatementDownloadTest extends FinanceBrowserTest
 {
+    public function testHistoricalProcessingDistinguishesApprovedRowsFromUnresolvedDrafts(): void
+    {
+        $fixtures = FixtureStore::getFixtures();
+        $this->loginUser($fixtures['demo']);
+        $approved = $fixtures['demo_card_statement'];
+        $page = $this->visit('/home/statement-processing/'.$approved->getId());
+        self::assertResponseIsSuccessful();
+        self::assertStringContainsString('No drafts remain for review.', $page->locator('body')->textContent());
+        self::assertSame(0, $page->locator('[data-draft-results] tbody tr')->count());
+        self::assertSame(0, $page->locator('a[href="#draft-results"]')->count());
+
+        $unresolved = $fixtures['history_usd_2024_11'];
+        $page = $this->visit('/home/statement-processing/'.$unresolved->getId());
+        self::assertResponseIsSuccessful();
+        self::assertStringContainsString('Draft transactions requiring review: 1.', $page->locator('body')->textContent());
+        self::assertSame(1, $page->locator('[data-draft-results] tbody tr')->count());
+        self::assertStringContainsString('unknown', $page->locator('[data-draft-results] tbody tr')->textContent());
+    }
+
     public function testOwnerDownloadsSyntheticBytesThroughStatementUiWithoutTrustingQueryInputs(): void
     {
         $fixtures = FixtureStore::getFixtures();

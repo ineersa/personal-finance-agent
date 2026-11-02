@@ -2,7 +2,11 @@
     <p>{{ statement.originalFilename }} — {{ statement.source.name }}</p>
     <p>Status: <strong data-processing-status>{{ statement.processingStatus.value }}</strong></p>
     {% if statement.processingStatus.value == 'completed' %}
-        <twig:ea:Alert variant="success">Drafts are ready. <a href="#draft-results">View draft results</a>. They still require review before approval.</twig:ea:Alert>
+        {% if drafts is not empty %}
+            <twig:ea:Alert variant="success">Draft transactions requiring review: {{ drafts|length }}. <a href="#draft-results">View draft results</a>.</twig:ea:Alert>
+        {% else %}
+            <twig:ea:Alert variant="success">Processing completed. No drafts remain for review.</twig:ea:Alert>
+        {% endif %}
     {% elseif statement.processingStatus.value in ['queued', 'running'] %}
         <p role="status">Processing is in progress. Live updates appear while your workspace is open. You can also return from Statements later.</p>
     {% endif %}
