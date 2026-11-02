@@ -1,0 +1,20 @@
+{% extends '@EasyAdmin/page/content.html.twig' %}
+{% form_theme form with ['@EasyAdmin/crud/form_theme.html.twig'] only %}
+{% block content_title %}Review draft transaction{% endblock %}
+{% block main %}
+    <p>{{ draft.statement.originalFilename }}</p>
+    <p>This transaction is a draft and is excluded from financial totals. Save corrections to keep it as a draft, or explicitly approve it for financial analysis.</p>
+    {{ form_start(form) }}
+        {{ form_errors(form) }}
+        {{ form_row(form.transactionDate) }}
+        {{ form_row(form.amount, {help: 'Use a plain decimal amount, for example 123.45. Do not use separators or a currency symbol.'}) }}
+        {{ form_row(form.currency, {help: 'Use a three-letter uppercase currency code, for example CAD.'}) }}
+        {{ form_row(form.direction) }}
+        {{ form_row(form.description) }}
+        {{ form_row(form.source) }}
+        {{ form_row(form.category) }}
+        {{ form_widget(form.save, {attr: {class: 'btn btn-secondary'}}) }}
+        {{ form_widget(form.approve, {attr: {class: 'btn btn-primary'}}) }}
+    {{ form_end(form) }}
+    <a href="{{ path('admin_statement_processing', {id: draft.statement.id}) }}">Back to statement drafts</a>
+{% endblock %}
