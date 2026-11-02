@@ -322,34 +322,10 @@ function browserLifecycleTest(bool $workerFailure = false): int
             $container = 'pfa-qa-worker-failure-'.bin2hex(random_bytes(6));
             $browser = new Process(runtimeCommand(['env', 'FINANCE_IMPORT_URL='.stackUrl('browser'), 'FINANCE_PROXY_IP='.proxyAddress(), 'php', 'vendor/bin/phpunit', 'tests/Live/StatementLifecycleTest.php', '--filter', 'testExhaustedWorkerFailure', '--fail-on-empty-test-suite'], $container, false, true), $root, timeout: 150);
             $execution = TaskExecution::$current ?? throw new \LogicException('Missing task execution.');
-            $queueCount = /** @phpstan-impure */ static function (): int {
-                $code = <<<'CODE'
-                    require 'vendor/autoload.php';
-                    if (!is_file('/app/var/queue/broker.db')) { throw new RuntimeException('Missing isolated broker database.'); }
-                    $db = Doctrine\DBAL\DriverManager::getConnection(['driver' => 'pdo_sqlite', 'path' => '/app/var/queue/broker.db']);
-                    echo $db->createQueryBuilder()->select('COUNT(*)')->from('queue_messages')->executeQuery()->fetchOne();
-                    CODE;
-                $query = new Process([...stackCommand('browser'), 'exec', '-T', 'php', 'php', '-r', $code], \dirname(__DIR__), stackEnvironment('browser'), timeout: 30);
-                runTaskProcess($query);
-                if (!ctype_digit(trim($query->getOutput()))) {
-                    throw new \RuntimeException('Could not inspect the isolated broker.');
-                }
-
-                return (int) trim($query->getOutput());
-            };
-            $count = /** @phpstan-impure */ static function (string $where): int {
-                $query = new Process([...stackCommand('browser'), 'exec', '-T', 'php', 'php', 'bin/console', 'doctrine:query:dql', 'SELECT COUNT(record.id) FROM App\\Entity\\Statement record WHERE '.$where, '--hydrate=single-scalar', '--no-ansi'], \dirname(__DIR__), stackEnvironment('browser'), timeout: 30);
-                runTaskProcess($query);
-                if (1 !== preg_match('/(?:int\((\d+)\)|string\(\d+\) "(\d+)")/', $query->getOutput(), $match)) {
-                    throw new \RuntimeException('Could not verify the isolated queue precondition.');
-                }
-
-                return (int) ('' !== $match[1] ? $match[1] : $match[2]);
-            };
             $moved = false;
             try {
                 stackRun('browser', ['stop', 'worker']);
-                if (0 !== $count("record.processingStatus IN ('queued', 'running')") || 0 !== $queueCount()) {
+                if (0 !== browserStatementCount("record.processingStatus IN ('queued', 'running')") || 0 !== browserBrokerMessageCount()) {
                     throw new \RuntimeException('Finish unrelated isolated imports before this scenario.');
                 }
                 $browser->start();
@@ -365,7 +341,7 @@ function browserLifecycleTest(bool $workerFailure = false): int
                 }
                 $saved = json_decode((string) file_get_contents($ready), true, flags: \JSON_THROW_ON_ERROR);
                 $id = (int) $saved['id'];
-                if ($id <= 0 || 1 !== $count("record.processingStatus IN ('queued', 'running')") || 1 !== $count('record.id = '.$id." AND record.processingStatus = 'queued'") || 1 !== $queueCount()) {
+                if ($id <= 0 || 1 !== browserStatementCount("record.processingStatus IN ('queued', 'running')") || 1 !== browserStatementCount('record.id = '.$id." AND record.processingStatus = 'queued'") || 1 !== browserBrokerMessageCount()) {
                     throw new \RuntimeException('The browser upload is not the only eligible isolated message.');
                 }
                 $moved = rename($storage, $backup);
@@ -439,6 +415,35 @@ function browserLifecycleTest(bool $workerFailure = false): int
 
         return report('browser:lifecycle:verify', [...$command, '--filter', 'testPromotedOwner', '--fail-on-empty-test-suite'], networked: true);
     });
+}
+
+/** @phpstan-impure */
+function browserBrokerMessageCount(): int
+{
+    $code = <<<'CODE'
+        require 'vendor/autoload.php';
+        if (!is_file('/app/var/queue/broker.db')) { throw new RuntimeException('Missing isolated broker database.'); }
+        $db = Doctrine\DBAL\DriverManager::getConnection(['driver' => 'pdo_sqlite', 'path' => '/app/var/queue/broker.db']);
+        echo $db->createQueryBuilder()->select('COUNT(*)')->from('queue_messages')->executeQuery()->fetchOne();
+        CODE;
+    $query = new Process([...stackCommand('browser'), 'exec', '-T', 'php', 'php', '-r', $code], \dirname(__DIR__), stackEnvironment('browser'), timeout: 30);
+    runTaskProcess($query);
+    if (!ctype_digit(trim($query->getOutput()))) {
+        throw new \RuntimeException('Could not inspect the isolated broker.');
+    }
+
+    return (int) trim($query->getOutput());
+}
+/** @phpstan-impure */
+function browserStatementCount(string $where): int
+{
+    $query = new Process([...stackCommand('browser'), 'exec', '-T', 'php', 'php', 'bin/console', 'doctrine:query:dql', 'SELECT COUNT(record.id) FROM App\\Entity\\Statement record WHERE '.$where, '--hydrate=single-scalar', '--no-ansi'], \dirname(__DIR__), stackEnvironment('browser'), timeout: 30);
+    runTaskProcess($query);
+    if (1 !== preg_match('/(?:int\((\d+)\)|string\(\d+\) "(\d+)")/', $query->getOutput(), $match)) {
+        throw new \RuntimeException('Could not verify the isolated queue precondition.');
+    }
+
+    return (int) ('' !== $match[1] ? $match[1] : $match[2]);
 }
 
 #[AsTask(namespace: 'browser', name: 'routes:test', description: 'Verify comma-separated live stack URLs in a real tooling-container browser.')]
