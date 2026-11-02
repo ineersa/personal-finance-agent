@@ -13,6 +13,7 @@ use App\Import\ImportException;
 use App\Import\ImportUpdates;
 use App\Import\TransactionInterpreter;
 use App\Message\ProcessStatementMessage;
+use App\Repository\CategoryRepository;
 use App\Repository\StatementRepository;
 use App\Storage\StatementStorage;
 use Doctrine\ORM\EntityManagerInterface;
@@ -21,7 +22,7 @@ use Symfony\Component\Messenger\Attribute\AsMessageHandler;
 #[AsMessageHandler]
 final readonly class ProcessStatementHandler
 {
-    public function __construct(private EntityManagerInterface $entityManager, private StatementRepository $statements, private StatementStorage $storage, private CsvParser $parser, private TransactionInterpreter $interpreter, private ImportUpdates $updates)
+    public function __construct(private EntityManagerInterface $entityManager, private StatementRepository $statements, private StatementStorage $storage, private CsvParser $parser, private TransactionInterpreter $interpreter, private ImportUpdates $updates, private CategoryRepository $categories)
     {
     }
 
@@ -68,16 +69,25 @@ final readonly class ProcessStatementHandler
                 throw new ImportException('Statement bytes are unavailable or do not match their saved metadata.');
             }
             $rows = $this->parser->parse($content, $statement->source->currency, $statement->source->instrumentKind);
-            $categories = $this->entityManager->getRepository(Category::class)->findAll();
-            $catalog = [];
-            $byName = [];
-            foreach ($categories as $category) {
-                $catalog[$category->name] = $category->description ?? $category->name;
-                $byName[$category->name] = $category;
-            }
+            $categories = $this->categories->findAllIndexedByName();
+            $catalog = array_map(static fn (Category $category): string => $category->description ?? $category->name, $categories);
             $rows = $this->interpreter->interpret($rows, $statement->source->instrumentKind, $catalog);
             foreach ($rows as $row) {
-                $this->entityManager->persist(new Transaction($owner, $statement, $statement->source, $row->date, $row->amount, $row->currency, $row->direction, $row->description, null === $row->categoryName ? null : $byName[$row->categoryName], true, $row->meaning, $row->recurrence));
+                $category = null === $row->categoryName ? null : $categories[$row->categoryName];
+                $this->entityManager->persist(new Transaction(
+                    user: $owner,
+                    statement: $statement,
+                    source: $statement->source,
+                    transactionDate: $row->date,
+                    amount: $row->amount,
+                    currency: $row->currency,
+                    direction: $row->direction,
+                    description: $row->description,
+                    category: $category,
+                    isDraft: true,
+                    meaning: $row->meaning,
+                    recurrence: $row->recurrence,
+                ));
             }
             $statement->processingStatus = ProcessingStatus::Completed;
             $statement->processingError = null;
