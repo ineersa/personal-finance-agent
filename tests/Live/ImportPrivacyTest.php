@@ -14,9 +14,6 @@ final class ImportPrivacyTest extends TestCase
     {
         $url = (string) getenv('FINANCE_IMPORT_URL');
         self::assertMatchesRegularExpression('~^http://[a-z0-9-]+\.browser\.finance\.localhost$~D', $url);
-        $saved = json_decode((string) file_get_contents(\dirname(__DIR__, 2).'/var/qa/statement-imports.json'), true, flags: \JSON_THROW_ON_ERROR);
-        $statementUrl = $saved[0]['url'];
-        self::assertStringStartsWith($url.'/home/statement-processing/', $statementUrl);
         $address = getenv('FINANCE_PROXY_IP');
         self::assertNotFalse(filter_var($address, \FILTER_VALIDATE_IP, \FILTER_FLAG_IPV4));
         $client = PlaywrightFactory::create();
@@ -87,7 +84,7 @@ final class ImportPrivacyTest extends TestCase
                 self::assertFalse($receivedForeignPayload, 'A live mixed-topic connection must filter another owner’s private payload.');
                 self::assertSame(1, $observer->evaluate('() => window.privacyStream.readyState'));
                 $observer->evaluate('() => window.privacyStream.close()');
-                self::assertSame(404, $foreignPage->goto($statementUrl)?->status());
+                self::assertSame(404, $foreignPage->goto($url.'/home/statement-processing/'.$privateStatement)?->status());
                 $foreignPage->goto($url.'/home/statement-upload');
                 self::assertStringNotContainsString('Maple Harbour', $foreignPage->getByLabel('Source', ['exact' => true])->textContent());
                 $foreignPage->getByLabel('Source', ['exact' => true])->evaluate('(select, id) => { const option = new Option("Foreign source", id, true, true); select.add(option); }', $foreignSourceId);

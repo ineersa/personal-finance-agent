@@ -36,7 +36,7 @@ final readonly class StatementUpload
         if (false === $sha256) {
             throw new ImportException('Cannot read uploaded statement metadata.');
         }
-        $originalFilename = basename(str_replace('\\', '/', $file->getClientOriginalName()));
+        $originalFilename = $file->getClientOriginalName();
         $mediaType = $file->getMimeType() ?? 'text/plain';
         $byteSize = $file->getSize();
         try {
@@ -67,8 +67,12 @@ final readonly class StatementUpload
         if (\in_array('ROLE_ADMIN', $owner->getRoles(), true) || $statement->getUser()->getId() !== $owner->getId() || $statement->source->getUser()->getId() !== $owner->getId()) {
             throw new ImportException('The statement is not available.');
         }
-        if ($this->statements->transition($statement->getId() ?? throw new \LogicException('Statement missing.'), $owner->getId() ?? throw new \LogicException('Owner missing.'), $statement->storedFilename, ProcessingStatus::Failed, ProcessingStatus::Queued, withoutTransactions: true)) {
-            $this->dispatch($statement, $owner);
+        foreach ([ProcessingStatus::Failed, ProcessingStatus::Running] as $status) {
+            if ($this->statements->transition($statement->getId() ?? throw new \LogicException('Statement missing.'), $owner->getId() ?? throw new \LogicException('Owner missing.'), $statement->storedFilename, $status, ProcessingStatus::Queued, withoutTransactions: true)) {
+                $this->dispatch($statement, $owner);
+
+                return;
+            }
         }
     }
 

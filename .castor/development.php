@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace AppTasks;
 
-use Castor\Attribute\AsArgument;
+use Castor\Attribute\AsArgsAfterOptionEnd;
 use Castor\Attribute\AsTask;
 use Symfony\Component\Process\Process;
 
@@ -279,177 +279,15 @@ function developmentStackStop(): int
     return developmentStack('dev', 'stop');
 }
 
-#[AsTask(namespace: 'browser', name: 'imports:test', description: 'Run real-network upload scenarios against this checkout’s isolated stack; hosted Jev calls are paid.')]
-function browserImportsTest(bool $replay = false, bool $privacy = false, bool $boundary = false): int
+/** @param list<string> $arguments */
+#[AsTask(namespace: 'browser', name: 'live:test', description: 'Run browser tests against the isolated live stack; pass native PHPUnit arguments after --.')]
+function browserLiveTest(#[AsArgsAfterOptionEnd] array $arguments = []): int
 {
-    if ((int) $replay + (int) $privacy + (int) $boundary > 1) {
-        throw new \InvalidArgumentException('Select only one verification mode.');
-    }
-    $arguments = ['--filter', $replay ? 'testPreviouslyCompletedImportsRemainUnchangedAfterOperatorRedelivery' : 'testThreeSourceUploads|testMalformedUpload|testQuotedCsv'];
-    $file = 'tests/Live/StatementImportTest.php';
-    if ($privacy || $boundary) {
-        $arguments = [];
-        $file = $privacy ? 'tests/Live/ImportPrivacyTest.php' : 'tests/Live/UploadBoundaryTest.php';
+    if ([] === $arguments) {
+        throw new \InvalidArgumentException('Pass the PHPUnit test selection after --.');
     }
 
-    return report('browser:imports:test', ['env', 'FINANCE_IMPORT_URL='.stackUrl('browser'), 'FINANCE_IMPORT_REPLAY='.($replay ? '1' : '0'), 'FINANCE_PROXY_IP='.proxyAddress(), 'php', 'vendor/bin/phpunit', $file, ...$arguments, '--fail-on-empty-test-suite', '--log-junit', 'var/qa/browser-imports-test/junit.xml'], networked: true);
-}
-
-#[AsTask(namespace: 'browser', name: 'lifecycle:test', description: 'Verify queued-owner role loss and native statement deletion on the isolated browser stack.')]
-function browserLifecycleTest(bool $workerFailure = false): int
-{
-    $root = \dirname(__DIR__);
-    foreach ([$root.'/var', $root.'/var/browser-live', $root.'/var/browser-live/browser', $root.'/var/browser-live/browser/application.db'] as $path) {
-        if (is_link($path)) {
-            throw new \RuntimeException('Refusing symlinked lifecycle-test storage.');
-        }
-    }
-    if (!is_file($root.'/var/browser-live/browser/application.db')) {
-        throw new \RuntimeException('Initialize the isolated browser-stack database before lifecycle verification.');
-    }
-
-    if ($workerFailure) {
-        return report('browser:lifecycle:worker-failure', [], runtime: false, operation: static function () use ($root): int {
-            $storage = $root.'/var/browser-live/browser/statements';
-            $backup = $storage.'.worker-failure-'.bin2hex(random_bytes(6));
-            $ready = $root.'/var/qa/lifecycle-worker-failure.json';
-            if (is_link($storage) || !is_dir($storage) || file_exists($backup) || is_link($backup) || is_link($ready) || is_link($ready.'.tmp')) {
-                throw new \RuntimeException('Unexpected isolated worker-failure paths.');
-            }
-            if (is_file($ready)) {
-                unlink($ready);
-            }
-            $container = 'pfa-qa-worker-failure-'.bin2hex(random_bytes(6));
-            $browser = new Process(runtimeCommand(['env', 'FINANCE_IMPORT_URL='.stackUrl('browser'), 'FINANCE_PROXY_IP='.proxyAddress(), 'php', 'vendor/bin/phpunit', 'tests/Live/StatementLifecycleTest.php', '--filter', 'testExhaustedWorkerFailure', '--fail-on-empty-test-suite'], $container, false, true), $root, timeout: 150);
-            $execution = TaskExecution::$current ?? throw new \LogicException('Missing task execution.');
-            $moved = false;
-            try {
-                stackRun('browser', ['stop', 'worker']);
-                if (0 !== browserStatementCount("record.processingStatus IN ('queued', 'running')") || 0 !== browserBrokerMessageCount()) {
-                    throw new \RuntimeException('Finish unrelated isolated imports before this scenario.');
-                }
-                $browser->start();
-                $execution->process = $browser;
-                $deadline = time() + 60;
-                while (!is_file($ready)) {
-                    $execution->throwIfInterrupted();
-                    $browser->checkTimeout();
-                    if (!$browser->isRunning() || time() >= $deadline) {
-                        throw new \RuntimeException('Browser did not report a connected queued page.');
-                    }
-                    usleep(100000);
-                }
-                $saved = json_decode((string) file_get_contents($ready), true, flags: \JSON_THROW_ON_ERROR);
-                $id = (int) $saved['id'];
-                if ($id <= 0 || 1 !== browserStatementCount("record.processingStatus IN ('queued', 'running')") || 1 !== browserStatementCount('record.id = '.$id." AND record.processingStatus = 'queued'") || 1 !== browserBrokerMessageCount()) {
-                    throw new \RuntimeException('The browser upload is not the only eligible isolated message.');
-                }
-                $moved = rename($storage, $backup);
-                if (!$moved) {
-                    throw new \RuntimeException('Cannot stage the isolated storage fault.');
-                }
-                $fault = fopen($storage, 'xb');
-                if (false === $fault) {
-                    throw new \RuntimeException('Cannot stage the isolated storage fault.');
-                }
-                fclose($fault);
-                // Eager native Flysystem root creation now fails during handler construction.
-                stackRun('browser', ['exec', '-T', '--user', posix_getuid().':'.posix_getgid(), 'php', 'env', 'JEV_API_KEY=', 'php', 'bin/console', 'messenger:consume', 'statement_import', '--limit=1', '--time-limit=30', '--no-interaction', '-v']);
-                unlink($storage);
-                if (!rename($backup, $storage)) {
-                    throw new \RuntimeException('Restore the isolated statement directory before restarting its worker.');
-                }
-                $moved = false;
-                $execution->process = $browser;
-
-                return $browser->wait();
-            } finally {
-                try {
-                    if ($browser->isStarted()) {
-                        if ($browser->isRunning()) {
-                            $browser->stop(10);
-                        }
-                        echo $browser->getOutput();
-                        echo $browser->getErrorOutput();
-                    }
-                } finally {
-                    if ($moved) {
-                        if (is_file($storage)) {
-                            unlink($storage);
-                        }
-                        if (!rename($backup, $storage)) {
-                            throw new \RuntimeException('Isolated statement storage needs restoration; worker remains stopped.');
-                        }
-                    }
-                    try {
-                        cleanupRuntime($container);
-                    } finally {
-                        stackRun('browser', ['up', '-d', '--wait', 'worker']);
-                    }
-                }
-            }
-        });
-    }
-
-    return report('browser:lifecycle:test', ['vendor/bin/castor', 'browser:lifecycle:test'], runtime: false, operation: static function (): int {
-        $command = ['env', 'FINANCE_IMPORT_URL='.stackUrl('browser'), 'FINANCE_PROXY_IP='.proxyAddress(), 'php', 'vendor/bin/phpunit', 'tests/Live/StatementLifecycleTest.php'];
-        try {
-            stackRun('browser', ['stop', 'worker']);
-            $exit = report('browser:lifecycle:busy', [...$command, '--filter', 'testQueuedImport', '--fail-on-empty-test-suite'], networked: true);
-            if (0 === $exit) {
-                // Consume deterministically while the browser-promoted owner has no finance access.
-                // An empty provider key also makes accidental interpretation fail before any HTTP call.
-                $consumer = ['exec', '-T', '--user', posix_getuid().':'.posix_getgid(), 'php', 'env', 'JEV_API_KEY=', 'php', 'bin/console', 'messenger:consume', 'statement_import', '--limit=1', '--time-limit=30', '--no-interaction', '-v'];
-                $exit = report('browser:lifecycle:promoted-owner', [...stackCommand('browser'), ...$consumer], runtime: false, operation: static function () use ($consumer): int {
-                    stackRun('browser', $consumer);
-
-                    return 0;
-                });
-            }
-        } finally {
-            stackRun('browser', ['up', '-d', '--wait', 'worker']);
-        }
-        if (0 !== $exit) {
-            return $exit;
-        }
-
-        return report('browser:lifecycle:verify', [...$command, '--filter', 'testPromotedOwner', '--fail-on-empty-test-suite'], networked: true);
-    });
-}
-
-/** @phpstan-impure */
-function browserBrokerMessageCount(): int
-{
-    $code = <<<'CODE'
-        require 'vendor/autoload.php';
-        if (!is_file('/app/var/queue/broker.db')) { throw new RuntimeException('Missing isolated broker database.'); }
-        $db = Doctrine\DBAL\DriverManager::getConnection(['driver' => 'pdo_sqlite', 'path' => '/app/var/queue/broker.db']);
-        echo $db->createQueryBuilder()->select('COUNT(*)')->from('queue_messages')->executeQuery()->fetchOne();
-        CODE;
-    $query = new Process([...stackCommand('browser'), 'exec', '-T', 'php', 'php', '-r', $code], \dirname(__DIR__), stackEnvironment('browser'), timeout: 30);
-    runTaskProcess($query);
-    if (!ctype_digit(trim($query->getOutput()))) {
-        throw new \RuntimeException('Could not inspect the isolated broker.');
-    }
-
-    return (int) trim($query->getOutput());
-}
-/** @phpstan-impure */
-function browserStatementCount(string $where): int
-{
-    $query = new Process([...stackCommand('browser'), 'exec', '-T', 'php', 'php', 'bin/console', 'doctrine:query:dql', 'SELECT COUNT(record.id) FROM App\\Entity\\Statement record WHERE '.$where, '--hydrate=single-scalar', '--no-ansi'], \dirname(__DIR__), stackEnvironment('browser'), timeout: 30);
-    runTaskProcess($query);
-    if (1 !== preg_match('/(?:int\((\d+)\)|string\(\d+\) "(\d+)")/', $query->getOutput(), $match)) {
-        throw new \RuntimeException('Could not verify the isolated queue precondition.');
-    }
-
-    return (int) ('' !== $match[1] ? $match[1] : $match[2]);
-}
-
-#[AsTask(namespace: 'browser', name: 'routes:test', description: 'Verify comma-separated live stack URLs in a real tooling-container browser.')]
-function browserRoutesTest(#[AsArgument] string $urls = '', string $absent = ''): int
-{
-    return report('browser:routes:test', ['env', 'FINANCE_ROUTING_URLS='.$urls, 'FINANCE_UNREGISTERED_URLS='.$absent, 'FINANCE_PROXY_IP='.proxyAddress(), 'php', 'vendor/bin/phpunit', 'tests/Live/RoutingTest.php', '--fail-on-empty-test-suite', '--log-junit', 'var/qa/browser-routes-test/junit.xml'], networked: true);
+    return report('browser:live:test', ['env', 'FINANCE_IMPORT_URL='.stackUrl('browser'), 'FINANCE_PROXY_IP='.proxyAddress(), 'php', 'vendor/bin/phpunit', ...$arguments, '--fail-on-empty-test-suite', '--log-junit', 'var/qa/browser-live-test/junit.xml'], networked: true);
 }
 
 #[AsTask(namespace: 'dev', name: 'proxy:stop', description: 'Stop the shared proxy only when no checkout has registered routes.')]

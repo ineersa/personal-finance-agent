@@ -26,6 +26,7 @@ use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Security\Http\Attribute\CurrentUser;
 use Symfony\Component\Security\Http\Attribute\IsGranted;
 use Symfony\Component\Validator\Constraints as Assert;
+use Symfony\UX\Turbo\TurboBundle;
 
 #[IsGranted(FinanceRecordVoter::ACCESS)]
 final class StatementImportController extends AbstractController
@@ -54,9 +55,7 @@ final class StatementImportController extends AbstractController
             }
         }
 
-        $providerHost = parse_url($providerUrl, \PHP_URL_HOST);
-
-        return $this->render('statement/upload.html.twig', ['form' => $form, 'providerHost' => \is_string($providerHost) && '' !== $providerHost ? $providerHost : 'configured provider']);
+        return $this->render('statement/upload.html.twig', ['form' => $form, 'providerUrl' => $providerUrl]);
     }
 
     #[AdminRoute('/statement-processing/{id}', name: 'statement_processing', options: ['methods' => ['GET', 'POST'], 'requirements' => ['id' => '\d+']])]
@@ -65,7 +64,7 @@ final class StatementImportController extends AbstractController
         $statement = $statements->findForUser($owner, $id) ?? throw $this->createNotFoundException();
         $form = $this->createFormBuilder()->getForm();
         $form->handleRequest($request);
-        if ($form->isSubmitted() && $form->isValid() && ProcessingStatus::Failed === $statement->processingStatus) {
+        if ($form->isSubmitted() && $form->isValid() && \in_array($statement->processingStatus, [ProcessingStatus::Failed, ProcessingStatus::Running], true)) {
             try {
                 $uploads->retry($owner, $statement);
             } catch (ImportException $error) {
@@ -74,13 +73,13 @@ final class StatementImportController extends AbstractController
 
             return $this->redirectToRoute('admin_statement_processing', ['id' => $id]);
         }
-        $drafts = $transactions->queryForUser($owner)->andWhere('record.statement = :statement')->andWhere('record.isDraft = true')->setParameter('statement', $statement)->orderBy('record.id', 'ASC')->getQuery()->getResult();
+        $drafts = $transactions->draftsForStatement($owner, $statement);
 
-        if ('GET' === $request->getMethod() && str_contains((string) $request->headers->get('Accept'), 'text/vnd.turbo-stream.html')) {
+        if ($request->isMethod(Request::METHOD_GET) && TurboBundle::STREAM_FORMAT === $request->getPreferredFormat()) {
+            $request->setRequestFormat(TurboBundle::STREAM_FORMAT);
             $response = \in_array($statement->processingStatus, [ProcessingStatus::Completed, ProcessingStatus::Failed], true)
-                ? $this->render('statement/update.stream.html.twig', ['statement' => $statement, 'drafts' => $drafts])
+                ? $this->render('statement/update.stream.html.twig', ['statement' => $statement, 'drafts' => $drafts, 'retryForm' => $form->createView()])
                 : new Response(status: Response::HTTP_NO_CONTENT);
-            $response->headers->set('Content-Type', 'text/vnd.turbo-stream.html');
             $response->headers->set('Cache-Control', 'no-store, private');
 
             return $response;

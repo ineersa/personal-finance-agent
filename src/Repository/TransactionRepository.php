@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Repository;
 
+use App\Entity\Statement;
 use App\Entity\Transaction;
 use App\Entity\User;
 use Doctrine\ORM\EntityManagerInterface;
@@ -41,5 +42,16 @@ final readonly class TransactionRepository
             ->setParameter('id', $id)
             ->getQuery()
             ->getOneOrNullResult();
+    }
+
+    /** @return list<Transaction> */
+    public function draftsForStatement(User $user, Statement $statement): array
+    {
+        return $this->queryForUser($user)
+            ->andWhere('record.statement = :statement')
+            ->andWhere('record.isDraft = true')
+            ->setParameter('statement', $statement)
+            ->orderBy('record.id', 'ASC')
+            ->getQuery()->getResult();
     }
 }

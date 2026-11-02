@@ -15,9 +15,6 @@ final readonly class JevDecisions
     public function __construct(
         #[Autowire(service: 'app.jev.platform')]
         private PlatformInterface $platform,
-        #[Autowire('%env(JEV_API_KEY)%')]
-        #[\SensitiveParameter]
-        private string $apiKey,
         #[Autowire('%env(JEV_MODEL)%')]
         private string $model,
     ) {
@@ -29,9 +26,6 @@ final readonly class JevDecisions
      */
     public function evaluate(#[\SensitiveParameter] array $state, array $questions): Answers
     {
-        if ('' === $this->apiKey) {
-            throw new ImportException('Jev is not configured. Set the server-side JEV_API_KEY.');
-        }
         try {
             $answers = $this->platform->invoke($this->model, new Evaluation($state, $questions))->asObject();
         } catch (\Throwable) {

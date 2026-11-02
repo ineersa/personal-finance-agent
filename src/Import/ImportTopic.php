@@ -11,6 +11,6 @@ final class ImportTopic
 {
     public function forUser(User $user): string
     {
-        return 'https://finance.localhost/users/'.$user->getId().'/imports';
+        return 'urn:personal-finance:user:'.$user->getId().':imports';
     }
 }

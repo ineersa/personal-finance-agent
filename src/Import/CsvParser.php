@@ -22,7 +22,7 @@ final readonly class CsvParser
         $rows = $this->read($content);
         $mapping = $this->mapper->map($rows, $currency, $instrument);
 
-        return $this->transactions($rows, $mapping, $currency);
+        return self::transactions($rows, $mapping, $currency);
     }
 
     /** @return non-empty-list<list<string>> */
@@ -46,8 +46,8 @@ final readonly class CsvParser
                     continue;
                 }
                 $row = array_map(static fn (?string $cell): string => trim($cell ?? ''), $row);
-                if (\count($row) < 4 || \count($row) > 12 || ([] !== $rows && \count($row) !== \count($rows[0]))) {
-                    throw new ImportException('CSV rows must have consistent comma-separated columns (4–12 fields).');
+                if ([] !== $rows && \count($row) !== \count($rows[0])) {
+                    throw new ImportException('CSV rows must have consistent comma-separated columns.');
                 }
                 $rows[] = $row;
             }
@@ -102,34 +102,85 @@ final readonly class CsvParser
      *
      * @return list<ParsedTransactionDTO>
      */
-    private function transactions(#[\SensitiveParameter] array $rows, array $mapping, string $currency): array
+    private static function transactions(#[\SensitiveParameter] array $rows, array $mapping, string $currency): array
     {
+        if ($mapping['hasHeader']) {
+            unset($rows[0]);
+        }
+        if ([] === $rows) {
+            throw new ImportException('The CSV has no transaction rows.');
+        }
+        $dates = self::dates(array_map(static fn (array $row): string => $row[$mapping['date']], $rows));
+        $amounts = self::amounts(array_map(static fn (array $row): string => '' !== $row[$mapping['debit']] ? $row[$mapping['debit']] : $row[$mapping['credit']], $rows));
         $parsed = [];
         foreach ($rows as $index => $row) {
-            if (0 === $index && $mapping['hasHeader']) {
-                continue;
-            }
-            $rawDate = $row[$mapping['date']];
-            $date = \DateTimeImmutable::createFromFormat('!Y-m-d', $rawDate);
             $debit = $row[$mapping['debit']];
             $credit = $row[$mapping['credit']];
             $description = $row[$mapping['description']];
             if (null !== $mapping['currency'] && $row[$mapping['currency']] !== $currency) {
                 throw new ImportException('CSV currency must match the selected source in record '.($index + 1).'.');
             }
-            if (false === $date || $date->format('Y-m-d') !== $rawDate || '' === $description || ('' === $debit) === ('' === $credit)) {
-                throw new ImportException('Invalid date, description or debit/credit values in CSV record '.($index + 1).'.');
+            if ('' === $description || ('' === $debit) === ('' === $credit)) {
+                throw new ImportException('Invalid description or debit/credit values in CSV record '.($index + 1).'.');
             }
-            $amount = '' !== $debit ? $debit : $credit;
-            if (1 !== preg_match('/\A[0-9]+(?:\.[0-9]+)?\z/D', $amount)) {
-                throw new ImportException('Expected an unsigned decimal amount in CSV record '.($index + 1).'.');
-            }
-            $parsed[] = new ParsedTransactionDTO($index + 1, $date, $description, $amount, $currency, '' !== $debit ? Direction::Debit : Direction::Credit);
-        }
-        if ([] === $parsed) {
-            throw new ImportException('The CSV has no transaction rows.');
+            $parsed[] = new ParsedTransactionDTO($index + 1, new \DateTimeImmutable($dates[$index]), $description, $amounts[$index], $currency, '' !== $debit ? Direction::Debit : Direction::Credit);
         }
 
         return $parsed;
+    }
+
+    /** @param non-empty-array<int, string> $values
+     * @return array<int, string>
+     */
+    private static function dates(#[\SensitiveParameter] array $values): array
+    {
+        $interpretations = [];
+        foreach (['Y-m-d', 'Y/m/d', 'd/m/Y', 'm/d/Y', 'd.m.Y', 'd-m-Y', 'm-d-Y', 'd M Y', 'M d, Y', 'd F Y', 'F d, Y'] as $format) {
+            $dates = [];
+            foreach ($values as $index => $value) {
+                $date = \DateTimeImmutable::createFromFormat('!'.$format, $value);
+                if (false === $date || false !== \DateTimeImmutable::getLastErrors()) {
+                    continue 2;
+                }
+                $dates[$index] = $date->format('Y-m-d');
+            }
+            $interpretations[implode('|', $dates)] = $dates;
+        }
+        if (1 !== \count($interpretations)) {
+            throw new ImportException('CSV dates are invalid or ambiguous. Export dates with a four-digit year and an unambiguous day/month order.');
+        }
+
+        return array_values($interpretations)[0];
+    }
+
+    /** @param non-empty-array<int, string> $values
+     * @return array<int, string>
+     */
+    private static function amounts(#[\SensitiveParameter] array $values): array
+    {
+        $interpretations = [];
+        foreach (['en_US', 'de_DE', 'fr_FR', 'de_CH'] as $locale) {
+            $formatter = new \NumberFormatter($locale, \NumberFormatter::DECIMAL);
+            $amounts = [];
+            foreach ($values as $index => $value) {
+                $position = 0;
+                // ICU validates locale syntax; never use its floating-point result as money.
+                if (false === $formatter->parse($value, \NumberFormatter::TYPE_DOUBLE, $position) || $position !== mb_strlen($value)) {
+                    continue 2;
+                }
+                $amount = str_replace((string) $formatter->getSymbol(\NumberFormatter::GROUPING_SEPARATOR_SYMBOL), '', $value);
+                $amount = str_replace((string) $formatter->getSymbol(\NumberFormatter::DECIMAL_SEPARATOR_SYMBOL), '.', $amount);
+                if (1 !== preg_match('/\A[0-9]+(?:\.[0-9]+)?\z/D', $amount)) {
+                    continue 2;
+                }
+                $amounts[$index] = $amount;
+            }
+            $interpretations[implode('|', $amounts)] = $amounts;
+        }
+        if (1 !== \count($interpretations)) {
+            throw new ImportException('CSV amounts are invalid or their decimal/grouping separators are ambiguous. Export amounts with a consistent, unambiguous number format.');
+        }
+
+        return array_values($interpretations)[0];
     }
 }

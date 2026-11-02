@@ -39,12 +39,17 @@ final readonly class ProcessStatementHandler
             return;
         }
         if (\in_array('ROLE_ADMIN', $owner->getRoles(), true)) {
-            $this->statements->transition($message->statementId, $message->ownerId, $statement->storedFilename, ProcessingStatus::Queued, ProcessingStatus::Failed, 'Processing refused: the owner no longer has access to personal finances.');
+            foreach ([ProcessingStatus::Queued, ProcessingStatus::Running] as $status) {
+                if ($this->statements->transition($message->statementId, $message->ownerId, $statement->storedFilename, $status, ProcessingStatus::Failed, 'Processing refused: the owner no longer has access to personal finances.')) {
+                    break;
+                }
+            }
 
             return;
         }
-        // Atomic single-winner claim; redeliveries of running/completed/failed statements are no-ops.
-        if (!$this->statements->transition($message->statementId, $message->ownerId, $statement->storedFilename, ProcessingStatus::Queued, ProcessingStatus::Running)) {
+        // A worker can die after saving Running. Redelivery must be able to resume it.
+        if (!$this->statements->transition($message->statementId, $message->ownerId, $statement->storedFilename, ProcessingStatus::Queued, ProcessingStatus::Running, withoutTransactions: true)
+            && !$this->statements->transition($message->statementId, $message->ownerId, $statement->storedFilename, ProcessingStatus::Running, ProcessingStatus::Running, withoutTransactions: true)) {
             return;
         }
         $statement->processingStatus = ProcessingStatus::Running;
@@ -73,9 +78,15 @@ final readonly class ProcessStatementHandler
             $rows = $this->interpreter->interpret($rows, $statement->source->instrumentKind, $catalog);
             // No provider, byte storage or broker operations inside this short write transaction.
             $this->entityManager->wrapInTransaction(function () use ($statement, $owner, $rows, $byName): void {
+                // The existing SQLite transaction starts IMMEDIATE. Refresh inside it so
+                // overlapping deliveries cannot both insert a set of results.
+                $this->entityManager->refresh($statement);
+                if (ProcessingStatus::Completed === $statement->processingStatus) {
+                    return;
+                }
                 $this->entityManager->refresh($owner);
                 $this->entityManager->refresh($statement->source);
-                if ($statement->source->getUser()->getId() !== $owner->getId() || \in_array('ROLE_ADMIN', $owner->getRoles(), true)) {
+                if ($statement->getUser()->getId() !== $owner->getId() || $statement->source->getUser()->getId() !== $owner->getId() || \in_array('ROLE_ADMIN', $owner->getRoles(), true)) {
                     throw new ImportException('Statement ownership is no longer available.');
                 }
                 foreach ($rows as $row) {
@@ -87,7 +98,9 @@ final readonly class ProcessStatementHandler
             });
         } catch (\Throwable $error) {
             $safeError = $error instanceof ImportException ? $error->getMessage() : 'Processing failed. No draft results were accepted. Retry after checking storage, source configuration and provider availability.';
-            $this->statements->transition($message->statementId, $message->ownerId, $statement->storedFilename, ProcessingStatus::Running, ProcessingStatus::Failed, $safeError);
+            if (!$this->statements->transition($message->statementId, $message->ownerId, $statement->storedFilename, ProcessingStatus::Running, ProcessingStatus::Failed, $safeError)) {
+                return;
+            }
             $statement->processingStatus = ProcessingStatus::Failed;
             $statement->processingError = $safeError;
             // Do not log exception chains: provider/storage exceptions can expose personal data.

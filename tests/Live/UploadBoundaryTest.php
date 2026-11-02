@@ -30,7 +30,7 @@ final class UploadBoundaryTest extends TestCase
                 $page->waitForURL('**/home/**');
                 foreach ([10 * 1024 * 1024, 10 * 1024 * 1024 + 1] as $size) {
                     // Deliberately malformed, avoiding provider calls while proving real HTTP/PHP size admission.
-                    file_put_contents($path, str_repeat('x', $size));
+                    file_put_contents($path, "a,b\n".str_repeat('x', $size - 4));
                     $page->goto($url.'/home/statement-upload');
                     $page->locator('turbo-mercure-stream-source[connected]')->waitFor(['state' => 'attached']);
                     $page->getByLabel('Source', ['exact' => true])->selectOption(['label' => 'Maple Harbour Chequing · 7318']);

@@ -3,8 +3,8 @@
 {% block content_title %}Upload CSV statement{% endblock %}
 {% block main %}
     <p>Maximum 10 MiB. Select the account or card that owns this statement. Set its currency and instrument kind in Sources first.</p>
-    <p>Processing sends representative CSV rows and transaction details to <strong>{{ providerHost }}</strong> using Jev. This is separate from your chat provider. Private descriptions, dates and amounts can leave this installation. Uploaded bytes remain in private local storage.</p>
-    <p>Supported now: UTF-8 comma-separated CSV, ISO dates and separate unsigned debit/credit columns. Processing creates drafts only; nothing is automatically approved or included in financial analysis.</p>
+    <p>Processing sends representative CSV rows and transaction details to <strong>{{ providerUrl }}</strong> using Jev. This is separate from your chat provider. Private descriptions, dates and amounts can leave this installation. Uploaded bytes remain in private local storage.</p>
+    <p>Use UTF-8 comma-separated CSV with separate unsigned debit/credit columns. Dates and number separators must be consistent and unambiguous across the file. Processing creates drafts only; nothing is automatically approved or included in financial analysis.</p>
     {{ form_start(form) }}
         {{ form_errors(form) }}
         {{ form_row(form.source) }}

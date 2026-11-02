@@ -91,7 +91,7 @@ final class StatementImportTest extends TestCase
                 self::assertStringContainsString('PAYROLL LANTERN LABS', $approvedRows);
                 $manifest = json_decode((string) file_get_contents(\dirname(__DIR__, 2).'/resources/demo-statements/expected.json'), true, flags: \JSON_THROW_ON_ERROR);
                 $labels = ['demo_current' => 'Maple Harbour Chequing · 7318', 'demo_card' => 'Maple Harbour Rewards Visa · 4826', 'demo_usd' => 'Maple Harbour US Dollar · 9054'];
-                $saved = [];
+                $processed = 0;
                 foreach ($manifest['statements'] as $statement) {
                     if ('upload_holdout' !== $statement['purpose']) {
                         continue;
@@ -126,12 +126,11 @@ final class StatementImportTest extends TestCase
                     }
                     $page->reload();
                     self::assertSame(\count($statement['rows']), $page->locator('[data-draft-results] tbody tr')->count());
-                    $saved[] = ['url' => $processingUrl, 'count' => \count($statement['rows'])];
+                    ++$processed;
                     $page->goto($url.'/home/transaction');
                     self::assertSame($approvedRows, $page->locator('tbody')->textContent(), 'Importing drafts must not change the approved transaction list.');
                 }
-                self::assertCount(3, $saved);
-                file_put_contents(\dirname(__DIR__, 2).'/var/qa/statement-imports.json', json_encode($saved, \JSON_THROW_ON_ERROR));
+                self::assertSame(3, $processed);
             } finally {
                 $context->close();
             }
@@ -150,7 +149,7 @@ final class StatementImportTest extends TestCase
                 $page->locator('turbo-mercure-stream-source[connected]')->waitFor(['state' => 'attached']);
                 $page->getByLabel('Source', ['exact' => true])->selectOption(['label' => 'Maple Harbour Chequing · 7318']);
                 $malformed = \dirname(__DIR__, 2).'/var/qa/malformed.csv';
-                file_put_contents($malformed, "not,a,valid\n");
+                file_put_contents($malformed, "not,a,valid\nunequal,row\n");
                 $page->getByLabel('CSV statement', ['exact' => true])->setInputFiles($malformed);
                 $page->getByRole('checkbox')->check();
                 $page->getByRole('button', ['name' => 'Upload and prepare drafts'])->click();
@@ -230,24 +229,35 @@ final class StatementImportTest extends TestCase
         });
     }
 
-    public function testPreviouslyCompletedImportsRemainUnchangedAfterOperatorRedelivery(): void
+    public function testLocalizedCsvFormatsAndExtraColumnsPreserveExactFacts(): void
     {
-        if ('1' !== getenv('FINANCE_IMPORT_REPLAY')) {
-            self::markTestSkipped('Run browser:imports:test --replay after republishing the saved identifiers.');
-        }
-        $saved = json_decode((string) file_get_contents(\dirname(__DIR__, 2).'/var/qa/statement-imports.json'), true, flags: \JSON_THROW_ON_ERROR);
-        $this->withBrowser(function (BrowserInterface $browser, string $url) use ($saved): void {
+        $this->withBrowser(function (BrowserInterface $browser, string $url): void {
             $context = $browser->newContext();
+            $path = \dirname(__DIR__, 2).'/var/qa/localized-import.csv';
             try {
                 $page = $context->newPage();
                 $this->login($page, $url, 'demo@test.com', 'demo');
-                foreach ($saved as $statement) {
-                    self::assertStringStartsWith($url.'/home/statement-processing/', $statement['url']);
-                    $page->goto($statement['url']);
-                    self::assertSame('completed', $page->locator('[data-processing-status]')->getAttribute('data-status'));
-                    self::assertSame($statement['count'], $page->locator('[data-draft-results] tbody tr')->count());
+                foreach ([['31/10/2026', '30/10/2026', '1.234,56789012', '2,50'], ['10/31/2026', '10/30/2026', '1,234.56789012', '2.50']] as [$date, $refundDate, $debit, $credit]) {
+                    $extra = str_repeat(',unused', 10);
+                    file_put_contents($path, 'Date,Debit,Credit,Description'.$extra."\n".$date.',"'.$debit.'",,Coffee'.$extra."\n".$refundDate.',,"'.$credit.'",Coffee refund'.$extra."\n");
+                    $page->goto($url.'/home/statement-upload');
+                    $page->getByLabel('Source', ['exact' => true])->selectOption(['label' => 'Maple Harbour Chequing · 7318']);
+                    $page->getByLabel('CSV statement', ['exact' => true])->setInputFiles($path);
+                    $page->getByRole('checkbox')->check();
+                    $page->getByRole('button', ['name' => 'Upload and prepare drafts'])->click();
+                    $page->waitForURL('**/home/statement-processing/*');
+                    $page->locator('[data-processing-status][data-status="completed"]')->waitFor(['timeout' => 120000]);
+                    $rows = $page->locator('[data-draft-results] tbody tr');
+                    self::assertSame(2, $rows->count());
+                    self::assertSame('2026-10-31', $rows->nth(0)->locator('td')->nth(0)->textContent());
+                    self::assertSame('1234.56789012', $rows->nth(0)->locator('td')->nth(2)->textContent());
+                    self::assertSame('2026-10-30', $rows->nth(1)->locator('td')->nth(0)->textContent());
+                    self::assertSame('2.50', $rows->nth(1)->locator('td')->nth(2)->textContent());
                 }
             } finally {
+                if (is_file($path)) {
+                    unlink($path);
+                }
                 $context->close();
             }
         });
