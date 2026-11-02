@@ -296,7 +296,7 @@ function browserImportsTest(bool $replay = false, bool $privacy = false, bool $b
 }
 
 #[AsTask(namespace: 'browser', name: 'lifecycle:test', description: 'Verify queued-owner role loss and native statement deletion on the isolated browser stack.')]
-function browserLifecycleTest(): int
+function browserLifecycleTest(bool $workerFailure = false): int
 {
     $root = \dirname(__DIR__);
     foreach ([$root.'/var', $root.'/var/browser-live', $root.'/var/browser-live/browser', $root.'/var/browser-live/browser/application.db'] as $path) {
@@ -306,6 +306,113 @@ function browserLifecycleTest(): int
     }
     if (!is_file($root.'/var/browser-live/browser/application.db')) {
         throw new \RuntimeException('Initialize the isolated browser-stack database before lifecycle verification.');
+    }
+
+    if ($workerFailure) {
+        return report('browser:lifecycle:worker-failure', [], runtime: false, operation: static function () use ($root): int {
+            $storage = $root.'/var/browser-live/browser/statements';
+            $backup = $storage.'.worker-failure-'.bin2hex(random_bytes(6));
+            $ready = $root.'/var/qa/lifecycle-worker-failure.json';
+            if (is_link($storage) || !is_dir($storage) || file_exists($backup) || is_link($backup) || is_link($ready) || is_link($ready.'.tmp')) {
+                throw new \RuntimeException('Unexpected isolated worker-failure paths.');
+            }
+            if (is_file($ready)) {
+                unlink($ready);
+            }
+            $container = 'pfa-qa-worker-failure-'.bin2hex(random_bytes(6));
+            $browser = new Process(runtimeCommand(['env', 'FINANCE_IMPORT_URL='.stackUrl('browser'), 'FINANCE_PROXY_IP='.proxyAddress(), 'php', 'vendor/bin/phpunit', 'tests/Live/StatementLifecycleTest.php', '--filter', 'testExhaustedWorkerFailure', '--fail-on-empty-test-suite'], $container, false, true), $root, timeout: 150);
+            $execution = TaskExecution::$current ?? throw new \LogicException('Missing task execution.');
+            $queueCount = static function (): int {
+                $code = <<<'CODE'
+                    require 'vendor/autoload.php';
+                    if (!is_file('/app/var/queue/broker.db')) { throw new RuntimeException('Missing isolated broker database.'); }
+                    $db = Doctrine\DBAL\DriverManager::getConnection(['driver' => 'pdo_sqlite', 'path' => '/app/var/queue/broker.db']);
+                    echo $db->createQueryBuilder()->select('COUNT(*)')->from('queue_messages')->executeQuery()->fetchOne();
+                    CODE;
+                $query = new Process([...stackCommand('browser'), 'exec', '-T', 'php', 'php', '-r', $code], \dirname(__DIR__), stackEnvironment('browser'), timeout: 30);
+                runTaskProcess($query);
+                if (!ctype_digit(trim($query->getOutput()))) {
+                    throw new \RuntimeException('Could not inspect the isolated broker.');
+                }
+
+                return (int) trim($query->getOutput());
+            };
+            $count = static function (string $where): int {
+                $query = new Process([...stackCommand('browser'), 'exec', '-T', 'php', 'php', 'bin/console', 'doctrine:query:dql', 'SELECT COUNT(record.id) FROM App\\Entity\\Statement record WHERE '.$where, '--hydrate=single-scalar', '--no-ansi'], \dirname(__DIR__), stackEnvironment('browser'), timeout: 30);
+                runTaskProcess($query);
+                if (1 !== preg_match('/(?:int\((\d+)\)|string\(\d+\) "(\d+)")/', $query->getOutput(), $match)) {
+                    throw new \RuntimeException('Could not verify the isolated queue precondition.');
+                }
+
+                return (int) ('' !== $match[1] ? $match[1] : $match[2]);
+            };
+            $moved = false;
+            try {
+                stackRun('browser', ['stop', 'worker']);
+                if (0 !== $count("record.processingStatus IN ('queued', 'running')") || 0 !== $queueCount()) {
+                    throw new \RuntimeException('Finish unrelated isolated imports before this scenario.');
+                }
+                $browser->start();
+                $execution->process = $browser;
+                $deadline = time() + 60;
+                while (!is_file($ready)) {
+                    $execution->throwIfInterrupted();
+                    $browser->checkTimeout();
+                    if (!$browser->isRunning() || time() >= $deadline) {
+                        throw new \RuntimeException('Browser did not report a connected queued page.');
+                    }
+                    usleep(100000);
+                }
+                $saved = json_decode((string) file_get_contents($ready), true, flags: \JSON_THROW_ON_ERROR);
+                $id = (int) $saved['id'];
+                if ($id <= 0 || 1 !== $count("record.processingStatus IN ('queued', 'running')") || 1 !== $count('record.id = '.$id." AND record.processingStatus = 'queued'") || 1 !== $queueCount()) {
+                    throw new \RuntimeException('The browser upload is not the only eligible isolated message.');
+                }
+                $moved = rename($storage, $backup);
+                if (!$moved) {
+                    throw new \RuntimeException('Cannot stage the isolated storage fault.');
+                }
+                $fault = fopen($storage, 'xb');
+                if (false === $fault) {
+                    throw new \RuntimeException('Cannot stage the isolated storage fault.');
+                }
+                fclose($fault);
+                // Eager native Flysystem root creation now fails during handler construction.
+                stackRun('browser', ['exec', '-T', '--user', posix_getuid().':'.posix_getgid(), 'php', 'env', 'JEV_API_KEY=', 'php', 'bin/console', 'messenger:consume', 'statement_import', '--limit=1', '--time-limit=30', '--no-interaction', '-v']);
+                unlink($storage);
+                if (!rename($backup, $storage)) {
+                    throw new \RuntimeException('Restore the isolated statement directory before restarting its worker.');
+                }
+                $moved = false;
+                $execution->process = $browser;
+
+                return $browser->wait();
+            } finally {
+                try {
+                    if ($browser->isStarted()) {
+                        if ($browser->isRunning()) {
+                            $browser->stop(10);
+                        }
+                        echo $browser->getOutput();
+                        echo $browser->getErrorOutput();
+                    }
+                } finally {
+                    if ($moved) {
+                        if (is_file($storage)) {
+                            unlink($storage);
+                        }
+                        if (!rename($backup, $storage)) {
+                            throw new \RuntimeException('Isolated statement storage needs restoration; worker remains stopped.');
+                        }
+                    }
+                    try {
+                        cleanupRuntime($container);
+                    } finally {
+                        stackRun('browser', ['up', '-d', '--wait', 'worker']);
+                    }
+                }
+            }
+        });
     }
 
     return report('browser:lifecycle:test', ['vendor/bin/castor', 'browser:lifecycle:test'], runtime: false, operation: static function (): int {

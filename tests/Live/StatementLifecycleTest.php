@@ -12,16 +12,59 @@ use Playwright\PlaywrightFactory;
 /** Import/deletion proof on the isolated browser stack; never resets the database. */
 final class StatementLifecycleTest extends TestCase
 {
+    public function testExhaustedWorkerFailureUpdatesConnectedPage(): void
+    {
+        $this->withBrowser(function (BrowserInterface $browser, string $url): void {
+            $context = $browser->newContext();
+            $path = \dirname(__DIR__, 2).'/var/qa/lifecycle-worker-failure.csv';
+            try {
+                file_put_contents($path, "Date,Debit,Credit,Description\n2026-10-01,1.00,,Coffee\n2026-10-02,,2.00,Dinner refund\n");
+                $page = $context->newPage();
+                $this->login($page, $url, 'demo@test.com', 'demo');
+                $page->addInitScript(<<<'JS'
+                    const nativeFetch = window.fetch;
+                    window.fetch = async (...args) => {
+                        const response = await nativeFetch(...args);
+                        if (args[1]?.headers?.Accept === 'text/vnd.turbo-stream.html') window.snapshotStatus = response.status;
+                        return response;
+                    };
+                    JS);
+                $page->goto($url.'/home/statement-upload');
+                $page->getByLabel('Source', ['exact' => true])->selectOption(['label' => 'Maple Harbour Chequing · 7318']);
+                $page->getByLabel('CSV statement', ['exact' => true])->setInputFiles($path);
+                $page->getByRole('checkbox')->check();
+                $page->getByRole('button', ['name' => 'Upload and prepare drafts'])->click();
+                $page->waitForURL('**/home/statement-processing/*');
+                $page->locator('turbo-mercure-stream-source[connected]')->waitFor(['state' => 'attached']);
+                $page->waitForFunction('() => window.snapshotStatus === 204');
+                self::assertSame('queued', $page->locator('[data-processing-status]')->getAttribute('data-status'));
+                $page->evaluate('() => { window.failurePageProbe = "connected"; window.connectionChanges = 0; new MutationObserver(() => ++window.connectionChanges).observe(document.querySelector("turbo-mercure-stream-source"), {attributes: true, attributeFilter: ["connected"]}); }');
+                $ready = \dirname(__DIR__, 2).'/var/qa/lifecycle-worker-failure.json';
+                file_put_contents($ready.'.tmp', json_encode(['id' => (int) basename($page->url())], \JSON_THROW_ON_ERROR));
+                rename($ready.'.tmp', $ready);
+                $page->locator('[data-processing-status][data-status="failed"]')->waitFor(['timeout' => 60000]);
+                self::assertStringContainsString('The worker could not handle this statement.', $page->getByRole('alert')->textContent());
+                self::assertTrue($page->getByRole('link', ['name' => 'Open retry options'])->isVisible());
+                self::assertSame(0, $page->locator('[data-draft-results] tbody tr')->count());
+                self::assertSame('connected', $page->evaluate('() => window.failurePageProbe'));
+                self::assertSame(0, $page->evaluate('() => window.connectionChanges'), 'The failure must arrive on the existing subscription, not catch-up after reconnect.');
+            } finally {
+                unlink($path);
+                $context->close();
+            }
+        });
+    }
+
     public function testQueuedImportCannotBeDeletedAndOwnerCanBePromoted(): void
     {
         $this->withBrowser(function (BrowserInterface $browser, string $url): void {
             $context = $browser->newContext();
-            $path = \dirname(__DIR__, 2).'/var/qa/lifecycle-malformed.csv';
+            $path = \dirname(__DIR__, 2).'/var/qa/lifecycle-retry.csv';
             try {
                 $page = $context->newPage();
                 $this->login($page, $url, 'demo@test.com', 'demo');
                 // Castor has stopped only this isolated worker; queued state is deterministic.
-                file_put_contents($path, "not,a,valid,statement\ninvalid,row\n");
+                file_put_contents($path, "Date,Debit,Credit,Description\n2026-10-01,1.00,,Coffee\n2026-10-02,,2.00,Dinner refund\n");
                 $page->goto($url.'/home/statement-upload');
                 $page->getByLabel('Source', ['exact' => true])->selectOption(['label' => 'Maple Harbour Chequing · 7318']);
                 $page->getByLabel('CSV statement', ['exact' => true])->setInputFiles($path);
@@ -85,10 +128,45 @@ final class StatementLifecycleTest extends TestCase
                 $this->login($page, $url, 'demo@test.com', 'demo');
                 $processing = $url.'/home/statement-processing/'.$saved['id'];
                 $statement = $url.'/home/statement/'.$saved['id'];
+                // Hold a real failed snapshot body while another tab retries successfully.
+                $page->addInitScript(<<<'JS'
+                    if (location.pathname.includes('/statement-processing/')) {
+                        const nativeFetch = window.fetch;
+                        let held = false;
+                        window.fetch = async (...args) => {
+                            const response = await nativeFetch(...args);
+                            if (!held && args[1]?.headers?.Accept === 'text/vnd.turbo-stream.html') {
+                                held = true;
+                                const text = await response.text();
+                                window.snapshotHeld = true;
+                                response.text = () => new Promise(resolve => {
+                                    window.releaseFailedSnapshot = () => resolve(text);
+                                });
+                            }
+                            return response;
+                        };
+                    }
+                    JS);
                 $page->goto($processing);
                 self::assertSame('failed', $page->locator('[data-processing-status]')->getAttribute('data-status'));
                 self::assertStringContainsString('the owner no longer has access to personal finances', $page->locator('body')->textContent());
                 self::assertSame(0, $page->locator('[data-draft-results] tbody tr')->count());
+                $page->locator('turbo-mercure-stream-source[connected]')->waitFor(['state' => 'attached']);
+                $page->waitForFunction('() => window.snapshotHeld === true');
+                $page->evaluate('() => window.retryPageProbe = "same-document"');
+                $retry = $context->newPage();
+                try {
+                    $retry->goto($processing);
+                    $retry->getByRole('button', ['name' => 'Retry processing', 'exact' => true])->click();
+                    $page->locator('[data-processing-status][data-status="completed"]')->waitFor(['timeout' => 120000]);
+                    self::assertSame(2, $page->locator('[data-draft-results] tbody tr')->count());
+                    $page->evaluate('async () => { window.releaseFailedSnapshot(); await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve))); }');
+                    self::assertSame('completed', $page->locator('[data-processing-status]')->getAttribute('data-status'), 'A late failed snapshot must not overwrite the successful retry stream.');
+                    self::assertSame(2, $page->locator('[data-draft-results] tbody tr')->count());
+                    self::assertSame('same-document', $page->evaluate('() => window.retryPageProbe'));
+                } finally {
+                    $retry->close();
+                }
                 $page->goto($statement);
                 $download = $page->locator('.action-download')->getAttribute('href');
                 $deleteAction = $page->locator('.action-delete')->getAttribute('formaction');
