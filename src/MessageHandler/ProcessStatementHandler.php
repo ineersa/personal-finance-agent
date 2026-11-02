@@ -76,26 +76,13 @@ final readonly class ProcessStatementHandler
                 $byName[$category->name] = $category;
             }
             $rows = $this->interpreter->interpret($rows, $statement->source->instrumentKind, $catalog);
-            // No provider, byte storage or broker operations inside this short write transaction.
-            $this->entityManager->wrapInTransaction(function () use ($statement, $owner, $rows, $byName): void {
-                // The existing SQLite transaction starts IMMEDIATE. Refresh inside it so
-                // overlapping deliveries cannot both insert a set of results.
-                $this->entityManager->refresh($statement);
-                if (ProcessingStatus::Completed === $statement->processingStatus) {
-                    return;
-                }
-                $this->entityManager->refresh($owner);
-                $this->entityManager->refresh($statement->source);
-                if ($statement->getUser()->getId() !== $owner->getId() || $statement->source->getUser()->getId() !== $owner->getId() || \in_array('ROLE_ADMIN', $owner->getRoles(), true)) {
-                    throw new ImportException('Statement ownership is no longer available.');
-                }
-                foreach ($rows as $row) {
-                    $this->entityManager->persist(new Transaction($owner, $statement, $statement->source, $row->date, $row->amount, $row->currency, $row->direction, $row->description, null === $row->categoryName ? null : $byName[$row->categoryName], true, $row->meaning, $row->recurrence));
-                }
-                $statement->processingStatus = ProcessingStatus::Completed;
-                $statement->processingError = null;
-                $statement->processedAt = new \DateTimeImmutable();
-            });
+            foreach ($rows as $row) {
+                $this->entityManager->persist(new Transaction($owner, $statement, $statement->source, $row->date, $row->amount, $row->currency, $row->direction, $row->description, null === $row->categoryName ? null : $byName[$row->categoryName], true, $row->meaning, $row->recurrence));
+            }
+            $statement->processingStatus = ProcessingStatus::Completed;
+            $statement->processingError = null;
+            $statement->processedAt = new \DateTimeImmutable();
+            $this->entityManager->flush();
         } catch (\Throwable $error) {
             $safeError = $error instanceof ImportException ? $error->getMessage() : 'Processing failed. No draft results were accepted. Retry after checking storage, source configuration and provider availability.';
             if (!$this->statements->transition($message->statementId, $message->ownerId, $statement->storedFilename, ProcessingStatus::Running, ProcessingStatus::Failed, $safeError)) {
