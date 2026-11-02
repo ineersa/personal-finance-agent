@@ -19,7 +19,9 @@ final class HomepageTest extends FinanceBrowserTest
         self::assertStringNotContainsString('admin@test.com', $page->locator('body')->textContent());
         self::assertSame(0, $page->locator('.app-sidebar, .app-nav, .finance-app, .composer-preview, textarea, [aria-disabled=true]')->count());
         $page->getByRole('link', ['name' => 'Log in', 'exact' => true])->click();
-        $this->assertPageContains('Personal finance login');
+        $loginHeading = $page->getByRole('heading', ['name' => 'Personal finance login', 'exact' => true]);
+        $loginHeading->waitFor();
+        self::assertSame('Personal finance login', $loginHeading->textContent());
         self::assertSame('rgb(17, 17, 18)', $page->evaluate('() => getComputedStyle(document.body).backgroundColor'));
         self::assertSame('rgb(17, 17, 18)', $page->getByLabel('Email', ['exact' => true])->evaluate('(input) => getComputedStyle(input).backgroundColor'));
         self::assertStringEndsWith('/favicon.svg', $page->locator('link[rel=icon]')->getAttribute('href'));
