@@ -295,32 +295,29 @@ function browserImportsTest(bool $replay = false, bool $privacy = false, bool $b
     return report('browser:imports:test', ['env', 'FINANCE_IMPORT_URL='.stackUrl('browser'), 'FINANCE_IMPORT_REPLAY='.($replay ? '1' : '0'), 'FINANCE_PROXY_IP='.proxyAddress(), 'php', 'vendor/bin/phpunit', $file, ...$arguments, '--fail-on-empty-test-suite', '--log-junit', 'var/qa/browser-imports-test/junit.xml'], networked: true);
 }
 
-#[AsTask(namespace: 'browser', name: 'maintenance:test', description: 'Destructively verify reset/delete on the isolated browser stack only; restores canonical fixtures.')]
-function browserMaintenanceTest(bool $confirmReset = false): int
+#[AsTask(namespace: 'browser', name: 'lifecycle:test', description: 'Verify queued-owner role loss and native statement deletion on the isolated browser stack.')]
+function browserLifecycleTest(): int
 {
-    if (!$confirmReset) {
-        throw new \InvalidArgumentException('Pass --confirm-reset to authorize replacing all isolated browser-stack data. Development data is never targeted.');
-    }
     $root = \dirname(__DIR__);
     foreach ([$root.'/var', $root.'/var/browser-live', $root.'/var/browser-live/browser', $root.'/var/browser-live/browser/application.db'] as $path) {
         if (is_link($path)) {
-            throw new \RuntimeException('Refusing symlinked maintenance-test storage.');
+            throw new \RuntimeException('Refusing symlinked lifecycle-test storage.');
         }
     }
     if (!is_file($root.'/var/browser-live/browser/application.db')) {
-        throw new \RuntimeException('Initialize the isolated browser-stack database before destructive verification.');
+        throw new \RuntimeException('Initialize the isolated browser-stack database before lifecycle verification.');
     }
 
-    return report('browser:maintenance:test', ['vendor/bin/castor', 'browser:maintenance:test', '--confirm-reset'], runtime: false, operation: static function (): int {
-        $command = ['env', 'FINANCE_DEMO_RESET_CONFIRM=1', 'FINANCE_IMPORT_URL='.stackUrl('browser'), 'FINANCE_PROXY_IP='.proxyAddress(), 'php', 'vendor/bin/phpunit', 'tests/Live/DemoMaintenanceTest.php'];
+    return report('browser:lifecycle:test', ['vendor/bin/castor', 'browser:lifecycle:test'], runtime: false, operation: static function (): int {
+        $command = ['env', 'FINANCE_IMPORT_URL='.stackUrl('browser'), 'FINANCE_PROXY_IP='.proxyAddress(), 'php', 'vendor/bin/phpunit', 'tests/Live/StatementLifecycleTest.php'];
         try {
             stackRun('browser', ['stop', 'worker']);
-            $exit = report('browser:maintenance:busy', [...$command, '--filter', 'testBusyImports', '--fail-on-empty-test-suite'], networked: true);
+            $exit = report('browser:lifecycle:busy', [...$command, '--filter', 'testQueuedImport', '--fail-on-empty-test-suite'], networked: true);
             if (0 === $exit) {
                 // Consume deterministically while the browser-promoted owner has no finance access.
                 // An empty provider key also makes accidental interpretation fail before any HTTP call.
                 $consumer = ['exec', '-T', '--user', posix_getuid().':'.posix_getgid(), 'php', 'env', 'JEV_API_KEY=', 'php', 'bin/console', 'messenger:consume', 'statement_import', '--limit=1', '--time-limit=30', '--no-interaction', '-v'];
-                $exit = report('browser:maintenance:promoted-owner', [...stackCommand('browser'), ...$consumer], runtime: false, operation: static function () use ($consumer): int {
+                $exit = report('browser:lifecycle:promoted-owner', [...stackCommand('browser'), ...$consumer], runtime: false, operation: static function () use ($consumer): int {
                     stackRun('browser', $consumer);
 
                     return 0;
@@ -333,7 +330,7 @@ function browserMaintenanceTest(bool $confirmReset = false): int
             return $exit;
         }
 
-        return report('browser:maintenance:restore', [...$command, '--filter', 'testNativeDelete', '--fail-on-empty-test-suite'], networked: true);
+        return report('browser:lifecycle:verify', [...$command, '--filter', 'testPromotedOwner', '--fail-on-empty-test-suite'], networked: true);
     });
 }
 

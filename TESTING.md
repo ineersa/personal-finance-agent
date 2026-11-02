@@ -78,13 +78,7 @@ Reset checks queued/running statements across all users. Deletion commits the ow
 
 `ProcessStatementMessage` carries immutable stored-filename identity as well as owner/statement IDs. A matching queued import whose owner becomes an administrator fails before CSV interpretation; stale or deleted identities are ignored. Do not deploy the renamed message with old messages still queued: let the old worker finish them before the coordinated refresh. Never rewrite database statuses to bypass the busy guard.
 
-Run destructive proof only against the isolated browser stack, after its migrations/canonical fixture initialization:
-
-```sh
-vendor/bin/castor browser:maintenance:test --confirm-reset
-```
-
-This task never targets the development preview. It stops only the isolated worker for deterministic queued-import reset/delete refusals and always restarts that worker. Chromium promotes the queued import's owner through native administrator forms. A bounded native Messenger consumer handles one message while the owner is promoted, with an empty provider key preventing accidental hosted calls. Chromium then restores the role and checks the specific access-loss failure and absence of drafts. Keep the isolated queue clear of unrelated pending messages before this scenario. The test then uses the confirmed reset UI to establish canonical history even on an older isolated database, verifies native deletion of a statement with approved and draft rows, and resets again to restore history and settings. It also checks consent/CSRF refusals, administrator/foreign-owner denial, inaccessible downloads, fixture counts, restored CAD preference and invalidation of already-authenticated sessions. It replaces all isolated browser data and invalidates identifiers saved by earlier import/replay scenarios; run those scenarios again afterward if needed. No owner-preview reset is part of verification.
+Saved browser coverage deliberately does not exercise the database-reset button. Run independent import/deletion lifecycle checks against an initialized isolated browser stack with `vendor/bin/castor browser:lifecycle:test`. This task never purges or resets the database. It stops only the isolated worker, verifies refusal to delete a queued statement, promotes its owner through native administrator forms, and consumes one message with an empty provider key to prevent accidental hosted calls. The verification phase restores the role, checks the specific access-loss failure and absence of drafts, and verifies owner/admin/foreign-user deletion boundaries and CSRF. It deletes only the synthetic upload and temporary user created by the scenario. Keep the isolated queue free of unrelated pending messages. The worker is restarted in a finalizer; interrupted runs may require scoped worker recovery.
 
 The development and browser stacks start the native sqlite-queue broker and stock `messenger:consume statement_import --keepalive=5` worker. Browser services share only `var/browser-live`: the application database is `browser/application.db`, private uploads are `browser/statements`, and broker SQLite/socket are `queue/broker.db` and `queue/broker.sock`. The broker owns its schema. Its 300-second reservation is renewed by Messenger; no provider call or broker publication runs inside an application write transaction.
 
@@ -238,7 +232,7 @@ Implement browser scenarios alongside each supported feature:
 - Financial questions: synthetic history with known expected totals for subscriptions, yearly income, and internet bills. Assert results, not just the presence of answer text.
 - Chat and inline output: input, safe text/table rendering, streamed updates, completed chart images, failure states, and reload/reconnect recovery. Include real worker/broker/Mercure delivery checks.
 - Untrusted content: uploaded and model-supplied text must not execute scripts or render unsafe HTML.
-- Administration: account management and authorized reset behavior once reset scope and safeguards are defined.
+- Administration: account management and role-based access boundaries.
 
 ### Statement conversion
 

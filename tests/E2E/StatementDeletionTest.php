@@ -32,7 +32,7 @@ final class StatementDeletionTest extends FinanceBrowserTest
         }
     }
 
-    public function testCleanupNeverDeletesAFileStillReferencedAfterAnIncompleteReset(): void
+    public function testCleanupNeverDeletesAReferencedFile(): void
     {
         $fixtures = FixtureStore::getFixtures();
         $retained = $fixtures['demo_statement'];
@@ -43,10 +43,12 @@ final class StatementDeletionTest extends FinanceBrowserTest
         $page = $this->visit('/home/statement/'.$fixtures['demo_card_statement']->getId());
         $page->locator('.action-delete')->click();
         $this->submit(static fn () => $page->locator('#modal-action-confirmation-button')->click());
-        $page->getByRole('heading', ['name' => 'Statements', 'exact' => true])->waitFor();
+        $page->locator('body.ea-index')->waitFor();
+        self::assertResponseIsSuccessful();
         $download = $page->evaluate('async url => { const r = await fetch(url); return {status: r.status, body: await r.text()}; }', '/home/statement/'.$retained->getId().'/download');
         self::assertSame(200, $download['status']);
         self::assertSame($retained->sha256, hash('sha256', $download['body']));
+        self::assertSame(404, $page->evaluate('async url => (await fetch(url)).status', '/home/statement/'.$fixtures['demo_card_statement']->getId()));
     }
 
     public function testFailedDatabaseRemovalKeepsOriginalDownloadable(): void
@@ -110,7 +112,9 @@ final class StatementDeletionTest extends FinanceBrowserTest
         $page = $this->visit('/home/statement/'.$second->getId());
         $page->locator('.action-delete')->click();
         $this->submit(static fn () => $page->locator('#modal-action-confirmation-button')->click());
-        $page->getByRole('heading', ['name' => 'Statements', 'exact' => true])->waitFor();
+        $page->locator('body.ea-index')->waitFor();
+        self::assertResponseIsSuccessful();
+        self::assertSame(404, $page->evaluate('async url => (await fetch(url)).status', '/home/statement/'.$second->getId()));
         self::assertFileDoesNotExist($path);
         self::assertSame(0, (int) $connection->fetchOne('SELECT COUNT(*) FROM pending_statement_file_cleanup'));
     }
