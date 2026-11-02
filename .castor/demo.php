@@ -6,6 +6,12 @@ namespace AppTasks;
 
 use Castor\Attribute\AsTask;
 
+#[AsTask(namespace: 'demo', name: 'statements:inspect', description: 'Paid Jev diagnostic using only the three committed synthetic holdouts; no database writes.')]
+function demoStatementsInspect(): int
+{
+    return report('demo:statements:inspect', ['php', 'bin/console', 'app:demo:inspect-statements', '--no-interaction', '--no-debug'], jev: true);
+}
+
 #[AsTask(namespace: 'demo', name: 'statements:generate', description: 'Regenerate invented monthly CSV inputs and expected outcomes; never accesses a database or provider.')]
 function demoStatementsGenerate(): int
 {
@@ -37,7 +43,25 @@ function demoStatementsGenerate(): int
                 } finally {
                     fclose($file);
                 }
-                $manifest['statements'][] = ['file' => $relative, 'source_fixture' => ['chequing' => 'demo_current', 'credit' => 'demo_card', 'usd' => 'demo_usd'][$source], 'currency' => 'usd' === $source ? 'USD' : 'CAD', 'purpose' => 23 === $month ? 'upload_holdout' : 'history_pending_pipeline', 'rows' => $rows];
+                $totals = ['spending_debits' => 0, 'refund_credits' => 0, 'income_credits' => 0, 'unresolved_rows' => 0];
+                foreach ($rows as $row) {
+                    $cents = (int) str_replace('.', '', $row['amount']);
+                    if ('expense' === $row['meaning'] && 'debit' === $row['direction']) {
+                        $totals['spending_debits'] += $cents;
+                    } elseif ('refund' === $row['meaning'] && 'credit' === $row['direction']) {
+                        $totals['refund_credits'] += $cents;
+                    } elseif ('income' === $row['meaning'] && 'credit' === $row['direction']) {
+                        $totals['income_credits'] += $cents;
+                    } elseif ('unknown' === $row['meaning']) {
+                        ++$totals['unresolved_rows'];
+                    }
+                }
+                $expectedTotals = [];
+                foreach (['spending_debits', 'refund_credits', 'income_credits'] as $key) {
+                    $expectedTotals[$key] = intdiv($totals[$key], 100).'.'.str_pad((string) ($totals[$key] % 100), 2, '0', \STR_PAD_LEFT);
+                }
+                $expectedTotals['unresolved_rows'] = $totals['unresolved_rows'];
+                $manifest['statements'][] = ['file' => $relative, 'source_fixture' => ['chequing' => 'demo_current', 'credit' => 'demo_card', 'usd' => 'demo_usd'][$source], 'currency' => 'usd' === $source ? 'USD' : 'CAD', 'purpose' => 23 === $month ? 'upload_holdout' : 'history_pending_pipeline', 'expected_totals' => $expectedTotals, 'rows' => $rows];
             }
         }
         file_put_contents($root.'/expected.json', json_encode($manifest, \JSON_PRETTY_PRINT | \JSON_THROW_ON_ERROR)."\n");
@@ -56,12 +80,13 @@ function demoMonthlyRows(string $source, int $month, string $period): array
     };
     // Deterministic invented variation, independent of personal statements and global RNG state.
     $variation = static fn (int $salt, int $range): int => (int) hexdec(substr(hash('sha256', $source.':'.$month.':'.$salt), 0, 6)) % $range;
+    $cardPayment = 88000 + (int) hexdec(substr(hash('sha256', 'card-payment:'.$month), 0, 6)) % 45000;
     if ('chequing' === $source) {
         $add(1, 'PAYROLL LANTERN LABS', 286000 + intdiv($month, 6) * 8500, 'credit', 'salary', 'income', 'other_recurring');
         $add(2, 'RENT WILLOW COURT monthly', 148000, 'debit', 'housing', 'expense', 'recurring_bill');
         $add(5, 'CEDARLINE INTERNET monthly service', 7295, 'debit', 'internet_phone', 'expense', 'recurring_bill');
         $add(8, 'RIVERLIGHT ELECTRIC monthly bill', 6500 + $variation(1, 8500), 'debit', 'utilities', 'expense', 'recurring_bill');
-        $add(12, 'PAYMENT TO OWN DEMO CREDIT CARD', 88000 + $variation(2, 45000), 'debit', 'card_payments', 'credit_card_payment', 'other_recurring');
+        $add(12, 'PAYMENT TO OWN DEMO CREDIT CARD', $cardPayment, 'debit', 'card_payments', 'credit_card_payment', 'other_recurring');
         $add(15, 'PAYROLL LANTERN LABS', 286000 + intdiv($month, 6) * 8500, 'credit', 'salary', 'income', 'other_recurring');
         $add(18, 'TRANSFER TO OWN DEMO USD ACCOUNT', 40000 + $variation(3, 8000), 'debit', 'transfers', 'own_account_transfer');
         $add(21, 'LOAN PAYMENT monthly', 18500, 'debit', 'loans', 'expense', 'recurring_bill');
@@ -77,7 +102,7 @@ function demoMonthlyRows(string $source, int $month, string $period): array
         $add(6, 'NORTHPATH TRANSIT PASS monthly', 10400, 'debit', 'transportation', 'expense', 'recurring_bill');
         $add(7, 'GREENLEAF PHARMACY', 1800 + $variation(8, 6000), 'debit', 'health');
         $add(9, 'CLOUDHARBOR MOBILE monthly plan', 4500, 'debit', 'internet_phone', 'expense', 'recurring_bill');
-        $add(12, 'PAYMENT RECEIVED FROM OWN DEMO CHEQUING', 88000 + $variation(9, 45000), 'credit', 'card_payments', 'credit_card_payment', 'other_recurring');
+        $add(12, 'PAYMENT RECEIVED FROM OWN DEMO CHEQUING', $cardPayment, 'credit', 'card_payments', 'credit_card_payment', 'other_recurring');
         $add(14, 'OAK TRAIL OUTFITTERS jacket', 6800 + $variation(10, 11000), 'debit', 'shopping');
         $add(19, 'MOSS COMMUNITY THEATRE', 2400 + $variation(11, 3000), 'debit', 'entertainment');
         $add(20, 'BRIGHT PAGES evening course', 6500 + $variation(12, 5000), 'debit', 'education');

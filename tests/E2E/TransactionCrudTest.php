@@ -30,7 +30,7 @@ final class TransactionCrudTest extends FinanceBrowserTest
         $this->submit(static fn () => $page->locator('button[name="ea[newForm][btn]"], button[name="ea[editForm][btn]"]')->first()->click());
         Expect::locator($page->getByText('This value is not valid'))->toBeVisible();
         $page = $this->visit('/home/settings');
-        self::assertSame('USD', $page->getByLabel('Reporting currency')->inputValue());
+        self::assertSame('CAD', $page->getByLabel('Reporting currency')->inputValue());
         $page->getByLabel('Reporting currency')->selectOption('EUR');
         $this->submit(static fn () => $page->getByRole('button', ['name' => 'Save preferences'])->click());
         $this->assertPageContains('Reporting currency saved');

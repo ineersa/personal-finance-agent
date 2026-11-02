@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "8554bf0bff80a83657c677ee09934d41",
+    "content-hash": "9f9b0529774ca1e1cd55e2bd9f11ec38",
     "packages": [
         {
             "name": "composer/semver",
@@ -2342,6 +2342,88 @@
             "published-time": "2026-10-26T14:11:20+00:00"
         },
         {
+            "name": "symfony/ai-decision-platform",
+            "version": "v1.0.0-BETA1",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/symfony/ai-decision-platform.git",
+                "reference": "bd71aa6e0f19f3fe92cca10a4460446d85f1d3df"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/symfony/ai-decision-platform/zipball/bd71aa6e0f19f3fe92cca10a4460446d85f1d3df",
+                "reference": "bd71aa6e0f19f3fe92cca10a4460446d85f1d3df",
+                "shasum": ""
+            },
+            "require": {
+                "php": ">=8.2",
+                "symfony/ai-platform": "^1.0"
+            },
+            "require-dev": {
+                "phpstan/phpstan": "^2.1",
+                "phpstan/phpstan-phpunit": "^2.0",
+                "phpstan/phpstan-strict-rules": "^2.0",
+                "phpunit/phpunit": "^11.5.53"
+            },
+            "type": "symfony-ai-platform",
+            "extra": {
+                "thanks": {
+                    "url": "https://github.com/symfony/ai",
+                    "name": "symfony/ai"
+                }
+            },
+            "autoload": {
+                "psr-4": {
+                    "Symfony\\AI\\Platform\\Bridge\\Decision\\": ""
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "Yoan Bernabeu",
+                    "email": "yoan.bernabeu@gmail.com"
+                },
+                {
+                    "name": "Symfony Community",
+                    "homepage": "https://symfony.com/contributors"
+                }
+            ],
+            "description": "Decision platform bridge for Symfony AI",
+            "keywords": [
+                "Bridge",
+                "ai",
+                "classification",
+                "decision",
+                "platform"
+            ],
+            "support": {
+                "source": "https://github.com/symfony/ai-decision-platform/tree/v1.0.0-BETA1"
+            },
+            "funding": [
+                {
+                    "url": "https://symfony.com/sponsor",
+                    "type": "custom"
+                },
+                {
+                    "url": "https://github.com/fabpot",
+                    "type": "github"
+                },
+                {
+                    "url": "https://github.com/nicolas-grekas",
+                    "type": "github"
+                },
+                {
+                    "url": "https://tidelift.com/funding/github/packagist/symfony/symfony",
+                    "type": "tidelift"
+                }
+            ],
+            "time": "2026-10-26T14:03:07+00:00",
+            "published-time": "2026-10-26T14:09:47+00:00"
+        },
+        {
             "name": "symfony/ai-platform",
             "version": "v1.0.0-BETA1",
             "source": {
@@ -2481,6 +2563,91 @@
             ],
             "time": "2026-10-26T14:03:07+00:00",
             "published-time": "2026-10-26T14:11:20+00:00"
+        },
+        {
+            "name": "symfony/ai-type-safe-platform",
+            "version": "v1.0.0-BETA1",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/symfony/ai-type-safe-platform.git",
+                "reference": "ad6339c93977db88bccc0c7d3a1f1d4da8715bd4"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/symfony/ai-type-safe-platform/zipball/ad6339c93977db88bccc0c7d3a1f1d4da8715bd4",
+                "reference": "ad6339c93977db88bccc0c7d3a1f1d4da8715bd4",
+                "shasum": ""
+            },
+            "require": {
+                "php": ">=8.2",
+                "symfony/ai-decision-platform": "^1.0",
+                "symfony/ai-platform": "^1.0",
+                "symfony/http-client": "^7.3|^8.0"
+            },
+            "require-dev": {
+                "phpstan/phpstan": "^2.1",
+                "phpstan/phpstan-phpunit": "^2.0",
+                "phpstan/phpstan-strict-rules": "^2.0",
+                "phpunit/phpunit": "^11.5.53"
+            },
+            "type": "symfony-ai-platform",
+            "extra": {
+                "thanks": {
+                    "url": "https://github.com/symfony/ai",
+                    "name": "symfony/ai"
+                }
+            },
+            "autoload": {
+                "psr-4": {
+                    "Symfony\\AI\\Platform\\Bridge\\TypeSafe\\": ""
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "Yoan Bernabeu",
+                    "email": "yoan.bernabeu@gmail.com"
+                },
+                {
+                    "name": "Symfony Community",
+                    "homepage": "https://symfony.com/contributors"
+                }
+            ],
+            "description": "TypeSafe platform bridge for Symfony AI",
+            "keywords": [
+                "Bridge",
+                "ai",
+                "classification",
+                "jev",
+                "platform",
+                "typesafe"
+            ],
+            "support": {
+                "source": "https://github.com/symfony/ai-type-safe-platform/tree/v1.0.0-BETA1"
+            },
+            "funding": [
+                {
+                    "url": "https://symfony.com/sponsor",
+                    "type": "custom"
+                },
+                {
+                    "url": "https://github.com/fabpot",
+                    "type": "github"
+                },
+                {
+                    "url": "https://github.com/nicolas-grekas",
+                    "type": "github"
+                },
+                {
+                    "url": "https://tidelift.com/funding/github/packagist/symfony/symfony",
+                    "type": "tidelift"
+                }
+            ],
+            "time": "2026-10-26T14:03:07+00:00",
+            "published-time": "2026-10-26T14:08:43+00:00"
         },
         {
             "name": "symfony/asset",

@@ -14,7 +14,7 @@ function toolingImage(): string
 /** @param list<string> $command
  * @return list<string>
  */
-function runtimeCommand(array $command, string $container, bool $headed, bool $networked = false): array
+function runtimeCommand(array $command, string $container, bool $headed, bool $networked = false, bool $jev = false): array
 {
     $root = \dirname(__DIR__);
     if (!is_dir($root.'/var/tooling/home')) {
@@ -23,6 +23,14 @@ function runtimeCommand(array $command, string $container, bool $headed, bool $n
     $docker = ['docker', 'run', '--rm', '--init', '--name', $container, '--label', 'finance.qa.owner='.hash('sha256', $root), '--user', posix_getuid().':'.posix_getgid(), '--volume', $root.':/app', '--env', 'XDG_CONFIG_HOME=/app/var/tooling/home/.config', '--env', 'XDG_CACHE_HOME=/app/var/tooling/home/.cache'];
     if ($networked) {
         $docker = [...$docker, '--network', developmentNetwork()];
+    }
+    if ($jev) {
+        // Docker inherits the value; command/report arguments contain only variable names, never secrets.
+        foreach (['JEV_API_KEY', 'JEV_BASE_URL', 'JEV_MODEL'] as $variable) {
+            if (false !== getenv($variable)) {
+                $docker = [...$docker, '--env', $variable];
+            }
+        }
     }
     if ($headed) {
         $display = getenv('DISPLAY');

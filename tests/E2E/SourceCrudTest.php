@@ -24,6 +24,8 @@ final class SourceCrudTest extends FinanceBrowserTest
         self::assertStringEndsWith('/favicon.svg', $page->locator('link[rel="shortcut icon"]')->getAttribute('href'));
         $page->getByLabel('Name', ['exact' => true])->fill('<script>window.financeInjected=true</script>');
         $page->getByLabel('Description', ['exact' => true])->fill('Synthetic source created through the browser');
+        $page->getByLabel('Currency', ['exact' => true])->fill('CAD');
+        $page->getByLabel('Instrument kind')->selectOption('credit_card');
         $this->submit(static fn () => $page->locator('button[name="ea[newForm][btn]"], button[name="ea[editForm][btn]"]')->first()->click());
         $page = $this->visit('/home/source');
         self::assertStringContainsString('<script>window.financeInjected=true</script>', $page->locator('body')->textContent());
@@ -35,6 +37,8 @@ final class SourceCrudTest extends FinanceBrowserTest
         $this->submit(static fn () => $page->locator('button[name="ea[newForm][btn]"], button[name="ea[editForm][btn]"]')->first()->click());
         $page->goto($editUrl);
         self::assertSame('Browser renamed account', $page->getByLabel('Name', ['exact' => true])->inputValue());
+        self::assertSame('CAD', $page->getByLabel('Currency', ['exact' => true])->inputValue());
+        self::assertSame('credit_card', $page->getByLabel('Instrument kind')->inputValue());
         $page->getByLabel('Name', ['exact' => true])->fill('');
         $page->evaluate('() => document.querySelector("form[name=Source]").noValidate = true');
         $this->submit(static fn () => $page->locator('button[name="ea[newForm][btn]"], button[name="ea[editForm][btn]"]')->first()->click());

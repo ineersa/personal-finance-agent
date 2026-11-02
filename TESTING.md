@@ -211,22 +211,31 @@ Cover [ADR 0015](docs/adr/0015-sqlite-conversation-history.md) through Playwrigh
 - Keep queued/running conversations protected. Exercise creation when no eligible victim exists; verify no protected deletion or silent count increase without assuming a new admission policy.
 - Race Save chat, new-chat creation, and work admission in separate browser contexts. Verify atomic counts and protection of newly saved or queued/running conversations.
 - Verify pruning leaves source financial data and accounting/idempotency information needed for admitted work intact. Use bounded test-owned diagnostics when browser output alone cannot establish this.
-- Distinguish the five stored temporary chats from the unchanged shared one-active-generation-per-user limit. Do not infer unlimited context, cross-provider compatibility, a TTL, or permanent remote image availability from saved history.
+- Distinguish the five stored temporary chats from provider context limits. AI admission quotas are deferred by ADR 0021. Do not infer unlimited context, cross-provider compatibility, a TTL, or permanent remote image availability from saved history.
 
-### Rate limits and budgets
+### Upload limits and deferred quotas
 
-Cover [ADR 0011](docs/adr/0011-layered-rate-limiting.md) through Playwright scenarios with isolated synthetic users and explicitly configured test thresholds:
+Follow [ADR 0021](docs/adr/0021-fixtures-first-jev-import.md), which supersedes ADR 0011. Verify the 10 MiB per-file upload limit and existing login throttling. Upload frequency, daily bytes, retained-storage quotas, shared AI allowances, one-active-generation-per-user admission, pending/global capacity and AI budgets are deferred. Do not build quota scenarios or accounting infrastructure for the current import slice.
 
-- Exercise login throttling, AI burst/daily allowances, upload count/size/byte limits, and retained-storage quotas. Assert clear refusal messages, `429` and `Retry-After` where applicable, and continued read access to existing records.
-- Use two users sharing an IP to verify separate user allowances below the coarse IP threshold. Verify that chat and AI extraction share one user's AI allowance.
-- Submit competing actions from separate browser contexts to verify active/pending/global limits and atomic admission. Establish that rejected actions create no jobs or provider work, not merely that the UI displays an error.
-- Exercise actual worker delivery, provider retries, and duplicate messages through browser-triggered workflows. Verify that additional provider usage counts without counting a redelivered submission twice, and that exhausted shared budgets prevent further provider calls.
-- Verify that normal cache clearing and an authorized financial demo reset preserve quota/budget accounting. Test the configured daily reset boundary without arbitrary long sleeps.
-- Exercise web-server/PHP upload rejection and trusted-proxy behavior against the isolated running stack, not only intercepted-kernel browser requests.
+Rejected oversized uploads must not enqueue work. Malformed CSV processing must fail visibly without accepted draft rows. Cover storage-write failure and metadata compensation through the real upload flow once available. Exercise redelivery without duplicate drafts and owner isolation against real isolated web/broker/worker processes. Test web-server/PHP upload rejection against that stack, not only intercepted requests.
 
-Use bounded test-owned diagnostics to corroborate job and usage counts when the browser result alone cannot establish them. Do not add a non-browser test suite. Provider fixtures can verify accounting logic but do not prove real provider billing accuracy.
+### Synthetic Jev diagnostics
 
-Document how a scenario controls provider responses. Do not claim that a mocked response proves a real model/provider integration. Select the exact provider testing arrangement during bootstrap.
+`vendor/bin/castor demo:statements:generate` deterministically regenerates 72 invented monthly files and known expected outcomes. It does not access a provider or database. October 2026 remains the three upload holdouts. `expected.json` also records per-statement exact expected spending debits, refund credits, income credits and unresolved-row counts. Confirmed own-account-transfer and credit-card-payment meanings contribute to neither spending nor income, independently of category or matched counterparts. Unknown meanings require review, not automatic exclusion. These totals are synthetic expectations, not implemented SQL reporting or model outputs; do not sum CAD and USD without conversion.
+
+With paid synthetic requests authorized and `JEV_API_KEY` exported locally, run:
+
+```console
+vendor/bin/castor demo:statements:inspect
+```
+
+This diagnostic sends only the three committed synthetic October files through the installed Symfony AI TypeSafe/Decision bridges. The disposable tooling container receives the key by environment-variable name, never through a literal command argument. Optional server-side `JEV_BASE_URL` and `JEV_MODEL` default to `https://api.typesafe.ai` and `jev-1.14.0`. A local endpoint must implement the same API; compatibility is not established merely by changing the URL. The client is not profiler-traced and provider exception payloads are not logged.
+
+Read `var/qa/demo-statements-inspect/result.json` for task status and `var/demo-interpretation/result.json` for synthetic interpreted values. The command does not persist financial records, approve drafts, seed history or prove an upload/worker integration. It accepts no arbitrary input path. Application behavior coverage remains browser-only.
+
+The initial parser supports UTF-8 comma-separated records, consistent 4–12 fields, ISO `YYYY-MM-DD` dates and separate unsigned decimal-string debit/credit columns with exactly one populated per transaction. Optional header detection and column selection are Jev decisions over at most eight complete, length-bounded sample rows. Sampling prioritizes distinct empty/nonempty patterns so a rare incoming payment is not lost. Currency comes from the trusted selected source; extra account identifiers never select or authorize a source. Ambiguous mappings fail instead of guessing. Other delimiters, signed-single-amount layouts, localized numbers/dates and mixed-currency files are not yet supported.
+
+Interpretation batches at most eight same-source records and asks separate support questions for meaning, category and recurrence. Unknown is valid; generated recurrence labels may describe a schedule not observable from one month alone. Review historical outcomes before canonical fixture export. No historical finalization or production auto-approval is implemented yet.
 
 ## Evidence and privacy
 

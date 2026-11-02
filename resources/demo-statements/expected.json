@@ -9,6 +9,12 @@
             "source_fixture": "demo_current",
             "currency": "CAD",
             "purpose": "history_pending_pipeline",
+            "expected_totals": {
+                "spending_debits": "1880.76",
+                "refund_credits": "0.00",
+                "income_credits": "5721.19",
+                "unresolved_rows": 0
+            },
             "rows": [
                 {
                     "date": "2024-11-01",
@@ -49,7 +55,7 @@
                 {
                     "date": "2024-11-12",
                     "description": "PAYMENT TO OWN DEMO CREDIT CARD",
-                    "amount": "1038.75",
+                    "amount": "1170.66",
                     "direction": "debit",
                     "category": "card_payments",
                     "meaning": "credit_card_payment",
@@ -116,6 +122,12 @@
             "source_fixture": "demo_card",
             "currency": "CAD",
             "purpose": "history_pending_pipeline",
+            "expected_totals": {
+                "spending_debits": "1245.49",
+                "refund_credits": "77.28",
+                "income_credits": "0.00",
+                "unresolved_rows": 0
+            },
             "rows": [
                 {
                     "date": "2024-11-03",
@@ -192,7 +204,7 @@
                 {
                     "date": "2024-11-12",
                     "description": "PAYMENT RECEIVED FROM OWN DEMO CHEQUING",
-                    "amount": "913.65",
+                    "amount": "1170.66",
                     "direction": "credit",
                     "category": "card_payments",
                     "meaning": "credit_card_payment",
@@ -295,6 +307,12 @@
             "source_fixture": "demo_usd",
             "currency": "USD",
             "purpose": "history_pending_pipeline",
+            "expected_totals": {
+                "spending_debits": "248.09",
+                "refund_credits": "25.00",
+                "income_credits": "0.00",
+                "unresolved_rows": 1
+            },
             "rows": [
                 {
                     "date": "2024-11-02",
@@ -357,6 +375,12 @@
             "source_fixture": "demo_current",
             "currency": "CAD",
             "purpose": "history_pending_pipeline",
+            "expected_totals": {
+                "spending_debits": "1878.00",
+                "refund_credits": "0.00",
+                "income_credits": "5720.72",
+                "unresolved_rows": 0
+            },
             "rows": [
                 {
                     "date": "2024-12-01",
@@ -397,7 +421,7 @@
                 {
                     "date": "2024-12-12",
                     "description": "PAYMENT TO OWN DEMO CREDIT CARD",
-                    "amount": "1161.70",
+                    "amount": "917.57",
                     "direction": "debit",
                     "category": "card_payments",
                     "meaning": "credit_card_payment",
@@ -464,6 +488,12 @@
             "source_fixture": "demo_card",
             "currency": "CAD",
             "purpose": "history_pending_pipeline",
+            "expected_totals": {
+                "spending_debits": "964.82",
+                "refund_credits": "0.00",
+                "income_credits": "0.00",
+                "unresolved_rows": 0
+            },
             "rows": [
                 {
                     "date": "2024-12-03",
@@ -540,7 +570,7 @@
                 {
                     "date": "2024-12-12",
                     "description": "PAYMENT RECEIVED FROM OWN DEMO CHEQUING",
-                    "amount": "1201.62",
+                    "amount": "917.57",
                     "direction": "credit",
                     "category": "card_payments",
                     "meaning": "credit_card_payment",
@@ -625,6 +655,12 @@
             "source_fixture": "demo_usd",
             "currency": "USD",
             "purpose": "history_pending_pipeline",
+            "expected_totals": {
+                "spending_debits": "12.45",
+                "refund_credits": "0.00",
+                "income_credits": "0.00",
+                "unresolved_rows": 1
+            },
             "rows": [
                 {
                     "date": "2024-12-02",
@@ -669,6 +705,12 @@
             "source_fixture": "demo_current",
             "currency": "CAD",
             "purpose": "history_pending_pipeline",
+            "expected_totals": {
+                "spending_debits": "1866.70",
+                "refund_credits": "0.00",
+                "income_credits": "5720.56",
+                "unresolved_rows": 0
+            },
             "rows": [
                 {
                     "date": "2025-01-01",
@@ -709,7 +751,7 @@
                 {
                     "date": "2025-01-12",
                     "description": "PAYMENT TO OWN DEMO CREDIT CARD",
-                    "amount": "1204.08",
+                    "amount": "1121.29",
                     "direction": "debit",
                     "category": "card_payments",
                     "meaning": "credit_card_payment",
@@ -776,6 +818,12 @@
             "source_fixture": "demo_card",
             "currency": "CAD",
             "purpose": "history_pending_pipeline",
+            "expected_totals": {
+                "spending_debits": "977.13",
+                "refund_credits": "0.00",
+                "income_credits": "0.00",
+                "unresolved_rows": 0
+            },
             "rows": [
                 {
                     "date": "2025-01-03",
@@ -852,7 +900,7 @@
                 {
                     "date": "2025-01-12",
                     "description": "PAYMENT RECEIVED FROM OWN DEMO CHEQUING",
-                    "amount": "943.16",
+                    "amount": "1121.29",
                     "direction": "credit",
                     "category": "card_payments",
                     "meaning": "credit_card_payment",
@@ -937,6 +985,12 @@
             "source_fixture": "demo_usd",
             "currency": "USD",
             "purpose": "history_pending_pipeline",
+            "expected_totals": {
+                "spending_debits": "12.45",
+                "refund_credits": "0.00",
+                "income_credits": "0.00",
+                "unresolved_rows": 1
+            },
             "rows": [
                 {
                     "date": "2025-01-02",
@@ -981,6 +1035,12 @@
             "source_fixture": "demo_current",
             "currency": "CAD",
             "purpose": "history_pending_pipeline",
+            "expected_totals": {
+                "spending_debits": "1866.00",
+                "refund_credits": "0.00",
+                "income_credits": "5720.61",
+                "unresolved_rows": 0
+            },
             "rows": [
                 {
                     "date": "2025-02-01",
@@ -1021,7 +1081,7 @@
                 {
                     "date": "2025-02-12",
                     "description": "PAYMENT TO OWN DEMO CREDIT CARD",
-                    "amount": "1085.89",
+                    "amount": "1312.88",
                     "direction": "debit",
                     "category": "card_payments",
                     "meaning": "credit_card_payment",
@@ -1088,6 +1148,12 @@
             "source_fixture": "demo_card",
             "currency": "CAD",
             "purpose": "history_pending_pipeline",
+            "expected_totals": {
+                "spending_debits": "909.31",
+                "refund_credits": "160.32",
+                "income_credits": "0.00",
+                "unresolved_rows": 0
+            },
             "rows": [
                 {
                     "date": "2025-02-03",
@@ -1164,7 +1230,7 @@
                 {
                     "date": "2025-02-12",
                     "description": "PAYMENT RECEIVED FROM OWN DEMO CHEQUING",
-                    "amount": "1031.65",
+                    "amount": "1312.88",
                     "direction": "credit",
                     "category": "card_payments",
                     "meaning": "credit_card_payment",
@@ -1258,6 +1324,12 @@
             "source_fixture": "demo_usd",
             "currency": "USD",
             "purpose": "history_pending_pipeline",
+            "expected_totals": {
+                "spending_debits": "12.45",
+                "refund_credits": "0.00",
+                "income_credits": "0.00",
+                "unresolved_rows": 1
+            },
             "rows": [
                 {
                     "date": "2025-02-02",
@@ -1302,6 +1374,12 @@
             "source_fixture": "demo_current",
             "currency": "CAD",
             "purpose": "history_pending_pipeline",
+            "expected_totals": {
+                "spending_debits": "1867.44",
+                "refund_credits": "0.00",
+                "income_credits": "5721.04",
+                "unresolved_rows": 0
+            },
             "rows": [
                 {
                     "date": "2025-03-01",
@@ -1342,7 +1420,7 @@
                 {
                     "date": "2025-03-12",
                     "description": "PAYMENT TO OWN DEMO CREDIT CARD",
-                    "amount": "1135.82",
+                    "amount": "934.83",
                     "direction": "debit",
                     "category": "card_payments",
                     "meaning": "credit_card_payment",
@@ -1409,6 +1487,12 @@
             "source_fixture": "demo_card",
             "currency": "CAD",
             "purpose": "history_pending_pipeline",
+            "expected_totals": {
+                "spending_debits": "905.03",
+                "refund_credits": "0.00",
+                "income_credits": "0.00",
+                "unresolved_rows": 0
+            },
             "rows": [
                 {
                     "date": "2025-03-03",
@@ -1485,7 +1569,7 @@
                 {
                     "date": "2025-03-12",
                     "description": "PAYMENT RECEIVED FROM OWN DEMO CHEQUING",
-                    "amount": "1217.05",
+                    "amount": "934.83",
                     "direction": "credit",
                     "category": "card_payments",
                     "meaning": "credit_card_payment",
@@ -1570,6 +1654,12 @@
             "source_fixture": "demo_usd",
             "currency": "USD",
             "purpose": "history_pending_pipeline",
+            "expected_totals": {
+                "spending_debits": "303.95",
+                "refund_credits": "25.00",
+                "income_credits": "0.00",
+                "unresolved_rows": 1
+            },
             "rows": [
                 {
                     "date": "2025-03-02",
@@ -1632,6 +1722,12 @@
             "source_fixture": "demo_current",
             "currency": "CAD",
             "purpose": "history_pending_pipeline",
+            "expected_totals": {
+                "spending_debits": "1879.95",
+                "refund_credits": "0.00",
+                "income_credits": "5720.54",
+                "unresolved_rows": 0
+            },
             "rows": [
                 {
                     "date": "2025-04-01",
@@ -1672,7 +1768,7 @@
                 {
                     "date": "2025-04-12",
                     "description": "PAYMENT TO OWN DEMO CREDIT CARD",
-                    "amount": "903.60",
+                    "amount": "1257.67",
                     "direction": "debit",
                     "category": "card_payments",
                     "meaning": "credit_card_payment",
@@ -1739,6 +1835,12 @@
             "source_fixture": "demo_card",
             "currency": "CAD",
             "purpose": "history_pending_pipeline",
+            "expected_totals": {
+                "spending_debits": "963.85",
+                "refund_credits": "0.00",
+                "income_credits": "0.00",
+                "unresolved_rows": 0
+            },
             "rows": [
                 {
                     "date": "2025-04-03",
@@ -1815,7 +1917,7 @@
                 {
                     "date": "2025-04-12",
                     "description": "PAYMENT RECEIVED FROM OWN DEMO CHEQUING",
-                    "amount": "1181.37",
+                    "amount": "1257.67",
                     "direction": "credit",
                     "category": "card_payments",
                     "meaning": "credit_card_payment",
@@ -1900,6 +2002,12 @@
             "source_fixture": "demo_usd",
             "currency": "USD",
             "purpose": "history_pending_pipeline",
+            "expected_totals": {
+                "spending_debits": "12.45",
+                "refund_credits": "0.00",
+                "income_credits": "0.00",
+                "unresolved_rows": 1
+            },
             "rows": [
                 {
                     "date": "2025-04-02",
@@ -1944,6 +2052,12 @@
             "source_fixture": "demo_current",
             "currency": "CAD",
             "purpose": "history_pending_pipeline",
+            "expected_totals": {
+                "spending_debits": "1831.57",
+                "refund_credits": "0.00",
+                "income_credits": "5890.79",
+                "unresolved_rows": 0
+            },
             "rows": [
                 {
                     "date": "2025-05-01",
@@ -1984,7 +2098,7 @@
                 {
                     "date": "2025-05-12",
                     "description": "PAYMENT TO OWN DEMO CREDIT CARD",
-                    "amount": "1217.09",
+                    "amount": "1072.73",
                     "direction": "debit",
                     "category": "card_payments",
                     "meaning": "credit_card_payment",
@@ -2051,6 +2165,12 @@
             "source_fixture": "demo_card",
             "currency": "CAD",
             "purpose": "history_pending_pipeline",
+            "expected_totals": {
+                "spending_debits": "1107.08",
+                "refund_credits": "113.24",
+                "income_credits": "0.00",
+                "unresolved_rows": 0
+            },
             "rows": [
                 {
                     "date": "2025-05-03",
@@ -2127,7 +2247,7 @@
                 {
                     "date": "2025-05-12",
                     "description": "PAYMENT RECEIVED FROM OWN DEMO CHEQUING",
-                    "amount": "947.04",
+                    "amount": "1072.73",
                     "direction": "credit",
                     "category": "card_payments",
                     "meaning": "credit_card_payment",
@@ -2221,6 +2341,12 @@
             "source_fixture": "demo_usd",
             "currency": "USD",
             "purpose": "history_pending_pipeline",
+            "expected_totals": {
+                "spending_debits": "12.45",
+                "refund_credits": "0.00",
+                "income_credits": "0.00",
+                "unresolved_rows": 1
+            },
             "rows": [
                 {
                     "date": "2025-05-02",
@@ -2265,6 +2391,12 @@
             "source_fixture": "demo_current",
             "currency": "CAD",
             "purpose": "history_pending_pipeline",
+            "expected_totals": {
+                "spending_debits": "1887.55",
+                "refund_credits": "0.00",
+                "income_credits": "5890.69",
+                "unresolved_rows": 0
+            },
             "rows": [
                 {
                     "date": "2025-06-01",
@@ -2305,7 +2437,7 @@
                 {
                     "date": "2025-06-12",
                     "description": "PAYMENT TO OWN DEMO CREDIT CARD",
-                    "amount": "1283.23",
+                    "amount": "1043.18",
                     "direction": "debit",
                     "category": "card_payments",
                     "meaning": "credit_card_payment",
@@ -2372,6 +2504,12 @@
             "source_fixture": "demo_card",
             "currency": "CAD",
             "purpose": "history_pending_pipeline",
+            "expected_totals": {
+                "spending_debits": "1062.93",
+                "refund_credits": "0.00",
+                "income_credits": "0.00",
+                "unresolved_rows": 0
+            },
             "rows": [
                 {
                     "date": "2025-06-03",
@@ -2448,7 +2586,7 @@
                 {
                     "date": "2025-06-12",
                     "description": "PAYMENT RECEIVED FROM OWN DEMO CHEQUING",
-                    "amount": "1076.51",
+                    "amount": "1043.18",
                     "direction": "credit",
                     "category": "card_payments",
                     "meaning": "credit_card_payment",
@@ -2533,6 +2671,12 @@
             "source_fixture": "demo_usd",
             "currency": "USD",
             "purpose": "history_pending_pipeline",
+            "expected_totals": {
+                "spending_debits": "12.45",
+                "refund_credits": "0.00",
+                "income_credits": "0.00",
+                "unresolved_rows": 1
+            },
             "rows": [
                 {
                     "date": "2025-06-02",
@@ -2577,6 +2721,12 @@
             "source_fixture": "demo_current",
             "currency": "CAD",
             "purpose": "history_pending_pipeline",
+            "expected_totals": {
+                "spending_debits": "1888.40",
+                "refund_credits": "0.00",
+                "income_credits": "5890.61",
+                "unresolved_rows": 0
+            },
             "rows": [
                 {
                     "date": "2025-07-01",
@@ -2617,7 +2767,7 @@
                 {
                     "date": "2025-07-12",
                     "description": "PAYMENT TO OWN DEMO CREDIT CARD",
-                    "amount": "1124.39",
+                    "amount": "938.99",
                     "direction": "debit",
                     "category": "card_payments",
                     "meaning": "credit_card_payment",
@@ -2684,6 +2834,12 @@
             "source_fixture": "demo_card",
             "currency": "CAD",
             "purpose": "history_pending_pipeline",
+            "expected_totals": {
+                "spending_debits": "1125.14",
+                "refund_credits": "0.00",
+                "income_credits": "0.00",
+                "unresolved_rows": 0
+            },
             "rows": [
                 {
                     "date": "2025-07-03",
@@ -2760,7 +2916,7 @@
                 {
                     "date": "2025-07-12",
                     "description": "PAYMENT RECEIVED FROM OWN DEMO CHEQUING",
-                    "amount": "921.04",
+                    "amount": "938.99",
                     "direction": "credit",
                     "category": "card_payments",
                     "meaning": "credit_card_payment",
@@ -2845,6 +3001,12 @@
             "source_fixture": "demo_usd",
             "currency": "USD",
             "purpose": "history_pending_pipeline",
+            "expected_totals": {
+                "spending_debits": "261.59",
+                "refund_credits": "25.00",
+                "income_credits": "0.00",
+                "unresolved_rows": 1
+            },
             "rows": [
                 {
                     "date": "2025-07-02",
@@ -2907,6 +3069,12 @@
             "source_fixture": "demo_current",
             "currency": "CAD",
             "purpose": "history_pending_pipeline",
+            "expected_totals": {
+                "spending_debits": "1835.03",
+                "refund_credits": "0.00",
+                "income_credits": "5891.01",
+                "unresolved_rows": 0
+            },
             "rows": [
                 {
                     "date": "2025-08-01",
@@ -2947,7 +3115,7 @@
                 {
                     "date": "2025-08-12",
                     "description": "PAYMENT TO OWN DEMO CREDIT CARD",
-                    "amount": "1306.91",
+                    "amount": "1257.16",
                     "direction": "debit",
                     "category": "card_payments",
                     "meaning": "credit_card_payment",
@@ -3014,6 +3182,12 @@
             "source_fixture": "demo_card",
             "currency": "CAD",
             "purpose": "history_pending_pipeline",
+            "expected_totals": {
+                "spending_debits": "1030.70",
+                "refund_credits": "103.41",
+                "income_credits": "0.00",
+                "unresolved_rows": 0
+            },
             "rows": [
                 {
                     "date": "2025-08-03",
@@ -3090,7 +3264,7 @@
                 {
                     "date": "2025-08-12",
                     "description": "PAYMENT RECEIVED FROM OWN DEMO CHEQUING",
-                    "amount": "1288.87",
+                    "amount": "1257.16",
                     "direction": "credit",
                     "category": "card_payments",
                     "meaning": "credit_card_payment",
@@ -3184,6 +3358,12 @@
             "source_fixture": "demo_usd",
             "currency": "USD",
             "purpose": "history_pending_pipeline",
+            "expected_totals": {
+                "spending_debits": "12.45",
+                "refund_credits": "0.00",
+                "income_credits": "0.00",
+                "unresolved_rows": 1
+            },
             "rows": [
                 {
                     "date": "2025-08-02",
@@ -3228,6 +3408,12 @@
             "source_fixture": "demo_current",
             "currency": "CAD",
             "purpose": "history_pending_pipeline",
+            "expected_totals": {
+                "spending_debits": "1892.49",
+                "refund_credits": "0.00",
+                "income_credits": "5890.44",
+                "unresolved_rows": 0
+            },
             "rows": [
                 {
                     "date": "2025-09-01",
@@ -3268,7 +3454,7 @@
                 {
                     "date": "2025-09-12",
                     "description": "PAYMENT TO OWN DEMO CREDIT CARD",
-                    "amount": "1175.41",
+                    "amount": "1021.76",
                     "direction": "debit",
                     "category": "card_payments",
                     "meaning": "credit_card_payment",
@@ -3335,6 +3521,12 @@
             "source_fixture": "demo_card",
             "currency": "CAD",
             "purpose": "history_pending_pipeline",
+            "expected_totals": {
+                "spending_debits": "873.06",
+                "refund_credits": "0.00",
+                "income_credits": "0.00",
+                "unresolved_rows": 0
+            },
             "rows": [
                 {
                     "date": "2025-09-03",
@@ -3411,7 +3603,7 @@
                 {
                     "date": "2025-09-12",
                     "description": "PAYMENT RECEIVED FROM OWN DEMO CHEQUING",
-                    "amount": "1094.98",
+                    "amount": "1021.76",
                     "direction": "credit",
                     "category": "card_payments",
                     "meaning": "credit_card_payment",
@@ -3496,6 +3688,12 @@
             "source_fixture": "demo_usd",
             "currency": "USD",
             "purpose": "history_pending_pipeline",
+            "expected_totals": {
+                "spending_debits": "12.45",
+                "refund_credits": "0.00",
+                "income_credits": "0.00",
+                "unresolved_rows": 1
+            },
             "rows": [
                 {
                     "date": "2025-09-02",
@@ -3540,6 +3738,12 @@
             "source_fixture": "demo_current",
             "currency": "CAD",
             "purpose": "history_pending_pipeline",
+            "expected_totals": {
+                "spending_debits": "1821.38",
+                "refund_credits": "0.00",
+                "income_credits": "5890.40",
+                "unresolved_rows": 0
+            },
             "rows": [
                 {
                     "date": "2025-10-01",
@@ -3580,7 +3784,7 @@
                 {
                     "date": "2025-10-12",
                     "description": "PAYMENT TO OWN DEMO CREDIT CARD",
-                    "amount": "1115.75",
+                    "amount": "955.77",
                     "direction": "debit",
                     "category": "card_payments",
                     "meaning": "credit_card_payment",
@@ -3647,6 +3851,12 @@
             "source_fixture": "demo_card",
             "currency": "CAD",
             "purpose": "history_pending_pipeline",
+            "expected_totals": {
+                "spending_debits": "1019.00",
+                "refund_credits": "0.00",
+                "income_credits": "0.00",
+                "unresolved_rows": 0
+            },
             "rows": [
                 {
                     "date": "2025-10-03",
@@ -3723,7 +3933,7 @@
                 {
                     "date": "2025-10-12",
                     "description": "PAYMENT RECEIVED FROM OWN DEMO CHEQUING",
-                    "amount": "900.13",
+                    "amount": "955.77",
                     "direction": "credit",
                     "category": "card_payments",
                     "meaning": "credit_card_payment",
@@ -3808,6 +4018,12 @@
             "source_fixture": "demo_usd",
             "currency": "USD",
             "purpose": "history_pending_pipeline",
+            "expected_totals": {
+                "spending_debits": "12.45",
+                "refund_credits": "0.00",
+                "income_credits": "0.00",
+                "unresolved_rows": 1
+            },
             "rows": [
                 {
                     "date": "2025-10-02",
@@ -3852,6 +4068,12 @@
             "source_fixture": "demo_current",
             "currency": "CAD",
             "purpose": "history_pending_pipeline",
+            "expected_totals": {
+                "spending_debits": "1840.62",
+                "refund_credits": "0.00",
+                "income_credits": "6060.64",
+                "unresolved_rows": 0
+            },
             "rows": [
                 {
                     "date": "2025-11-01",
@@ -3892,7 +4114,7 @@
                 {
                     "date": "2025-11-12",
                     "description": "PAYMENT TO OWN DEMO CREDIT CARD",
-                    "amount": "1043.17",
+                    "amount": "1313.88",
                     "direction": "debit",
                     "category": "card_payments",
                     "meaning": "credit_card_payment",
@@ -3959,6 +4181,12 @@
             "source_fixture": "demo_card",
             "currency": "CAD",
             "purpose": "history_pending_pipeline",
+            "expected_totals": {
+                "spending_debits": "1097.09",
+                "refund_credits": "69.66",
+                "income_credits": "0.00",
+                "unresolved_rows": 0
+            },
             "rows": [
                 {
                     "date": "2025-11-03",
@@ -4035,7 +4263,7 @@
                 {
                     "date": "2025-11-12",
                     "description": "PAYMENT RECEIVED FROM OWN DEMO CHEQUING",
-                    "amount": "969.75",
+                    "amount": "1313.88",
                     "direction": "credit",
                     "category": "card_payments",
                     "meaning": "credit_card_payment",
@@ -4138,6 +4366,12 @@
             "source_fixture": "demo_usd",
             "currency": "USD",
             "purpose": "history_pending_pipeline",
+            "expected_totals": {
+                "spending_debits": "309.64",
+                "refund_credits": "25.00",
+                "income_credits": "0.00",
+                "unresolved_rows": 1
+            },
             "rows": [
                 {
                     "date": "2025-11-02",
@@ -4200,6 +4434,12 @@
             "source_fixture": "demo_current",
             "currency": "CAD",
             "purpose": "history_pending_pipeline",
+            "expected_totals": {
+                "spending_debits": "1837.12",
+                "refund_credits": "0.00",
+                "income_credits": "6060.66",
+                "unresolved_rows": 0
+            },
             "rows": [
                 {
                     "date": "2025-12-01",
@@ -4240,7 +4480,7 @@
                 {
                     "date": "2025-12-12",
                     "description": "PAYMENT TO OWN DEMO CREDIT CARD",
-                    "amount": "1180.28",
+                    "amount": "1107.78",
                     "direction": "debit",
                     "category": "card_payments",
                     "meaning": "credit_card_payment",
@@ -4307,6 +4547,12 @@
             "source_fixture": "demo_card",
             "currency": "CAD",
             "purpose": "history_pending_pipeline",
+            "expected_totals": {
+                "spending_debits": "1033.53",
+                "refund_credits": "0.00",
+                "income_credits": "0.00",
+                "unresolved_rows": 0
+            },
             "rows": [
                 {
                     "date": "2025-12-03",
@@ -4383,7 +4629,7 @@
                 {
                     "date": "2025-12-12",
                     "description": "PAYMENT RECEIVED FROM OWN DEMO CHEQUING",
-                    "amount": "1121.47",
+                    "amount": "1107.78",
                     "direction": "credit",
                     "category": "card_payments",
                     "meaning": "credit_card_payment",
@@ -4468,6 +4714,12 @@
             "source_fixture": "demo_usd",
             "currency": "USD",
             "purpose": "history_pending_pipeline",
+            "expected_totals": {
+                "spending_debits": "12.45",
+                "refund_credits": "0.00",
+                "income_credits": "0.00",
+                "unresolved_rows": 1
+            },
             "rows": [
                 {
                     "date": "2025-12-02",
@@ -4512,6 +4764,12 @@
             "source_fixture": "demo_current",
             "currency": "CAD",
             "purpose": "history_pending_pipeline",
+            "expected_totals": {
+                "spending_debits": "1822.25",
+                "refund_credits": "0.00",
+                "income_credits": "6061.06",
+                "unresolved_rows": 0
+            },
             "rows": [
                 {
                     "date": "2026-01-01",
@@ -4552,7 +4810,7 @@
                 {
                     "date": "2026-01-12",
                     "description": "PAYMENT TO OWN DEMO CREDIT CARD",
-                    "amount": "1296.18",
+                    "amount": "1196.34",
                     "direction": "debit",
                     "category": "card_payments",
                     "meaning": "credit_card_payment",
@@ -4619,6 +4877,12 @@
             "source_fixture": "demo_card",
             "currency": "CAD",
             "purpose": "history_pending_pipeline",
+            "expected_totals": {
+                "spending_debits": "933.67",
+                "refund_credits": "0.00",
+                "income_credits": "0.00",
+                "unresolved_rows": 0
+            },
             "rows": [
                 {
                     "date": "2026-01-03",
@@ -4695,7 +4959,7 @@
                 {
                     "date": "2026-01-12",
                     "description": "PAYMENT RECEIVED FROM OWN DEMO CHEQUING",
-                    "amount": "976.37",
+                    "amount": "1196.34",
                     "direction": "credit",
                     "category": "card_payments",
                     "meaning": "credit_card_payment",
@@ -4780,6 +5044,12 @@
             "source_fixture": "demo_usd",
             "currency": "USD",
             "purpose": "history_pending_pipeline",
+            "expected_totals": {
+                "spending_debits": "12.45",
+                "refund_credits": "0.00",
+                "income_credits": "0.00",
+                "unresolved_rows": 1
+            },
             "rows": [
                 {
                     "date": "2026-01-02",
@@ -4824,6 +5094,12 @@
             "source_fixture": "demo_current",
             "currency": "CAD",
             "purpose": "history_pending_pipeline",
+            "expected_totals": {
+                "spending_debits": "1877.71",
+                "refund_credits": "0.00",
+                "income_credits": "6061.16",
+                "unresolved_rows": 0
+            },
             "rows": [
                 {
                     "date": "2026-02-01",
@@ -4864,7 +5140,7 @@
                 {
                     "date": "2026-02-12",
                     "description": "PAYMENT TO OWN DEMO CREDIT CARD",
-                    "amount": "900.49",
+                    "amount": "1021.17",
                     "direction": "debit",
                     "category": "card_payments",
                     "meaning": "credit_card_payment",
@@ -4931,6 +5207,12 @@
             "source_fixture": "demo_card",
             "currency": "CAD",
             "purpose": "history_pending_pipeline",
+            "expected_totals": {
+                "spending_debits": "1035.08",
+                "refund_credits": "143.68",
+                "income_credits": "0.00",
+                "unresolved_rows": 0
+            },
             "rows": [
                 {
                     "date": "2026-02-03",
@@ -5007,7 +5289,7 @@
                 {
                     "date": "2026-02-12",
                     "description": "PAYMENT RECEIVED FROM OWN DEMO CHEQUING",
-                    "amount": "1102.70",
+                    "amount": "1021.17",
                     "direction": "credit",
                     "category": "card_payments",
                     "meaning": "credit_card_payment",
@@ -5101,6 +5383,12 @@
             "source_fixture": "demo_usd",
             "currency": "USD",
             "purpose": "history_pending_pipeline",
+            "expected_totals": {
+                "spending_debits": "12.45",
+                "refund_credits": "0.00",
+                "income_credits": "0.00",
+                "unresolved_rows": 1
+            },
             "rows": [
                 {
                     "date": "2026-02-02",
@@ -5145,6 +5433,12 @@
             "source_fixture": "demo_current",
             "currency": "CAD",
             "purpose": "history_pending_pipeline",
+            "expected_totals": {
+                "spending_debits": "1881.51",
+                "refund_credits": "0.00",
+                "income_credits": "6060.35",
+                "unresolved_rows": 0
+            },
             "rows": [
                 {
                     "date": "2026-03-01",
@@ -5185,7 +5479,7 @@
                 {
                     "date": "2026-03-12",
                     "description": "PAYMENT TO OWN DEMO CREDIT CARD",
-                    "amount": "973.13",
+                    "amount": "1005.87",
                     "direction": "debit",
                     "category": "card_payments",
                     "meaning": "credit_card_payment",
@@ -5252,6 +5546,12 @@
             "source_fixture": "demo_card",
             "currency": "CAD",
             "purpose": "history_pending_pipeline",
+            "expected_totals": {
+                "spending_debits": "932.01",
+                "refund_credits": "0.00",
+                "income_credits": "0.00",
+                "unresolved_rows": 0
+            },
             "rows": [
                 {
                     "date": "2026-03-03",
@@ -5328,7 +5628,7 @@
                 {
                     "date": "2026-03-12",
                     "description": "PAYMENT RECEIVED FROM OWN DEMO CHEQUING",
-                    "amount": "999.01",
+                    "amount": "1005.87",
                     "direction": "credit",
                     "category": "card_payments",
                     "meaning": "credit_card_payment",
@@ -5413,6 +5713,12 @@
             "source_fixture": "demo_usd",
             "currency": "USD",
             "purpose": "history_pending_pipeline",
+            "expected_totals": {
+                "spending_debits": "256.48",
+                "refund_credits": "25.00",
+                "income_credits": "0.00",
+                "unresolved_rows": 1
+            },
             "rows": [
                 {
                     "date": "2026-03-02",
@@ -5475,6 +5781,12 @@
             "source_fixture": "demo_current",
             "currency": "CAD",
             "purpose": "history_pending_pipeline",
+            "expected_totals": {
+                "spending_debits": "1898.44",
+                "refund_credits": "0.00",
+                "income_credits": "6060.43",
+                "unresolved_rows": 0
+            },
             "rows": [
                 {
                     "date": "2026-04-01",
@@ -5515,7 +5827,7 @@
                 {
                     "date": "2026-04-12",
                     "description": "PAYMENT TO OWN DEMO CREDIT CARD",
-                    "amount": "1166.44",
+                    "amount": "989.80",
                     "direction": "debit",
                     "category": "card_payments",
                     "meaning": "credit_card_payment",
@@ -5582,6 +5894,12 @@
             "source_fixture": "demo_card",
             "currency": "CAD",
             "purpose": "history_pending_pipeline",
+            "expected_totals": {
+                "spending_debits": "911.25",
+                "refund_credits": "0.00",
+                "income_credits": "0.00",
+                "unresolved_rows": 0
+            },
             "rows": [
                 {
                     "date": "2026-04-03",
@@ -5658,7 +5976,7 @@
                 {
                     "date": "2026-04-12",
                     "description": "PAYMENT RECEIVED FROM OWN DEMO CHEQUING",
-                    "amount": "1130.63",
+                    "amount": "989.80",
                     "direction": "credit",
                     "category": "card_payments",
                     "meaning": "credit_card_payment",
@@ -5743,6 +6061,12 @@
             "source_fixture": "demo_usd",
             "currency": "USD",
             "purpose": "history_pending_pipeline",
+            "expected_totals": {
+                "spending_debits": "12.45",
+                "refund_credits": "0.00",
+                "income_credits": "0.00",
+                "unresolved_rows": 1
+            },
             "rows": [
                 {
                     "date": "2026-04-02",
@@ -5787,6 +6111,12 @@
             "source_fixture": "demo_current",
             "currency": "CAD",
             "purpose": "history_pending_pipeline",
+            "expected_totals": {
+                "spending_debits": "1823.80",
+                "refund_credits": "0.00",
+                "income_credits": "6230.88",
+                "unresolved_rows": 0
+            },
             "rows": [
                 {
                     "date": "2026-05-01",
@@ -5827,7 +6157,7 @@
                 {
                     "date": "2026-05-12",
                     "description": "PAYMENT TO OWN DEMO CREDIT CARD",
-                    "amount": "1100.61",
+                    "amount": "1294.35",
                     "direction": "debit",
                     "category": "card_payments",
                     "meaning": "credit_card_payment",
@@ -5894,6 +6224,12 @@
             "source_fixture": "demo_card",
             "currency": "CAD",
             "purpose": "history_pending_pipeline",
+            "expected_totals": {
+                "spending_debits": "1060.83",
+                "refund_credits": "143.41",
+                "income_credits": "0.00",
+                "unresolved_rows": 0
+            },
             "rows": [
                 {
                     "date": "2026-05-03",
@@ -5970,7 +6306,7 @@
                 {
                     "date": "2026-05-12",
                     "description": "PAYMENT RECEIVED FROM OWN DEMO CHEQUING",
-                    "amount": "1105.28",
+                    "amount": "1294.35",
                     "direction": "credit",
                     "category": "card_payments",
                     "meaning": "credit_card_payment",
@@ -6064,6 +6400,12 @@
             "source_fixture": "demo_usd",
             "currency": "USD",
             "purpose": "history_pending_pipeline",
+            "expected_totals": {
+                "spending_debits": "12.45",
+                "refund_credits": "0.00",
+                "income_credits": "0.00",
+                "unresolved_rows": 1
+            },
             "rows": [
                 {
                     "date": "2026-05-02",
@@ -6108,6 +6450,12 @@
             "source_fixture": "demo_current",
             "currency": "CAD",
             "purpose": "history_pending_pipeline",
+            "expected_totals": {
+                "spending_debits": "1851.83",
+                "refund_credits": "0.00",
+                "income_credits": "6230.38",
+                "unresolved_rows": 0
+            },
             "rows": [
                 {
                     "date": "2026-06-01",
@@ -6148,7 +6496,7 @@
                 {
                     "date": "2026-06-12",
                     "description": "PAYMENT TO OWN DEMO CREDIT CARD",
-                    "amount": "914.15",
+                    "amount": "1293.06",
                     "direction": "debit",
                     "category": "card_payments",
                     "meaning": "credit_card_payment",
@@ -6215,6 +6563,12 @@
             "source_fixture": "demo_card",
             "currency": "CAD",
             "purpose": "history_pending_pipeline",
+            "expected_totals": {
+                "spending_debits": "931.43",
+                "refund_credits": "0.00",
+                "income_credits": "0.00",
+                "unresolved_rows": 0
+            },
             "rows": [
                 {
                     "date": "2026-06-03",
@@ -6291,7 +6645,7 @@
                 {
                     "date": "2026-06-12",
                     "description": "PAYMENT RECEIVED FROM OWN DEMO CHEQUING",
-                    "amount": "1298.59",
+                    "amount": "1293.06",
                     "direction": "credit",
                     "category": "card_payments",
                     "meaning": "credit_card_payment",
@@ -6376,6 +6730,12 @@
             "source_fixture": "demo_usd",
             "currency": "USD",
             "purpose": "history_pending_pipeline",
+            "expected_totals": {
+                "spending_debits": "12.45",
+                "refund_credits": "0.00",
+                "income_credits": "0.00",
+                "unresolved_rows": 1
+            },
             "rows": [
                 {
                     "date": "2026-06-02",
@@ -6420,6 +6780,12 @@
             "source_fixture": "demo_current",
             "currency": "CAD",
             "purpose": "history_pending_pipeline",
+            "expected_totals": {
+                "spending_debits": "1825.19",
+                "refund_credits": "0.00",
+                "income_credits": "6230.37",
+                "unresolved_rows": 0
+            },
             "rows": [
                 {
                     "date": "2026-07-01",
@@ -6460,7 +6826,7 @@
                 {
                     "date": "2026-07-12",
                     "description": "PAYMENT TO OWN DEMO CREDIT CARD",
-                    "amount": "1147.95",
+                    "amount": "1222.62",
                     "direction": "debit",
                     "category": "card_payments",
                     "meaning": "credit_card_payment",
@@ -6527,6 +6893,12 @@
             "source_fixture": "demo_card",
             "currency": "CAD",
             "purpose": "history_pending_pipeline",
+            "expected_totals": {
+                "spending_debits": "964.87",
+                "refund_credits": "0.00",
+                "income_credits": "0.00",
+                "unresolved_rows": 0
+            },
             "rows": [
                 {
                     "date": "2026-07-03",
@@ -6603,7 +6975,7 @@
                 {
                     "date": "2026-07-12",
                     "description": "PAYMENT RECEIVED FROM OWN DEMO CHEQUING",
-                    "amount": "1018.10",
+                    "amount": "1222.62",
                     "direction": "credit",
                     "category": "card_payments",
                     "meaning": "credit_card_payment",
@@ -6688,6 +7060,12 @@
             "source_fixture": "demo_usd",
             "currency": "USD",
             "purpose": "history_pending_pipeline",
+            "expected_totals": {
+                "spending_debits": "218.05",
+                "refund_credits": "25.00",
+                "income_credits": "0.00",
+                "unresolved_rows": 1
+            },
             "rows": [
                 {
                     "date": "2026-07-02",
@@ -6750,6 +7128,12 @@
             "source_fixture": "demo_current",
             "currency": "CAD",
             "purpose": "history_pending_pipeline",
+            "expected_totals": {
+                "spending_debits": "1894.89",
+                "refund_credits": "0.00",
+                "income_credits": "6231.16",
+                "unresolved_rows": 0
+            },
             "rows": [
                 {
                     "date": "2026-08-01",
@@ -6790,7 +7174,7 @@
                 {
                     "date": "2026-08-12",
                     "description": "PAYMENT TO OWN DEMO CREDIT CARD",
-                    "amount": "1168.10",
+                    "amount": "924.88",
                     "direction": "debit",
                     "category": "card_payments",
                     "meaning": "credit_card_payment",
@@ -6857,6 +7241,12 @@
             "source_fixture": "demo_card",
             "currency": "CAD",
             "purpose": "history_pending_pipeline",
+            "expected_totals": {
+                "spending_debits": "1004.31",
+                "refund_credits": "144.93",
+                "income_credits": "0.00",
+                "unresolved_rows": 0
+            },
             "rows": [
                 {
                     "date": "2026-08-03",
@@ -6933,7 +7323,7 @@
                 {
                     "date": "2026-08-12",
                     "description": "PAYMENT RECEIVED FROM OWN DEMO CHEQUING",
-                    "amount": "970.59",
+                    "amount": "924.88",
                     "direction": "credit",
                     "category": "card_payments",
                     "meaning": "credit_card_payment",
@@ -7027,6 +7417,12 @@
             "source_fixture": "demo_usd",
             "currency": "USD",
             "purpose": "history_pending_pipeline",
+            "expected_totals": {
+                "spending_debits": "12.45",
+                "refund_credits": "0.00",
+                "income_credits": "0.00",
+                "unresolved_rows": 1
+            },
             "rows": [
                 {
                     "date": "2026-08-02",
@@ -7071,6 +7467,12 @@
             "source_fixture": "demo_current",
             "currency": "CAD",
             "purpose": "history_pending_pipeline",
+            "expected_totals": {
+                "spending_debits": "1846.13",
+                "refund_credits": "0.00",
+                "income_credits": "6230.81",
+                "unresolved_rows": 0
+            },
             "rows": [
                 {
                     "date": "2026-09-01",
@@ -7111,7 +7513,7 @@
                 {
                     "date": "2026-09-12",
                     "description": "PAYMENT TO OWN DEMO CREDIT CARD",
-                    "amount": "1101.70",
+                    "amount": "1281.35",
                     "direction": "debit",
                     "category": "card_payments",
                     "meaning": "credit_card_payment",
@@ -7178,6 +7580,12 @@
             "source_fixture": "demo_card",
             "currency": "CAD",
             "purpose": "history_pending_pipeline",
+            "expected_totals": {
+                "spending_debits": "1041.84",
+                "refund_credits": "0.00",
+                "income_credits": "0.00",
+                "unresolved_rows": 0
+            },
             "rows": [
                 {
                     "date": "2026-09-03",
@@ -7254,7 +7662,7 @@
                 {
                     "date": "2026-09-12",
                     "description": "PAYMENT RECEIVED FROM OWN DEMO CHEQUING",
-                    "amount": "1255.29",
+                    "amount": "1281.35",
                     "direction": "credit",
                     "category": "card_payments",
                     "meaning": "credit_card_payment",
@@ -7339,6 +7747,12 @@
             "source_fixture": "demo_usd",
             "currency": "USD",
             "purpose": "history_pending_pipeline",
+            "expected_totals": {
+                "spending_debits": "12.45",
+                "refund_credits": "0.00",
+                "income_credits": "0.00",
+                "unresolved_rows": 1
+            },
             "rows": [
                 {
                     "date": "2026-09-02",
@@ -7383,6 +7797,12 @@
             "source_fixture": "demo_current",
             "currency": "CAD",
             "purpose": "upload_holdout",
+            "expected_totals": {
+                "spending_debits": "1822.47",
+                "refund_credits": "0.00",
+                "income_credits": "6230.58",
+                "unresolved_rows": 0
+            },
             "rows": [
                 {
                     "date": "2026-10-01",
@@ -7423,7 +7843,7 @@
                 {
                     "date": "2026-10-12",
                     "description": "PAYMENT TO OWN DEMO CREDIT CARD",
-                    "amount": "1322.99",
+                    "amount": "1130.94",
                     "direction": "debit",
                     "category": "card_payments",
                     "meaning": "credit_card_payment",
@@ -7490,6 +7910,12 @@
             "source_fixture": "demo_card",
             "currency": "CAD",
             "purpose": "upload_holdout",
+            "expected_totals": {
+                "spending_debits": "1087.85",
+                "refund_credits": "0.00",
+                "income_credits": "0.00",
+                "unresolved_rows": 0
+            },
             "rows": [
                 {
                     "date": "2026-10-03",
@@ -7566,7 +7992,7 @@
                 {
                     "date": "2026-10-12",
                     "description": "PAYMENT RECEIVED FROM OWN DEMO CHEQUING",
-                    "amount": "897.75",
+                    "amount": "1130.94",
                     "direction": "credit",
                     "category": "card_payments",
                     "meaning": "credit_card_payment",
@@ -7651,6 +8077,12 @@
             "source_fixture": "demo_usd",
             "currency": "USD",
             "purpose": "upload_holdout",
+            "expected_totals": {
+                "spending_debits": "12.45",
+                "refund_credits": "0.00",
+                "income_credits": "0.00",
+                "unresolved_rows": 1
+            },
             "rows": [
                 {
                     "date": "2026-10-02",

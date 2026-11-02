@@ -30,6 +30,10 @@ Transaction meaning is expense, income, refund, own-account transfer, credit-car
 
 Use the 21 shared categories defined in `fixtures/category.yaml`. Refunds retain the underlying purchase category where known, rather than becoming income. Recurrence does not imply fixed amounts or monthly frequency, and repeated shopping alone does not prove a recurring bill. These labels are not an accounting or automatic reconciliation system.
 
+Confirmed own-account transfers and credit-card balance payments contribute to neither spending nor income, regardless of category, debit/credit direction, whether a counterpart exists, or whether the two sides cross currencies/months. Do not infer this exclusion merely by netting credits and debits. Unknown meaning remains unresolved and must not be automatically treated as a transfer. Preserve original source, amount and currency; this decision does not match pairs or invent FX rates. Synthetic expected totals report spending debits, refund credits and income credits separately per source/currency, with unresolved counts.
+
+Set the canonical demo user's reporting preference to CAD. Keep the application-wide new-user default USD and the administrator fixture unchanged.
+
 ### Canonical synthetic inputs
 
 Prepare 24 fixed completed months, November 2024 through October 2026, for CAD chequing, CAD credit and USD bank accounts. Reserve October 2026 (one file per source) for upload scenarios. The preceding 69 files are historical candidates. Use wholly invented merchants, amounts, identifiers and sequences, preserving bank-export patterns without reversible pseudonymization or personal source rows.

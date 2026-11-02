@@ -55,6 +55,8 @@ final class TransactionCrudController extends OwnedCrudController
         yield TextField::new('currency')->setRequired(true);
         yield ChoiceField::new('direction')->setChoices(['Credit' => Direction::Credit, 'Debit' => Direction::Debit])->setRequired(true);
         yield TextareaField::new('description')->setRequired(false)->setFormTypeOption('empty_data', '');
+        yield ChoiceField::new('meaning')->onlyOnDetail();
+        yield ChoiceField::new('recurrence')->onlyOnDetail();
         yield AssociationField::new('source')->renderAsNativeWidget()->setFormTypeOption('choice_label', 'name')
             ->setFormTypeOption('empty_data', static fn (FormInterface $form): never => throw new TransformationFailedException('A transaction source is required.'))
             ->setFormTypeOption('query_builder', fn (): QueryBuilder => $this->sources->queryForUser($this->owner()));

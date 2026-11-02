@@ -12,7 +12,7 @@ use Symfony\Component\Process\Process;
  * @param list<string>           $command
  * @param (\Closure(): int)|null $operation
  */
-function report(string $task, array $command, bool $runtime = true, bool $headed = false, ?\Closure $operation = null, string $artifact = '', bool $networked = false): int
+function report(string $task, array $command, bool $runtime = true, bool $headed = false, ?\Closure $operation = null, string $artifact = '', bool $networked = false, bool $jev = false): int
 {
     $root = \dirname(__DIR__);
     $relative = 'var/qa/'.str_replace(':', '-', $task);
@@ -67,7 +67,7 @@ function report(string $task, array $command, bool $runtime = true, bool $headed
             }
         } else {
             if (null !== $container) {
-                $command = runtimeCommand($command, $container, $headed, $networked);
+                $command = runtimeCommand($command, $container, $headed, $networked, $jev);
                 $result['command'] = $command;
                 $result['runtime_container'] = $container;
                 $save();

@@ -31,6 +31,8 @@ Scanned/image-only PDF support and an existing OCR backend remain unresolved; or
 
 A source is a bank account, card, or other financial account instrument, not a merchant. Keep one transaction date exactly from the statement, original amount/currency, credit/debit direction, and category. Direction alone does not distinguish income, refunds, or own-account transfers; no complex accounting or inferred tax policy is selected.
 
+Confirmed own-account-transfer and credit-card-payment meanings exclude a row from both spending and income, independently of category or a matched counterpart. This must work for one-sided uploads, cross-currency transfers and different posting months. Unknown meaning remains unresolved, not automatically excluded. Do not achieve the exclusion merely by netting all debits and credits.
+
 Store editable drafts and approved records in one transaction table with an `isDraft` flag. Approval must validate records before clearing that flag; only valid non-draft records feed analysis. Categories are shared reference data with names, descriptions and icons, not per-user category CRUD. Sources have names, optional descriptions and optional currency/instrument context, without AI instructions at this stage. Transaction meaning (expense, income, refund, own-account transfer, card payment or unknown) and recurrence (bill, subscription/membership, other recurring, non-recurring or unknown) are independent of category and direction. Unknown is the migration default; do not guess existing values. Refunds retain the underlying purchase category when identifiable, not income. No automatic transfer matching or subscription-management subsystem is selected. The shared 21-category catalog is defined in `fixtures/category.yaml`.
 
 Show finances in one user-configurable reporting currency stored on User, USD by default, limited to ECB feed currencies with EUR as the implicit base. Use transaction-date reference rates where available, initially aiming for roughly three years of history without a fixed retention threshold. Preserve original values; reporting conversion is not the bank's actual FX/fees. Use decimal strings and BCMath, with SQLite-safe storage/aggregation and rounding/missing-rate behavior still to verify. See [ADR 0017](docs/adr/0017-exact-money-and-ecb-reporting.md).
@@ -90,6 +92,8 @@ For late implementation, use the simple context handoff in [ADR 0013](docs/adr/0
 ## Demo proposal
 
 Provide synthetic financial fixtures and a demo user so judges can explore the application without uploading personal bank statements.
+
+The canonical demo user's reporting preference is CAD; the application-wide default for new users remains USD.
 
 Prepare 24 fixed completed months (November 2024–October 2026) for CAD chequing, CAD credit and a USD account, using wholly invented identities, merchants, amounts and sequences. Reserve the latest month as one unprocessed upload file per source; process and review preceding history through the actual pipeline before exporting canonical Alice fixtures. Generated expected labels are evaluation targets, not Jev results. Keep existing small hand-authored Alice examples as compatibility scaffolding until historical export exists. Include subscriptions, recurring income, variable bills, refunds, transfers and ambiguous references.
 

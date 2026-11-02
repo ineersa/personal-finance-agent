@@ -24,13 +24,13 @@ final class SettingsTest extends FinanceBrowserTest
             self::assertLessThan(500, $this->getLastResponse()->getStatusCode());
             Expect::locator($page->getByText('The selected choice is invalid'))->toBeVisible();
             $page = $this->visit('/home/settings');
-            self::assertSame('USD', $page->getByLabel('Reporting currency')->inputValue());
+            self::assertSame('CAD', $page->getByLabel('Reporting currency')->inputValue());
         }
         $page->getByLabel('Reporting currency')->selectOption('EUR');
         $page->evaluate('() => document.querySelector("input[name=\"form[_token]\"]").value = "invalid"');
         $this->submit(static fn () => $page->getByRole('button', ['name' => 'Save preferences'])->click());
         Expect::locator($page->getByText('The CSRF token is invalid'))->toBeVisible();
         $page = $this->visit('/home/settings');
-        self::assertSame('USD', $page->getByLabel('Reporting currency')->inputValue());
+        self::assertSame('CAD', $page->getByLabel('Reporting currency')->inputValue());
     }
 }
