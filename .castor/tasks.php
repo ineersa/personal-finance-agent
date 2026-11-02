@@ -155,7 +155,7 @@ function phpstan(): int
 #[AsTask(namespace: 'lsp', name: 'check')]
 function lspCheck(): int
 {
-    return report('lsp:check', ['symfony', 'lsp:check', '--format=json', '--environment=dev']);
+    return report('lsp:check', ['symfony', 'lsp:check', '--format=json', '--environment=dev', ...(\Castor\output()->isVerbose() ? ['--verbose'] : [])]);
 }
 
 /** @param list<string> $arguments */

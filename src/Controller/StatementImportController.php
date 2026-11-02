@@ -57,7 +57,9 @@ final class StatementImportController extends AbstractController
             }
         }
 
-        return $this->render('statement/upload.html.twig', ['form' => $form, 'providerHost' => parse_url($providerUrl, \PHP_URL_HOST) ?: 'configured provider']);
+        $providerHost = parse_url($providerUrl, \PHP_URL_HOST);
+
+        return $this->render('statement/upload.html.twig', ['form' => $form, 'providerHost' => \is_string($providerHost) && '' !== $providerHost ? $providerHost : 'configured provider']);
     }
 
     #[AdminRoute('/statement-processing/{id}', name: 'statement_processing', options: ['methods' => ['GET', 'POST'], 'requirements' => ['id' => '\d+']])]
