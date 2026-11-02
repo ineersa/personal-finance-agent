@@ -87,7 +87,9 @@ final class DemoMaintenanceTest extends TestCase
                     $foreignPage = $foreign->newPage();
                     $this->login($foreignPage, $url, $email, 'Synthetic-maintenance-07');
                     self::assertSame(403, $foreignPage->goto($url.'/home/settings/reset')?->status());
-                    self::assertSame(403, $foreignPage->goto($foreignTarget.'/delete')?->status());
+                    self::assertSame(405, $foreignPage->goto($foreignTarget.'/delete')?->status());
+                    $foreignPage->goto($url.'/home/statement');
+                    self::assertSame(403, $this->postNativeDelete($foreignPage, $foreignTarget.'/delete'), 'A valid-CSRF foreign-owner POST must be denied, not merely an unsupported method.');
                 } finally {
                     $foreign->close();
                 }
@@ -111,7 +113,8 @@ final class DemoMaintenanceTest extends TestCase
                 $download = $page->locator('.action-download')->getAttribute('href');
                 $deleteAction = $page->locator('.action-delete')->getAttribute('formaction');
                 self::assertNotNull($deleteAction);
-                self::assertSame(403, $adminPage->goto($deleteAction)?->status());
+                $adminPage->goto($url.'/home/user');
+                self::assertSame(403, $this->postNativeDelete($adminPage, $deleteAction), 'Administrator roles do not authorize deleting another owner’s statement.');
                 $this->deleteThroughModal($page, true);
                 $page->goto($statement);
                 self::assertSame(1, $page->locator('.action-delete')->count(), 'Forged CSRF must not delete the statement.');
@@ -156,6 +159,19 @@ final class DemoMaintenanceTest extends TestCase
                 $context->close();
             }
         });
+    }
+
+    private function postNativeDelete(PageInterface $page, string $target): int
+    {
+        self::assertSame(1, $page->locator('#action-confirmation-form input[name=token]')->count());
+
+        return $page->evaluate(<<<'JS'
+            async target => {
+                const form = document.querySelector('#action-confirmation-form');
+                const response = await fetch(target, {method: 'POST', credentials: 'same-origin', body: new FormData(form)});
+                return response.status;
+            }
+            JS, $target);
     }
 
     private function deleteThroughModal(PageInterface $page, bool $forged = false): void
