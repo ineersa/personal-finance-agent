@@ -14,7 +14,7 @@ use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Style\SymfonyStyle;
 use Symfony\Component\Messenger\MessageBusInterface;
 
-#[AsCommand(name: 'app:statement:dispatch', description: 'Republish an owned statement identifier; completed or running imports remain unchanged.')]
+#[AsCommand(name: 'app:statement:dispatch', description: 'Replay a resolved owned statement message without changing its processing status.')]
 final readonly class DispatchStatementCommand
 {
     public function __construct(private EntityManagerInterface $entityManager, private StatementRepository $statements, private MessageBusInterface $bus)

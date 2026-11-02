@@ -113,6 +113,57 @@ final class StatementImportTest extends TestCase
         });
     }
 
+    public function testQuotedCsvRejectsUnterminatedFieldsAndPreservesMultilineDescriptions(): void
+    {
+        $this->withBrowser(function (BrowserInterface $browser, string $url): void {
+            $context = $browser->newContext();
+            $path = \dirname(__DIR__, 2).'/var/qa/import-quoting-'.bin2hex(random_bytes(6)).'.csv';
+            try {
+                $page = $context->newPage();
+                $this->login($page, $url, 'demo@test.com', 'demo');
+                $cases = [
+                    'failed' => "Date,Debit,Credit,Description\n2026-10-01,1.00,,\"Coffee\n2026-10-02,2.00,,Dinner",
+                    // CRLF records, leading field whitespace, an embedded newline and doubled quotes.
+                    // The final record deliberately has no trailing newline.
+                    'completed' => "\xEF\xBB\xBFDate,Debit,Credit,Description\r\n2026-10-01,1.00,, \t\"Coffee\nwith \"\"oat\"\" milk\"\r\n2026-10-02,,2.00,\"Dinner refund\"",
+                ];
+                foreach ($cases as $expectedStatus => $content) {
+                    file_put_contents($path, $content);
+                    $page->goto($url.'/home/statement-upload');
+                    $page->getByLabel('Source', ['exact' => true])->selectOption(['label' => 'Maple Harbour Chequing · 7318']);
+                    $page->locator('turbo-mercure-stream-source[connected]')->waitFor(['state' => 'attached']);
+                    $page->getByLabel('CSV statement', ['exact' => true])->setInputFiles($path);
+                    $page->getByRole('checkbox')->check();
+                    $page->getByRole('button', ['name' => 'Upload and prepare drafts'])->click();
+                    $page->waitForURL('**/home/statement-processing/*');
+                    $page->locator('[data-processing-status][data-status='.$expectedStatus.']')->waitFor(['timeout' => 120000]);
+                    $page->reload();
+                    self::assertSame($expectedStatus, $page->locator('[data-processing-status]')->getAttribute('data-status'));
+                    $rows = $page->locator('[data-draft-results] tbody tr');
+                    if ('failed' === $expectedStatus) {
+                        self::assertSame(0, $rows->count());
+                        self::assertStringContainsString('unterminated quoted field', $page->getByRole('alert')->textContent());
+                        continue;
+                    }
+                    self::assertSame(2, $rows->count(), 'A quoted newline must not swallow the following transaction.');
+                    foreach ([["Coffee\nwith \"oat\" milk", '1.00', '2026-10-01', 'debit'], ['Dinner refund', '2.00', '2026-10-02', 'credit']] as $index => [$description, $amount, $date, $direction]) {
+                        $cells = $rows->nth($index)->locator('td');
+                        self::assertSame($date, $cells->nth(0)->textContent());
+                        self::assertSame($description, $cells->nth(1)->textContent());
+                        self::assertSame($amount, $cells->nth(2)->textContent());
+                        self::assertSame('CAD', $cells->nth(3)->textContent());
+                        self::assertSame($direction, $cells->nth(4)->textContent());
+                    }
+                }
+            } finally {
+                if (is_file($path)) {
+                    unlink($path);
+                }
+                $context->close();
+            }
+        });
+    }
+
     public function testPreviouslyCompletedImportsRemainUnchangedAfterOperatorRedelivery(): void
     {
         if ('1' !== getenv('FINANCE_IMPORT_REPLAY')) {

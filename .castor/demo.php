@@ -18,12 +18,6 @@ function demoHistoryProcess(bool $export = false): int
     return report('demo:history:process', ['env', 'DATABASE_URL=sqlite:////app/var/browser/history-final/application.db', 'STATEMENT_STORAGE_DIR=/app/var/browser/history-final/statements', 'IMPORT_UPDATES_ENABLED=0', 'php', 'bin/console', 'app:demo:process-history', '--env=dev', '--no-interaction', ...($export ? ['--export'] : [])], jev: true);
 }
 
-#[AsTask(namespace: 'demo', name: 'statements:inspect', description: 'Paid Jev diagnostic using only the three committed synthetic holdouts; no database writes.')]
-function demoStatementsInspect(): int
-{
-    return report('demo:statements:inspect', ['php', 'bin/console', 'app:demo:inspect-statements', '--no-interaction', '--no-debug'], jev: true);
-}
-
 #[AsTask(namespace: 'demo', name: 'statements:generate', description: 'Regenerate invented monthly CSV inputs and expected outcomes; never accesses a database or provider.')]
 function demoStatementsGenerate(): int
 {

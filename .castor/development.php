@@ -285,7 +285,7 @@ function browserImportsTest(bool $replay = false, bool $privacy = false, bool $b
     if ((int) $replay + (int) $privacy + (int) $boundary > 1) {
         throw new \InvalidArgumentException('Select only one verification mode.');
     }
-    $arguments = ['--filter', $replay ? 'testPreviouslyCompletedImportsRemainUnchangedAfterOperatorRedelivery' : 'testThreeSourceUploads|testMalformedUpload'];
+    $arguments = ['--filter', $replay ? 'testPreviouslyCompletedImportsRemainUnchangedAfterOperatorRedelivery' : 'testThreeSourceUploads|testMalformedUpload|testQuotedCsv'];
     $file = 'tests/Live/StatementImportTest.php';
     if ($privacy || $boundary) {
         $arguments = [];

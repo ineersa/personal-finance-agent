@@ -36,8 +36,30 @@ services:
             # Wrap the native driver before connection-caching/test middleware.
             - { name: doctrine.middleware, connection: default, priority: 1000 }
 
-    # add more service definitions when explicit configuration is needed
-    # please note that last definitions always *replace* previous ones
+    # Native client without framework tracing: statement payloads must not enter profiler collectors.
+    app.jev.http_client:
+        class: Symfony\Contracts\HttpClient\HttpClientInterface
+        factory: ['Symfony\Component\HttpClient\HttpClient', 'create']
+        autoconfigure: false
+        arguments:
+            $defaultOptions: { timeout: 30, max_duration: 60 }
+
+    app.jev.model_catalog:
+        class: Symfony\AI\Platform\Bridge\TypeSafe\ModelCatalog
+        arguments:
+            $additionalModels:
+                '%env(JEV_MODEL)%':
+                    class: Symfony\AI\Platform\Bridge\TypeSafe\Jev
+                    capabilities: []
+
+    app.jev.platform:
+        class: Symfony\AI\Platform\Platform
+        factory: ['Symfony\AI\Platform\Bridge\TypeSafe\Factory', 'createPlatform']
+        arguments:
+            $apiKey: '%env(JEV_API_KEY)%'
+            $httpClient: '@app.jev.http_client'
+            $modelCatalog: '@app.jev.model_catalog'
+            $baseUrl: '%env(JEV_BASE_URL)%'
 
 when@dev: &fixture_services
     services:
