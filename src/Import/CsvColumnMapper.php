@@ -14,8 +14,12 @@ final readonly class CsvColumnMapper
     {
     }
 
-    /** @param non-empty-list<list<string>> $rows */
-    public function map(#[\SensitiveParameter] array $rows, string $currency, InstrumentKind $instrument): CsvColumnMappingDTO
+    /**
+     * @param non-empty-list<list<string>> $rows
+     *
+     * @return array{date: int, description: int, debit: int, credit: int, currency: ?int, hasHeader: bool}
+     */
+    public function map(#[\SensitiveParameter] array $rows, string $currency, InstrumentKind $instrument): array
     {
         $samples = $this->sampleRows($rows);
         $columns = [];
@@ -65,7 +69,7 @@ final readonly class CsvColumnMapper
             throw new ImportException('It is unclear whether the CSV contains a header.');
         }
 
-        return new CsvColumnMappingDTO($mapping['date'], $mapping['description'], $mapping['debit'], $mapping['credit'], $currencyColumn, $header >= 0.7);
+        return ['date' => $mapping['date'], 'description' => $mapping['description'], 'debit' => $mapping['debit'], 'credit' => $mapping['credit'], 'currency' => $currencyColumn, 'hasHeader' => $header >= 0.7];
     }
 
     /**

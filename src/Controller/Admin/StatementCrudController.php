@@ -8,10 +8,9 @@ use App\Entity\Statement;
 use App\Entity\User;
 use App\Enum\ProcessingStatus;
 use App\Import\ImportException;
-use App\Import\ImportLifecycle;
 use App\Repository\StatementRepository;
 use App\Security\FinanceRecordVoter;
-use App\Storage\StatementFileCleanup;
+use App\Storage\StatementStorage;
 use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\QueryBuilder;
 use EasyCorp\Bundle\EasyAdminBundle\Config\Action;
@@ -26,14 +25,13 @@ use EasyCorp\Bundle\EasyAdminBundle\Field\DateTimeField;
 use EasyCorp\Bundle\EasyAdminBundle\Field\IntegerField;
 use EasyCorp\Bundle\EasyAdminBundle\Field\TextField;
 use Symfony\Component\HttpFoundation\Response;
-use Symfony\Component\Security\Core\Exception\AccessDeniedException;
 use Symfony\Component\Security\Http\Attribute\IsGranted;
 
 /** @extends OwnedCrudController<Statement> */
 #[IsGranted(FinanceRecordVoter::ACCESS)]
 final class StatementCrudController extends OwnedCrudController
 {
-    public function __construct(private readonly StatementRepository $statements, private readonly ImportLifecycle $lifecycle, private readonly StatementFileCleanup $cleanup)
+    public function __construct(private readonly StatementRepository $statements, private readonly StatementStorage $storage)
     {
     }
 
@@ -86,36 +84,23 @@ final class StatementCrudController extends OwnedCrudController
 
     public function deleteEntity(EntityManagerInterface $entityManager, object $entityInstance): void
     {
-        $this->denyAccessUnlessGranted(FinanceRecordVoter::ACCESS, $entityInstance);
         if (!$entityInstance instanceof Statement) {
             throw new \LogicException('Expected a statement.');
         }
-        try {
-            $lock = $this->lifecycle->acquire(true);
-        } catch (ImportException $error) {
-            throw new ImportException($error->getMessage());
+        // EasyAdmin checks the configured entity permission before calling this hook.
+        if (\in_array($entityInstance->processingStatus, [ProcessingStatus::Queued, ProcessingStatus::Running], true)) {
+            throw new ImportException('Deletion refused: wait for this import to finish.');
         }
+        $filename = $entityInstance->storedFilename;
         try {
-            $entityManager->refresh($entityInstance);
-            $this->denyAccessUnlessGranted(FinanceRecordVoter::ACCESS, $entityInstance);
-            if (\in_array($entityInstance->processingStatus, [ProcessingStatus::Queued, ProcessingStatus::Running], true)) {
-                throw new ImportException('Deletion refused: wait for this import to finish.');
-            }
-            $entityManager->wrapInTransaction(function () use ($entityManager, $entityInstance): void {
-                $this->cleanup->schedule($entityInstance->storedFilename);
-                $entityManager->remove($entityInstance);
-            });
-            try {
-                $this->cleanup->drain();
-            } catch (\Throwable) {
-                $this->addFlash('warning', 'Statement records were deleted. File cleanup is pending; an operator can retry app:statement:cleanup.');
-            }
-        } catch (ImportException|AccessDeniedException $error) {
-            throw $error;
+            parent::deleteEntity($entityManager, $entityInstance);
         } catch (\Throwable) {
             throw new ImportException('Statement deletion could not be committed. The original file was retained. Check database availability before retrying.');
-        } finally {
-            $lock->release();
+        }
+        try {
+            $this->storage->delete($filename);
+        } catch (\Throwable) {
+            $this->addFlash('warning', 'Statement records were deleted, but its original file could not be removed. Orphaned bytes may remain in private storage.');
         }
     }
 

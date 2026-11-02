@@ -1,6 +1,3 @@
 # yaml-language-server: $schema=../schema.json
 framework:
-    lock:
-        resources:
-            default: '%env(LOCK_DSN)%'
-            statement_lifecycle: 'flock://%statement_storage_directory%/.locks'
+    lock: '%env(LOCK_DSN)%'

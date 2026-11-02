@@ -25,7 +25,6 @@ services:
         exclude:
             - '../src/Entity/'
             - '../src/DataFixtures/'
-            - '../src/Demo/StatementCleanupPurgerFactory.php'
             - '../src/Doctrine/ExactDecimalType.php'
             - '../src/Doctrine/SqliteImmediateTransactionConnection.php'
             - '../src/Doctrine/SqliteImmediateTransactionDriver.php'
@@ -63,9 +62,6 @@ services:
 
 when@dev: &fixture_services
     services:
-        fidry_alice_data_fixtures.persistence.doctrine.purger.purger_factory:
-            class: App\Demo\StatementCleanupPurgerFactory
-            autowire: true
         App\Demo\DemoReset:
             autowire: true
             arguments:

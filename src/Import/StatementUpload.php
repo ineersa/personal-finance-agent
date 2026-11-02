@@ -17,36 +17,11 @@ use Symfony\Component\Messenger\MessageBusInterface;
 
 final readonly class StatementUpload
 {
-    public function __construct(private StatementStorage $storage, private EntityManagerInterface $entityManager, private MessageBusInterface $bus, private ImportLifecycle $lifecycle, private StatementRepository $statements)
+    public function __construct(private StatementStorage $storage, private EntityManagerInterface $entityManager, private MessageBusInterface $bus, private StatementRepository $statements)
     {
     }
 
     public function upload(User $owner, Source $source, UploadedFile $file): Statement
-    {
-        $lock = $this->lifecycle->acquire();
-        try {
-            return $this->storeAndDispatch($owner, $source, $file);
-        } finally {
-            $lock->release();
-        }
-    }
-
-    public function retry(User $owner, Statement $statement): void
-    {
-        $lock = $this->lifecycle->acquire();
-        try {
-            if (\in_array('ROLE_ADMIN', $owner->getRoles(), true) || $statement->getUser()->getId() !== $owner->getId() || $statement->source->getUser()->getId() !== $owner->getId()) {
-                throw new ImportException('The statement is not available.');
-            }
-            if ($this->statements->transition($statement->getId() ?? throw new \LogicException('Statement missing.'), $owner->getId() ?? throw new \LogicException('Owner missing.'), $statement->storedFilename, ProcessingStatus::Failed, ProcessingStatus::Queued, withoutTransactions: true)) {
-                $this->dispatch($statement, $owner);
-            }
-        } finally {
-            $lock->release();
-        }
-    }
-
-    private function storeAndDispatch(User $owner, Source $source, UploadedFile $file): Statement
     {
         if (null === $owner->getId() || null === $source->getId() || $source->getUser()->getId() !== $owner->getId() || \in_array('ROLE_ADMIN', $owner->getRoles(), true)) {
             throw new ImportException('The selected source is not available.');
@@ -85,6 +60,16 @@ final readonly class StatementUpload
         $this->dispatch($statement, $owner);
 
         return $statement;
+    }
+
+    public function retry(User $owner, Statement $statement): void
+    {
+        if (\in_array('ROLE_ADMIN', $owner->getRoles(), true) || $statement->getUser()->getId() !== $owner->getId() || $statement->source->getUser()->getId() !== $owner->getId()) {
+            throw new ImportException('The statement is not available.');
+        }
+        if ($this->statements->transition($statement->getId() ?? throw new \LogicException('Statement missing.'), $owner->getId() ?? throw new \LogicException('Owner missing.'), $statement->storedFilename, ProcessingStatus::Failed, ProcessingStatus::Queued, withoutTransactions: true)) {
+            $this->dispatch($statement, $owner);
+        }
     }
 
     private function dispatch(Statement $statement, User $owner): void

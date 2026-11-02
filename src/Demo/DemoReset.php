@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace App\Demo;
 
+use App\Entity\Statement;
 use App\Entity\User;
 use App\Import\ImportException;
-use App\Import\ImportLifecycle;
-use App\Storage\StatementFileCleanup;
+use App\Repository\StatementRepository;
 use Doctrine\ORM\EntityManagerInterface;
 use Hautelook\AliceBundle\LoaderInterface;
 use League\Flysystem\FilesystemOperator;
@@ -18,7 +18,7 @@ use Symfony\Component\HttpKernel\KernelInterface;
 
 final readonly class DemoReset
 {
-    public function __construct(private EntityManagerInterface $em, private ImportLifecycle $lifecycle, private KernelInterface $kernel, #[Target('statements.storage')] private FilesystemOperator $storage, private StatementFileCleanup $cleanup, #[Autowire('%env(bool:LOCAL_DEMO_RESET_ENABLED)%')] private bool $enabled, private ?LoaderInterface $loader = null)
+    public function __construct(private EntityManagerInterface $em, private StatementRepository $statements, private KernelInterface $kernel, #[Target('statements.storage')] private FilesystemOperator $storage, #[Autowire('%env(bool:LOCAL_DEMO_RESET_ENABLED)%')] private bool $enabled, private ?LoaderInterface $loader = null)
     {
     }
 
@@ -32,24 +32,20 @@ final readonly class DemoReset
         if (!$this->enabled || !\in_array($this->kernel->getEnvironment(), ['dev', 'test'], true) || null === $this->loader) {
             throw new \LogicException('Local demo reset is disabled.');
         }
-        $lock = $this->lifecycle->acquire(true);
+        if ($this->statements->hasActiveImports()) {
+            throw new ImportException('Reset refused: an import is queued or running. Wait for every import to finish.');
+        }
+        $this->em->clear();
+        $this->loader->load(new Application($this->kernel), $this->em, [], $this->kernel->getEnvironment(), false, false, true);
+        $filenames = array_map(static fn (Statement $statement): string => $statement->storedFilename, $this->em->getRepository(Statement::class)->findAll());
         try {
-            if (0 !== (int) $this->em->getConnection()->fetchOne("SELECT COUNT(*) FROM statement WHERE processing_status IN ('queued', 'running')")) {
-                throw new ImportException('Reset refused: an import is queued or running. Wait for every import to finish.');
-            }
-            // Preserve cleanup intent even if Alice fails; drain skips still-referenced files.
             foreach ($this->storage->listContents('', false) as $entry) {
-                if ($entry->isFile()) {
-                    $this->cleanup->schedule($entry->path());
+                if ($entry->isFile() && !\in_array($entry->path(), $filenames, true)) {
+                    $this->storage->delete($entry->path());
                 }
             }
-            $this->em->flush();
-            // Native Alice purges financial tables, retaining pending cleanup for explicit retry.
-            $this->em->clear();
-            $this->loader->load(new Application($this->kernel), $this->em, [], $this->kernel->getEnvironment(), false, false, true);
-            $this->cleanup->drain();
-        } finally {
-            $lock->release();
+        } catch (\Throwable) {
+            throw new ImportException('Demo records were restored, but some uploaded files could not be removed. Orphaned bytes may remain in private storage.');
         }
     }
 }

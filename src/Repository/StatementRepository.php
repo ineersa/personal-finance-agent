@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 namespace App\Repository;
 
+use App\Entity\Source;
 use App\Entity\Statement;
+use App\Entity\Transaction;
 use App\Entity\User;
 use App\Enum\ProcessingStatus;
 use Doctrine\ORM\EntityManagerInterface;
@@ -42,13 +44,36 @@ final readonly class StatementRepository
 
     public function transition(int $id, int $ownerId, string $filename, ProcessingStatus $from, ProcessingStatus $to, ?string $error = null, bool $withoutTransactions = false): bool
     {
-        $sql = 'UPDATE statement SET processing_status = ?, processing_error = ? WHERE id = ? AND user_id = ? AND stored_filename = ? AND processing_status = ? AND source_id IN (SELECT id FROM source WHERE user_id = ?)';
-        $parameters = [$to->value, $error, $id, $ownerId, $filename, $from->value, $ownerId];
+        $ownedSources = $this->entityManager->createQueryBuilder()->select('source.id')->from(Source::class, 'source')->where('source.user = :owner');
+        $query = $this->entityManager->createQueryBuilder()
+            ->update(Statement::class, 'record')
+            ->set('record.processingStatus', ':to')
+            ->set('record.processingError', ':error')
+            ->where('record.id = :id')
+            ->andWhere('record.user = :owner')
+            ->andWhere('record.storedFilename = :filename')
+            ->andWhere('record.processingStatus = :from')
+            ->andWhere('IDENTITY(record.source) IN ('.$ownedSources->getDQL().')')
+            ->setParameter('to', $to->value)
+            ->setParameter('error', $error)
+            ->setParameter('id', $id)
+            ->setParameter('owner', $ownerId)
+            ->setParameter('filename', $filename)
+            ->setParameter('from', $from->value);
         if ($withoutTransactions) {
-            $sql .= ' AND NOT EXISTS (SELECT 1 FROM financial_transaction WHERE statement_id = ?)';
-            $parameters[] = $id;
+            $transactions = $this->entityManager->createQueryBuilder()->select('transaction.id')->from(Transaction::class, 'transaction')->where('transaction.statement = :id');
+            $query->andWhere($query->expr()->not($query->expr()->exists($transactions->getDQL())));
         }
 
-        return 1 === $this->entityManager->getConnection()->executeStatement($sql, $parameters);
+        return 1 === $query->getQuery()->execute();
+    }
+
+    public function hasActiveImports(): bool
+    {
+        return 0 < (int) $this->entityManager->createQueryBuilder()
+            ->select('COUNT(record.id)')->from(Statement::class, 'record')
+            ->where('record.processingStatus IN (:statuses)')
+            ->setParameter('statuses', [ProcessingStatus::Queued->value, ProcessingStatus::Running->value])
+            ->getQuery()->getSingleScalarResult();
     }
 }

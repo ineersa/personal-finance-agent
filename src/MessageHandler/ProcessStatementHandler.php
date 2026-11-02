@@ -10,7 +10,6 @@ use App\Entity\User;
 use App\Enum\ProcessingStatus;
 use App\Import\CsvParser;
 use App\Import\ImportException;
-use App\Import\ImportLifecycle;
 use App\Import\ImportUpdates;
 use App\Import\TransactionInterpreter;
 use App\Message\ProcessStatementMessage;
@@ -22,7 +21,7 @@ use Symfony\Component\Messenger\Attribute\AsMessageHandler;
 #[AsMessageHandler]
 final readonly class ProcessStatementHandler
 {
-    public function __construct(private EntityManagerInterface $entityManager, private StatementRepository $statements, private StatementStorage $storage, private CsvParser $parser, private TransactionInterpreter $interpreter, private ImportUpdates $updates, private ImportLifecycle $lifecycle)
+    public function __construct(private EntityManagerInterface $entityManager, private StatementRepository $statements, private StatementStorage $storage, private CsvParser $parser, private TransactionInterpreter $interpreter, private ImportUpdates $updates)
     {
     }
 
@@ -31,16 +30,6 @@ final readonly class ProcessStatementHandler
         if (!isset($message->storedFilename)) {
             return;
         }
-        $lock = $this->lifecycle->acquire();
-        try {
-            $this->process($message);
-        } finally {
-            $lock->release();
-        }
-    }
-
-    private function process(ProcessStatementMessage $message): void
-    {
         $owner = $this->entityManager->find(User::class, $message->ownerId);
         if (null === $owner) {
             return;

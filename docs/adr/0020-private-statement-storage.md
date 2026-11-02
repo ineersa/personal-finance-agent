@@ -29,7 +29,7 @@ Task 07 owns authorization, upload validation, size limits, quota admission, met
 
 Run storage operations outside database write transactions. Storage opens and closes the write input stream; the caller closes a stream returned by `read()`. A failed storage write attempts to remove its possible partial file. If cleanup fails, propagate that failure rather than report success. After a successful write, the upload caller must commit metadata in a short transaction. If metadata construction or persistence fails, call `delete()` with the returned internal filename after rolling back any transaction. Coordinate quota reservation settlement in task 07; storage does not implement another quota counter.
 
-Do not delete bytes before the metadata transaction commits a separately authorized removal. If later file deletion fails, retain enough information for an explicit retry. No delete UI, automatic retention, entity callback or background recovery framework is introduced here. Process termination between filesystem and database steps can leave orphaned bytes; this bounded compensation is not an atomic filesystem/database transaction or crash-recovery guarantee.
+Do not delete bytes before the metadata transaction commits a separately authorized removal. Owner review on 2026-11-02 selected direct file deletion afterward with an honest warning on failure, removing the interim cleanup ledger, retry command and lifecycle locks. Orphaned private bytes are accepted; no automatic retention, entity callback or recovery mechanism is selected. Filesystem and database operations are not atomic, and local demo reset is not safe to run concurrently with imports.
 
 ### Synthetic fixtures
 
