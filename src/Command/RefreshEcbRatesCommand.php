@@ -23,7 +23,7 @@ final class RefreshEcbRatesCommand extends Command
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
         $count = $this->refresher->refresh();
-        $output->writeln(sprintf('Updated %d calendar-day currency rates.', $count));
+        $output->writeln(\sprintf('Updated %d calendar-day currency rates.', $count));
 
         return Command::SUCCESS;
     }
