@@ -75,6 +75,7 @@ final class StatementImportTest extends TestCase
                 self::assertSame($approvedRows, $page->locator('tbody')->textContent(), 'Drafts must not change approved transactions.');
                 $page->goto($processingUrl);
                 $page->getByRole('button', ['name' => 'Approve draft', 'exact' => true])->click();
+                $page->waitForURL('**/home/statement');
                 $page->getByText('Statement draft approved.', ['exact' => true])->waitFor();
                 $page->goto($processingUrl);
                 self::assertSame(0, $page->locator('[data-draft-results]')->count());

@@ -100,7 +100,7 @@ final class StatementImportController extends AbstractController
                 $entityManager->flush();
                 $this->addFlash('success', [] === $drafts ? 'No drafts remain for approval.' : 'Statement draft approved.');
 
-                return $this->redirectToRoute('admin_statement_processing', ['id' => $id]);
+                return $this->redirectToRoute('admin_statement_index');
             }
             $form->addError(new FormError('Nothing was approved. Correct the draft fields listed below, then approve again.'));
         }
