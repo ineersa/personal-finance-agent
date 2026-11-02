@@ -100,6 +100,18 @@ function browserStackStatus(): int
     return developmentStack('browser', 'status');
 }
 
+#[AsTask(namespace: 'browser', name: 'stack:restart-worker', description: 'Restart only this checkout\'s isolated browser worker to load changed code and templates.')]
+function browserStackRestartWorker(): int
+{
+    $command = ['restart', 'worker'];
+
+    return report('browser:stack:restart-worker', [...stackCommand('browser'), ...$command], runtime: false, operation: static function () use ($command): int {
+        stackRun('browser', $command);
+
+        return 0;
+    });
+}
+
 /** @param list<string> $arguments */
 #[AsTask(namespace: 'browser', name: 'stack:console', description: 'Run Symfony console in this checkout\'s running isolated browser stack; pass arguments after --.')]
 function browserStackConsole(#[AsArgsAfterOptionEnd] array $arguments = []): int

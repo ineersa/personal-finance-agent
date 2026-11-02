@@ -94,6 +94,8 @@ vendor/bin/castor browser:stack:console -- hautelook:fixtures:load --append --no
 
 Do not rerun fixture loading over existing fixture identities or purge data to make it pass. Use `admin@test.com / admin` or `demo@test.com / demo`. Configure the provider using the existing development setup; do not put credentials in test commands or reports.
 
+After changing worker code or streamed templates, run `vendor/bin/castor browser:stack:restart-worker` before the live journey. It restarts only this checkout's isolated browser worker, leaving the web preview, broker and storage intact.
+
 Run the single live journey, then stop the owned stack when it is no longer needed:
 
 ```sh
