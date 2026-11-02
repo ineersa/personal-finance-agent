@@ -18,6 +18,8 @@ class CurrencyRate
         public string $currency,
         #[ORM\Column(type: 'exact_decimal')]
         public string $unitsPerEur,
+        #[ORM\Column(options: ['default' => false])]
+        public bool $isProvisional = false,
     ) {
     }
 }

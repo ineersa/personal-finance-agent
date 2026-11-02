@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "4c1ab34cce3353ba9abb382059789110",
+    "content-hash": "5d551769a28e013f9a09a226027d581c",
     "packages": [
         {
             "name": "amphp/amp",
@@ -8630,6 +8630,102 @@
             "published-time": "2026-10-23T17:21:21+00:00"
         },
         {
+            "name": "symfony/scheduler",
+            "version": "8.2.x-dev",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/symfony/scheduler.git",
+                "reference": "ba95f256e2ac959ed02fe8ede25a68be0f74593e"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/symfony/scheduler/zipball/ba95f256e2ac959ed02fe8ede25a68be0f74593e",
+                "reference": "ba95f256e2ac959ed02fe8ede25a68be0f74593e",
+                "shasum": ""
+            },
+            "require": {
+                "php": ">=8.4.1",
+                "symfony/clock": "^7.4|^8.0",
+                "symfony/deprecation-contracts": "^2.5|^3"
+            },
+            "conflict": {
+                "symfony/cache": "<8.2",
+                "symfony/cache-contracts": "<3.8",
+                "symfony/console": "<8.2",
+                "symfony/dependency-injection": "<8.1",
+                "symfony/messenger": "<8.2"
+            },
+            "require-dev": {
+                "dragonmantank/cron-expression": "^3.1",
+                "symfony/cache": "^8.2",
+                "symfony/config": "^7.4|^8.0",
+                "symfony/console": "^8.2",
+                "symfony/dependency-injection": "^8.1",
+                "symfony/event-dispatcher": "^7.4|^8.0",
+                "symfony/lock": "^7.4|^8.0",
+                "symfony/messenger": "^8.2",
+                "symfony/serializer": "^7.4|^8.0"
+            },
+            "default-branch": true,
+            "type": "library",
+            "autoload": {
+                "psr-4": {
+                    "Symfony\\Component\\Scheduler\\": ""
+                },
+                "exclude-from-classmap": [
+                    "/Tests/"
+                ]
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "Sergey Rabochiy",
+                    "email": "upyx.00@gmail.com"
+                },
+                {
+                    "name": "Fabien Potencier",
+                    "email": "fabien@symfony.com"
+                },
+                {
+                    "name": "Symfony Community",
+                    "homepage": "https://symfony.com/contributors"
+                }
+            ],
+            "description": "Provides scheduling through Symfony Messenger",
+            "homepage": "https://symfony.com",
+            "keywords": [
+                "cron",
+                "schedule",
+                "scheduler"
+            ],
+            "support": {
+                "source": "https://github.com/symfony/scheduler/tree/8.2"
+            },
+            "funding": [
+                {
+                    "url": "https://symfony.com/sponsor",
+                    "type": "custom"
+                },
+                {
+                    "url": "https://github.com/fabpot",
+                    "type": "github"
+                },
+                {
+                    "url": "https://github.com/nicolas-grekas",
+                    "type": "github"
+                },
+                {
+                    "url": "https://tidelift.com/funding/github/packagist/symfony/symfony",
+                    "type": "tidelift"
+                }
+            ],
+            "time": "2026-10-28T07:27:57+00:00",
+            "published-time": "2026-10-28T08:35:48+00:00"
+        },
+        {
             "name": "symfony/security-bundle",
             "version": "8.2.x-dev",
             "source": {
@@ -17135,6 +17231,7 @@
         "symfony/messenger": 20,
         "symfony/rate-limiter": 20,
         "symfony/runtime": 20,
+        "symfony/scheduler": 20,
         "symfony/twig-bundle": 20,
         "symfony/uid": 20,
         "symfony/web-profiler-bundle": 20,
