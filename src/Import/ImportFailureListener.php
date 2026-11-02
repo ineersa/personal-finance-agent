@@ -28,18 +28,16 @@ final readonly class ImportFailureListener
         }
         try {
             // Covers failures before handler construction, without exposing exception payloads.
+            $error = 'The worker could not handle this statement. Retry processing after checking worker availability.';
             foreach ([ProcessingStatus::Queued, ProcessingStatus::Running] as $status) {
-                if ($this->statements->transition($message->statementId, $message->ownerId, $message->storedFilename, $status, ProcessingStatus::Failed, 'The worker could not handle this statement. Retry processing after checking worker availability.')) {
+                if ($this->statements->transition($message->statementId, $message->ownerId, $message->storedFilename, $status, ProcessingStatus::Failed, $error)) {
                     $statement = $this->entityManager->find(Statement::class, $message->statementId);
                     if (null === $statement) {
                         return;
                     }
-                    $this->entityManager->refresh($statement);
-                    $this->entityManager->refresh($statement->getUser());
-                    $this->entityManager->refresh($statement->source);
-                    if (ProcessingStatus::Failed === $statement->processingStatus && $statement->storedFilename === $message->storedFilename && $statement->getUser()->getId() === $message->ownerId) {
-                        $this->updates->publish($statement, []);
-                    }
+                    $statement->processingStatus = ProcessingStatus::Failed;
+                    $statement->processingError = $error;
+                    $this->updates->publish($statement, []);
 
                     return;
                 }
