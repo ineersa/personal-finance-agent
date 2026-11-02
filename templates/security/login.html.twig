@@ -8,8 +8,8 @@
         {% if error %}
             <p class="form-error" role="alert">{{ error.messageKey|trans(error.messageData, 'security') }}</p>
         {% endif %}
-        <form class="finance-form" method="post" action="{{ path('app_login') }}">
-            <input type="hidden" name="_csrf_token" value="{{ csrf_token('authenticate') }}">
+        <form class="finance-form" method="post" action="{{ path('app_login') }}" data-turbo="false">
+            <input type="hidden" name="_csrf_token" value="{{ csrf_token('authenticate') }}" data-controller="csrf-protection">
             <label for="username">Email</label>
             <input id="username" type="email" name="_username" value="{{ last_username }}" required autofocus autocomplete="username">
             <label for="password">Password</label>

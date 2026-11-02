@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace AppTasks;
 
-use Castor\Attribute\AsArgument;
+use Castor\Attribute\AsArgsAfterOptionEnd;
 use Castor\Attribute\AsTask;
 use Symfony\Component\Process\Process;
 
@@ -63,7 +63,28 @@ function stackCommand(string $mode): array
 /** @return array<string, string> */
 function stackEnvironment(string $mode): array
 {
-    return ['FINANCE_CHECKOUT_ID' => checkoutId(), 'FINANCE_PROJECT' => stackProject($mode), 'FINANCE_NETWORK' => developmentNetwork(), 'LOCAL_UID' => (string) posix_getuid(), 'LOCAL_GID' => (string) posix_getgid()];
+    $directory = \dirname(__DIR__).'/var/tooling';
+    if (is_link($directory)) {
+        throw new \RuntimeException('Refusing symlinked runtime secrets.');
+    }
+    if (!is_dir($directory)) {
+        mkdir($directory, 0700, true);
+    }
+    $secret = $directory.'/mercure-'.$mode.'.key';
+    if (is_link($secret)) {
+        throw new \RuntimeException('Refusing symlinked Mercure secret.');
+    }
+    if (!is_file($secret)) {
+        $file = fopen($secret, 'xb');
+        if (false === $file) {
+            throw new \RuntimeException('Cannot create Mercure secret.');
+        }
+        chmod($secret, 0600);
+        fwrite($file, bin2hex(random_bytes(32)));
+        fclose($file);
+    }
+
+    return ['FINANCE_CHECKOUT_ID' => checkoutId(), 'FINANCE_PROJECT' => stackProject($mode), 'FINANCE_NETWORK' => developmentNetwork(), 'FINANCE_PUBLIC_URL' => stackUrl($mode), 'MERCURE_JWT_SECRET' => trim((string) file_get_contents($secret)), 'LOCAL_UID' => (string) posix_getuid(), 'LOCAL_GID' => (string) posix_getgid()];
 }
 
 /** @param list<string> $arguments */
@@ -201,6 +222,13 @@ function developmentStack(string $mode, string $action): int
                 if ('browser' === $mode && !is_dir(\dirname(__DIR__).'/var/browser-live/browser')) {
                     mkdir(\dirname(__DIR__).'/var/browser-live/browser', 0700, true);
                 }
+                $queue = \dirname(__DIR__).'/var/'.('browser' === $mode ? 'browser-live/' : '').'queue';
+                if (is_link($queue)) {
+                    throw new \RuntimeException('Refusing symlinked queue storage.');
+                }
+                if (!is_dir($queue)) {
+                    mkdir($queue, 0700, true);
+                }
                 stackRun($mode, ['build']);
                 writeProxyConfig($state, $routes);
                 ensureProxy($state);
@@ -251,10 +279,15 @@ function developmentStackStop(): int
     return developmentStack('dev', 'stop');
 }
 
-#[AsTask(namespace: 'browser', name: 'routes:test', description: 'Verify comma-separated live stack URLs in a real tooling-container browser.')]
-function browserRoutesTest(#[AsArgument] string $urls = '', string $absent = ''): int
+/** @param list<string> $arguments */
+#[AsTask(namespace: 'browser', name: 'live:test', description: 'Run browser tests against the isolated live stack; pass native PHPUnit arguments after --.')]
+function browserLiveTest(#[AsArgsAfterOptionEnd] array $arguments = []): int
 {
-    return report('browser:routes:test', ['env', 'FINANCE_ROUTING_URLS='.$urls, 'FINANCE_UNREGISTERED_URLS='.$absent, 'FINANCE_PROXY_IP='.proxyAddress(), 'php', 'vendor/bin/phpunit', 'tests/Live/RoutingTest.php', '--fail-on-empty-test-suite', '--log-junit', 'var/qa/browser-routes-test/junit.xml'], networked: true);
+    if ([] === $arguments) {
+        throw new \InvalidArgumentException('Pass the PHPUnit test selection after --.');
+    }
+
+    return report('browser:live:test', ['env', 'FINANCE_IMPORT_URL='.stackUrl('browser'), 'FINANCE_PROXY_IP='.proxyAddress(), 'php', 'vendor/bin/phpunit', ...$arguments, '--fail-on-empty-test-suite', '--log-junit', 'var/qa/browser-live-test/junit.xml'], networked: true);
 }
 
 #[AsTask(namespace: 'dev', name: 'proxy:stop', description: 'Stop the shared proxy only when no checkout has registered routes.')]

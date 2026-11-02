@@ -1,31 +1,907 @@
-# StatementFileProcessor supplies canonical synthetic CSV bytes and their metadata.
 App\Entity\Statement:
-    demo_statement:
-        __construct:
-            - '@demo'
-            - '@demo_current'
-            - a19abfd3-cbb5-4ead-8be0-a8ed2b99be01
-            - demo-october-2026.csv
-            - text/csv
-            - 0
-            - '0000000000000000000000000000000000000000000000000000000000000000'
-        statementDate: '<(new \DateTimeImmutable("2026-10-01"))>'
-    demo_card_statement:
-        __construct:
-            - '@demo'
-            - '@demo_card'
-            - a19abfd3-cbb5-4ead-8be0-a8ed2b99be02
-            - demo-card-2026.csv
-            - text/csv
-            - 0
-            - '0000000000000000000000000000000000000000000000000000000000000000'
-        statementDate: '<(new \DateTimeImmutable("2026-10-01"))>'
     admin_statement:
         __construct:
             - '@administrator'
             - '@admin_current'
             - a19abfd3-cbb5-4ead-8be0-a8ed2b99be03
-            - admin-october-2026.csv
+            - admin-september-2026.csv
             - text/csv
             - 0
             - '0000000000000000000000000000000000000000000000000000000000000000'
+    history_chequing_2024_11:
+        __construct:
+            - '@demo'
+            - '@demo_current'
+            - synthetic-chequing_2024_11
+            - history-chequing-2024-11.csv
+            - text/csv
+            - 543
+            - bb08cf1571ee461ff1d57d070c58d1c8f4f1040f1510a8cf4072bbe4debd7d81
+        statementDate: '<(new \DateTimeImmutable("2024-11-01"))>'
+        processingStatus: '<(App\Enum\ProcessingStatus::Completed)>'
+        uploadedAt: '<(new \DateTimeImmutable("2026-11-02T00:00:00+00:00"))>'
+        processedAt: '<(new \DateTimeImmutable("2026-11-02T00:00:00+00:00"))>'
+    history_credit_2024_11:
+        __construct:
+            - '@demo'
+            - '@demo_card'
+            - synthetic-credit_2024_11
+            - history-credit-2024-11.csv
+            - text/csv
+            - 1182
+            - 2faa867cacb19f8c440e1b84d3dbafa12d69274e4bef122729967bc3df259fbe
+        statementDate: '<(new \DateTimeImmutable("2024-11-01"))>'
+        processingStatus: '<(App\Enum\ProcessingStatus::Completed)>'
+        uploadedAt: '<(new \DateTimeImmutable("2026-11-02T00:00:00+00:00"))>'
+        processedAt: '<(new \DateTimeImmutable("2026-11-02T00:00:00+00:00"))>'
+    history_usd_2024_11:
+        __construct:
+            - '@demo'
+            - '@demo_usd'
+            - synthetic-usd_2024_11
+            - history-usd-2024-11.csv
+            - text/csv
+            - 304
+            - 96bef6e40b7eb83bb38f0eb1d947d70d4e31bff7a2094aa1b0cfd8fc91010c58
+        statementDate: '<(new \DateTimeImmutable("2024-11-01"))>'
+        processingStatus: '<(App\Enum\ProcessingStatus::Completed)>'
+        uploadedAt: '<(new \DateTimeImmutable("2026-11-02T00:00:00+00:00"))>'
+        processedAt: '<(new \DateTimeImmutable("2026-11-02T00:00:00+00:00"))>'
+    history_chequing_2024_12:
+        __construct:
+            - '@demo'
+            - '@demo_current'
+            - synthetic-chequing_2024_12
+            - history-chequing-2024-12.csv
+            - text/csv
+            - 542
+            - 26d12a84efcb60af692ed5848e9c5e06c19376ccfe53348e6112251653fef14a
+        statementDate: '<(new \DateTimeImmutable("2024-12-01"))>'
+        processingStatus: '<(App\Enum\ProcessingStatus::Completed)>'
+        uploadedAt: '<(new \DateTimeImmutable("2026-11-02T00:00:00+00:00"))>'
+        processedAt: '<(new \DateTimeImmutable("2026-11-02T00:00:00+00:00"))>'
+    history_credit_2024_12:
+        __construct:
+            - '@demo'
+            - '@demo_card'
+            - synthetic-credit_2024_12
+            - history-credit-2024-12.csv
+            - text/csv
+            - 1026
+            - 8fee92135b240241a83a8d9322a87c158f71bfbb61602c4bb0853ee6fb87d072
+        statementDate: '<(new \DateTimeImmutable("2024-12-01"))>'
+        processingStatus: '<(App\Enum\ProcessingStatus::Completed)>'
+        uploadedAt: '<(new \DateTimeImmutable("2026-11-02T00:00:00+00:00"))>'
+        processedAt: '<(new \DateTimeImmutable("2026-11-02T00:00:00+00:00"))>'
+    history_usd_2024_12:
+        __construct:
+            - '@demo'
+            - '@demo_usd'
+            - synthetic-usd_2024_12
+            - history-usd-2024-12.csv
+            - text/csv
+            - 193
+            - 125d79b065de5f5249bd26034c2a1ef3ca8f946eb69dd0157e0daf7a3111bff9
+        statementDate: '<(new \DateTimeImmutable("2024-12-01"))>'
+        processingStatus: '<(App\Enum\ProcessingStatus::Completed)>'
+        uploadedAt: '<(new \DateTimeImmutable("2026-11-02T00:00:00+00:00"))>'
+        processedAt: '<(new \DateTimeImmutable("2026-11-02T00:00:00+00:00"))>'
+    history_chequing_2025_01:
+        __construct:
+            - '@demo'
+            - '@demo_current'
+            - synthetic-chequing_2025_01
+            - history-chequing-2025-01.csv
+            - text/csv
+            - 543
+            - 3b2d3f39c9521d5abd347a1b62873956f0f574482025c3d21c5bc7688729cfa3
+        statementDate: '<(new \DateTimeImmutable("2025-01-01"))>'
+        processingStatus: '<(App\Enum\ProcessingStatus::Completed)>'
+        uploadedAt: '<(new \DateTimeImmutable("2026-11-02T00:00:00+00:00"))>'
+        processedAt: '<(new \DateTimeImmutable("2026-11-02T00:00:00+00:00"))>'
+    history_credit_2025_01:
+        __construct:
+            - '@demo'
+            - '@demo_card'
+            - synthetic-credit_2025_01
+            - history-credit-2025-01.csv
+            - text/csv
+            - 1028
+            - aa44dbc3d939a8cb952df9aec7a31eb74846c77a7a27646046bf5bb9ca4a8ec6
+        statementDate: '<(new \DateTimeImmutable("2025-01-01"))>'
+        processingStatus: '<(App\Enum\ProcessingStatus::Completed)>'
+        uploadedAt: '<(new \DateTimeImmutable("2026-11-02T00:00:00+00:00"))>'
+        processedAt: '<(new \DateTimeImmutable("2026-11-02T00:00:00+00:00"))>'
+    history_usd_2025_01:
+        __construct:
+            - '@demo'
+            - '@demo_usd'
+            - synthetic-usd_2025_01
+            - history-usd-2025-01.csv
+            - text/csv
+            - 193
+            - 4b3b5f3d900aff04950b687396b86b14a155443f53f48675f09a85ac18a54836
+        statementDate: '<(new \DateTimeImmutable("2025-01-01"))>'
+        processingStatus: '<(App\Enum\ProcessingStatus::Completed)>'
+        uploadedAt: '<(new \DateTimeImmutable("2026-11-02T00:00:00+00:00"))>'
+        processedAt: '<(new \DateTimeImmutable("2026-11-02T00:00:00+00:00"))>'
+    history_chequing_2025_02:
+        __construct:
+            - '@demo'
+            - '@demo_current'
+            - synthetic-chequing_2025_02
+            - history-chequing-2025-02.csv
+            - text/csv
+            - 543
+            - 095cedb409eaa012fbd89e4ef182a488ddac4cc76a38965f63ee2c1d5a9b30b1
+        statementDate: '<(new \DateTimeImmutable("2025-02-01"))>'
+        processingStatus: '<(App\Enum\ProcessingStatus::Completed)>'
+        uploadedAt: '<(new \DateTimeImmutable("2026-11-02T00:00:00+00:00"))>'
+        processedAt: '<(new \DateTimeImmutable("2026-11-02T00:00:00+00:00"))>'
+    history_credit_2025_02:
+        __construct:
+            - '@demo'
+            - '@demo_card'
+            - synthetic-credit_2025_02
+            - history-credit-2025-02.csv
+            - text/csv
+            - 1110
+            - e6bb1d5568263184518585a0e34a33daa0febb0fa84212ccde51a78f8159a234
+        statementDate: '<(new \DateTimeImmutable("2025-02-01"))>'
+        processingStatus: '<(App\Enum\ProcessingStatus::Completed)>'
+        uploadedAt: '<(new \DateTimeImmutable("2026-11-02T00:00:00+00:00"))>'
+        processedAt: '<(new \DateTimeImmutable("2026-11-02T00:00:00+00:00"))>'
+    history_usd_2025_02:
+        __construct:
+            - '@demo'
+            - '@demo_usd'
+            - synthetic-usd_2025_02
+            - history-usd-2025-02.csv
+            - text/csv
+            - 193
+            - 2ca2cca84e72520e8a79ee7b8311c0403626218b9c566de1d6fcfdeabc9df066
+        statementDate: '<(new \DateTimeImmutable("2025-02-01"))>'
+        processingStatus: '<(App\Enum\ProcessingStatus::Completed)>'
+        uploadedAt: '<(new \DateTimeImmutable("2026-11-02T00:00:00+00:00"))>'
+        processedAt: '<(new \DateTimeImmutable("2026-11-02T00:00:00+00:00"))>'
+    history_chequing_2025_03:
+        __construct:
+            - '@demo'
+            - '@demo_current'
+            - synthetic-chequing_2025_03
+            - history-chequing-2025-03.csv
+            - text/csv
+            - 542
+            - 3423368700d92e1832e71a5c9534f856140b897725a5cfc6311ef3825dbd6cc4
+        statementDate: '<(new \DateTimeImmutable("2025-03-01"))>'
+        processingStatus: '<(App\Enum\ProcessingStatus::Completed)>'
+        uploadedAt: '<(new \DateTimeImmutable("2026-11-02T00:00:00+00:00"))>'
+        processedAt: '<(new \DateTimeImmutable("2026-11-02T00:00:00+00:00"))>'
+    history_credit_2025_03:
+        __construct:
+            - '@demo'
+            - '@demo_card'
+            - synthetic-credit_2025_03
+            - history-credit-2025-03.csv
+            - text/csv
+            - 1025
+            - 072760c00fc8055e5b02adfe2e89111ef39b47e4cad434c1d2020df4fa68b6cf
+        statementDate: '<(new \DateTimeImmutable("2025-03-01"))>'
+        processingStatus: '<(App\Enum\ProcessingStatus::Completed)>'
+        uploadedAt: '<(new \DateTimeImmutable("2026-11-02T00:00:00+00:00"))>'
+        processedAt: '<(new \DateTimeImmutable("2026-11-02T00:00:00+00:00"))>'
+    history_usd_2025_03:
+        __construct:
+            - '@demo'
+            - '@demo_usd'
+            - synthetic-usd_2025_03
+            - history-usd-2025-03.csv
+            - text/csv
+            - 304
+            - a5a458166c6ab3a3a5f0261e103b293cf2b635ba62d96f0d1faa7cd4f699de08
+        statementDate: '<(new \DateTimeImmutable("2025-03-01"))>'
+        processingStatus: '<(App\Enum\ProcessingStatus::Completed)>'
+        uploadedAt: '<(new \DateTimeImmutable("2026-11-02T00:00:00+00:00"))>'
+        processedAt: '<(new \DateTimeImmutable("2026-11-02T00:00:00+00:00"))>'
+    history_chequing_2025_04:
+        __construct:
+            - '@demo'
+            - '@demo_current'
+            - synthetic-chequing_2025_04
+            - history-chequing-2025-04.csv
+            - text/csv
+            - 543
+            - d68600b2e0fc04b5dbdff2a72110de82d91708bc8146c186c35db4824dfabe0f
+        statementDate: '<(new \DateTimeImmutable("2025-04-01"))>'
+        processingStatus: '<(App\Enum\ProcessingStatus::Completed)>'
+        uploadedAt: '<(new \DateTimeImmutable("2026-11-02T00:00:00+00:00"))>'
+        processedAt: '<(new \DateTimeImmutable("2026-11-02T00:00:00+00:00"))>'
+    history_credit_2025_04:
+        __construct:
+            - '@demo'
+            - '@demo_card'
+            - synthetic-credit_2025_04
+            - history-credit-2025-04.csv
+            - text/csv
+            - 1026
+            - e44e26671df8a6c56bc51bfd8b4705a588f746903a6591662f0dd8c604e1d274
+        statementDate: '<(new \DateTimeImmutable("2025-04-01"))>'
+        processingStatus: '<(App\Enum\ProcessingStatus::Completed)>'
+        uploadedAt: '<(new \DateTimeImmutable("2026-11-02T00:00:00+00:00"))>'
+        processedAt: '<(new \DateTimeImmutable("2026-11-02T00:00:00+00:00"))>'
+    history_usd_2025_04:
+        __construct:
+            - '@demo'
+            - '@demo_usd'
+            - synthetic-usd_2025_04
+            - history-usd-2025-04.csv
+            - text/csv
+            - 193
+            - 9c9b137df7c514784e65ddda666ffc54424db5c4474b2363912b0cb56858cb72
+        statementDate: '<(new \DateTimeImmutable("2025-04-01"))>'
+        processingStatus: '<(App\Enum\ProcessingStatus::Completed)>'
+        uploadedAt: '<(new \DateTimeImmutable("2026-11-02T00:00:00+00:00"))>'
+        processedAt: '<(new \DateTimeImmutable("2026-11-02T00:00:00+00:00"))>'
+    history_chequing_2025_05:
+        __construct:
+            - '@demo'
+            - '@demo_current'
+            - synthetic-chequing_2025_05
+            - history-chequing-2025-05.csv
+            - text/csv
+            - 542
+            - 7e6875cb63c9bade67d5dca7b5bd3d7788ec397b5d60c8eaa83927179d734bf6
+        statementDate: '<(new \DateTimeImmutable("2025-05-01"))>'
+        processingStatus: '<(App\Enum\ProcessingStatus::Completed)>'
+        uploadedAt: '<(new \DateTimeImmutable("2026-11-02T00:00:00+00:00"))>'
+        processedAt: '<(new \DateTimeImmutable("2026-11-02T00:00:00+00:00"))>'
+    history_credit_2025_05:
+        __construct:
+            - '@demo'
+            - '@demo_card'
+            - synthetic-credit_2025_05
+            - history-credit-2025-05.csv
+            - text/csv
+            - 1111
+            - fd11ecd8b5fcfbedd3e716cb801fdbd987511b733f1ba2d02303c66f228adb92
+        statementDate: '<(new \DateTimeImmutable("2025-05-01"))>'
+        processingStatus: '<(App\Enum\ProcessingStatus::Completed)>'
+        uploadedAt: '<(new \DateTimeImmutable("2026-11-02T00:00:00+00:00"))>'
+        processedAt: '<(new \DateTimeImmutable("2026-11-02T00:00:00+00:00"))>'
+    history_usd_2025_05:
+        __construct:
+            - '@demo'
+            - '@demo_usd'
+            - synthetic-usd_2025_05
+            - history-usd-2025-05.csv
+            - text/csv
+            - 193
+            - 405660cde295ec5fcfc50711ec9f4926076e9b0d663e69c2011596ba1c3f06d8
+        statementDate: '<(new \DateTimeImmutable("2025-05-01"))>'
+        processingStatus: '<(App\Enum\ProcessingStatus::Completed)>'
+        uploadedAt: '<(new \DateTimeImmutable("2026-11-02T00:00:00+00:00"))>'
+        processedAt: '<(new \DateTimeImmutable("2026-11-02T00:00:00+00:00"))>'
+    history_chequing_2025_06:
+        __construct:
+            - '@demo'
+            - '@demo_current'
+            - synthetic-chequing_2025_06
+            - history-chequing-2025-06.csv
+            - text/csv
+            - 543
+            - 0d7f7b681f7130eff531ac7120f643f4c4176cbacafe1a606c3c07ee9ea44a2d
+        statementDate: '<(new \DateTimeImmutable("2025-06-01"))>'
+        processingStatus: '<(App\Enum\ProcessingStatus::Completed)>'
+        uploadedAt: '<(new \DateTimeImmutable("2026-11-02T00:00:00+00:00"))>'
+        processedAt: '<(new \DateTimeImmutable("2026-11-02T00:00:00+00:00"))>'
+    history_credit_2025_06:
+        __construct:
+            - '@demo'
+            - '@demo_card'
+            - synthetic-credit_2025_06
+            - history-credit-2025-06.csv
+            - text/csv
+            - 1028
+            - 92815d536c60f3f32b0a8cd5b282e6d073dab9d4df92d2c34667703bb78291e5
+        statementDate: '<(new \DateTimeImmutable("2025-06-01"))>'
+        processingStatus: '<(App\Enum\ProcessingStatus::Completed)>'
+        uploadedAt: '<(new \DateTimeImmutable("2026-11-02T00:00:00+00:00"))>'
+        processedAt: '<(new \DateTimeImmutable("2026-11-02T00:00:00+00:00"))>'
+    history_usd_2025_06:
+        __construct:
+            - '@demo'
+            - '@demo_usd'
+            - synthetic-usd_2025_06
+            - history-usd-2025-06.csv
+            - text/csv
+            - 193
+            - 518157f782930447bc282579ae9432298a1b6a9c75624c62711191e81078cce8
+        statementDate: '<(new \DateTimeImmutable("2025-06-01"))>'
+        processingStatus: '<(App\Enum\ProcessingStatus::Completed)>'
+        uploadedAt: '<(new \DateTimeImmutable("2026-11-02T00:00:00+00:00"))>'
+        processedAt: '<(new \DateTimeImmutable("2026-11-02T00:00:00+00:00"))>'
+    history_chequing_2025_07:
+        __construct:
+            - '@demo'
+            - '@demo_current'
+            - synthetic-chequing_2025_07
+            - history-chequing-2025-07.csv
+            - text/csv
+            - 542
+            - 7cfe3f55477ca044dd7bfd745ad45f51f53450200387850f181ceef039c4085c
+        statementDate: '<(new \DateTimeImmutable("2025-07-01"))>'
+        processingStatus: '<(App\Enum\ProcessingStatus::Completed)>'
+        uploadedAt: '<(new \DateTimeImmutable("2026-11-02T00:00:00+00:00"))>'
+        processedAt: '<(new \DateTimeImmutable("2026-11-02T00:00:00+00:00"))>'
+    history_credit_2025_07:
+        __construct:
+            - '@demo'
+            - '@demo_card'
+            - synthetic-credit_2025_07
+            - history-credit-2025-07.csv
+            - text/csv
+            - 1029
+            - 291eb6da6648093b2e3642b94cf07c53a6f6c17855636af92cf10e9d8c1ae28b
+        statementDate: '<(new \DateTimeImmutable("2025-07-01"))>'
+        processingStatus: '<(App\Enum\ProcessingStatus::Completed)>'
+        uploadedAt: '<(new \DateTimeImmutable("2026-11-02T00:00:00+00:00"))>'
+        processedAt: '<(new \DateTimeImmutable("2026-11-02T00:00:00+00:00"))>'
+    history_usd_2025_07:
+        __construct:
+            - '@demo'
+            - '@demo_usd'
+            - synthetic-usd_2025_07
+            - history-usd-2025-07.csv
+            - text/csv
+            - 304
+            - 9343fccd1f0d15e2d9a2431f41bac29e3d46adb7ed8a034435db09e7cba1fb86
+        statementDate: '<(new \DateTimeImmutable("2025-07-01"))>'
+        processingStatus: '<(App\Enum\ProcessingStatus::Completed)>'
+        uploadedAt: '<(new \DateTimeImmutable("2026-11-02T00:00:00+00:00"))>'
+        processedAt: '<(new \DateTimeImmutable("2026-11-02T00:00:00+00:00"))>'
+    history_chequing_2025_08:
+        __construct:
+            - '@demo'
+            - '@demo_current'
+            - synthetic-chequing_2025_08
+            - history-chequing-2025-08.csv
+            - text/csv
+            - 542
+            - 1f791c96a13b54701ad05122841c3023a2499c3a64accb21e9f8d322f7f3188b
+        statementDate: '<(new \DateTimeImmutable("2025-08-01"))>'
+        processingStatus: '<(App\Enum\ProcessingStatus::Completed)>'
+        uploadedAt: '<(new \DateTimeImmutable("2026-11-02T00:00:00+00:00"))>'
+        processedAt: '<(new \DateTimeImmutable("2026-11-02T00:00:00+00:00"))>'
+    history_credit_2025_08:
+        __construct:
+            - '@demo'
+            - '@demo_card'
+            - synthetic-credit_2025_08
+            - history-credit-2025-08.csv
+            - text/csv
+            - 1111
+            - cc2c5eea429e9a741a18af63036c49727fe089c9c78adff082cf369dca99e52f
+        statementDate: '<(new \DateTimeImmutable("2025-08-01"))>'
+        processingStatus: '<(App\Enum\ProcessingStatus::Completed)>'
+        uploadedAt: '<(new \DateTimeImmutable("2026-11-02T00:00:00+00:00"))>'
+        processedAt: '<(new \DateTimeImmutable("2026-11-02T00:00:00+00:00"))>'
+    history_usd_2025_08:
+        __construct:
+            - '@demo'
+            - '@demo_usd'
+            - synthetic-usd_2025_08
+            - history-usd-2025-08.csv
+            - text/csv
+            - 193
+            - f9f1cdc00e0ff3e671eea722987b048db26648878f544424adbb9f1a85fb05ba
+        statementDate: '<(new \DateTimeImmutable("2025-08-01"))>'
+        processingStatus: '<(App\Enum\ProcessingStatus::Completed)>'
+        uploadedAt: '<(new \DateTimeImmutable("2026-11-02T00:00:00+00:00"))>'
+        processedAt: '<(new \DateTimeImmutable("2026-11-02T00:00:00+00:00"))>'
+    history_chequing_2025_09:
+        __construct:
+            - '@demo'
+            - '@demo_current'
+            - synthetic-chequing_2025_09
+            - history-chequing-2025-09.csv
+            - text/csv
+            - 543
+            - 777504aa5394b15dbe82fd769f4e70a87264eb46b91a6a0dae2c95695df8bf8d
+        statementDate: '<(new \DateTimeImmutable("2025-09-01"))>'
+        processingStatus: '<(App\Enum\ProcessingStatus::Completed)>'
+        uploadedAt: '<(new \DateTimeImmutable("2026-11-02T00:00:00+00:00"))>'
+        processedAt: '<(new \DateTimeImmutable("2026-11-02T00:00:00+00:00"))>'
+    history_credit_2025_09:
+        __construct:
+            - '@demo'
+            - '@demo_card'
+            - synthetic-credit_2025_09
+            - history-credit-2025-09.csv
+            - text/csv
+            - 1027
+            - f2144cc06c748a762e3958bd9fd1e53146a661869f0a3d081c953e7aca975156
+        statementDate: '<(new \DateTimeImmutable("2025-09-01"))>'
+        processingStatus: '<(App\Enum\ProcessingStatus::Completed)>'
+        uploadedAt: '<(new \DateTimeImmutable("2026-11-02T00:00:00+00:00"))>'
+        processedAt: '<(new \DateTimeImmutable("2026-11-02T00:00:00+00:00"))>'
+    history_usd_2025_09:
+        __construct:
+            - '@demo'
+            - '@demo_usd'
+            - synthetic-usd_2025_09
+            - history-usd-2025-09.csv
+            - text/csv
+            - 193
+            - 223ccc0c821e5c13785bcf926d9d4a74899c114611481dfb8f6b4684c9d797aa
+        statementDate: '<(new \DateTimeImmutable("2025-09-01"))>'
+        processingStatus: '<(App\Enum\ProcessingStatus::Completed)>'
+        uploadedAt: '<(new \DateTimeImmutable("2026-11-02T00:00:00+00:00"))>'
+        processedAt: '<(new \DateTimeImmutable("2026-11-02T00:00:00+00:00"))>'
+    history_chequing_2025_10:
+        __construct:
+            - '@demo'
+            - '@demo_current'
+            - synthetic-chequing_2025_10
+            - history-chequing-2025-10.csv
+            - text/csv
+            - 541
+            - 7a51e26f80ef01795826bf8b9a305ab28dda1342c3ed455a620be0dd4829967e
+        statementDate: '<(new \DateTimeImmutable("2025-10-01"))>'
+        processingStatus: '<(App\Enum\ProcessingStatus::Completed)>'
+        uploadedAt: '<(new \DateTimeImmutable("2026-11-02T00:00:00+00:00"))>'
+        processedAt: '<(new \DateTimeImmutable("2026-11-02T00:00:00+00:00"))>'
+    history_credit_2025_10:
+        __construct:
+            - '@demo'
+            - '@demo_card'
+            - synthetic-credit_2025_10
+            - history-credit-2025-10.csv
+            - text/csv
+            - 1026
+            - bbfa0fe6d65ea654aa707972b83b12e34508053b33ea25a2d5f9f39d63005ae3
+        statementDate: '<(new \DateTimeImmutable("2025-10-01"))>'
+        processingStatus: '<(App\Enum\ProcessingStatus::Completed)>'
+        uploadedAt: '<(new \DateTimeImmutable("2026-11-02T00:00:00+00:00"))>'
+        processedAt: '<(new \DateTimeImmutable("2026-11-02T00:00:00+00:00"))>'
+    history_usd_2025_10:
+        __construct:
+            - '@demo'
+            - '@demo_usd'
+            - synthetic-usd_2025_10
+            - history-usd-2025-10.csv
+            - text/csv
+            - 193
+            - c4701266c851c2b4ec5026d18cec7e388a02aeff1a9f1126c4ae5cb0d991d75b
+        statementDate: '<(new \DateTimeImmutable("2025-10-01"))>'
+        processingStatus: '<(App\Enum\ProcessingStatus::Completed)>'
+        uploadedAt: '<(new \DateTimeImmutable("2026-11-02T00:00:00+00:00"))>'
+        processedAt: '<(new \DateTimeImmutable("2026-11-02T00:00:00+00:00"))>'
+    history_chequing_2025_11:
+        __construct:
+            - '@demo'
+            - '@demo_current'
+            - synthetic-chequing_2025_11
+            - history-chequing-2025-11.csv
+            - text/csv
+            - 542
+            - 129d6639f075f0c49d4a55e48272b349cf88711f8417c5ced50a56d3dbccdbac
+        statementDate: '<(new \DateTimeImmutable("2025-11-01"))>'
+        processingStatus: '<(App\Enum\ProcessingStatus::Completed)>'
+        uploadedAt: '<(new \DateTimeImmutable("2026-11-02T00:00:00+00:00"))>'
+        processedAt: '<(new \DateTimeImmutable("2026-11-02T00:00:00+00:00"))>'
+    history_credit_2025_11:
+        __construct:
+            - '@demo'
+            - '@demo_card'
+            - synthetic-credit_2025_11
+            - history-credit-2025-11.csv
+            - text/csv
+            - 1181
+            - fb5cff75e34d5f08b37b4c6f4516e6d5ad3980685b9a28cd27fca9a07407650f
+        statementDate: '<(new \DateTimeImmutable("2025-11-01"))>'
+        processingStatus: '<(App\Enum\ProcessingStatus::Completed)>'
+        uploadedAt: '<(new \DateTimeImmutable("2026-11-02T00:00:00+00:00"))>'
+        processedAt: '<(new \DateTimeImmutable("2026-11-02T00:00:00+00:00"))>'
+    history_usd_2025_11:
+        __construct:
+            - '@demo'
+            - '@demo_usd'
+            - synthetic-usd_2025_11
+            - history-usd-2025-11.csv
+            - text/csv
+            - 304
+            - ad28f3c81ad792fa022978f1eedcd5c2b7919011ff6bcc65197b82d32f12b7e1
+        statementDate: '<(new \DateTimeImmutable("2025-11-01"))>'
+        processingStatus: '<(App\Enum\ProcessingStatus::Completed)>'
+        uploadedAt: '<(new \DateTimeImmutable("2026-11-02T00:00:00+00:00"))>'
+        processedAt: '<(new \DateTimeImmutable("2026-11-02T00:00:00+00:00"))>'
+    history_chequing_2025_12:
+        __construct:
+            - '@demo'
+            - '@demo_current'
+            - synthetic-chequing_2025_12
+            - history-chequing-2025-12.csv
+            - text/csv
+            - 542
+            - d5e82bb9cb3790e6f42e74563773030867a4bb15ac125675dbd043fb438e6bd3
+        statementDate: '<(new \DateTimeImmutable("2025-12-01"))>'
+        processingStatus: '<(App\Enum\ProcessingStatus::Completed)>'
+        uploadedAt: '<(new \DateTimeImmutable("2026-11-02T00:00:00+00:00"))>'
+        processedAt: '<(new \DateTimeImmutable("2026-11-02T00:00:00+00:00"))>'
+    history_credit_2025_12:
+        __construct:
+            - '@demo'
+            - '@demo_card'
+            - synthetic-credit_2025_12
+            - history-credit-2025-12.csv
+            - text/csv
+            - 1030
+            - 6e030f07559a5c7569506081a3371bfcf3f1b5fb878b2a321d4e8e34b0254335
+        statementDate: '<(new \DateTimeImmutable("2025-12-01"))>'
+        processingStatus: '<(App\Enum\ProcessingStatus::Completed)>'
+        uploadedAt: '<(new \DateTimeImmutable("2026-11-02T00:00:00+00:00"))>'
+        processedAt: '<(new \DateTimeImmutable("2026-11-02T00:00:00+00:00"))>'
+    history_usd_2025_12:
+        __construct:
+            - '@demo'
+            - '@demo_usd'
+            - synthetic-usd_2025_12
+            - history-usd-2025-12.csv
+            - text/csv
+            - 193
+            - ecadf262b757d4a66f486cb60bd028f8030bf3412b8bc04511deb67812154ca4
+        statementDate: '<(new \DateTimeImmutable("2025-12-01"))>'
+        processingStatus: '<(App\Enum\ProcessingStatus::Completed)>'
+        uploadedAt: '<(new \DateTimeImmutable("2026-11-02T00:00:00+00:00"))>'
+        processedAt: '<(new \DateTimeImmutable("2026-11-02T00:00:00+00:00"))>'
+    history_chequing_2026_01:
+        __construct:
+            - '@demo'
+            - '@demo_current'
+            - synthetic-chequing_2026_01
+            - history-chequing-2026-01.csv
+            - text/csv
+            - 542
+            - db6ae41ace794b762df192d964d1275b872bedef29ec94de896b14553bd3d933
+        statementDate: '<(new \DateTimeImmutable("2026-01-01"))>'
+        processingStatus: '<(App\Enum\ProcessingStatus::Completed)>'
+        uploadedAt: '<(new \DateTimeImmutable("2026-11-02T00:00:00+00:00"))>'
+        processedAt: '<(new \DateTimeImmutable("2026-11-02T00:00:00+00:00"))>'
+    history_credit_2026_01:
+        __construct:
+            - '@demo'
+            - '@demo_card'
+            - synthetic-credit_2026_01
+            - history-credit-2026-01.csv
+            - text/csv
+            - 1027
+            - 4a5e6f1ff32a57927993237cfee85842b702b442c28731cc7c3525dba61ce75f
+        statementDate: '<(new \DateTimeImmutable("2026-01-01"))>'
+        processingStatus: '<(App\Enum\ProcessingStatus::Completed)>'
+        uploadedAt: '<(new \DateTimeImmutable("2026-11-02T00:00:00+00:00"))>'
+        processedAt: '<(new \DateTimeImmutable("2026-11-02T00:00:00+00:00"))>'
+    history_usd_2026_01:
+        __construct:
+            - '@demo'
+            - '@demo_usd'
+            - synthetic-usd_2026_01
+            - history-usd-2026-01.csv
+            - text/csv
+            - 193
+            - f01fc7fa68140157e257aabe1ace98769d3ff2ab195acf455162c72cd4679c38
+        statementDate: '<(new \DateTimeImmutable("2026-01-01"))>'
+        processingStatus: '<(App\Enum\ProcessingStatus::Completed)>'
+        uploadedAt: '<(new \DateTimeImmutable("2026-11-02T00:00:00+00:00"))>'
+        processedAt: '<(new \DateTimeImmutable("2026-11-02T00:00:00+00:00"))>'
+    history_chequing_2026_02:
+        __construct:
+            - '@demo'
+            - '@demo_current'
+            - synthetic-chequing_2026_02
+            - history-chequing-2026-02.csv
+            - text/csv
+            - 543
+            - 2913c8de471c884081bf107a0817831074c2d839c484487d8515f17aed289cc8
+        statementDate: '<(new \DateTimeImmutable("2026-02-01"))>'
+        processingStatus: '<(App\Enum\ProcessingStatus::Completed)>'
+        uploadedAt: '<(new \DateTimeImmutable("2026-11-02T00:00:00+00:00"))>'
+        processedAt: '<(new \DateTimeImmutable("2026-11-02T00:00:00+00:00"))>'
+    history_credit_2026_02:
+        __construct:
+            - '@demo'
+            - '@demo_card'
+            - synthetic-credit_2026_02
+            - history-credit-2026-02.csv
+            - text/csv
+            - 1111
+            - 60adcb41988afe8b52cfb974a2014ad8d7bd6fd31afaea7f8a238a34da29309c
+        statementDate: '<(new \DateTimeImmutable("2026-02-01"))>'
+        processingStatus: '<(App\Enum\ProcessingStatus::Completed)>'
+        uploadedAt: '<(new \DateTimeImmutable("2026-11-02T00:00:00+00:00"))>'
+        processedAt: '<(new \DateTimeImmutable("2026-11-02T00:00:00+00:00"))>'
+    history_usd_2026_02:
+        __construct:
+            - '@demo'
+            - '@demo_usd'
+            - synthetic-usd_2026_02
+            - history-usd-2026-02.csv
+            - text/csv
+            - 193
+            - 085fcb2834536cbf6d2d716f0db6a3abd464bb30582c60d4e87428c52157d98a
+        statementDate: '<(new \DateTimeImmutable("2026-02-01"))>'
+        processingStatus: '<(App\Enum\ProcessingStatus::Completed)>'
+        uploadedAt: '<(new \DateTimeImmutable("2026-11-02T00:00:00+00:00"))>'
+        processedAt: '<(new \DateTimeImmutable("2026-11-02T00:00:00+00:00"))>'
+    history_chequing_2026_03:
+        __construct:
+            - '@demo'
+            - '@demo_current'
+            - synthetic-chequing_2026_03
+            - history-chequing-2026-03.csv
+            - text/csv
+            - 543
+            - c5636e14b39057a71853fe03c4a494de867574f327b0760b3610c0dd18f3df64
+        statementDate: '<(new \DateTimeImmutable("2026-03-01"))>'
+        processingStatus: '<(App\Enum\ProcessingStatus::Completed)>'
+        uploadedAt: '<(new \DateTimeImmutable("2026-11-02T00:00:00+00:00"))>'
+        processedAt: '<(new \DateTimeImmutable("2026-11-02T00:00:00+00:00"))>'
+    history_credit_2026_03:
+        __construct:
+            - '@demo'
+            - '@demo_card'
+            - synthetic-credit_2026_03
+            - history-credit-2026-03.csv
+            - text/csv
+            - 1027
+            - b0993a693714e099b150a5dd94f6e5a68f61770b1ad215bd4632fb3e9f414e01
+        statementDate: '<(new \DateTimeImmutable("2026-03-01"))>'
+        processingStatus: '<(App\Enum\ProcessingStatus::Completed)>'
+        uploadedAt: '<(new \DateTimeImmutable("2026-11-02T00:00:00+00:00"))>'
+        processedAt: '<(new \DateTimeImmutable("2026-11-02T00:00:00+00:00"))>'
+    history_usd_2026_03:
+        __construct:
+            - '@demo'
+            - '@demo_usd'
+            - synthetic-usd_2026_03
+            - history-usd-2026-03.csv
+            - text/csv
+            - 304
+            - 01272da53ac148c51b279d6531b2098bc2e1ba26fd4d8d1b1562cfb28edf7f3e
+        statementDate: '<(new \DateTimeImmutable("2026-03-01"))>'
+        processingStatus: '<(App\Enum\ProcessingStatus::Completed)>'
+        uploadedAt: '<(new \DateTimeImmutable("2026-11-02T00:00:00+00:00"))>'
+        processedAt: '<(new \DateTimeImmutable("2026-11-02T00:00:00+00:00"))>'
+    history_chequing_2026_04:
+        __construct:
+            - '@demo'
+            - '@demo_current'
+            - synthetic-chequing_2026_04
+            - history-chequing-2026-04.csv
+            - text/csv
+            - 542
+            - dc19a0d5287ed7b412936bbc0b6f77ec36b4ada1261831513d75db0c7f1cec42
+        statementDate: '<(new \DateTimeImmutable("2026-04-01"))>'
+        processingStatus: '<(App\Enum\ProcessingStatus::Completed)>'
+        uploadedAt: '<(new \DateTimeImmutable("2026-11-02T00:00:00+00:00"))>'
+        processedAt: '<(new \DateTimeImmutable("2026-11-02T00:00:00+00:00"))>'
+    history_credit_2026_04:
+        __construct:
+            - '@demo'
+            - '@demo_card'
+            - synthetic-credit_2026_04
+            - history-credit-2026-04.csv
+            - text/csv
+            - 1026
+            - b49b79b5467647454b032b926d85e41ef04436514dba658659060b73e904ff59
+        statementDate: '<(new \DateTimeImmutable("2026-04-01"))>'
+        processingStatus: '<(App\Enum\ProcessingStatus::Completed)>'
+        uploadedAt: '<(new \DateTimeImmutable("2026-11-02T00:00:00+00:00"))>'
+        processedAt: '<(new \DateTimeImmutable("2026-11-02T00:00:00+00:00"))>'
+    history_usd_2026_04:
+        __construct:
+            - '@demo'
+            - '@demo_usd'
+            - synthetic-usd_2026_04
+            - history-usd-2026-04.csv
+            - text/csv
+            - 193
+            - 40de68b6003893db06d5fa8c2fc3031a6ddd7fd70cd9a1e9c9033f6349f5c7dd
+        statementDate: '<(new \DateTimeImmutable("2026-04-01"))>'
+        processingStatus: '<(App\Enum\ProcessingStatus::Completed)>'
+        uploadedAt: '<(new \DateTimeImmutable("2026-11-02T00:00:00+00:00"))>'
+        processedAt: '<(new \DateTimeImmutable("2026-11-02T00:00:00+00:00"))>'
+    history_chequing_2026_05:
+        __construct:
+            - '@demo'
+            - '@demo_current'
+            - synthetic-chequing_2026_05
+            - history-chequing-2026-05.csv
+            - text/csv
+            - 542
+            - a270e5ce5a7560c3e7fad4c67492e35caea5844515aebac400699ed6456ba66b
+        statementDate: '<(new \DateTimeImmutable("2026-05-01"))>'
+        processingStatus: '<(App\Enum\ProcessingStatus::Completed)>'
+        uploadedAt: '<(new \DateTimeImmutable("2026-11-02T00:00:00+00:00"))>'
+        processedAt: '<(new \DateTimeImmutable("2026-11-02T00:00:00+00:00"))>'
+    history_credit_2026_05:
+        __construct:
+            - '@demo'
+            - '@demo_card'
+            - synthetic-credit_2026_05
+            - history-credit-2026-05.csv
+            - text/csv
+            - 1110
+            - f6182e620bdfeb4565fa8e7740ada60c50ab5c46b0416192b9a53d1bdf6fc593
+        statementDate: '<(new \DateTimeImmutable("2026-05-01"))>'
+        processingStatus: '<(App\Enum\ProcessingStatus::Completed)>'
+        uploadedAt: '<(new \DateTimeImmutable("2026-11-02T00:00:00+00:00"))>'
+        processedAt: '<(new \DateTimeImmutable("2026-11-02T00:00:00+00:00"))>'
+    history_usd_2026_05:
+        __construct:
+            - '@demo'
+            - '@demo_usd'
+            - synthetic-usd_2026_05
+            - history-usd-2026-05.csv
+            - text/csv
+            - 193
+            - 1f71eb3e2716ac6537f1133e7e0979ac0e55db8a7d3eeabfa28c19634dc5500f
+        statementDate: '<(new \DateTimeImmutable("2026-05-01"))>'
+        processingStatus: '<(App\Enum\ProcessingStatus::Completed)>'
+        uploadedAt: '<(new \DateTimeImmutable("2026-11-02T00:00:00+00:00"))>'
+        processedAt: '<(new \DateTimeImmutable("2026-11-02T00:00:00+00:00"))>'
+    history_chequing_2026_06:
+        __construct:
+            - '@demo'
+            - '@demo_current'
+            - synthetic-chequing_2026_06
+            - history-chequing-2026-06.csv
+            - text/csv
+            - 543
+            - 504541bfa90e0374fd27f87a18478c53a58b2135480531e9300f8326a6ffc969
+        statementDate: '<(new \DateTimeImmutable("2026-06-01"))>'
+        processingStatus: '<(App\Enum\ProcessingStatus::Completed)>'
+        uploadedAt: '<(new \DateTimeImmutable("2026-11-02T00:00:00+00:00"))>'
+        processedAt: '<(new \DateTimeImmutable("2026-11-02T00:00:00+00:00"))>'
+    history_credit_2026_06:
+        __construct:
+            - '@demo'
+            - '@demo_card'
+            - synthetic-credit_2026_06
+            - history-credit-2026-06.csv
+            - text/csv
+            - 1028
+            - c1c3a348010b0c97381ae3bbf3e5b550faa139c6d92e4fc76171fb43d85a3394
+        statementDate: '<(new \DateTimeImmutable("2026-06-01"))>'
+        processingStatus: '<(App\Enum\ProcessingStatus::Completed)>'
+        uploadedAt: '<(new \DateTimeImmutable("2026-11-02T00:00:00+00:00"))>'
+        processedAt: '<(new \DateTimeImmutable("2026-11-02T00:00:00+00:00"))>'
+    history_usd_2026_06:
+        __construct:
+            - '@demo'
+            - '@demo_usd'
+            - synthetic-usd_2026_06
+            - history-usd-2026-06.csv
+            - text/csv
+            - 193
+            - 70f06c5ab6d01e4f3da6902b56584433eb89f1b317315024fb62f70d8247eed0
+        statementDate: '<(new \DateTimeImmutable("2026-06-01"))>'
+        processingStatus: '<(App\Enum\ProcessingStatus::Completed)>'
+        uploadedAt: '<(new \DateTimeImmutable("2026-11-02T00:00:00+00:00"))>'
+        processedAt: '<(new \DateTimeImmutable("2026-11-02T00:00:00+00:00"))>'
+    history_chequing_2026_07:
+        __construct:
+            - '@demo'
+            - '@demo_current'
+            - synthetic-chequing_2026_07
+            - history-chequing-2026-07.csv
+            - text/csv
+            - 542
+            - 5886063b7d395de22d304bed852a410b37177d528b54fd23e45c3fa5ee24fbf5
+        statementDate: '<(new \DateTimeImmutable("2026-07-01"))>'
+        processingStatus: '<(App\Enum\ProcessingStatus::Completed)>'
+        uploadedAt: '<(new \DateTimeImmutable("2026-11-02T00:00:00+00:00"))>'
+        processedAt: '<(new \DateTimeImmutable("2026-11-02T00:00:00+00:00"))>'
+    history_credit_2026_07:
+        __construct:
+            - '@demo'
+            - '@demo_card'
+            - synthetic-credit_2026_07
+            - history-credit-2026-07.csv
+            - text/csv
+            - 1028
+            - d24cf7f0f3d9926c640e661f0b5724c943f8c0b8218c1522c792e1c3e202c10f
+        statementDate: '<(new \DateTimeImmutable("2026-07-01"))>'
+        processingStatus: '<(App\Enum\ProcessingStatus::Completed)>'
+        uploadedAt: '<(new \DateTimeImmutable("2026-11-02T00:00:00+00:00"))>'
+        processedAt: '<(new \DateTimeImmutable("2026-11-02T00:00:00+00:00"))>'
+    history_usd_2026_07:
+        __construct:
+            - '@demo'
+            - '@demo_usd'
+            - synthetic-usd_2026_07
+            - history-usd-2026-07.csv
+            - text/csv
+            - 304
+            - b3a4d8c00f3be2bc23c8dcb01b03f24ed9aed5f949db23f4bec131e3c2c7114e
+        statementDate: '<(new \DateTimeImmutable("2026-07-01"))>'
+        processingStatus: '<(App\Enum\ProcessingStatus::Completed)>'
+        uploadedAt: '<(new \DateTimeImmutable("2026-11-02T00:00:00+00:00"))>'
+        processedAt: '<(new \DateTimeImmutable("2026-11-02T00:00:00+00:00"))>'
+    history_chequing_2026_08:
+        __construct:
+            - '@demo'
+            - '@demo_current'
+            - synthetic-chequing_2026_08
+            - history-chequing-2026-08.csv
+            - text/csv
+            - 542
+            - cb335f5b1e82bcca9f4c21a55a1043f7092aa10b9ea5ce18d2a326b63944c0cd
+        statementDate: '<(new \DateTimeImmutable("2026-08-01"))>'
+        processingStatus: '<(App\Enum\ProcessingStatus::Completed)>'
+        uploadedAt: '<(new \DateTimeImmutable("2026-11-02T00:00:00+00:00"))>'
+        processedAt: '<(new \DateTimeImmutable("2026-11-02T00:00:00+00:00"))>'
+    history_credit_2026_08:
+        __construct:
+            - '@demo'
+            - '@demo_card'
+            - synthetic-credit_2026_08
+            - history-credit-2026-08.csv
+            - text/csv
+            - 1109
+            - c3d015f0e1c24beb68f1df0f26489c3abe60c38ce19ebe324799a689401e33d8
+        statementDate: '<(new \DateTimeImmutable("2026-08-01"))>'
+        processingStatus: '<(App\Enum\ProcessingStatus::Completed)>'
+        uploadedAt: '<(new \DateTimeImmutable("2026-11-02T00:00:00+00:00"))>'
+        processedAt: '<(new \DateTimeImmutable("2026-11-02T00:00:00+00:00"))>'
+    history_usd_2026_08:
+        __construct:
+            - '@demo'
+            - '@demo_usd'
+            - synthetic-usd_2026_08
+            - history-usd-2026-08.csv
+            - text/csv
+            - 193
+            - 430a993b7b644f50c80c3db56f03b7dd402d44a8b2e96c2f17819a55afd99daa
+        statementDate: '<(new \DateTimeImmutable("2026-08-01"))>'
+        processingStatus: '<(App\Enum\ProcessingStatus::Completed)>'
+        uploadedAt: '<(new \DateTimeImmutable("2026-11-02T00:00:00+00:00"))>'
+        processedAt: '<(new \DateTimeImmutable("2026-11-02T00:00:00+00:00"))>'
+    demo_statement:
+        __construct:
+            - '@demo'
+            - '@demo_current'
+            - synthetic-chequing_2026_09
+            - history-chequing-2026-09.csv
+            - text/csv
+            - 542
+            - 592ce7cf117d5b9fc90216a08a017e7f080f3df808febabf6c76b644dbc4cf41
+        statementDate: '<(new \DateTimeImmutable("2026-09-01"))>'
+        processingStatus: '<(App\Enum\ProcessingStatus::Completed)>'
+        uploadedAt: '<(new \DateTimeImmutable("2026-11-02T00:00:00+00:00"))>'
+        processedAt: '<(new \DateTimeImmutable("2026-11-02T00:00:00+00:00"))>'
+    demo_card_statement:
+        __construct:
+            - '@demo'
+            - '@demo_card'
+            - synthetic-credit_2026_09
+            - history-credit-2026-09.csv
+            - text/csv
+            - 1030
+            - 0fc74cabbe27c7796f2d4569d82eb537862450f29cdeaeedb1faff79ca3f6e3c
+        statementDate: '<(new \DateTimeImmutable("2026-09-01"))>'
+        processingStatus: '<(App\Enum\ProcessingStatus::Completed)>'
+        uploadedAt: '<(new \DateTimeImmutable("2026-11-02T00:00:00+00:00"))>'
+        processedAt: '<(new \DateTimeImmutable("2026-11-02T00:00:00+00:00"))>'
+    history_usd_2026_09:
+        __construct:
+            - '@demo'
+            - '@demo_usd'
+            - synthetic-usd_2026_09
+            - history-usd-2026-09.csv
+            - text/csv
+            - 193
+            - f7e7824fee494eacecde085998a405bbc31f3400f6402e36ee5412648d202516
+        statementDate: '<(new \DateTimeImmutable("2026-09-01"))>'
+        processingStatus: '<(App\Enum\ProcessingStatus::Completed)>'
+        uploadedAt: '<(new \DateTimeImmutable("2026-11-02T00:00:00+00:00"))>'
+        processedAt: '<(new \DateTimeImmutable("2026-11-02T00:00:00+00:00"))>'

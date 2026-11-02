@@ -1,0 +1,5 @@
+{% if field.value is not null and entity.instance.currency is not null %}
+    {{ field.value|format_currency(entity.instance.currency, locale: app.user.moneyLocale) }}
+{% else %}
+    {{ field.value }}
+{% endif %}

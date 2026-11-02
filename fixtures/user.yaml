@@ -3,6 +3,7 @@ App\Entity\User:
     demo:
         email: demo@test.com
         password: demo
+        reportingCurrency: '<(App\Enum\ReportingCurrency::CAD)>'
     administrator:
         email: admin@test.com
         password: admin

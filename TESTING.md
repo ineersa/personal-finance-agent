@@ -1,235 +1,116 @@
 # Testing
 
-## Scope and current status
+## Scope and approval policy
 
-[ADR 0010](docs/adr/0010-playwright-only-testing.md) selects Playwright as the only application behavior-testing approach. Do not add unit, kernel-only, service-only, or API-only suites. A PHP runner such as PHPUnit is only a harness for the real-browser suite, not a separate testing layer.
+Keep the suite small: **one happy-path scenario per implemented view or action**. A single CRUD journey may cover its related list, create, detail, edit, and delete operations. Do not duplicate those operations in separate scenarios or hide extra cases in loops and data providers.
 
-Saved PHP Playwright scenarios in `tests/E2E/` are organized by feature: authentication, ownership, source CRUD, transaction corrections, catalog/user CRUD, password forms, settings, and the homepage/profiler. Fixture-backed scenarios use `tests/Support/FinanceBrowserTest.php` only for Alice's native fixture lifecycle. Development and tests load the same canonical definitions, one entity per file in `fixtures/*.yaml`, into separate databases. There is no supplementary test dataset. Arrange necessary boundary and hostile inputs through the existing browser forms, not another fixture loader or manual ORM seeding. Browser execution must be recorded separately; installing the harness or passing static checks is not proof of browser behavior. Workers, broker, and Mercure workflows do not exist yet.
+**Ask the owner for explicit permission before adding or running special-case tests.** This includes negative paths, boundary values, security matrices, fault injection, concurrency, recovery, and layout permutations. Fixing a bug does not automatically authorize another regression scenario. Database-reset tests remain excluded.
 
-The anonymous homepage scenarios cover the public landing, ordinary demo credentials, and absence of workspace controls. Signed-in scenarios compare the shared native EasyAdmin chrome, current navigation, sidebar width, header spacing, footer, and narrow-screen layout across Chat, Settings, and CRUD pages. Mobile sidebar width must fill the body's available layout box, which excludes EasyAdmin's stable scrollbar gutter. Role regressions cover deterministic login entry, removal of `/admin` and standalone `/settings` URLs, and administrator denial of finance, Chat, and Settings requests through direct URLs, legacy route queries, and browser POSTs, even for owned records and dual-role accounts. Protected pages use `/home` paths; administrators enter Users, while ordinary users enter `/home/chat` and use `/home/settings` for preferences. Dark-only regressions seed saved light/auto preferences and emulate a light operating system at desktop and mobile widths, while checking that selectors are absent and native controls remain dark.
+This policy replaces the earlier broad coverage requirements. It does not remove application authorization, validation, or privacy requirements. Do not claim that happy-path coverage proves those boundaries.
 
-## Test quality
+[ADR 0010](docs/adr/0010-playwright-only-testing.md) selects real Playwright browsers for application behavior. PHPUnit is the browser harness, not a separate unit, kernel, service, or API-only testing layer. Keep the existing harness and generic Castor tasks; do not add scenario-specific runners, orchestration, cross-run manifests, or supplementary datasets.
 
-Quality over quantity. Never write tests merely to increase their count. Each test must have a specific purpose and cover distinct behavior, a failure mode, or a regression not already covered.
+## Current suite
 
-Name the purpose in the test method. Consolidate duplicate coverage and keep unrelated concerns separate. Repeated setup and control assertions are valid when the test still adds distinct coverage. Assert meaningful outcomes: for example, prove that owned records are accessible as well as foreign records being denied, and reload after a rejected write to confirm that persisted data is unchanged. Do not treat test or assertion counts as evidence of quality.
+| Scenario | Happy path |
+|---|---|
+| Homepage | Public landing and login link |
+| Authentication | Login and logout |
+| Chat preview | Existing placeholder view; generation is not implemented |
+| Settings | Save and reload reporting currency and money locale; verify localized money display |
+| Sources | Create, list, edit, detail, delete |
+| Transactions | List, detail, edit and reload |
+| Categories | Administrator create, list, edit, detail, delete |
+| Users | Administrator create, list, edit email/password, verify login, detail, delete |
+| Statements | List, detail, download |
+| Live import | Upload one canonical CSV, observe completion and drafts, delete that uploaded statement |
+
+The first nine scenarios are in `tests/E2E/`. The single real-network import journey is in `tests/Live/`. It calls the configured Jev provider and uses the actual worker, broker, and Mercure stack. It verifies that drafts do not change the approved transaction list. It does not cover failure/retry, redelivery, quotas, hostile input, or concurrent processing. Those require separate permission. Reset remains untested by owner instruction.
 
 ## Prepare the tooling runtime
 
-Use Linux amd64 with Docker, Docker Compose 2.24.4 or newer, Git, and host PHP 8.5 CLI with PCNTL/POSIX for Castor orchestration. Only explicitly requested headed runs need a visible X11 display and host `xauth`. Application commands always run in the authoritative tooling container, including when the host lacks BCMath. The tooling image includes PHP 8.5, the application's extensions, Node.js, Chromium system libraries, and Symfony CLI. Language Tools downloads on its first invocation and needs network access.
+Use Linux amd64, Docker, Docker Compose 2.24.4 or newer, Git, and host PHP 8.5 CLI with PCNTL/POSIX. Castor owns application runtime selection. Only owner-requested headed runs need display access and host `xauth`.
 
-On a fresh checkout without `vendor/bin/castor`, install the locked dependencies once using the existing development Docker target. This bootstrap is necessary before the Composer-installed command exists:
-
-```sh
-	docker build --target frankenphp_dev -t personal-finance-agent-bootstrap .
-	docker run --rm --user "$(id -u):$(id -g)" --volume "$PWD:/app" --entrypoint composer personal-finance-agent-bootstrap install --no-interaction
-```
-
-After that bootstrap, use only host Castor for routine preparation and tooling:
+If `vendor/bin/castor` is missing, bootstrap the locked dependencies once:
 
 ```sh
-	vendor/bin/castor tooling:prepare
-	vendor/bin/castor cs:fix
-	vendor/bin/castor qa:static
-	vendor/bin/castor test
+ docker build --target frankenphp_dev -t personal-finance-agent-bootstrap .
+ docker run --rm --user "$(id -u):$(id -g)" --volume "$PWD:/app" --entrypoint composer personal-finance-agent-bootstrap install --no-interaction
 ```
 
-`tooling:prepare` builds the development-only image, installs locked dependencies, and installs Chromium. Its constituent tasks are `tooling:build`, `composer:install`, and `browser:install`. Castor runs application tools as the host UID/GID in disposable containers and mounts this checkout. Its private home, browser cache, Symfony CLI cache, and per-invocation display cookie live under ignored `var/tooling/`. Only for explicitly requested `--headed` runs does it pass `DISPLAY`, a read-only X11 socket mount, and the current display's Xauth entry. Default runs require no display or Xauth access. It does not use `xhost` or the owner's browser profile. An unavailable display fails a requested headed run; a failed browser launch fails either mode.
-
-Castor sets the literal `PLAYWRIGHT_HEADLESS=true` for default tests and `false` for `--headed`; PHPUnit XML and `.env.test` do not override the choice. Saved scenarios extend the integration's `PlaywrightTestCase`, through `FinanceBrowserTest` when they need fixtures. Use `vendor/bin/castor test --headed` or `vendor/bin/castor check --headed` only when the owner explicitly requests visibility. The `check` task forwards this option to `test`. Each test uses fresh browser contexts. The bridge closes contexts after tests and stops its shared browser after the class. Its pinned Node server closes owned browsers when its PHP parent's stdin closes, including termination paths. The Castor report/runtime helpers forward normal interruption signals, bound browser execution to five minutes, and clean up only the invocation's named container after checking its ownership label. They also remove its private display cookie. Docker's init process and container removal terminate owned remaining processes. Abrupt host failure still requires inspecting task-owned leftovers, not global browser cleanup.
-
-The default suite uses intercepted Symfony requests, not a network application server. Test SQLite storage is `var/browser/application.db`, separate from development `var/app.db`; shared test files use `var/browser/share`. The test Doctrine configuration fixes the SQLite URL explicitly rather than resolving ambient `DATABASE_URL` overrides. SQLite does not support Doctrine's database-name suffix isolation. `test` invokes `test:database:prepare`, which creates the parent directory, rejects symlinked storage, and runs `doctrine:migrations:migrate --env=test --no-interaction --allow-no-migration` in the application runtime. SQLite creates a missing database file when Doctrine connects; pending application migrations establish or update its schema. The pinned DBAL 4 SQLite platform does not support `doctrine:database:create`. Preparation does not drop databases or reset data.
-
-Fixture-backed intercepted scenarios use Hautelook Alice's `RefreshDatabaseTrait`: it purges and seeds only `var/browser/application.db` on the first kernel boot, then rolls back each case while retaining the seed records. `FinanceBrowserTest` applies the documented `#[DAMA\DoctrineTestBundle\PHPUnit\SkipDatabaseRollback]` class attribute, inherited by these scenarios, so DAMA does not wrap Alice's lifecycle in a second transaction. Read named records through `FixtureStore::getFixtures()`; do not use deprecated fixture/options properties or manual ORM fixture construction. Use the inherited `loginUser()` for scenarios that are not testing authentication. Keep real browser login submissions for authentication and password behavior.
-
-DAMA remains a test-only dependency with its PHPUnit extension enabled for other intercepted scenarios. DBAL 4 requires no additional savepoint setting. Browser scenarios observe CRUD persistence and owner isolation against the [domain schema](docs/domain-persistence.md). Development and live-stack fixture commands remain native append-only and must not purge existing data. Do not add a test application command, endpoint, invented schema, or custom lifecycle framework. Reuse the development fixture definitions, never the contents of the development database.
-
-### Isolated live stack
-
-Use this path for exploratory checks and future direct-network PHP browser scenarios. It does not demonstrate worker, broker, or Mercure integration by itself.
+Then use the host Castor entry point:
 
 ```sh
-	vendor/bin/castor browser:stack:up
-	vendor/bin/castor browser:stack:status
-	# Browser agent: open the printed URL in a unique session; add --headed only on an owner request.
-	vendor/bin/castor browser:stack:stop
+vendor/bin/castor tooling:prepare
+vendor/bin/castor cs:fix
+vendor/bin/castor test
+vendor/bin/castor qa:static
 ```
 
-Castor layers `compose.browser.yaml` over the base and development files. The resulting stack uses its own checkout-scoped Compose project and `http://<checkout-id>.browser.finance.localhost` route through the shared loopback-only proxy. It publishes no host ports. Source is read-only; `var/browser-live` is mounted as the entire writable `/app/var`. Its SQLite URL points to `/app/var/browser/application.db`. Development keeps separate storage and a different hostname. Never reuse development worker, queue, or upload storage when adding background services. Stop only this stack; do not remove volumes or reset data as part of normal validation.
+`tooling:prepare` builds the development tooling image, installs locked dependencies and Chromium. Its disposable containers run as the host UID/GID. Private browser/tooling files live under ignored `var/tooling/`. Do not invoke another PHP runner around Castor.
 
-For isolated exploration, prepare only the running browser stack's database and append the synthetic Alice dataset once:
+## Running tests
+
+`vendor/bin/castor test` runs the nine intercepted-browser scenarios headlessly. Native PHPUnit arguments go after `--`:
 
 ```sh
-	vendor/bin/castor browser:stack:console -- doctrine:migrations:migrate --no-interaction
-	vendor/bin/castor browser:stack:console -- hautelook:fixtures:load --append --no-interaction
+vendor/bin/castor test -- tests/E2E/SourceCrudTest.php
+vendor/bin/castor test -- --list-tests
 ```
 
-`browser:stack:console` uses the running browser stack's test environment and dedicated `var/browser-live/browser/application.db`, not development data or the intercepted suite's database. Use **admin@test.com / admin** or **demo@test.com / demo**. Append loading preserves existing records and fails on duplicate fixture identities; do not purge data to repeat it. The canonical Alice statement processor creates synthetic CSV files alongside their metadata. Download them through the statement list or detail page. No upload or processing workflow is implemented. Close the CLI browser session and stop the owned stack afterward. For the actual development stack, use `vendor/bin/castor dev:fixtures:load` instead.
+Castor must not hardcode test filenames, method filters, or scenario selection. PHPUnit owns test discovery and selection. There is no per-scenario Castor task or custom test coordinator.
 
-`tests/E2E/StatementDownloadTest.php` exercises downloads through the real browser and native Alice fixtures. It checks content hashes, attachment headers, owner and role denial, path-like request inputs, and private-root URL rejection. Intercepted browser requests do not prove the web server's static-file rules. Repeat direct private-root URL attempts against the isolated live stack for that boundary. Upload validation, hostile uploaded filenames and failed-write compensation proof remain with task 07; do not add a test-only endpoint to expose them. See [ADR 0020](docs/adr/0020-private-statement-storage.md) for storage locations and the caller's compensation contract.
+Use `test --headed` or `check --headed` only when the owner requests a visible run. Missing display access blocks a requested headed run; it does not justify silently changing modes.
 
-For a saved direct-network regression, start two owned stacks, then pass their printed URLs as one positional comma-separated argument:
+Run `cs:fix`, relevant saved happy-path scenarios, and `qa:static` after code changes. The task workflow runs the literal `castor check` as the sole combined full browser/static gate at CODE-REVIEW. Do not run it prematurely during task-start. The default gate does not start a live application or make hosted model calls.
+
+Report actual elapsed time, results, and any gaps. Do not inflate assertion counts or add test matrices. Routine validation must stay short; ask permission before expanding its scope or runtime.
+
+## Fixtures and isolation
+
+Both development and tests use the canonical `fixtures/*.yaml` definitions. Do not create a supplementary test dataset or mutate development data for verification.
+
+The intercepted suite uses `var/browser/application.db`. `castor test` prepares it with native Doctrine migrations; it does not drop the database. Fixture-backed scenarios extend `tests/Support/FinanceBrowserTest.php`, which uses Hautelook Alice's native `RefreshDatabaseTrait` and the documented DAMA `SkipDatabaseRollback` attribute. Alice seeds the isolated database and rolls back each scenario. Read records through `FixtureStore`, not deprecated static properties. The installed DAMA extension remains available for other intercepted scenarios.
+
+Use `loginUser()` when authentication is setup rather than the action under test. Use the existing `SubmitsBrowserForms` helper for native form submissions and redirects through the pinned interception bridge. Do not replace that helper with test-only application behavior. Assert a persisted result, not just a successful click.
+
+Database rollback does not restore filesystem changes or isolate other processes. The live import journey deletes only its own uploaded statement through the browser, not canonical fixture files.
+
+## Isolated live stack
+
+Use checkout-scoped tasks and their printed URL. Do not invent ports, Compose project names, or routing environment variables.
 
 ```sh
-	vendor/bin/castor dev:stack:up
-	vendor/bin/castor browser:stack:up
-	vendor/bin/castor browser:routes:test 'http://<checkout-id>.finance.localhost,http://<checkout-id>.browser.finance.localhost'
+vendor/bin/castor browser:stack:up
+vendor/bin/castor browser:stack:status
 ```
 
-`tests/Live/RoutingTest.php` launches real headless Chromium without Symfony request interception. It checks HTTP success, the public landing and login link, loaded CSS, absence of signed-in controls, and independent browser storage across origins. The task attaches only its disposable tooling container to the shared proxy network and passes the inspected proxy IPv4 address to Chromium's native `--host-resolver-rules`. It does not change host DNS or add a DNS server. This separate command requires live stacks; the default `test` and `check` suites remain self-contained intercepted-browser scenarios. Routing coverage does not prove worker, broker, or Mercure integration.
-
-For worktree-isolation verification, start stacks from two task-managed worktrees, run the routing scenario against both URLs, stop one checkout, and confirm the other URL still renders through Playwright. Inspect the stopped checkout's route failure too. Preserve evidence before rerunning a task because its report directory is reused. Stop each owned stack before task-worktree removal; the shared proxy stays running until `dev:proxy:stop` succeeds with no registered routes.
-
-Use `browser:routes:test "$SURVIVING_URL" --absent="$STOPPED_URL"` to save the survivor and exact unregistered HTTP 404 assertions together. Omit the positional argument when all supplied routes are expected absent; pass at least two distinct URLs across both lists. Follow the [routing lifecycle regression procedures](docs/development-routing-regressions.md) to verify cleanup while the proxy is stopped, persisted configuration after restart, and SIGTERM cancellation during a controlled subprocess. Process and registry probes corroborate browser assertions; they do not replace them.
-
-## Agent verification workflow
-
-Use this procedure once the application and relevant project tasks exist. Delegate browser interaction to the configured browser agent and load the `playwright-cli` skill. The agent must perform the checks, not ask the owner to operate the browser.
-
-1. Select the affected workflows and observable assertions. Include a failure or ownership-denial path when relevant.
-2. Use project Castor tasks to prepare isolated synthetic fixtures and start only the services needed for the scenario. Verify the target URL and test storage before any reset or cleanup.
-3. Run the relevant saved browser scenarios. Use headless mode unless the owner explicitly requests visibility.
-4. Open a uniquely named CLI session when further investigation is needed. Read the page snapshot before interacting and use current element references.
-5. Assert the expected result. For background operations, wait on observable UI state with a bounded timeout. Do not replace assertions with sleeps or treat a click, screenshot, or successful page load as proof of the workflow.
-6. Inspect bounded browser diagnostics, Mate logs, or profiler records when a check fails. Fix the cause and rerun the affected scenario. Add a repeatable browser regression case for a bug fix.
-7. Save useful failure evidence, then close all browser resources owned by this run. Clean up only its test processes and data. Ensure teardown also runs on errors and normal interruption.
-8. Report the command or scenario, assertions checked, result, and evidence paths. State any blocked, untested, or mocked integration explicitly.
-
-Show a browser only on an explicit owner request. If display access is unavailable for that requested visible run, report the blocker rather than silently changing mode. Do not use `close-all`, `kill-all`, or the owner's personal profile to recover a session. Verify ownership before cleaning up a leftover browser.
-
-### CLI session commands
-
-Prefer project Castor browser tasks when available. The underlying commands for the installed CLI are shown below. Set `APP_URL` to the verified test application URL and `BROWSER_SESSION` to a unique name for this run.
+For a fresh isolated stack, migrate and append the canonical fixtures once:
 
 ```sh
-	playwright-cli -s="$BROWSER_SESSION" open "$APP_URL"
-	playwright-cli -s="$BROWSER_SESSION" snapshot
-	playwright-cli -s="$BROWSER_SESSION" close
+vendor/bin/castor browser:stack:console -- doctrine:migrations:migrate --no-interaction
+vendor/bin/castor browser:stack:console -- hautelook:fixtures:load --append --no-interaction
 ```
 
-Arrange cleanup before opening the browser. The final command is required even when assertions fail. An unexpected process termination may prevent teardown; report that condition rather than claiming the browser was closed.
+Do not rerun fixture loading over existing fixture identities or purge data to make it pass. Use `admin@test.com / admin` or `demo@test.com / demo`. Configure the provider using the existing development setup; do not put credentials in test commands or reports.
 
-## Automated browser suite
-
-Use the PHP Playwright/Symfony approach from the [SymfonyCasts article](https://symfonycasts.com/blog/playwright-php-symfony). Keep browser launch configuration headless by default. Use the explicit `--headed` Castor option only when the owner requests visibility.
-
-Use fresh browser contexts and synthetic users. Cover the real login form even if other scenarios use the integration's authentication helpers. Use stable accessible locators and Playwright waiting/assertion facilities rather than timing guesses.
-
-Kernel interception is suitable for browser workflows handled inside the test process. For queue, worker, and Mercure checks, visit a real isolated running application with Playwright and observe browser results. Verify that this mode uses real network delivery rather than intercepted in-process responses.
-
-Commit fixtures that workers must read. Do not wrap a cross-process run in one long test transaction: independent workers do not share that connection, and SQLite writer locks can block them. Keep the test application database, broker database, uploads, and worker processes separate from development/demo state. Reset only verified test-owned resources.
-
-Do not assume the article's transaction rollback technique cleans up the whole live stack. Do not introduce a non-browser integration suite to work around these constraints.
-
-### Command contract
-
-Run these tasks from the host checkout. Castor owns their runtime selection:
-
-| Command | Scope |
-|---|---|
-| `vendor/bin/castor test` | Run the headless Playwright browser suite with cleanup and saved diagnostics; `--headed` requires an owner request. |
-| `vendor/bin/castor qa:static` | Run the static gate defined in ADR 0009, including `symfony lsp:check`. |
-| `vendor/bin/castor check` | Sole combined static/browser gate, executed by the workflow's literal `castor check` at the CODE-REVIEW transition. |
-
-Pass native PHPUnit arguments after Castor's `--` separator. Castor owns visibility, the JUnit path, and failure on an empty test selection; PHPUnit owns file selection, filters, groups, suites, and listing options. Listing commands do not launch a browser. `check` accepts only its visibility option and always invokes the full suite, never a filtered selection.
+Run the single live journey, then stop the owned stack when it is no longer needed:
 
 ```sh
-	vendor/bin/castor test -- tests/E2E/HomepageTest.php
-	vendor/bin/castor test -- tests/E2E/HomepageTest.php tests/E2E/HomepageProfilerTest.php
-	vendor/bin/castor test -- --filter='testHomepage$|testHomepageProfile$'
-	vendor/bin/castor test -- --group=profiler
-	vendor/bin/castor test -- --testsuite='Browser suite'
-	vendor/bin/castor test -- --list-tests
-	vendor/bin/castor test -- --list-groups
+vendor/bin/castor browser:live:test -- tests/Live
+vendor/bin/castor browser:stack:stop
 ```
 
-The profiler scenario exercises the real homepage with the integration's `enableProfiler()` and `getProfile()` methods. It records a test-context artifact without changing the default `collect: false` policy. Main runs these saved tests directly; the browser subagent remains limited to actual system `playwright-cli` interaction.
+The runner supplies the current checkout URL and proxy address internally. No manual URL flags are needed. The stack uses `var/browser-live` for its application database, private uploads, broker database, and socket. The fixed intercepted database and development data are separate. Native migrations and append-only fixture loading are the only setup; there are no test endpoints, worker-fault controls, or cross-run state files.
 
-Use `app:composer` for application Composer, not Castor's built-in `composer` command, which manages Castor's own dependencies. Use `app:console` for Symfony application console commands. Both forward native argv after `--` through the existing runtime/report boundary, without a shell parser. Keep quotes around a single argument containing spaces or regular-expression metacharacters. `composer:install` also accepts native install options after `--`.
+A browser timeout, failed provider call, missing tool, interrupted process, or unavailable stack is a failure, not a pass. Do not stop unrelated containers, remove volumes, or clear owner data. Stop the shared proxy only through `dev:proxy:stop` when no checkout uses it.
 
-```sh
-	vendor/bin/castor app:composer -- --version
-	vendor/bin/castor app:composer -- check-platform-reqs
-	vendor/bin/castor composer:install -- --dry-run --no-scripts
-	vendor/bin/castor app:console -- about --env=test
-	vendor/bin/castor app:console -- cache:warmup --env=dev
-```
+## Diagnostics and evidence
 
-Read each task's result before another invocation overwrites the same report directory. Tool failures retain their exit codes. For official Mate filters, context maps, bounds, and targeted collector access, see [Mate instructions](mate/AGENT_INSTRUCTIONS.md).
+Main runs saved tests and QA directly through Castor. Read `var/qa/<task>/result.json` first and inspect bounded diagnostics only when needed. The browser test output is under `var/qa/test-browser/`, with JUnit at `var/qa/test/junit.xml`; live output is under `var/qa/browser-live-test/`. Reports are overwritten on the next run of the same task. Do not run the same task concurrently.
 
-The individual static tasks are `composer:validate`, `cs:check`, `phpstan`, and `lsp:check`. `cs:fix` modifies PHP formatting separately. The selected sqlite-queue CS Fixer rules apply to application/task/test PHP and selected entry points, with one owner-approved exception: `php_unit_test_case_static_method_calls` uses `call_type: self`. Call declared-static PHPUnit and Symfony assertions with `self::`; keep actual instance methods such as Playwright's `visit` and `assertPageContains` on `$this`. PHPStan preserves its strict level 6 rules, PHPUnit/Castor extensions, and production/tooling scope; it does not analyze browser-test files. Each task writes `var/qa/<task>/result.json`, with colons replaced by hyphens, and prints a short JSON summary. Reports include command, timestamps, duration, status, exit code, and stdout/stderr paths. Native JSON is preserved for style, PHPStan, LSP, and Mate tasks. The `test` report contains database/browser child summaries; PHPUnit diagnostics are in `var/qa/test-browser/`, with JUnit at `var/qa/test/junit.xml`. Do not run the same task concurrently: its report directory is locked. Normal interruption records a failure after cleanup; abrupt interruption can leave `running`, never a stale pass. QA aggregates execute all children and preserve the first failure; interruption stops further work. Their stdout files contain each child's summary.
+`qa:static` includes Composer validation, read-only style checking, PHPStan, and runtime-complete `symfony lsp:check`. Missing tools or incomplete analysis are failures. See [ADR 0009](docs/adr/0009-castor-and-static-checks.md) and [Mate instructions](mate/AGENT_INSTRUCTIONS.md) for tooling and bounded diagnostics. Do not suppress rules to make the gate pass.
 
-The LSP task requires both global and project completeness, runtime mode, and ready runtime state. It never uses source-only analysis. Read only the failing task's diagnostic files before widening inspection. Reports, logs, profiles, cookies, screenshots, and traces remain private generated data.
+Exploratory browser work uses the configured browser agent and system `playwright-cli`, with a unique session and isolated profile. Obtain permission first for special-case investigations. Close owned contexts on success and failure; never use global cleanup commands or the owner's browser profile.
 
-Run `vendor/bin/castor cs:fix` before validation when application or tooling code changes. During task-start, run affected browser scenarios and `qa:static`; let the CODE-REVIEW transition execute `check`. Keep task output concise, preserve failures, and save reports under `var/qa/`. A missing browser, unavailable display for a requested headed run, startup failure, or interrupted suite must not produce a passing result.
-
-## Initial coverage requirements
-
-Implement browser scenarios alongside each supported feature:
-
-- Authentication: login, rejected credentials, logout, and protected pages.
-- Ownership: at least two users with distinct data. Check lists, direct record URLs, association selectors, downloads, aggregates, conversations, saved inline chat output, and private event access. An administrator role does not grant access to everyone's finances.
-- Statement processing: valid uploads, rejected uploads, processing progress, failures, extracted results, and persistence after reload.
-- Review: transaction corrections and source creation/editing, including invalid submissions.
-- Financial questions: synthetic history with known expected totals for subscriptions, yearly income, and internet bills. Assert results, not just the presence of answer text.
-- Chat and inline output: input, safe text/table rendering, streamed updates, completed chart images, failure states, and reload/reconnect recovery. Include real worker/broker/Mercure delivery checks.
-- Untrusted content: uploaded and model-supplied text must not execute scripts or render unsafe HTML.
-- Administration: account management and authorized reset behavior once reset scope and safeguards are defined.
-
-### Statement conversion
-
-Cover [ADR 0016](docs/adr/0016-local-markitdown-conversion.md) through browser uploads and the actual worker/local MCP converter. Use synthetic digital PDF/XLSX and PHP-parsed CSV fixtures with known dates, amounts, and expected transactions; assert validation/review and stored results, not just generated Markdown.
-
-Exercise unsupported, malformed, no-text/image-only, conversion-error, and bounded-output cases without fabricating financial records or claiming OCR succeeded. Verify owner isolation, authorized staging access, cleanup, and hostile document text treated as data rather than instructions. Ordinary digital conversion must not require an LLM/API key; subsequent AI extraction remains a separate configured-provider step. Do not claim scanned-PDF support until an existing OCR backend is explicitly selected and verified.
-
-### Finance precision, review, and analysis
-
-Cover [ADR 0017](docs/adr/0017-exact-money-and-ecb-reporting.md) and [ADR 0018](docs/adr/0018-finance-review-sql-and-jev.md) through browser scenarios with synthetic fixtures:
-
-- Verify exact high-precision amount round trips, sums, and EUR-based cross-conversion with known decimal results. Changing reporting currency must preserve originals. Exercise missing-date/weekend handling once chosen; do not assume a fallback or exact SQLite `SUM`.
-- Verify editable drafts require valid user approval before analysis, preserve the statement date and account-source meaning, and do not treat every credit as income. Redelivery must not duplicate imports.
-- Exercise model-written SQL with attempted owner/table/write-access violations and bounded results. Confirm external enforcement rather than a prompted owner clause, and precision-preserving money results.
-- Verify LLM row extraction from converted Markdown/text separately from Jev categorization/decision checks. Exercise malformed/truncated/empty JSON and invalid dates, currencies, fields, or money values. LLM output must not automatically approve/commit financial records, and no invalid output or unapproved draft may feed analysis. Preserve monetary strings rather than JSON floats, and keep CSV PHP parsing independent of a forced LLM step.
-- Exercise JSON decoding, DTO denormalization, and Symfony Validator failures. Verify bounded correction requests include specific errors and retain the original statement context. Cover a successful correction that produces only an editable draft and exhausted attempts that report failure without accepting invalid records.
-- Verify extraction provider/model configuration is independent of chat, uses only enabled/configured allowed integrations, and captures validated choices for queued work. Do not infer uniform native JSON Schema support, automatic failover, or runtime bridge compatibility from provider documentation. Jev Choice/Score/Noul checks do not establish arbitrary-field extraction or OCR.
-- Verify target-model history conversion leaves canonical stored history unchanged and isolates tool IDs/reasoning state between concurrent users. Reconstructing context is not resuming an exact provider execution.
-
-Any cassettes/replay used for final verification must be identified as such, not reported as live provider integration.
-
-### Inline charts
-
-Cover [ADR 0014](docs/adr/0014-inline-chat-and-antv-charts.md) through browser scenarios. Verify actual Docker MCP chart generation through the worker and private Mercure delivery, not just a substituted image. Use synthetic aggregates only for external-renderer tests.
-
-Check unsafe text/table content and untrusted image references, owned saved chat-output access, and reload/reconnect behavior. Exercise hosted-renderer failures and unavailable images with clear chat feedback and retained conversation state still readable. Do not claim that external image URLs are private or permanently available. Exact image lifecycle remains open; chat retention follows ADR 0015 below.
-
-### Conversation persistence and retention
-
-Cover [ADR 0015](docs/adr/0015-sqlite-conversation-history.md) through Playwright scenarios against the isolated application/worker stack:
-
-- Verify temporary-by-default creation, Save chat, and reload of retained messages and generation state from the shared application database.
-- Give two users distinct histories. Verify five temporary chats per user, saved chats outside that count, owner-only access, and pruning of only the owner's oldest inactive temporary chat when a sixth is created.
-- Keep queued/running conversations protected. Exercise creation when no eligible victim exists; verify no protected deletion or silent count increase without assuming a new admission policy.
-- Race Save chat, new-chat creation, and work admission in separate browser contexts. Verify atomic counts and protection of newly saved or queued/running conversations.
-- Verify pruning leaves source financial data and accounting/idempotency information needed for admitted work intact. Use bounded test-owned diagnostics when browser output alone cannot establish this.
-- Distinguish the five stored temporary chats from the unchanged shared one-active-generation-per-user limit. Do not infer unlimited context, cross-provider compatibility, a TTL, or permanent remote image availability from saved history.
-
-### Rate limits and budgets
-
-Cover [ADR 0011](docs/adr/0011-layered-rate-limiting.md) through Playwright scenarios with isolated synthetic users and explicitly configured test thresholds:
-
-- Exercise login throttling, AI burst/daily allowances, upload count/size/byte limits, and retained-storage quotas. Assert clear refusal messages, `429` and `Retry-After` where applicable, and continued read access to existing records.
-- Use two users sharing an IP to verify separate user allowances below the coarse IP threshold. Verify that chat and AI extraction share one user's AI allowance.
-- Submit competing actions from separate browser contexts to verify active/pending/global limits and atomic admission. Establish that rejected actions create no jobs or provider work, not merely that the UI displays an error.
-- Exercise actual worker delivery, provider retries, and duplicate messages through browser-triggered workflows. Verify that additional provider usage counts without counting a redelivered submission twice, and that exhausted shared budgets prevent further provider calls.
-- Verify that normal cache clearing and an authorized financial demo reset preserve quota/budget accounting. Test the configured daily reset boundary without arbitrary long sleeps.
-- Exercise web-server/PHP upload rejection and trusted-proxy behavior against the isolated running stack, not only intercepted-kernel browser requests.
-
-Use bounded test-owned diagnostics to corroborate job and usage counts when the browser result alone cannot establish them. Do not add a non-browser test suite. Provider fixtures can verify accounting logic but do not prove real provider billing accuracy.
-
-Document how a scenario controls provider responses. Do not claim that a mocked response proves a real model/provider integration. Select the exact provider testing arrangement during bootstrap.
-
-## Evidence and privacy
-
-Keep test output, snapshots, screenshots, traces, authentication state, and profile data private and out of Git. Use synthetic financial data only. Read short summaries first; inspect detailed artifacts only when needed.
-
-Passing static checks does not establish browser behavior. Passing an intercepted-kernel browser scenario does not establish real background-process integration. Report only the checks actually performed.
+Keep screenshots, traces, profiles, cookies, reports, and provider data private and out of Git. Use synthetic financial inputs only. Static checks do not establish runtime behavior, and intercepted tests do not establish cross-process integration. Report only what was actually verified.

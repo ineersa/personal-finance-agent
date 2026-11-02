@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Entity;
 
+use App\Enum\InstrumentKind;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
@@ -35,6 +36,11 @@ class Source extends UserRecord
         public ?\DateTimeImmutable $createdAt = new \DateTimeImmutable(),
         #[ORM\Column(type: 'datetime_immutable', nullable: true)]
         public ?\DateTimeImmutable $updatedAt = new \DateTimeImmutable(),
+        #[ORM\Column(length: 3, nullable: true)]
+        #[Assert\Regex(pattern: '/\A[A-Z]{3}\z/D')]
+        public ?string $currency = null,
+        #[ORM\Column(enumType: InstrumentKind::class, options: ['default' => 'other'])]
+        public InstrumentKind $instrumentKind = InstrumentKind::Other,
     ) {
         parent::__construct($user);
         $this->statements = new ArrayCollection();

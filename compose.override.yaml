@@ -10,6 +10,12 @@ services:
     environment:
       APP_ENV: dev
       APP_DEBUG: "1"
+      JEV_API_KEY:
+      IMPORT_UPDATES_ENABLED: '1'
+      MERCURE_URL: 'http://mercure/.well-known/mercure'
+      MERCURE_PUBLIC_URL: '${FINANCE_PUBLIC_URL}/.well-known/mercure'
+      MERCURE_JWT_SECRET: '${MERCURE_JWT_SECRET}'
+      MERCURE_COOKIE_NAME: mercure_access_token
     volumes: !override
       - ./:/app
     ports: !reset []
@@ -18,6 +24,54 @@ services:
       development:
         aliases:
           - "${FINANCE_PROJECT}"
+
+  broker:
+    image: "pfa-${FINANCE_CHECKOUT_ID:?Run vendor/bin/castor dev:stack:up}-php:dev"
+    user: "${LOCAL_UID:-1000}:${LOCAL_GID:-1000}"
+    init: true
+    environment:
+      APP_ENV: dev
+    volumes:
+      - ./:/app
+    command: ['php', 'bin/console', 'sqlite-queue:broker', '--database=/app/var/queue/broker.db', '--endpoint=/app/var/queue/broker.sock']
+    healthcheck:
+      test: ['CMD', 'php', '-r', 'exit(file_exists("/app/var/queue/broker.sock") ? 0 : 1);']
+      interval: 2s
+      timeout: 2s
+      retries: 15
+  worker:
+    image: "pfa-${FINANCE_CHECKOUT_ID:?Run vendor/bin/castor dev:stack:up}-php:dev"
+    user: "${LOCAL_UID:-1000}:${LOCAL_GID:-1000}"
+    init: true
+    environment:
+      APP_ENV: dev
+      JEV_API_KEY:
+      IMPORT_UPDATES_ENABLED: '1'
+      MERCURE_URL: 'http://mercure/.well-known/mercure'
+      MERCURE_PUBLIC_URL: '${FINANCE_PUBLIC_URL}/.well-known/mercure'
+      MERCURE_JWT_SECRET: '${MERCURE_JWT_SECRET}'
+    volumes:
+      - ./:/app
+    command: ['php', 'bin/console', 'messenger:consume', 'statement_import', '--keepalive=5', '--memory-limit=256M', '--time-limit=3600', '--no-interaction']
+    healthcheck:
+      disable: true
+    restart: unless-stopped
+    depends_on:
+      broker:
+        condition: service_healthy
+
+###> symfony/mercure-bundle ###
+  mercure:
+    profiles: !reset []
+    ports: !reset []
+    environment:
+      MERCURE_EXTRA_DIRECTIVES: |
+        cookie_name mercure_access_token
+      GLOBAL_OPTIONS: |
+        servers {
+          trusted_proxies static private_ranges
+        }
+###< symfony/mercure-bundle ###
 
 networks:
   development:

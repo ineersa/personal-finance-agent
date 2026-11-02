@@ -1,0 +1,8 @@
+{% extends '@EasyAdmin/page/content.html.twig' %}
+{% form_theme retryForm with ['@EasyAdmin/crud/form_theme.html.twig'] only %}
+{% block content_title %}Statement import{% endblock %}
+{% block main %}
+    <div {{ stimulus_controller('import-catch-up', {url: path('admin_statement_processing', {id: statement.id})}) }}>
+    {{ include('statement/_results.html.twig') }}
+    </div>
+{% endblock %}

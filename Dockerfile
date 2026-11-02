@@ -6,6 +6,7 @@ WORKDIR /app
 RUN install-php-extensions @composer bcmath intl mbstring pdo_sqlite sqlite3 pcntl posix zip opcache
 
 COPY docker/frankenphp/Caddyfile /etc/caddy/Caddyfile
+COPY docker/frankenphp/uploads.ini /usr/local/etc/php/conf.d/uploads.ini
 
 CMD ["frankenphp", "run", "--config", "/etc/caddy/Caddyfile"]
 

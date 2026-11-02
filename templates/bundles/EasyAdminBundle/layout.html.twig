@@ -13,6 +13,11 @@
     {# The native layout shares this captured fragment between both responsive headers. #}
     {% set settings_dropdown = '' %}
     {{ parent() }}
+    {% if import_updates_enabled and app.user and not is_granted('ROLE_ADMIN') %}
+        <div id="import-live-subscription" data-turbo-permanent>
+            {{ turbo_stream_from(import_topic.forUser(app.user), private: true) }}
+        </div>
+    {% endif %}
 {% endblock %}
 
 {% block header_logo %}{{ include('chrome/brand.html.twig') }}{% endblock %}
@@ -27,8 +32,8 @@
     {{ parent() }}
     <twig:ea:ActionMenu:ActionList:Divider />
     <twig:ea:ActionMenu:ActionList:Content>
-        <form action="{{ path('app_logout') }}" method="post">
-            <input type="hidden" name="_csrf_token" value="{{ csrf_token('logout') }}">
+        <form action="{{ path('app_logout') }}" method="post" data-turbo="false">
+            <input type="hidden" name="_csrf_token" value="{{ csrf_token('logout') }}" data-controller="csrf-protection">
             <button type="submit" class="dropdown-item">
                 <twig:ea:Icon name="internal:sign-out" />
                 <span>Log out</span>

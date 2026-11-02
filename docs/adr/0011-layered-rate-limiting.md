@@ -1,6 +1,6 @@
 # ADR 0011: Apply layered rate limits and persistent AI budgets
 
-- Status: Accepted
+- Status: Superseded by [ADR 0021](0021-fixtures-first-jev-import.md) on 2026-11-02. The original rationale is preserved below; quota/budget implementation is deferred.
 - Date: 2026-10-29
 
 ## Context

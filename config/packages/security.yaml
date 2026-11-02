@@ -22,6 +22,9 @@ security:
                 path: app_logout
                 target: app_login
                 enable_csrf: true
+                delete_cookies:
+                    mercure_access_token: { path: '/.well-known/mercure' }
+                    __Secure-mercure_access_token: { path: '/.well-known/mercure', secure: true }
     access_control:
         - { path: ^/login$, roles: PUBLIC_ACCESS }
         - { path: ^/home(/|$), roles: IS_AUTHENTICATED_FULLY }

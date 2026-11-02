@@ -15,4 +15,13 @@ final class CategoryRepository extends ServiceEntityRepository
     {
         parent::__construct($registry, Category::class);
     }
+
+    /** @return array<string, Category> */
+    public function findAllIndexedByName(): array
+    {
+        return $this->createQueryBuilder('category')
+            ->indexBy('category', 'category.name')
+            ->getQuery()
+            ->getResult();
+    }
 }

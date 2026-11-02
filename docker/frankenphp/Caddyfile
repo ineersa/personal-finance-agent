@@ -9,5 +9,6 @@
 http://:8080 {
 	root * /app/public
 	encode zstd br gzip
+	reverse_proxy /.well-known/mercure* mercure:80
 	php_server
 }

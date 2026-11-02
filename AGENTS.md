@@ -16,6 +16,7 @@ A finance UI preview and development tooling are implemented; authentication, fi
 ## Development rules
 
 - Keep changes small and limited to the requested scope. Use Symfony and existing project facilities before adding custom infrastructure.
+- Do not turn hypothetical failure modes into new infrastructure. Before adding coordination or recovery mechanisms, explain why existing framework behavior and a simpler implementation are insufficient, and obtain approval.
 - Record significant agreed technical choices in ADRs. Keep product requirements in `SPEC.md` and implementation plans separate.
 - Treat the legacy finance application, web template, Agent Core, sqlite-queue, and re-search checkouts as read-only references unless explicitly asked to change them.
 - Do not import AI indexing, generated code indexes, mandatory Vera workflows, or editor-specific agent configuration. Use only the Mate tooling selected in the accepted ADRs.
@@ -24,10 +25,12 @@ A finance UI preview and development tooling are implemented; authentication, fi
 - Do not commit credentials, uploaded bank statements, personal financial fixtures, database files, or raw model/provider payloads containing personal data.
 - Enforce personal-data ownership across HTTP endpoints, EasyAdmin, background handlers, chat tools, and event subscriptions. Roles alone do not scope records.
 - Keep database write transactions short. Do not hold one open during model calls, parsing, or broker communication.
+- Generate migrations with Doctrine tooling through Castor against verified isolated task-owned storage. Do not hand-author migration classes or SQL. Read generated output and verify the schema changes before applying it; report unexpected destructive diffs instead of bypassing the generator. Preserve already-applied owner/production migration history.
 - Treat uploaded content and model output as untrusted. Do not inject unescaped output into HTML or execute model-generated JavaScript without an explicitly approved isolation design.
 - Do not reset demo data, remove volumes, or stop unrelated containers without explicit authorization and a verified target.
-- Follow [ADR 0011](docs/adr/0011-layered-rate-limiting.md) for per-user limits, coarse IP protection, upload quotas, and shared AI budgets. Check quota and capacity atomically before enqueueing; rejected requests must not create jobs. Enforce budget at the worker/model-call boundary too.
-- Preserve authoritative SQLite quota and budget accounting across normal cache clears and financial demo resets. Keep existing data readable when costly actions are limited.
+- The owner-authorized Settings reset is the sole local demo purge exception: explicitly enabled dev/test only, canonical demo operator, confirmed CSRF-protected action, database-wide canonical Alice reload and private statement cleanup. Keep `dev:fixtures:load` append-only. Never invoke the destructive action on an owner's preview for verification; use isolated browser storage.
+- Follow [ADR 0021](docs/adr/0021-fixtures-first-jev-import.md): enforce the 10 MiB upload limit; other upload/AI quotas and budget accounting are deferred. Retain ownership, login protection and short writes.
+- Do not introduce the deferred quota subsystem in the fixtures-first import slice. Keep existing financial data readable.
 
 ## Task workflow
 
@@ -56,12 +59,14 @@ A finance UI preview and development tooling are implemented; authentication, fi
 
 ## Testing and browser verification
 
-- Quality over quantity. Never write tests merely to increase their count. Each test must have a specific purpose and cover distinct behavior, a failure mode, or a regression not already covered. Consolidate duplicate coverage and assert meaningful outcomes.
+- Keep the test suite small: one happy-path scenario per implemented view or action. A single CRUD journey may cover its related views and actions; do not duplicate that coverage in separate tests.
+- Obtain explicit owner permission before adding or running special-case tests, including negative paths, boundary cases, security matrices, fault injection, concurrency, recovery, and layout permutations. A bug fix does not automatically authorize a new regression scenario. Do not hide extra cases in loops or data providers.
+- Use the existing browser harness and generic Castor runner. Do not add test-specific runners, orchestration, cross-run manifests, or supplementary datasets. Keep database-reset tests excluded. Report suite runtime and keep routine validation short.
 - Test application behavior only through real Playwright browsers. Do not add unit, kernel-only, service-only, or API-only test suites. PHPUnit may be the PHP browser-suite harness, not a separate unit-testing layer.
 - Use Hautelook Alice's native `RefreshDatabaseTrait` for fixture-backed intercepted browser scenarios. Apply the documented DAMA `SkipDatabaseRollback` class attribute so Alice alone owns their fixture transactions; retain the installed DAMA bundle and extension for other intercepted scenarios. Read fixtures through `FixtureStore`, not deprecated static properties.
 - Use the same canonical development fixture definitions in `fixtures/*.yaml` for development and tests. Do not add a supplementary test dataset. Run tests only against isolated test-owned storage, never the development database.
 - `vendor/bin/castor test` prepares the fixed isolated SQLite database through Doctrine. Alice may purge and seed that test-owned database once before rolling back each fixture-backed case. Development and live-stack fixture loading stays native append-only; never purge owner data. Do not invent test application commands, endpoints, schema, or lifecycle glue. Neither Alice nor DAMA isolates separate workers or network stacks.
-- Agents must verify affected behavior themselves, run relevant saved browser scenarios, and add browser regression coverage for bug fixes. Main runs saved tests and QA commands directly through Castor and reads their reports. Do not delegate those commands to the browser subagent or ask the owner to perform checks an agent can run.
+- Agents must verify affected behavior themselves using the relevant happy-path scenarios. Ask permission before special-case verification or additional regression coverage. Main runs saved tests and QA commands directly through Castor and reads their reports. Do not delegate those commands to the browser subagent or ask the owner to perform checks an agent can run.
 - Launch the browser subagent only when actual browser interaction through the system-installed `playwright-cli` is needed. Load the `playwright-cli` skill and use that CLI directly. Do not use the browser subagent for test-suite execution, Bash scripting, Python scripts, environment setup, QA orchestration, or custom browser runners. If the system CLI or required tools are unavailable to it, report the blocker instead of building a substitute.
 - Run saved tests and exploratory sessions headlessly by default. Show a browser only when the owner explicitly asks: use `test --headed` or `check --headed` for saved tests, and the CLI's `--headed` flag for exploration. Only requested visible runs require display access; report missing access as a blocker for those runs.
 - Use the installed `playwright-cli` for exploratory checks with uniquely named sessions and isolated profiles. Close owned browsers and contexts after testing, including failure paths. Do not use global cleanup commands or the owner's personal browser profile.

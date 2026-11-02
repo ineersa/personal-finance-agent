@@ -1,0 +1,13 @@
+mercure:
+    hubs:
+        default:
+            cookie_name: '%env(MERCURE_COOKIE_NAME)%'
+            url: '%env(default::MERCURE_URL)%'
+            public_url: '%env(default::MERCURE_PUBLIC_URL)%'
+            jwt:
+                secret: '%env(MERCURE_JWT_SECRET)%'
+                publish: '*'
+                claims:
+                    iss: '%env(MERCURE_JWT_ISSUER)%'
+                    sub: 'app'
+                    client_id: 'app'
