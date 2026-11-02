@@ -86,7 +86,6 @@ final class StatementImportController extends AbstractController
         $approvalErrors = [];
         if ($form->isSubmitted() && $form->isValid() && $approve instanceof ClickableInterface && $approve->isClicked() && ProcessingStatus::Completed === $statement->processingStatus) {
             foreach ($drafts as $draft) {
-                $this->denyAccessUnlessGranted(FinanceRecordVoter::ACCESS, $draft);
                 foreach ($validator->validate($draft, groups: ['Default', 'approved']) as $violation) {
                     $approvalErrors[] = ['id' => $draft->getId(), 'field' => $violation->getPropertyPath(), 'message' => $violation->getMessage()];
                 }

@@ -10,7 +10,6 @@ use App\Enum\Direction;
 use App\Repository\SourceRepository;
 use App\Repository\TransactionRepository;
 use App\Security\FinanceRecordVoter;
-use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\QueryBuilder;
 use EasyCorp\Bundle\EasyAdminBundle\Config\Action;
 use EasyCorp\Bundle\EasyAdminBundle\Config\Actions;
@@ -48,10 +47,7 @@ final class TransactionCrudController extends OwnedCrudController
 
     public function configureActions(Actions $actions): Actions
     {
-        return parent::configureActions($actions)
-            ->update(Crud::PAGE_INDEX, Action::DELETE, static fn (Action $action): Action => $action->displayIf(static fn (Transaction $transaction): bool => $transaction->isDraft))
-            ->update(Crud::PAGE_DETAIL, Action::DELETE, static fn (Action $action): Action => $action->displayIf(static fn (Transaction $transaction): bool => $transaction->isDraft))
-            ->disable(Action::NEW);
+        return parent::configureActions($actions)->disable(Action::NEW);
     }
 
     public function configureFields(string $pageName): iterable
@@ -63,8 +59,8 @@ final class TransactionCrudController extends OwnedCrudController
         yield TextField::new('currency')->setRequired(true);
         yield ChoiceField::new('direction')->setChoices(['Credit' => Direction::Credit, 'Debit' => Direction::Debit])->setRequired(true);
         yield TextareaField::new('description')->setRequired(false)->setFormTypeOption('empty_data', '');
-        yield ChoiceField::new('meaning')->onlyOnDetail();
-        yield ChoiceField::new('recurrence')->onlyOnDetail();
+        yield ChoiceField::new('meaning')->hideOnIndex();
+        yield ChoiceField::new('recurrence')->hideOnIndex();
         yield AssociationField::new('source')->renderAsNativeWidget()->setFormTypeOption('choice_label', 'name')
             ->setFormTypeOption('empty_data', static fn (FormInterface $form): never => throw new TransformationFailedException('A transaction source is required.'))
             ->setFormTypeOption('query_builder', fn (): QueryBuilder => $this->sources->queryForUser($this->owner()));
@@ -76,20 +72,13 @@ final class TransactionCrudController extends OwnedCrudController
     {
         $transaction = $context->getEntity()->getInstance();
         $response = parent::delete($context);
-        if ($transaction instanceof Transaction && $transaction->isDraft) {
+        // Doctrine clears the generated ID after deletion. Preserve unsuccessful
+        // native responses instead of redirecting merely because the row is a draft.
+        if ($response instanceof RedirectResponse && $transaction instanceof Transaction && $transaction->isDraft && null === $transaction->getId()) {
             return $this->redirectToRoute('admin_statement_processing', ['id' => $transaction->statement->getId()]);
         }
 
         return $response;
-    }
-
-    public function deleteEntity(EntityManagerInterface $entityManager, object $entityInstance): void
-    {
-        if (!$entityInstance instanceof Transaction || !$entityInstance->isDraft) {
-            throw $this->createAccessDeniedException('Only unapproved drafts can be deleted.');
-        }
-        $this->denyAccessUnlessGranted(FinanceRecordVoter::ACCESS, $entityInstance);
-        parent::deleteEntity($entityManager, $entityInstance);
     }
 
     protected function ownedQuery(User $user): QueryBuilder
@@ -100,7 +89,8 @@ final class TransactionCrudController extends OwnedCrudController
     protected function getRedirectResponseAfterSave(AdminContext $context, string $action): RedirectResponse
     {
         $transaction = $context->getEntity()->getInstance();
-        if ($transaction instanceof Transaction && $transaction->isDraft) {
+        $submitButton = $context->getRequest()->request->all()['ea']['newForm']['btn'] ?? null;
+        if (Action::SAVE_AND_RETURN === $submitButton && $transaction instanceof Transaction && $transaction->isDraft) {
             return $this->redirectToRoute('admin_statement_processing', ['id' => $transaction->statement->getId()]);
         }
 

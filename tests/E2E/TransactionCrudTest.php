@@ -12,7 +12,7 @@ final class TransactionCrudTest extends FinanceBrowserTest
 {
     use SubmitsBrowserForms;
 
-    public function testListViewAndEditTransaction(): void
+    public function testListViewEditAndDeleteTransaction(): void
     {
         $fixtures = FixtureStore::getFixtures();
         $this->loginUser($fixtures['demo']);
@@ -26,7 +26,12 @@ final class TransactionCrudTest extends FinanceBrowserTest
         $page = $this->visit('/home/transaction/'.$transaction->getId().'/edit');
         self::assertSame('123.45', $page->getByLabel('Amount', ['exact' => true])->inputValue());
         self::assertSame('CAD', $page->getByLabel('Currency', ['exact' => true])->inputValue());
-        $this->visit('/home/transaction/'.$transaction->getId());
+        $page = $this->visit('/home/transaction/'.$transaction->getId());
         $this->assertPageContains('Corrected salary');
+        $page->locator('.action-delete')->click();
+        $page->locator('#modal-action-confirmation-button')->waitFor(['state' => 'visible']);
+        $this->submit(static fn () => $page->locator('#modal-action-confirmation-button')->click());
+        $page = $this->visit('/home/transaction?query='.rawurlencode('Corrected salary'));
+        self::assertStringNotContainsString('Corrected salary', $page->locator('tbody')->textContent());
     }
 }
