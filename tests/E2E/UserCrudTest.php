@@ -14,7 +14,7 @@ final class UserCrudTest extends FinanceBrowserTest
 
     private const string PASSWORD = 'Synthetic-browser-password-05';
 
-    public function testAdministratorCreatesRenamesAndDeletesUser(): void
+    public function testCreateEditPasswordAndDeleteUser(): void
     {
         $fixtures = FixtureStore::getFixtures();
         $this->loginUser($fixtures['administrator']);
@@ -29,9 +29,16 @@ final class UserCrudTest extends FinanceBrowserTest
         $userDetailUrl = $userRow->locator('a.action-detail')->getAttribute('href');
         $page->goto($userUrl);
         $page->getByLabel('Email', ['exact' => true])->fill('renamed@example.test');
+        $page->getByLabel('New password', ['exact' => true])->fill('Changed-synthetic-password-05');
         $this->submit(static fn () => $page->locator('button[name="ea[newForm][btn]"], button[name="ea[editForm][btn]"]')->first()->click());
         $page->goto($userUrl);
         self::assertSame('renamed@example.test', $page->getByLabel('Email', ['exact' => true])->inputValue());
+        $page = $this->visit('/login');
+        $page->getByLabel('Email', ['exact' => true])->fill('renamed@example.test');
+        $page->getByLabel('Password', ['exact' => true])->fill('Changed-synthetic-password-05');
+        $this->submit(static fn () => $page->getByRole('button', ['name' => 'Log in', 'exact' => true])->click());
+        $page->locator('.finance-chat .chat-empty')->waitFor();
+        $this->loginUser($fixtures['administrator']);
         $page->goto($userDetailUrl);
         $page->locator('.action-delete')->click();
         $page->locator('#modal-action-confirmation-button')->waitFor(['state' => 'visible', 'timeout' => 5000]);

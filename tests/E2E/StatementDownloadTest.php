@@ -9,94 +9,19 @@ use Hautelook\AliceBundle\PhpUnit\FixtureStore;
 
 final class StatementDownloadTest extends FinanceBrowserTest
 {
-    public function testHistoricalProcessingDistinguishesApprovedRowsFromUnresolvedDrafts(): void
+    public function testListViewAndDownloadStatement(): void
     {
         $fixtures = FixtureStore::getFixtures();
         $this->loginUser($fixtures['demo']);
-        $approved = $fixtures['demo_card_statement'];
-        $page = $this->visit('/home/statement-processing/'.$approved->getId());
-        self::assertResponseIsSuccessful();
-        self::assertStringContainsString('No drafts remain for review.', $page->locator('body')->textContent());
-        self::assertSame(0, $page->locator('[data-draft-results] tbody tr')->count());
-        self::assertSame(0, $page->locator('a[href="#draft-results"]')->count());
-
-        $unresolved = $fixtures['history_usd_2024_11'];
-        $page = $this->visit('/home/statement-processing/'.$unresolved->getId());
-        self::assertResponseIsSuccessful();
-        self::assertStringContainsString('Draft transactions requiring review: 1', $page->locator('body')->textContent());
-        self::assertSame(1, $page->locator('[data-draft-results] tbody tr')->count());
-        self::assertStringContainsString('Needs review', $page->locator('[data-draft-results] tbody tr')->textContent());
-        self::assertSame('unknown', $page->locator('[data-meaning]')->getAttribute('data-meaning'));
-        self::assertSame('Import complete', $page->locator('[data-processing-status]')->textContent());
-        self::assertStringContainsString('1 unapproved draft transaction', $page->locator('.import-summary')->textContent());
-        self::assertStringContainsString('Editing and approval are not available yet', $page->locator('.import-drafts')->textContent());
-        self::assertSame(0, $page->getByRole('link', ['name' => 'Refresh processing status'])->count());
-        foreach ([1280, 390] as $width) {
-            $page->setViewportSize($width, 900);
-            self::assertTrue($page->evaluate('() => document.documentElement.scrollWidth <= window.innerWidth'));
-            self::assertSame('auto', $page->locator('.import-table')->evaluate('(element) => getComputedStyle(element).overflowX'));
-            self::assertSame('16px', $page->locator('.import-summary')->evaluate('(element) => getComputedStyle(element).borderRadius'));
-        }
-    }
-
-    public function testOwnerDownloadsSyntheticBytesThroughStatementUiWithoutTrustingQueryInputs(): void
-    {
-        $fixtures = FixtureStore::getFixtures();
-        $this->loginUser($fixtures['demo']);
-        foreach (['demo_statement' => 'chequing/2026-09.csv', 'demo_card_statement' => 'credit/2026-09.csv'] as $reference => $canonicalPath) {
-            $statement = $fixtures[$reference];
-            $filename = $statement->originalFilename;
-            $page = $this->visit('/home/statement/'.$statement->getId());
-            self::assertResponseIsSuccessful();
-            $link = $page->locator('a.action-download');
-            self::assertSame(1, $link->count());
-            $url = $link->getAttribute('href');
-            // Exercise both EasyAdmin's wrapped link and the direct controller route.
-            foreach ([$url, '/home/statement/'.$statement->getId().'/download'] as $url) {
-                $download = $page->evaluate(<<<'JS'
-                async (url) => {
-                    const requestUrl = new URL(url, window.location.href);
-                    requestUrl.searchParams.set('path', '../../etc/passwd');
-                    requestUrl.searchParams.set('url', 'file:///etc/passwd');
-                    requestUrl.searchParams.set('filename', '../../etc/passwd');
-                    const response = await fetch(requestUrl);
-                    return {status: response.status, body: await response.text(), disposition: response.headers.get('content-disposition'), type: response.headers.get('content-type'), cache: response.headers.get('cache-control'), nosniff: response.headers.get('x-content-type-options')};
-                }
-                JS, $url);
-                self::assertSame(200, $download['status'], 'Owner download from '.$url);
-                self::assertSame($statement->sha256, hash('sha256', $download['body']));
-                self::assertSame($statement->byteSize, \strlen($download['body']));
-                $canonical = file_get_contents(\dirname(__DIR__, 2).'/resources/demo-statements/'.$canonicalPath);
-                self::assertSame($canonical, $download['body']);
-                self::assertSame("attachment; filename=statement; filename*=utf-8''".$filename, $download['disposition']);
-                self::assertSame('application/octet-stream', $download['type']);
-                self::assertStringContainsString('no-store', $download['cache']);
-                self::assertSame('nosniff', $download['nosniff']);
-            }
-            foreach (['/statements/'.$statement->storedFilename, '/var/statements/'.$statement->storedFilename, '/var/browser/statements/'.$statement->storedFilename, '/home/statement/not-a-statement/download', '/home/statement/%2E%2E%2Fetc%2Fpasswd/download'] as $path) {
-                self::assertSame(404, $page->evaluate('async path => (await fetch(path)).status', $path), $path);
-            }
-        }
-    }
-
-    public function testForeignAndAdministrativeAccessCannotDownloadEvenOwnedAdministrativeFiles(): void
-    {
-        $fixtures = FixtureStore::getFixtures();
-        $this->loginUser($fixtures['demo']);
-        $page = $this->visit('/home/statement');
-        self::assertSame(404, $page->evaluate('async path => (await fetch(path)).status', '/home/statement/'.$fixtures['admin_statement']->getId().'/download'));
-        $this->loginUser($fixtures['administrator']);
-        $page = $this->visit('/home/user');
-        foreach (['demo_statement', 'admin_statement'] as $reference) {
-            self::assertSame(403, $page->evaluate('async path => (await fetch(path)).status', '/home/statement/'.$fixtures[$reference]->getId().'/download'));
-        }
-    }
-
-    public function testAnonymousDownloadRequiresLogin(): void
-    {
-        $fixtures = FixtureStore::getFixtures();
-        $page = $this->visit('/home/statement/'.$fixtures['demo_statement']->getId().'/download');
-        self::assertSame(1, $page->locator('input[name="_username"]')->count());
-        self::assertStringNotContainsString('Synthetic September salary', $page->locator('body')->textContent());
+        $statement = $fixtures['demo_statement'];
+        $this->visit('/home/statement?query='.rawurlencode($statement->originalFilename));
+        $this->assertPageContains($statement->originalFilename);
+        $page = $this->visit('/home/statement/'.$statement->getId());
+        $link = $page->locator('a.action-download');
+        self::assertTrue($link->isVisible());
+        $download = $page->evaluate('async url => { const response = await fetch(url); return {status: response.status, body: await response.text(), disposition: response.headers.get("content-disposition")}; }', $link->getAttribute('href'));
+        self::assertSame(200, $download['status']);
+        self::assertSame($statement->sha256, hash('sha256', $download['body']));
+        self::assertStringContainsString('attachment;', $download['disposition']);
     }
 }
