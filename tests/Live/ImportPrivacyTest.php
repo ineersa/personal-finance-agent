@@ -50,8 +50,43 @@ final class ImportPrivacyTest extends TestCase
                 $this->login($foreignPage, $url, $email, $password);
                 $foreignPage->locator('turbo-mercure-stream-source[connected]')->waitFor(['state' => 'attached']);
                 self::assertNotSame($ownerSubscription, $foreignPage->locator('turbo-mercure-stream-source')->getAttribute('src'));
-                $status = $foreignPage->evaluate('async src => { const response = await fetch(src, { credentials: "include", headers: {Accept: "text/event-stream"} }); const status = response.status; await response.body?.cancel(); return status; }', $ownerSubscription);
-                self::assertContains($status, [401, 403], 'The hub must refuse a foreign owner topic using this browser’s own subscriber cookie.');
+                $foreignSubscription = $foreignPage->locator('turbo-mercure-stream-source')->getAttribute('src');
+                self::assertNotNull($foreignSubscription);
+                $observer = $foreign->newPage();
+                $observer->goto($url.'/home/source');
+                $observer->evaluate(<<<'JS'
+                    subscriptions => {
+                        const own = new URL(subscriptions.own, location.href);
+                        const other = new URL(subscriptions.other, location.href);
+                        for (const [key, value] of other.searchParams) own.searchParams.append(key, value);
+                        window.privacyMessages = [];
+                        window.privacyStream = new EventSource(own, {withCredentials: true});
+                        window.privacyStream.onmessage = event => window.privacyMessages.push(event.data);
+                    }
+                    JS, ['own' => $foreignSubscription, 'other' => $ownerSubscription]);
+                $observer->waitForFunction('() => window.privacyStream.readyState === EventSource.OPEN');
+                // A valid subscription can open even when private updates for one matcher are forbidden.
+                // An own-owner control before and after the foreign publication proves this same stream is live.
+                $foreignPage->goto($url.'/home/source/new');
+                $sourceName = 'Isolation account '.bin2hex(random_bytes(6));
+                $foreignPage->getByLabel('Name', ['exact' => true])->fill($sourceName);
+                $foreignPage->getByLabel('Currency', ['exact' => true])->fill('USD');
+                $foreignPage->getByLabel('Instrument kind')->selectOption('bank_account');
+                $foreignPage->locator('button[name="ea[newForm][btn]"]')->first()->click();
+                $firstControl = $this->upload($foreignPage, $url, $sourceName);
+                $observer->waitForFunction('id => window.privacyMessages.some(data => data.includes(`id="statement-processing-${id}"`))', $firstControl);
+                $privateStatement = $this->upload($ownerPage, $url, 'Maple Harbour US Dollar · 9054');
+                $secondControl = $this->upload($foreignPage, $url, $sourceName);
+                $observer->waitForFunction('id => window.privacyMessages.some(data => data.includes(`id="statement-processing-${id}"`))', $secondControl);
+                $receivedForeignPayload = $observer->evaluate(<<<'JS'
+                    async id => {
+                        await new Promise(resolve => setTimeout(resolve, 1500));
+                        return window.privacyMessages.some(data => data.includes(`id="statement-processing-${id}"`));
+                    }
+                    JS, $privateStatement);
+                self::assertFalse($receivedForeignPayload, 'A live mixed-topic connection must filter another owner’s private payload.');
+                self::assertSame(1, $observer->evaluate('() => window.privacyStream.readyState'));
+                $observer->evaluate('() => window.privacyStream.close()');
                 self::assertSame(404, $foreignPage->goto($statementUrl)?->status());
                 $foreignPage->goto($url.'/home/statement-upload');
                 self::assertStringNotContainsString('Maple Harbour', $foreignPage->getByLabel('Source', ['exact' => true])->textContent());
@@ -61,10 +96,7 @@ final class ImportPrivacyTest extends TestCase
                 $foreignPage->getByRole('button', ['name' => 'Upload and prepare drafts'])->click();
                 $foreignPage->getByText('The selected choice is invalid.')->waitFor();
                 self::assertSame($url.'/home/statement-upload', $foreignPage->url());
-                $adminPage->goto($userDetail);
-                $adminPage->locator('.action-delete')->click();
-                $adminPage->locator('#modal-action-confirmation-button')->waitFor(['state' => 'visible']);
-                $adminPage->locator('#modal-action-confirmation-button')->click();
+                // Keep the isolated user's imported records; deleting a referenced owner is not test cleanup.
             } finally {
                 $foreign->close();
                 $administrator->close();
@@ -74,6 +106,22 @@ final class ImportPrivacyTest extends TestCase
             $browser?->close();
             $client->close();
         }
+    }
+
+    private function upload(PageInterface $page, string $url, string $source): string
+    {
+        $page->goto($url.'/home/statement-upload');
+        $page->locator('turbo-mercure-stream-source[connected]')->waitFor(['state' => 'attached']);
+        $page->getByLabel('Source', ['exact' => true])->selectOption(['label' => $source]);
+        $page->getByLabel('CSV statement', ['exact' => true])->setInputFiles(\dirname(__DIR__, 2).'/resources/demo-statements/usd/2026-10.csv');
+        $page->getByRole('checkbox')->check();
+        $page->getByRole('button', ['name' => 'Upload and prepare drafts'])->click();
+        $page->waitForURL('**/home/statement-processing/*');
+        $page->locator('[data-processing-status]')->filter(['hasText' => 'completed'])->waitFor(['timeout' => 120000]);
+        $page->locator('#import-notification a')->waitFor();
+        self::assertGreaterThan(0, $page->locator('[data-draft-results] tbody tr')->count());
+
+        return basename($page->url());
     }
 
     private function login(PageInterface $page, string $url, string $email, string $password): void
