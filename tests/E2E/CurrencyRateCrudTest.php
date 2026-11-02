@@ -20,7 +20,7 @@ final class CurrencyRateCrudTest extends FinanceBrowserTest
         $date = $today->modify('+1 day')->format('Y-m-d');
         $page = $this->visit('/home/currency-rate');
         $page->locator('.action-filters-button')->click();
-        self::assertSame($today->format('Y-m-d'), $page->locator('input[name="filters[day][value]"]')->inputValue());
+        self::assertSame($today->format('Y-m-d'), $page->locator('#filters_day_value')->inputValue());
 
         $page = $this->visit('/home/currency-rate/new');
         $page->getByLabel('Date', ['exact' => true])->fill($date);
@@ -30,11 +30,12 @@ final class CurrencyRateCrudTest extends FinanceBrowserTest
 
         $page = $this->visit('/home/currency-rate');
         $page->locator('.action-filters-button')->click();
-        $page->locator('input[name="filters[day][value]"]')->fill($date);
+        $page->locator('#filters_day_value')->fill($date);
         $page->locator('[data-filter-property="currency"] .filter-checkbox')->check();
         $page->locator('select[name="filters[currency][value]"]')->selectOption('USD');
-        $page->locator('#modal-apply-button')->click();
+        $this->submit(static fn () => $page->locator('#modal-apply-button')->click());
         $row = $page->locator('tbody tr')->filter(['hasText' => '1.12345678901234567890']);
+        self::assertSame(1, $row->count(), $page->locator('body')->textContent());
         $editUrl = $row->locator('a.action-edit')->getAttribute('href');
         $detailUrl = $row->locator('a.action-detail')->getAttribute('href');
         self::assertStringContainsString('USD', $row->textContent());
@@ -51,8 +52,8 @@ final class CurrencyRateCrudTest extends FinanceBrowserTest
         $this->submit(static fn () => $page->locator('#modal-action-confirmation-button')->click());
         self::assertStringNotContainsString('1.23456789012345678901', $page->locator('body')->textContent());
 
-        $page->locator('.action-filters-reset')->click();
+        $this->submit(static fn () => $page->locator('.action-filters-reset')->click());
         $page->locator('.action-filters-button')->click();
-        self::assertSame($today->format('Y-m-d'), $page->locator('input[name="filters[day][value]"]')->inputValue());
+        self::assertSame($today->format('Y-m-d'), $page->locator('#filters_day_value')->inputValue());
     }
 }
