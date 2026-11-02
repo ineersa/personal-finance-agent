@@ -72,7 +72,12 @@ final class DemoWorkspaceTest extends FinanceBrowserTest
                 self::assertSame('POST', $request->getMethod());
                 self::assertSame('/logout', $request->getPathInfo());
                 self::assertNotEmpty($request->request->get('_csrf_token'));
+                $response = $this->getLastResponse();
+                self::assertNotNull($response);
+                self::assertTrue($response->isRedirect(), 'Logout response status: '.$response->getStatusCode());
+                self::assertSame('/login', parse_url((string) $response->headers->get('location'), \PHP_URL_PATH));
             });
+            $this->assertNavigationPath($page, '/login');
             $page->waitForURL('**/login');
             $this->visit('/home/settings');
             $this->assertPageContains('Personal finance login');
@@ -150,6 +155,7 @@ final class DemoWorkspaceTest extends FinanceBrowserTest
         $page = $this->visit('/login');
         $this->submitLogin($page, 'admin@test.com', 'admin');
         $page = $this->visit('/home/user');
+        $this->assertNavigationPath($page, '/home/user');
         $page->waitForURL('**/home/user');
         $page = $this->visit('/home/user/'.$administrator->getId().'/edit');
         self::assertSame(['ROLE_ADMIN', 'ROLE_USER'], $page->locator('select[name="User[roles][]"]')->evaluate('(select) => Array.from(select.selectedOptions).map(option => option.value).sort()'));
@@ -174,11 +180,28 @@ final class DemoWorkspaceTest extends FinanceBrowserTest
         self::assertSame('USD', $connection->fetchOne('SELECT reporting_currency FROM user WHERE id = ?', [$administrator->getId()]));
     }
 
+    private function assertNavigationPath(PageInterface $page, string $expected): void
+    {
+        $response = $this->getLastResponse();
+        $diagnostic = json_encode([
+            'url' => $page->url(),
+            'status' => $response?->getStatusCode(),
+            'location' => $response?->headers->get('location'),
+            'request_method' => $this->getLastRequest()?->getMethod(),
+            'request_path' => $this->getLastRequest()?->getPathInfo(),
+        ], \JSON_THROW_ON_ERROR);
+        file_put_contents(\dirname(__DIR__, 2).'/var/qa/auth-navigation.jsonl', $diagnostic."\n", \FILE_APPEND);
+        self::assertSame($expected, parse_url($page->url(), \PHP_URL_PATH), $diagnostic);
+    }
+
     private function submitLogin(PageInterface $page, string $email, string $password): void
     {
         self::assertSame('false', $page->locator('form[action$="/login"]')->getAttribute('data-turbo'));
         $page->getByLabel('Email', ['exact' => true])->fill($email);
         $page->getByLabel('Password', ['exact' => true])->fill($password);
         $this->submit(static fn () => $page->getByRole('button', ['name' => 'Log in', 'exact' => true])->click());
+        $errors = $page->locator('.form-error[role="alert"]');
+        self::assertSame(0, $errors->count(), implode('; ', $errors->allTextContents()));
+        $this->assertNavigationPath($page, 'admin@test.com' === $email ? '/home/user' : '/home/chat');
     }
 }
