@@ -18,8 +18,8 @@ final class OwnershipTest extends FinanceBrowserTest
         $this->loginUser($fixtures['demo']);
         foreach ([
             'source' => ['Demo current account', 'Admin private account'],
-            'transaction' => ['Synthetic October salary', 'Admin private synthetic purchase'],
-            'statement' => ['demo-october-2026.csv', 'admin-october-2026.csv'],
+            'transaction' => ['Synthetic September salary', 'Admin private synthetic purchase'],
+            'statement' => ['demo-september-2026.csv', 'admin-september-2026.csv'],
         ] as $screen => [$own, $foreign]) {
             $page = $this->visit('/home/'.$screen);
             self::assertResponseIsSuccessful();

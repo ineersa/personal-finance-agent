@@ -27,12 +27,12 @@ final class DemoWorkspaceTest extends FinanceBrowserTest
         self::assertStringNotContainsString('Work in progress', $page->locator('.ea-sidebar')->textContent());
         self::assertStringNotContainsString('Manage sources and approved transactions.', $page->locator('.ea-sidebar')->textContent());
         $page = $this->visit('/home/transaction');
-        $this->assertPageContains('Synthetic October salary');
+        $this->assertPageContains('Synthetic September salary');
         $this->assertPageContains('Synthetic grocery purchase');
         self::assertStringNotContainsString('Synthetic incomplete draft', $page->locator('body')->textContent());
         $page = $this->visit('/home/statement');
         self::assertResponseIsSuccessful();
-        $this->assertPageContains('demo-october-2026.csv');
+        $this->assertPageContains('demo-september-2026.csv');
         self::assertSame(0, $page->locator('.action-new, .action-edit, .action-delete')->count());
         $page = $this->visit('/home/statement/'.FixtureStore::getFixtures()['demo_statement']->getId());
         self::assertResponseIsSuccessful();

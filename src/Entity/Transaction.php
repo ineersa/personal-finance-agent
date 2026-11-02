@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace App\Entity;
 
 use App\Enum\Direction;
+use App\Enum\RecurrenceKind;
+use App\Enum\TransactionMeaning;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Validator\Constraints as Assert;
 
@@ -45,6 +47,10 @@ class Transaction extends UserRecord
         public ?Category $category = null,
         #[ORM\Column]
         public bool $isDraft = true,
+        #[ORM\Column(enumType: TransactionMeaning::class, options: ['default' => 'unknown'])]
+        public TransactionMeaning $meaning = TransactionMeaning::Unknown,
+        #[ORM\Column(enumType: RecurrenceKind::class, options: ['default' => 'unknown'])]
+        public RecurrenceKind $recurrence = RecurrenceKind::Unknown,
     ) {
         parent::__construct($user);
     }

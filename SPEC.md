@@ -21,9 +21,9 @@ This document defines the product requirements. Technical decisions and their ra
 
 Accept PDF, XLSX, and CSV statement inputs. Convert digital PDF/XLSX locally in Docker using Microsoft's official MarkItDown MCP server, then prepare editable drafts for validation and user approval before financial analysis. Parse CSV in PHP. Conversion does not itself validate financial records or guarantee complex-table fidelity.
 
-Extract transaction rows from MarkItDown Markdown/text using a configured llama.cpp, z.ai, or DeepSeek LLM through Symfony AI structured output. Validate rows into editable drafts, using Jev separately for categorization/decision tasks during preparation/review. Jev is not the arbitrary-field extractor. Only user-approved valid records feed analysis; CSV parsing does not require an LLM.
+Extract transaction rows from MarkItDown Markdown/text using a configured llama.cpp, z.ai, or DeepSeek LLM through Symfony AI structured output. Validate rows into editable drafts, using Jev separately for categorization/decision tasks during preparation/review. Jev is not the arbitrary-field extractor. Only user-approved valid records feed analysis; CSV parsing does not require a generative LLM. Jev may interpret column roles from representative complete rows with explicit role descriptions and presence/support questions; PHP parses and validates exact values. Jev separately judges transaction meaning, recurrence and category, retaining unresolved outcomes when evidence is insufficient.
 
-Configure extraction provider/model independently of chat through settings/environment, using only enabled/configured allowed integrations and server-side secrets. Validate and capture the selected choices for queued work. Provider schema/JSON-mode support varies, and exact pinned bridge compatibility remains unverified; validate output and preserve decimal-string money, not JSON floats. Existing data-transfer disclosures, shared quotas, one-active-generation-per-user protection, and no automatic cross-provider failover remain. Advanced reconciliation, overlapping-statement matching, and automatic deduplication are not MVP requirements; message-redelivery idempotency remains required. [ADR 0018](docs/adr/0018-finance-review-sql-and-jev.md) records these boundaries.
+Configure extraction provider/model independently of chat through settings/environment, using only enabled/configured allowed integrations and server-side secrets. Validate and capture the selected choices for queued work. Provider schema/JSON-mode support varies, and exact pinned bridge compatibility remains unverified; validate output and preserve decimal-string money, not JSON floats. Existing data-transfer disclosures and no automatic cross-provider failover remain. Upload/AI quotas beyond the 10 MiB file limit are deferred by [ADR 0021](docs/adr/0021-fixtures-first-jev-import.md). Advanced reconciliation, overlapping-statement matching, and automatic deduplication are not MVP requirements; message-redelivery idempotency remains required. [ADR 0018](docs/adr/0018-finance-review-sql-and-jev.md) records these boundaries.
 
 Scanned/image-only PDF support and an existing OCR backend remain unresolved; ordinary conversion is not proof of automatic/free OCR. Do not build a custom OCR engine/pipeline. Subsequent AI extraction follows the configured provider's data-transfer policy. [ADR 0016](docs/adr/0016-local-markitdown-conversion.md) records the local conversion boundary.
 
@@ -31,7 +31,7 @@ Scanned/image-only PDF support and an existing OCR backend remain unresolved; or
 
 A source is a bank account, card, or other financial account instrument, not a merchant. Keep one transaction date exactly from the statement, original amount/currency, credit/debit direction, and category. Direction alone does not distinguish income, refunds, or own-account transfers; no complex accounting or inferred tax policy is selected.
 
-Store editable drafts and approved records in one transaction table with an `isDraft` flag. Approval must validate records before clearing that flag; only valid non-draft records feed analysis. Categories are shared reference data with names, descriptions and icons, not per-user category CRUD. Sources have names and optional descriptions, without AI instructions at this stage.
+Store editable drafts and approved records in one transaction table with an `isDraft` flag. Approval must validate records before clearing that flag; only valid non-draft records feed analysis. Categories are shared reference data with names, descriptions and icons, not per-user category CRUD. Sources have names, optional descriptions and optional currency/instrument context, without AI instructions at this stage. Transaction meaning (expense, income, refund, own-account transfer, card payment or unknown) and recurrence (bill, subscription/membership, other recurring, non-recurring or unknown) are independent of category and direction. Unknown is the migration default; do not guess existing values. Refunds retain the underlying purchase category when identifiable, not income. No automatic transfer matching or subscription-management subsystem is selected. The shared 21-category catalog is defined in `fixtures/category.yaml`.
 
 Show finances in one user-configurable reporting currency stored on User, USD by default, limited to ECB feed currencies with EUR as the implicit base. Use transaction-date reference rates where available, initially aiming for roughly three years of history without a fixed retention threshold. Preserve original values; reporting conversion is not the bank's actual FX/fees. Use decimal strings and BCMath, with SQLite-safe storage/aggregation and rounding/missing-rate behavior still to verify. See [ADR 0017](docs/adr/0017-exact-money-and-ecb-reporting.md).
 
@@ -57,9 +57,9 @@ Store conversations and messages in the existing shared application SQLite datab
 
 When creating a sixth temporary chat, remove the owner's oldest inactive temporary chat. Never prune saved chats or chats with queued/running work. If no eligible victim exists, do not delete protected work or silently exceed five; safe admission details remain open. Coordinate save, creation, work admission, and pruning atomically. All retained conversations are reloadable by their owner.
 
-Saved protects against temporary-chat pruning, not all storage limits or separately authorized demo/account lifecycle operations. The five-chat count does not change the shared one-active-generation-per-user limit or promise unlimited model context or remote chart-image availability. [ADR 0015](docs/adr/0015-sqlite-conversation-history.md) records the persistence and retention boundaries.
+Saved protects against temporary-chat pruning, not all storage limits or separately authorized demo/account lifecycle operations. The five-chat count does not promise unlimited model context or remote chart-image availability. AI admission quotas are deferred by ADR 0021. [ADR 0015](docs/adr/0015-sqlite-conversation-history.md) records the persistence and retention boundaries.
 
-For late implementation, use the simple context handoff in [ADR 0013](docs/adr/0013-symfony-ai-agent-runtime.md): watch context size with summary headroom, summarize with the same configured model and tools disabled at a complete tool-call/result boundary, then use application instructions, the handoff, and recent complete messages. Preserve canonical history. The summary is not security instructions or authoritative financial data; query financial facts again. Existing generation limits and budgets include summarization. This is not an advanced compactor, low-memory guarantee, or unlimited-context promise.
+For late implementation, use the simple context handoff in [ADR 0013](docs/adr/0013-symfony-ai-agent-runtime.md): watch context size with summary headroom, summarize with the same configured model and tools disabled at a complete tool-call/result boundary, then use application instructions, the handoff, and recent complete messages. Preserve canonical history. The summary is not security instructions or authoritative financial data; query financial facts again. Summarization is subject to provider context limits; application AI budgets are deferred by ADR 0021. This is not an advanced compactor, low-memory guarantee, or unlimited-context promise.
 
 ## Example questions
 
@@ -91,7 +91,7 @@ For late implementation, use the simple context handoff in [ADR 0013](docs/adr/0
 
 Provide synthetic financial fixtures and a demo user so judges can explore the application without uploading personal bank statements.
 
-The fixtures should cover enough history and transaction types to demonstrate the example questions, including subscriptions, income, and internet bills.
+Prepare 24 fixed completed months (November 2024–October 2026) for CAD chequing, CAD credit and a USD account, using wholly invented identities, merchants, amounts and sequences. Reserve the latest month as one unprocessed upload file per source; process and review preceding history through the actual pipeline before exporting canonical Alice fixtures. Generated expected labels are evaluation targets, not Jev results. Keep existing small hand-authored Alice examples as compatibility scaffolding until historical export exists. Include subscriptions, recurring income, variable bills, refunds, transfers and ambiguous references.
 
 Support restoring the demo to a known state. A manual reset and a scheduled reset were proposed; the mechanism and schedule remain undecided. Any reset must be limited to demo data and clearly communicate that demo edits will be lost.
 
@@ -107,11 +107,7 @@ Leave recovery hardening, final verification, and judge-installation polish unti
 
 ## Resource restrictions
 
-Limit AI work and statement uploads primarily per authenticated user, with coarse IP-based abuse protection and login throttling. Chat and AI-powered statement extraction share the user's AI allowance and an instance-wide daily AI budget. Bound active and pending work, file sizes, daily uploaded bytes, and retained storage.
-
-Concurrent agent execution is across users. The initial one-active-generation-per-user limit remains shared by chat and extraction, with global concurrency bounded.
-
-Explain refused actions and when retrying is possible. Rejected requests must not enqueue work; users must still be able to read existing financial data and conversations. Normal cache clearing and financial demo resets must preserve quota and AI-budget accounting. Configurable initial limits and implementation boundaries are recorded in [ADR 0011](docs/adr/0011-layered-rate-limiting.md).
+Limit uploaded files to 10 MiB each. Upload frequency, daily bytes, retained-storage quotas, shared AI submission limits, one-active-generation-per-user admission, pending/global capacity limits and instance AI-budget accounting are deferred to later work. Preserve existing login throttling, owner isolation, short writes, failure states and basic redelivery idempotency. Operators must supervise resource use until deferred controls exist. [ADR 0021](docs/adr/0021-fixtures-first-jev-import.md) supersedes ADR 0011 and earlier quota references.
 
 ## Technical decisions
 
@@ -125,7 +121,7 @@ Explain refused actions and when retrying is possible. Rejected requests must no
 - [Mate development diagnostics](docs/adr/0008-mate-development-tools.md).
 - [Castor and final static checks](docs/adr/0009-castor-and-static-checks.md).
 - [Playwright-only browser testing](docs/adr/0010-playwright-only-testing.md), with the verification workflow in [TESTING.md](TESTING.md).
-- [Layered rate limits and persistent AI budgets](docs/adr/0011-layered-rate-limiting.md).
+- [Fixtures-first Jev import and deferred quotas](docs/adr/0021-fixtures-first-jev-import.md), superseding [ADR 0011](docs/adr/0011-layered-rate-limiting.md).
 - [Configurable AI providers and chat selection](docs/adr/0012-configurable-ai-providers.md).
 - [Symfony AI-first agent runtime with concurrent execution](docs/adr/0013-symfony-ai-agent-runtime.md).
 - [Inline chat and AntV charts with hosted rendering](docs/adr/0014-inline-chat-and-antv-charts.md).
@@ -141,7 +137,7 @@ Explain refused actions and when retrying is possible. Rejected requests must no
 - Safe inline rendering and chart data contracts, image/reference persistence, reload behavior, and hosted-renderer failure handling.
 - Supported banks/layouts and extraction mappings within PDF/XLSX/CSV, including complex tables, scanned/image-only PDF handling, and explicit OCR backend selection/configuration/verification.
 - Exact MarkItDown transport, versions, parser dependencies/extras, staging/cleanup integration, and compatible MCP APIs.
-- Category vocabulary/Jev decision mappings and exact LLM extraction schema, provider/model configuration, and pinned structured-output bridge compatibility.
+- Jev decision wording/evaluation and exact LLM extraction schema, provider/model configuration, and pinned structured-output bridge compatibility.
 - SQL owner scoping, read-only/table enforcement, bounds, and precision-preserving aggregation; exact target-model history conversion compatibility and generation-local integration.
 - Exact model IDs, supported reasoning options, enabled/default providers and models per installation, credentials, and network requirements for the selected integrations.
 - Provider configuration schema, exact integration packages, and compatible APIs.
@@ -152,7 +148,7 @@ Explain refused actions and when retrying is possible. Rejected requests must no
 - How answers reference the transactions used to produce them.
 - Whether the assistant can propose or apply edits, or only analyze reviewed data.
 - Manual versus scheduled demo reset and its safeguards.
-- Resource-policy thresholds not fixed in ADR 0011, including daily byte/storage quotas, shared AI-budget amounts, global capacity, coarse IP limits, and the daily reset boundary.
+- Deferred resource-policy design and thresholds beyond the 10 MiB upload limit.
 
 ## Planned repository documentation
 

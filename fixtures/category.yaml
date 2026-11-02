@@ -2,8 +2,42 @@ App\Entity\Category:
     groceries:
         __construct: ['Groceries', 'Everyday food and household purchases', 'fa fa-cart-shopping']
     housing:
-        __construct: ['Housing', 'Rent and utilities', 'fa fa-house']
+        __construct: ['Housing', 'Rent, mortgage payments, property taxes, home insurance and repairs', 'fa fa-house']
     subscriptions:
-        __construct: ['Subscriptions', 'Recurring digital services', 'fa fa-repeat']
+        __construct: ['Subscriptions & Memberships', 'Streaming, software, gym and other memberships; excludes internet and phone access', 'fa fa-repeat']
     salary:
-        __construct: ['Salary', 'Employment income', 'fa fa-briefcase']
+        __construct: ['Employment Income', 'Salary, wages and employment bonuses; excludes refunds and transfers', 'fa fa-briefcase']
+    other_income:
+        __construct: ['Interest & Other Income', 'Account interest and identifiable non-employment income; excludes refunds and transfers', 'fa fa-coins']
+    utilities:
+        __construct: ['Utilities', 'Electricity, water and heating gas', 'fa fa-bolt']
+    internet_phone:
+        __construct: ['Internet & Phone', 'Home internet, mobile and telephone service bills', 'fa fa-phone']
+    dining:
+        __construct: ['Dining & Takeout', 'Restaurants, cafes, takeout and food delivery', 'fa fa-utensils']
+    transportation:
+        __construct: ['Transportation', 'Fuel, transit, parking, vehicle maintenance and vehicle insurance', 'fa fa-bus']
+    health:
+        __construct: ['Health & Personal Care', 'Medical, dental, prescriptions and personal care', 'fa fa-heart']
+    entertainment:
+        __construct: ['Entertainment & Hobbies', 'Events, games, recreation and hobby expenses', 'fa fa-ticket']
+    shopping:
+        __construct: ['Shopping', 'Clothing, electronics and household goods, including identifiable retail refunds', 'fa fa-bag-shopping']
+    travel:
+        __construct: ['Travel', 'Hotels, flights and identifiable trip expenses', 'fa fa-plane']
+    education:
+        __construct: ['Education', 'Tuition, courses, books and training', 'fa fa-book']
+    gifts:
+        __construct: ['Gifts & Donations', 'Gifts and charitable contributions', 'fa fa-gift']
+    savings:
+        __construct: ['Savings & Investments', 'Identifiable savings and investment contributions or withdrawals; may also have transfer meaning', 'fa fa-piggy-bank']
+    loans:
+        __construct: ['Loan Payments', 'Student, personal and other non-mortgage loan payments', 'fa fa-money-bill']
+    fees:
+        __construct: ['Fees & Charges', 'Bank fees, card fees and interest charges', 'fa fa-receipt']
+    transfers:
+        __construct: ['Own-account Transfers', 'Movements between the same owner’s accounts; not income or purchases', 'fa fa-right-left']
+    card_payments:
+        __construct: ['Credit-card Payments', 'Payments settling card balances; not new purchases or income', 'fa fa-credit-card']
+    uncategorized:
+        __construct: ['Uncategorized', 'Insufficient information or no suitable category', 'fa fa-question']

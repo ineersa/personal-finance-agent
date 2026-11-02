@@ -1,6 +1,6 @@
 # ADR 0018: Review draft imports and bound SQL analysis and Jev decisions
 
-- Status: Accepted
+- Status: Accepted; CSV interpretation, independent finance dimensions and resource-policy references amended by [ADR 0021](0021-fixtures-first-jev-import.md).
 - Date: 2026-10-29
 
 ## Context

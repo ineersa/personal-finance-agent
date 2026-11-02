@@ -13,7 +13,7 @@ final class StatementDownloadTest extends FinanceBrowserTest
     {
         $fixtures = FixtureStore::getFixtures();
         $this->loginUser($fixtures['demo']);
-        foreach (['demo_statement' => 'demo-october-2026.csv', 'demo_card_statement' => 'demo-card-2026.csv'] as $reference => $filename) {
+        foreach (['demo_statement' => 'demo-september-2026.csv', 'demo_card_statement' => 'demo-card-2026.csv'] as $reference => $filename) {
             $statement = $fixtures[$reference];
             $page = $this->visit('/home/statement/'.$statement->getId());
             self::assertResponseIsSuccessful();
@@ -35,7 +35,8 @@ final class StatementDownloadTest extends FinanceBrowserTest
                 self::assertSame(200, $download['status'], 'Owner download from '.$url);
                 self::assertSame($statement->sha256, hash('sha256', $download['body']));
                 self::assertSame($statement->byteSize, \strlen($download['body']));
-                self::assertStringContainsString('Synthetic fixture '.$reference, $download['body']);
+                $canonical = file_get_contents(\dirname(__DIR__, 2).'/resources/demo-statements/examples/'.$reference.'.csv');
+                self::assertSame($canonical, $download['body']);
                 self::assertSame("attachment; filename=statement; filename*=utf-8''".$filename, $download['disposition']);
                 self::assertSame('application/octet-stream', $download['type']);
                 self::assertStringContainsString('no-store', $download['cache']);
@@ -65,6 +66,6 @@ final class StatementDownloadTest extends FinanceBrowserTest
         $fixtures = FixtureStore::getFixtures();
         $page = $this->visit('/home/statement/'.$fixtures['demo_statement']->getId().'/download');
         self::assertSame(1, $page->locator('input[name="_username"]')->count());
-        self::assertStringNotContainsString('Synthetic fixture', $page->locator('body')->textContent());
+        self::assertStringNotContainsString('Synthetic September salary', $page->locator('body')->textContent());
     }
 }

@@ -5,11 +5,11 @@ App\Entity\Statement:
             - '@demo'
             - '@demo_current'
             - a19abfd3-cbb5-4ead-8be0-a8ed2b99be01
-            - demo-october-2026.csv
+            - demo-september-2026.csv
             - text/csv
             - 0
             - '0000000000000000000000000000000000000000000000000000000000000000'
-        statementDate: '<(new \DateTimeImmutable("2026-10-01"))>'
+        statementDate: '<(new \DateTimeImmutable("2026-09-01"))>'
     demo_card_statement:
         __construct:
             - '@demo'
@@ -19,13 +19,13 @@ App\Entity\Statement:
             - text/csv
             - 0
             - '0000000000000000000000000000000000000000000000000000000000000000'
-        statementDate: '<(new \DateTimeImmutable("2026-10-01"))>'
+        statementDate: '<(new \DateTimeImmutable("2026-09-01"))>'
     admin_statement:
         __construct:
             - '@administrator'
             - '@admin_current'
             - a19abfd3-cbb5-4ead-8be0-a8ed2b99be03
-            - admin-october-2026.csv
+            - admin-september-2026.csv
             - text/csv
             - 0
             - '0000000000000000000000000000000000000000000000000000000000000000'

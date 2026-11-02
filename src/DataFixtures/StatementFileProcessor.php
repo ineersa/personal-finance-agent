@@ -21,7 +21,15 @@ final readonly class StatementFileProcessor implements ProcessorInterface
         if (!$object instanceof Statement) {
             return;
         }
-        $content = "date,description,amount,currency\n2026-10-01,Synthetic fixture {$id},12.34,EUR\n";
+        // Fixture IDs are trusted definitions, never request paths or uploaded filenames.
+        $filename = match ($id) {
+            'demo_statement', 'demo_card_statement', 'admin_statement' => $id.'.csv',
+            default => throw new \LogicException('No canonical bytes for statement fixture '.$id),
+        };
+        $content = file_get_contents(\dirname(__DIR__, 2).'/resources/demo-statements/examples/'.$filename);
+        if (false === $content) {
+            throw new \RuntimeException('Cannot read canonical statement fixture bytes.');
+        }
         $object->byteSize = \strlen($content);
         $object->sha256 = hash('sha256', $content);
         $object->mediaType = 'text/csv';

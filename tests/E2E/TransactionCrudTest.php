@@ -38,7 +38,7 @@ final class TransactionCrudTest extends FinanceBrowserTest
         self::assertSame('EUR', $page->getByLabel('Reporting currency')->inputValue());
         $page = $this->visit('/home/transaction/'.$fixtures['demo_salary']->getId().'/edit');
         self::assertSame('-000123456789012.123456789012345678', $page->getByLabel('Amount', ['exact' => true])->inputValue());
-        self::assertSame('USD', $page->getByLabel('Currency', ['exact' => true])->inputValue());
+        self::assertSame('CAD', $page->getByLabel('Currency', ['exact' => true])->inputValue());
     }
 
     public function testSourceChoicesAreOwnerScopedAndInvalidSubmissionsCannotBeSaved(): void

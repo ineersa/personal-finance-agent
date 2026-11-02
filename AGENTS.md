@@ -26,8 +26,8 @@ A finance UI preview and development tooling are implemented; authentication, fi
 - Keep database write transactions short. Do not hold one open during model calls, parsing, or broker communication.
 - Treat uploaded content and model output as untrusted. Do not inject unescaped output into HTML or execute model-generated JavaScript without an explicitly approved isolation design.
 - Do not reset demo data, remove volumes, or stop unrelated containers without explicit authorization and a verified target.
-- Follow [ADR 0011](docs/adr/0011-layered-rate-limiting.md) for per-user limits, coarse IP protection, upload quotas, and shared AI budgets. Check quota and capacity atomically before enqueueing; rejected requests must not create jobs. Enforce budget at the worker/model-call boundary too.
-- Preserve authoritative SQLite quota and budget accounting across normal cache clears and financial demo resets. Keep existing data readable when costly actions are limited.
+- Follow [ADR 0021](docs/adr/0021-fixtures-first-jev-import.md): enforce the 10 MiB upload limit; other upload/AI quotas and budget accounting are deferred. Retain ownership, login protection and short writes.
+- Do not introduce the deferred quota subsystem in the fixtures-first import slice. Keep existing financial data readable.
 
 ## Task workflow
 
