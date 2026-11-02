@@ -60,8 +60,10 @@ final class DemoMaintenanceTest extends TestCase
                     self::assertNotNull($ownerId);
                     $adminPage->goto($url.'/home/user/'.$ownerId.'/edit');
                     $adminPage->locator('select[name="User[roles][]"]')->selectOption(['ROLE_ADMIN', 'ROLE_USER'], ['force' => true]);
-                    $adminPage->locator('button[name="ea[newForm][btn]"]')->first()->click();
-                    $adminPage->waitForURL('**/home/user');
+                    $adminPage->locator('button[name="ea[newForm][btn]"][value="saveAndReturn"]')->click();
+                    self::assertSame('/home/user', parse_url($adminPage->url(), \PHP_URL_PATH), 'Native saveAndReturn target: '.$adminPage->url());
+                    $adminPage->goto($url.'/home/user/'.$ownerId.'/edit');
+                    self::assertSame(['ROLE_ADMIN', 'ROLE_USER'], $adminPage->locator('select[name="User[roles][]"]')->evaluate('(select) => Array.from(select.selectedOptions).map(option => option.value).sort()'));
                     file_put_contents(\dirname(__DIR__, 2).'/var/qa/maintenance-import.json', json_encode(['id' => $id, 'ownerId' => $ownerId], \JSON_THROW_ON_ERROR));
                 } finally {
                     $admin->close();
@@ -89,8 +91,10 @@ final class DemoMaintenanceTest extends TestCase
                 // Castor has synchronously consumed the queued message while this owner was admin.
                 $adminPage->goto($url.'/home/user/'.$saved['ownerId'].'/edit');
                 $adminPage->locator('select[name="User[roles][]"]')->selectOption(['ROLE_USER'], ['force' => true]);
-                $adminPage->locator('button[name="ea[newForm][btn]"]')->first()->click();
-                $adminPage->waitForURL('**/home/user');
+                $adminPage->locator('button[name="ea[newForm][btn]"][value="saveAndReturn"]')->click();
+                self::assertSame('/home/user', parse_url($adminPage->url(), \PHP_URL_PATH), 'Native saveAndReturn target: '.$adminPage->url());
+                $adminPage->goto($url.'/home/user/'.$saved['ownerId'].'/edit');
+                self::assertSame(['ROLE_USER'], $adminPage->locator('select[name="User[roles][]"]')->evaluate('(select) => Array.from(select.selectedOptions).map(option => option.value).sort()'));
                 $this->login($page, $url, 'demo@test.com', 'demo');
                 $page->goto($url.'/home/statement-processing/'.$saved['id']);
                 self::assertSame('failed', $page->locator('[data-processing-status]')->getAttribute('data-status'));
