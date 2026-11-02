@@ -17,14 +17,17 @@ final class OwnershipTest extends FinanceBrowserTest
         $fixtures = FixtureStore::getFixtures();
         $this->loginUser($fixtures['demo']);
         foreach ([
-            'source' => ['Maple Harbour Chequing · 7318', 'Admin private account'],
-            'transaction' => ['Synthetic September salary', 'Admin private synthetic purchase'],
-            'statement' => ['demo-september-2026.csv', 'admin-september-2026.csv'],
+            'source' => [$fixtures['demo_current']->name, $fixtures['admin_current']->name],
+            'transaction' => [$fixtures['demo_salary']->description, $fixtures['admin_transaction']->description],
+            'statement' => [$fixtures['demo_statement']->originalFilename, $fixtures['admin_statement']->originalFilename],
         ] as $screen => [$own, $foreign]) {
             $page = $this->visit('/home/'.$screen);
             self::assertResponseIsSuccessful();
-            self::assertStringContainsString($own, $page->locator('body')->textContent());
             self::assertStringNotContainsString($foreign, $page->locator('body')->textContent());
+            $page = $this->visit('/home/'.$screen.'?query='.rawurlencode($own));
+            self::assertResponseIsSuccessful();
+            self::assertStringContainsString($own, $page->locator('tbody')->textContent());
+            self::assertStringNotContainsString($foreign, $page->locator('tbody')->textContent());
         }
         foreach (['source' => 'demo_current', 'statement' => 'demo_statement', 'transaction' => 'demo_salary'] as $screen => $reference) {
             $this->visit('/home/'.$screen.'/'.$fixtures[$reference]->getId());

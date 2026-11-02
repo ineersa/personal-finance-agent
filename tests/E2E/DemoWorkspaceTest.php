@@ -62,6 +62,7 @@ final class DemoWorkspaceTest extends FinanceBrowserTest
             self::assertSame(1, $menu->getByRole('link', ['name' => 'Settings', 'exact' => false])->count());
             $form = $menu->locator('form[action$="/logout"]');
             self::assertSame('post', $form->getAttribute('method'));
+            self::assertSame('false', $form->getAttribute('data-turbo'));
             self::assertNotEmpty($form->locator('input[name="_csrf_token"]')->inputValue());
             $logout = $menu->getByRole('button', ['name' => 'Log out', 'exact' => true]);
             $this->submit(function () use ($logout): void {
@@ -175,6 +176,7 @@ final class DemoWorkspaceTest extends FinanceBrowserTest
 
     private function submitLogin(PageInterface $page, string $email, string $password): void
     {
+        self::assertSame('false', $page->locator('form[action$="/login"]')->getAttribute('data-turbo'));
         $page->getByLabel('Email', ['exact' => true])->fill($email);
         $page->getByLabel('Password', ['exact' => true])->fill($password);
         $this->submit(static fn () => $page->getByRole('button', ['name' => 'Log in', 'exact' => true])->click());
