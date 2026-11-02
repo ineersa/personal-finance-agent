@@ -9,7 +9,7 @@ use Playwright\PlaywrightFactory;
 
 final class StatementImportTest extends TestCase
 {
-    public function testUploadReviewDraftsAndDeleteStatement(): void
+    public function testUploadEditDeleteAndApproveStatementDraft(): void
     {
         $url = (string) getenv('FINANCE_IMPORT_URL');
         self::assertMatchesRegularExpression('~^http://[a-z0-9-]+\.browser\.finance\.localhost$~D', $url);
@@ -46,8 +46,60 @@ final class StatementImportTest extends TestCase
                 self::assertNotFalse($amount);
                 self::assertSame($amount, $rows->first()->locator('td')->nth(2)->textContent());
                 $id = basename((string) parse_url($page->url(), \PHP_URL_PATH));
+                $processingUrl = $page->url();
+                $rows->first()->getByRole('link', ['name' => 'Edit', 'exact' => true])->click();
+                $page->waitForURL('**/home/transaction/*/edit');
+                $editUrl = $page->url();
+                $transactionId = basename(\dirname((string) parse_url($editUrl, \PHP_URL_PATH)));
+                $page->getByLabel('Transaction Date', ['exact' => true])->fill('2026-10-02');
+                $page->getByLabel('Amount', ['exact' => true])->fill('123.4500');
+                $page->getByLabel('Currency', ['exact' => true])->fill('USD');
+                $page->getByRole('combobox', ['name' => 'Direction', 'exact' => true])->click();
+                $page->getByRole('listbox', ['name' => 'Direction', 'exact' => true])->getByRole('option', ['name' => 'Debit', 'exact' => true])->click();
+                $page->getByRole('combobox', ['name' => 'Meaning', 'exact' => true])->click();
+                $page->getByRole('listbox', ['name' => 'Meaning', 'exact' => true])->getByRole('option', ['name' => 'Refund', 'exact' => true])->click();
+                $page->getByRole('combobox', ['name' => 'Recurrence', 'exact' => true])->click();
+                $page->getByRole('listbox', ['name' => 'Recurrence', 'exact' => true])->getByRole('option', ['name' => 'Subscription', 'exact' => true])->click();
+                $page->getByLabel('Description', ['exact' => true])->fill('Reviewed October transaction');
+                $page->getByLabel('Source', ['exact' => true])->selectOption(['label' => 'Maple Harbour US Dollar · 9054']);
+                $page->getByLabel('Category', ['exact' => true])->selectOption(['label' => 'Groceries']);
+                $page->getByRole('button', ['name' => 'Save and continue editing', 'exact' => true])->click();
+                $page->waitForURL('**/home/transaction/'.$transactionId.'/edit');
+                self::assertSame($editUrl, $page->url());
+                $page->goto($editUrl);
+                self::assertStringContainsString('Refund', $page->getByRole('combobox', ['name' => 'Meaning', 'exact' => true])->textContent());
+                self::assertStringContainsString('Subscription', $page->getByRole('combobox', ['name' => 'Recurrence', 'exact' => true])->textContent());
+                $page->getByRole('button', ['name' => 'Save changes', 'exact' => true])->click();
+                $page->waitForURL('**/home/statement-processing/'.$id);
+                $page->goto($editUrl);
+                self::assertSame('123.4500', $page->getByLabel('Amount', ['exact' => true])->inputValue());
+                self::assertSame('Reviewed October transaction', $page->getByLabel('Description', ['exact' => true])->inputValue());
+                $page->goto($processingUrl);
+                $page->locator('[data-draft-results] tbody tr')->nth(1)->getByRole('button', ['name' => 'Delete', 'exact' => true])->click();
+                $page->locator('#modal-action-confirmation-button')->waitFor(['state' => 'visible']);
+                $page->locator('#modal-action-confirmation-button')->click();
+                $page->getByRole('heading', ['name' => 'Draft transactions requiring review: '.(\count($statement['rows']) - 1), 'exact' => true])->waitFor();
+                $page->goto($processingUrl);
+                self::assertSame(\count($statement['rows']) - 1, $page->locator('[data-draft-results] tbody tr')->count());
                 $page->goto($url.'/home/transaction');
                 self::assertSame($approvedRows, $page->locator('tbody')->textContent(), 'Drafts must not change approved transactions.');
+                $page->goto($processingUrl);
+                $page->getByRole('button', ['name' => 'Approve draft', 'exact' => true])->click();
+                $page->waitForURL('**/home/statement');
+                $page->getByText('Statement draft approved.', ['exact' => true])->waitFor();
+                $page->goto($processingUrl);
+                self::assertSame(0, $page->locator('[data-draft-results]')->count());
+                $page->goto($url.'/home/transaction?query='.rawurlencode('Reviewed October transaction'));
+                self::assertStringContainsString('Reviewed October transaction', $page->locator('tbody')->textContent());
+                $page->goto($url.'/home/transaction/'.$transactionId.'/edit');
+                self::assertSame('2026-10-02', $page->getByLabel('Transaction Date', ['exact' => true])->inputValue());
+                self::assertSame('123.4500', $page->getByLabel('Amount', ['exact' => true])->inputValue());
+                self::assertSame('USD', $page->getByLabel('Currency', ['exact' => true])->inputValue());
+                self::assertSame('Reviewed October transaction', $page->getByLabel('Description', ['exact' => true])->inputValue());
+                self::assertSame('Maple Harbour US Dollar · 9054', $page->getByLabel('Source', ['exact' => true])->locator('option:checked')->textContent());
+                self::assertSame('Groceries', $page->getByLabel('Category', ['exact' => true])->locator('option:checked')->textContent());
+                self::assertStringContainsString('Refund', $page->getByRole('combobox', ['name' => 'Meaning', 'exact' => true])->textContent());
+                self::assertStringContainsString('Subscription', $page->getByRole('combobox', ['name' => 'Recurrence', 'exact' => true])->textContent());
                 $page->goto($url.'/home/statement/'.$id);
                 $page->locator('.action-delete')->click();
                 $page->locator('#modal-action-confirmation-button')->waitFor(['state' => 'visible']);
