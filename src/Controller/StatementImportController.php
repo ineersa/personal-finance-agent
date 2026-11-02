@@ -63,24 +63,33 @@ final class StatementImportController extends AbstractController
     }
 
     #[AdminRoute('/statement-processing/{id}', name: 'statement_processing', options: ['methods' => ['GET', 'POST'], 'requirements' => ['id' => '\d+']])]
-    public function processing(int $id, Request $request, #[CurrentUser] User $owner, StatementRepository $statements, TransactionRepository $transactions, EntityManagerInterface $entityManager, MessageBusInterface $bus): Response
+    public function processing(int $id, Request $request, #[CurrentUser] User $owner, StatementRepository $statements, TransactionRepository $transactions, EntityManagerInterface $entityManager, MessageBusInterface $bus, \App\Import\ImportLifecycle $lifecycle): Response
     {
         $statement = $statements->findForUser($owner, $id) ?? throw $this->createNotFoundException();
         $form = $this->createFormBuilder()->getForm();
         $form->handleRequest($request);
         if ($form->isSubmitted() && $form->isValid() && ProcessingStatus::Failed === $statement->processingStatus) {
-            $connection = $entityManager->getConnection();
-            // Retry only failed operations without persisted rows; a completed import is never duplicated.
-            $claimed = $connection->executeStatement("UPDATE statement SET processing_status = 'queued', processing_error = NULL WHERE id = ? AND user_id = ? AND processing_status = 'failed' AND NOT EXISTS (SELECT 1 FROM financial_transaction WHERE statement_id = ?)", [$id, $owner->getId(), $id]);
-            if (1 === $claimed) {
-                try {
-                    $bus->dispatch(new ProcessStatement($id, $owner->getId() ?? throw new \LogicException('Owner missing.')));
-                } catch (\Throwable) {
-                    $connection->executeStatement("UPDATE statement SET processing_status = 'failed', processing_error = ? WHERE id = ? AND processing_status = 'queued'", ['The processing queue is unavailable. Retry when the broker is running.', $id]);
-                }
+            try {
+                $lock = $lifecycle->acquire();
+            } catch (ImportException $error) {
+                throw new \Symfony\Component\HttpKernel\Exception\ConflictHttpException($error->getMessage());
             }
+            try {
+                $connection = $entityManager->getConnection();
+                // Retry only failed operations without persisted rows; a completed import is never duplicated.
+                $claimed = $connection->executeStatement("UPDATE statement SET processing_status = 'queued', processing_error = NULL WHERE id = ? AND user_id = ? AND stored_filename = ? AND processing_status = 'failed' AND NOT EXISTS (SELECT 1 FROM financial_transaction WHERE statement_id = ?)", [$id, $owner->getId(), $statement->storedFilename, $id]);
+                if (1 === $claimed) {
+                    try {
+                        $bus->dispatch(new ProcessStatement($id, $owner->getId() ?? throw new \LogicException('Owner missing.'), $statement->storedFilename));
+                    } catch (\Throwable) {
+                        $connection->executeStatement("UPDATE statement SET processing_status = 'failed', processing_error = ? WHERE id = ? AND processing_status = 'queued'", ['The processing queue is unavailable. Retry when the broker is running.', $id]);
+                    }
+                }
 
-            return $this->redirectToRoute('admin_statement_processing', ['id' => $id]);
+                return $this->redirectToRoute('admin_statement_processing', ['id' => $id]);
+            } finally {
+                $lock->release();
+            }
         }
         $drafts = $transactions->queryForUser($owner)->andWhere('record.statement = :statement')->andWhere('record.isDraft = true')->setParameter('statement', $statement)->orderBy('record.id', 'ASC')->getQuery()->getResult();
 

@@ -65,7 +65,7 @@ final class ProcessSyntheticHistoryCommand extends Command
             if (null === $id || null === $owner) {
                 throw new \LogicException('Missing persisted identifiers.');
             }
-            ($this->handler)(new ProcessStatement($id, $owner));
+            ($this->handler)(new ProcessStatement($id, $owner, $statement->storedFilename));
             $this->em->refresh($statement);
             if (ProcessingStatus::Completed !== $statement->processingStatus) {
                 throw new \RuntimeException('Synthetic processing failed: '.$entry['file'].' '.$statement->processingError);

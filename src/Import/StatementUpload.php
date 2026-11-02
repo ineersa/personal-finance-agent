@@ -16,11 +16,21 @@ use Symfony\Component\Messenger\MessageBusInterface;
 
 final readonly class StatementUpload
 {
-    public function __construct(private StatementStorage $storage, private EntityManagerInterface $entityManager, private MessageBusInterface $bus)
+    public function __construct(private StatementStorage $storage, private EntityManagerInterface $entityManager, private MessageBusInterface $bus, private ImportLifecycle $lifecycle)
     {
     }
 
     public function upload(User $owner, Source $source, UploadedFile $file): Statement
+    {
+        $lock = $this->lifecycle->acquire();
+        try {
+            return $this->storeAndDispatch($owner, $source, $file);
+        } finally {
+            $lock->release();
+        }
+    }
+
+    private function storeAndDispatch(User $owner, Source $source, UploadedFile $file): Statement
     {
         if (null === $owner->getId() || null === $source->getId() || $source->getUser()->getId() !== $owner->getId() || \in_array('ROLE_ADMIN', $owner->getRoles(), true)) {
             throw new ImportException('The selected source is not available.');
@@ -58,12 +68,11 @@ final readonly class StatementUpload
         }
         try {
             $id = $statement->getId() ?? throw new \LogicException('Statement ID missing after persistence.');
-            $this->bus->dispatch(new ProcessStatement($id, $owner->getId()));
+            $this->bus->dispatch(new ProcessStatement($id, $owner->getId(), $statement->storedFilename));
         } catch (\Throwable) {
             // Publication is outside the database transaction; retained owned metadata exposes the failure.
-            $statement->processingStatus = ProcessingStatus::Failed;
-            $statement->processingError = 'The processing queue was unavailable. Retry processing when the broker is running.';
-            $this->entityManager->flush();
+            $this->entityManager->getConnection()->executeStatement("UPDATE statement SET processing_status = 'failed', processing_error = ? WHERE id = ? AND user_id = ? AND stored_filename = ? AND processing_status = 'queued'", ['The processing queue was unavailable. Retry processing when the broker is running.', $statement->getId(), $owner->getId(), $statement->storedFilename]);
+            $this->entityManager->refresh($statement);
         }
 
         return $statement;

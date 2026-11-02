@@ -36,10 +36,12 @@ final class DemoWorkspaceTest extends FinanceBrowserTest
         $page = $this->visit('/home/statement');
         self::assertResponseIsSuccessful();
         $this->assertPageContains('history-');
-        self::assertSame(0, $page->locator('.action-new, .action-edit, .action-delete')->count());
+        self::assertSame(0, $page->locator('.action-new, .action-edit')->count());
+        self::assertGreaterThan(0, $page->locator('.action-delete')->count());
         $page = $this->visit('/home/statement/'.FixtureStore::getFixtures()['demo_statement']->getId());
         self::assertResponseIsSuccessful();
-        self::assertSame(0, $page->locator('.action-new, .action-edit, .action-delete')->count());
+        self::assertSame(0, $page->locator('.action-new, .action-edit')->count());
+        self::assertSame(1, $page->locator('.action-delete')->count());
     }
 
     public function testNativeAccountMenuLogsOutWithPostOnDesktopAndMobile(): void

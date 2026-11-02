@@ -10,6 +10,7 @@ use App\Entity\User;
 use App\Enum\ProcessingStatus;
 use App\Import\CsvParser;
 use App\Import\ImportException;
+use App\Import\ImportLifecycle;
 use App\Import\ImportUpdates;
 use App\Import\TransactionInterpreter;
 use App\Message\ProcessStatement;
@@ -21,23 +22,36 @@ use Symfony\Component\Messenger\Attribute\AsMessageHandler;
 #[AsMessageHandler]
 final readonly class ProcessStatementHandler
 {
-    public function __construct(private EntityManagerInterface $entityManager, private StatementRepository $statements, private StatementStorage $storage, private CsvParser $parser, private TransactionInterpreter $interpreter, private ImportUpdates $updates)
+    public function __construct(private EntityManagerInterface $entityManager, private StatementRepository $statements, private StatementStorage $storage, private CsvParser $parser, private TransactionInterpreter $interpreter, private ImportUpdates $updates, private ImportLifecycle $lifecycle)
     {
     }
 
     public function __invoke(ProcessStatement $message): void
+    {
+        if (!isset($message->storedFilename)) {
+            return;
+        }
+        $lock = $this->lifecycle->acquire();
+        try {
+            $this->process($message);
+        } finally {
+            $lock->release();
+        }
+    }
+
+    private function process(ProcessStatement $message): void
     {
         $owner = $this->entityManager->find(User::class, $message->ownerId);
         if (null === $owner || \in_array('ROLE_ADMIN', $owner->getRoles(), true)) {
             return;
         }
         $statement = $this->statements->findForUser($owner, $message->statementId);
-        if (null === $statement || $statement->source->getUser()->getId() !== $owner->getId()) {
+        if (null === $statement || $statement->storedFilename !== $message->storedFilename || $statement->source->getUser()->getId() !== $owner->getId()) {
             return;
         }
         $connection = $this->entityManager->getConnection();
         // Atomic single-winner claim; redeliveries of running/completed/failed statements are no-ops.
-        if (1 !== $connection->executeStatement("UPDATE statement SET processing_status = 'running', processing_error = NULL WHERE id = ? AND user_id = ? AND processing_status = 'queued'", [$message->statementId, $message->ownerId])) {
+        if (1 !== $connection->executeStatement("UPDATE statement SET processing_status = 'running', processing_error = NULL WHERE id = ? AND user_id = ? AND processing_status = 'queued' AND stored_filename = ?", [$message->statementId, $message->ownerId, $message->storedFilename])) {
             return;
         }
         $statement->processingStatus = ProcessingStatus::Running;
@@ -80,7 +94,7 @@ final readonly class ProcessStatementHandler
             });
         } catch (\Throwable $error) {
             $safeError = $error instanceof ImportException ? $error->getMessage() : 'Processing failed. No draft results were accepted. Retry after checking storage, source configuration and provider availability.';
-            $connection->executeStatement("UPDATE statement SET processing_status = 'failed', processing_error = ? WHERE id = ? AND user_id = ?", [$safeError, $message->statementId, $message->ownerId]);
+            $connection->executeStatement("UPDATE statement SET processing_status = 'failed', processing_error = ? WHERE id = ? AND user_id = ? AND stored_filename = ?", [$safeError, $message->statementId, $message->ownerId, $message->storedFilename]);
             $statement->processingStatus = ProcessingStatus::Failed;
             $statement->processingError = $safeError;
             // Do not log exception chains: provider/storage exceptions can expose personal data.

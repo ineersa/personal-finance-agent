@@ -35,7 +35,7 @@ final readonly class DispatchStatementCommand
 
             return Command::FAILURE;
         }
-        $this->bus->dispatch(new ProcessStatement($statementId, $owner->getId() ?? throw new \LogicException('Owner is not persisted.')));
+        $this->bus->dispatch(new ProcessStatement($statementId, $owner->getId() ?? throw new \LogicException('Owner is not persisted.'), $statement->storedFilename));
         $io->success('Statement identifier dispatched.');
 
         return Command::SUCCESS;
