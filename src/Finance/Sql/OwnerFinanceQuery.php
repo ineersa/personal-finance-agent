@@ -64,9 +64,7 @@ final class OwnerFinanceQuery
 
     public function __destruct()
     {
-        if (isset($this->database)) {
-            $this->database->close();
-        }
+        $this->database->close();
     }
 
     /**
