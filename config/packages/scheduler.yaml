@@ -1,0 +1,7 @@
+# yaml-language-server: $schema=../schema.json
+scheduler:
+    use_messenger_routing: true
+    schedules:
+        default:
+            stateful: true
+            process_only_last_missed_run: true
