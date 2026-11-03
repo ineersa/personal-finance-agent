@@ -277,6 +277,18 @@
             "config/routes.yaml"
         ]
     },
+    "symfony/scheduler": {
+        "version": "8.2",
+        "recipe": {
+            "repo": "github.com/symfony/recipes",
+            "branch": "main",
+            "version": "8.2",
+            "ref": "b77083bd73a4da995d904c6dda1b290aa582c02f"
+        },
+        "files": [
+            "config/packages/scheduler.yaml"
+        ]
+    },
     "symfony/security-bundle": {
         "version": "8.2",
         "recipe": {
