@@ -20,6 +20,7 @@
         "easycorp/easyadmin-bundle": "^5.8",
         "fabpot/amphp-sqlite3": "dev-development",
         "ineersa/sqlite-queue": "dev-main",
+        "ineersa/symfony-ai-openai-chatgpt-platform": "^0.3",
         "league/flysystem-bundle": "^3.0",
         "symfony/ai-agent": "~1.0.0@beta",
         "symfony/ai-decision-platform": "~1.0.0@beta",

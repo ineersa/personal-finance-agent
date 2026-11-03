@@ -11,6 +11,9 @@ parameters:
     env(JEV_BASE_URL): 'https://api.typesafe.ai'
     env(JEV_MODEL): 'jev-1.14.0'
     env(LOCAL_DEMO_RESET_ENABLED): '0'
+    env(CHATGPT_KEY_FILE): ''
+    env(CHATGPT_CALLBACK_PORT): '0'
+    env(CHATGPT_FINANCE_URL): ''
 
 services:
     # default configuration for services in *this* file
@@ -28,6 +31,7 @@ services:
             - '../src/Doctrine/ExactDecimalType.php'
             - '../src/Doctrine/SqliteImmediateTransactionConnection.php'
             - '../src/Doctrine/SqliteImmediateTransactionDriver.php'
+            - '../src/ChatGpt/UserAuthStorage.php'
 
     App\Doctrine\SqliteImmediateTransactionMiddleware:
         autoconfigure: false

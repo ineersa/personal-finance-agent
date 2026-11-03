@@ -61,6 +61,51 @@ function stackCommand(string $mode): array
 }
 
 /** @return array<string, string> */
+function chatGptEnvironment(string $mode): array
+{
+    $directory = \dirname(__DIR__).'/var/tooling';
+    $key = $directory.'/chatgpt-'.$mode.'.key';
+    $portFile = $directory.'/chatgpt-'.$mode.'.port';
+    foreach ([$key, $portFile] as $path) {
+        if (is_link($path)) {
+            throw new \RuntimeException('Refusing symlinked ChatGPT configuration.');
+        }
+    }
+    if (!is_file($key)) {
+        $file = fopen($key, 'xb');
+        if (false === $file) {
+            throw new \RuntimeException('Cannot create ChatGPT encryption key.');
+        }
+        chmod($key, 0600);
+        fwrite($file, random_bytes(32));
+        fclose($file);
+    }
+    if (!is_file($portFile)) {
+        $socket = stream_socket_server('tcp://127.0.0.1:0');
+        if (false === $socket) {
+            throw new \RuntimeException('Cannot allocate a local callback port.');
+        }
+        $address = stream_socket_get_name($socket, false);
+        fclose($socket);
+        if (false === $address) {
+            throw new \RuntimeException('Cannot inspect local callback port.');
+        }
+        $separator = strrpos($address, ':');
+        if (false === $separator) {
+            throw new \RuntimeException('Invalid local callback address.');
+        }
+        file_put_contents($portFile, substr($address, $separator + 1));
+        chmod($portFile, 0600);
+    }
+    $port = trim((string) file_get_contents($portFile));
+    if (!ctype_digit($port) || (int) $port < 1024 || (int) $port > 65535) {
+        throw new \RuntimeException('Invalid local callback port.');
+    }
+
+    return ['CHATGPT_KEY_PATH' => $key, 'CHATGPT_CALLBACK_PORT' => $port, 'CHATGPT_FINANCE_URL' => stackUrl($mode)];
+}
+
+/** @return array<string, string> */
 function stackEnvironment(string $mode): array
 {
     $directory = \dirname(__DIR__).'/var/tooling';
@@ -84,7 +129,7 @@ function stackEnvironment(string $mode): array
         fclose($file);
     }
 
-    return ['FINANCE_CHECKOUT_ID' => checkoutId(), 'FINANCE_PROJECT' => stackProject($mode), 'FINANCE_NETWORK' => developmentNetwork(), 'FINANCE_PUBLIC_URL' => stackUrl($mode), 'MERCURE_JWT_SECRET' => trim((string) file_get_contents($secret)), 'LOCAL_UID' => (string) posix_getuid(), 'LOCAL_GID' => (string) posix_getgid()];
+    return [...chatGptEnvironment($mode), 'FINANCE_CHECKOUT_ID' => checkoutId(), 'FINANCE_PROJECT' => stackProject($mode), 'FINANCE_NETWORK' => developmentNetwork(), 'FINANCE_PUBLIC_URL' => stackUrl($mode), 'MERCURE_JWT_SECRET' => trim((string) file_get_contents($secret)), 'LOCAL_UID' => (string) posix_getuid(), 'LOCAL_GID' => (string) posix_getgid()];
 }
 
 /** @param list<string> $arguments */
@@ -179,6 +224,7 @@ function developmentStack(string $mode, string $action): int
         if ('status' === $action) {
             stackRun($mode, ['ps', '--format=json']);
             echo stackUrl($mode)."\n";
+            echo 'ChatGPT callback: http://127.0.0.1:'.stackEnvironment($mode)['CHATGPT_CALLBACK_PORT']."/auth/callback\n";
 
             return 0;
         }
@@ -247,6 +293,9 @@ function developmentStack(string $mode, string $action): int
             TaskExecution::$current?->throwIfInterrupted();
             rename($state.'/routes.json.next', $state.'/routes.json');
             echo stackUrl($mode)."\n";
+            if ('up' === $action) {
+                echo 'ChatGPT callback: http://127.0.0.1:'.stackEnvironment($mode)['CHATGPT_CALLBACK_PORT']."/auth/callback\n";
+            }
         } finally {
             flock($lock, \LOCK_UN);
             fclose($lock);

@@ -16,9 +16,14 @@ services:
       MERCURE_PUBLIC_URL: '${FINANCE_PUBLIC_URL}/.well-known/mercure'
       MERCURE_JWT_SECRET: '${MERCURE_JWT_SECRET}'
       MERCURE_COOKIE_NAME: mercure_access_token
+      CHATGPT_KEY_FILE: /run/secrets/chatgpt.key
+      CHATGPT_CALLBACK_PORT: '${CHATGPT_CALLBACK_PORT}'
+      CHATGPT_FINANCE_URL: '${CHATGPT_FINANCE_URL}'
     volumes: !override
       - ./:/app
-    ports: !reset []
+      - '${CHATGPT_KEY_PATH}:/run/secrets/chatgpt.key:ro'
+    ports: !override
+      - '127.0.0.1:${CHATGPT_CALLBACK_PORT}:8081'
     networks:
       default: {}
       development:

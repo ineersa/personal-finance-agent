@@ -9,6 +9,29 @@
         <h2 id="welcome-heading">Make sense of your money.</h2>
         <p class="intro-copy">A place to ask questions, spot patterns, and understand your everyday finances.</p>
 
+        {% if chatgpt_status != 'connected' %}
+        <section class="chatgpt-connection" aria-label="ChatGPT connection">
+            <p>Connect ChatGPT to prepare your chat workspace. Your Finance login stays separate.</p>
+            {% if chatgpt_status == 'permission' %}
+                <p role="status">Sign-in saved, but plan usage is not enabled. Reconnect to grant permission.</p>
+            {% elseif chatgpt_status == 'reconnect' %}
+                <p role="status">Your connection could not be verified. Please reconnect.</p>
+            {% elseif chatgpt_status == 'unavailable' %}
+                <p role="status">Local ChatGPT connection is not configured for this instance.</p>
+            {% endif %}
+            <form method="post" action="{{ path('app_chatgpt_connection', {action: 'connect'}) }}" data-turbo="false">
+                <input type="hidden" name="_token" value="{{ csrf_token('chatgpt-connect') }}">
+                <button class="chatgpt-button" type="submit"{% if chatgpt_status == 'unavailable' %} disabled{% endif %}>Continue with ChatGPT</button>
+            </form>
+            {% if chatgpt_status in ['permission', 'reconnect'] %}
+                <p><a href="{{ path('admin_settings') }}#chatgpt-connection">Manage connection in Settings</a></p>
+            {% endif %}
+            <p class="preview-note">Authorization opens OpenAI. Credentials stay encrypted on this server, not in your browser. Chat generation is not available yet.</p>
+        </section>
+        {% endif %}
+
+        {% if chatgpt_status == 'connected' %}
+        <p class="chatgpt-status" role="status">ChatGPT connected <span aria-hidden="true">·</span> <a href="{{ path('admin_settings') }}#chatgpt-connection">Manage</a></p>
         <div class="composer-preview" aria-describedby="preview-note">
             <label class="visually-hidden" for="finance-question">Your financial question</label>
             <textarea id="finance-question" rows="2" placeholder="What would you like to understand?" disabled></textarea>
@@ -17,10 +40,11 @@
                 <button class="send-button" type="button" aria-label="Send message" disabled>↑</button>
             </div>
         </div>
-        <p id="preview-note" class="preview-note">Preview only. Chat and statement uploads are not available yet.</p>
+        <p id="preview-note" class="preview-note">Connection ready. Chat generation is not available yet.</p>
+        {% endif %}
 
         <div class="question-ideas" role="group" aria-label="Ideas for future questions">
-            <p class="eyebrow">A few questions to start with, once connected</p>
+            <p class="eyebrow">{{ chatgpt_status == 'connected' ? 'Ideas for your first conversation' : 'A few questions to start with, once connected' }}</p>
             <ul>
                 <li>Where did my money go this month?</li>
                 <li>How much am I spending on subscriptions?</li>

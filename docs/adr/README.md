@@ -27,6 +27,7 @@ ADRs record significant technical decisions, their context, and their consequenc
 | [0019](0019-worktree-development-routing.md) | Accepted | Route checkout-scoped development and live-browser stacks through a shared loopback Caddy proxy. |
 | [0020](0020-private-statement-storage.md) | Accepted | Store private statement bytes through local Flysystem storage and owner-authorized application downloads. |
 | [0021](0021-fixtures-first-jev-import.md) | Accepted | Prepare synthetic monthly inputs, use Jev for CSV decisions, separate meaning/recurrence and defer quotas beyond the 10 MiB file limit. |
+| [0022](0022-local-chatgpt-connection.md) | Accepted | Connect ChatGPT per Finance user through a local loopback callback with encrypted server-side credentials before chat generation. |
 
 ## Recording decisions
 
