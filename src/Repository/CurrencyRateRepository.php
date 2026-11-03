@@ -10,6 +10,8 @@ use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\DBAL\ArrayParameterType;
 use Doctrine\DBAL\Connection;
 use Doctrine\DBAL\ParameterType;
+use Doctrine\DBAL\Types\Types;
+use Doctrine\ORM\AbstractQuery;
 use Doctrine\Persistence\ManagerRegistry;
 
 /** @extends ServiceEntityRepository<CurrencyRate> */
@@ -25,7 +27,14 @@ final class CurrencyRateRepository extends ServiceEntityRepository
         if (ReportingCurrency::EUR === $currency) {
             return '1';
         }
-        $rate = $this->getEntityManager()->getConnection()->fetchOne('SELECT rate FROM currency_rate WHERE day = ? AND currency = ?', [$day->format('Y-m-d'), $currency->value]);
+        $rate = $this->createQueryBuilder('r')
+            ->select('r.rate')
+            ->where('r.day = :day')
+            ->andWhere('r.currency = :currency')
+            ->setParameter('day', $day, Types::DATE_IMMUTABLE)
+            ->setParameter('currency', $currency->value)
+            ->getQuery()
+            ->getOneOrNullResult(AbstractQuery::HYDRATE_SINGLE_SCALAR);
         if (!\is_string($rate)) {
             throw new \RuntimeException(\sprintf('No %s reference rate stored for %s. Refresh ECB history covering this date.', $currency->value, $day->format('Y-m-d')));
         }
@@ -35,7 +44,7 @@ final class CurrencyRateRepository extends ServiceEntityRepository
 
     public function firstStoredDay(): ?string
     {
-        $day = $this->getEntityManager()->getConnection()->fetchOne('SELECT MIN(day) FROM currency_rate');
+        $day = $this->createQueryBuilder('r')->select('MIN(r.day)')->getQuery()->getSingleScalarResult();
 
         return \is_string($day) ? $day : null;
     }
@@ -66,8 +75,14 @@ final class CurrencyRateRepository extends ServiceEntityRepository
     {
         $connection = $this->getEntityManager()->getConnection();
         $stored = [];
-        foreach ($connection->fetchAllAssociative('SELECT currency, rate, is_provisional FROM currency_rate WHERE day = ?', [$day]) as $row) {
-            $stored[(string) $row['currency']] = [(string) $row['rate'], (bool) $row['is_provisional']];
+        $rows = $this->createQueryBuilder('r')
+            ->select('r.currency', 'r.rate', 'r.isProvisional')
+            ->where('r.day = :day')
+            ->setParameter('day', new \DateTimeImmutable($day, new \DateTimeZone('UTC')), Types::DATE_IMMUTABLE)
+            ->getQuery()
+            ->getArrayResult();
+        foreach ($rows as $row) {
+            $stored[$row['currency']] = [$row['rate'], $row['isProvisional']];
         }
         $changes = [];
         foreach ($rates as $currency => $rate) {
