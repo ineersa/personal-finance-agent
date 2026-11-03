@@ -2,6 +2,7 @@
 
 {% block content_title %}Chat{% endblock %}
 {% block main %}
+    {% set statuses = enum('App\\ChatGpt\\ConnectionStatus') %}
     <div class="finance-chat">
     <section class="chat-empty" aria-labelledby="welcome-heading">
         <span class="intro-mark" aria-hidden="true">pf</span>
@@ -9,6 +10,19 @@
         <h2 id="welcome-heading">Make sense of your money.</h2>
         <p class="intro-copy">A place to ask questions, spot patterns, and understand your everyday finances.</p>
 
+        {% if chatgpt_status != statuses.Connected %}
+        <section class="chatgpt-connection" aria-label="ChatGPT connection">
+            <p>Connect ChatGPT to prepare your chat workspace. Your Finance login stays separate.</p>
+            {% include 'chatgpt/_connect.html.twig' %}
+            {% if chatgpt_status in [statuses.Permission, statuses.Reconnect] %}
+                <p><a href="{{ path(constant('App\\ChatGpt\\Connection::SETTINGS_ROUTE'), {_fragment: constant('App\\ChatGpt\\Connection::SETTINGS_FRAGMENT')}) }}">Manage connection in Settings</a></p>
+            {% endif %}
+            <p class="preview-note">Authorization opens OpenAI. Credentials stay in private files on this server, not in your browser. Chat generation is not available yet.</p>
+        </section>
+        {% endif %}
+
+        {% if chatgpt_status == statuses.Connected %}
+        <p class="chatgpt-status" role="status">ChatGPT connected <span aria-hidden="true">·</span> <a href="{{ path(constant('App\\ChatGpt\\Connection::SETTINGS_ROUTE'), {_fragment: constant('App\\ChatGpt\\Connection::SETTINGS_FRAGMENT')}) }}">Manage</a></p>
         <div class="composer-preview" aria-describedby="preview-note">
             <label class="visually-hidden" for="finance-question">Your financial question</label>
             <textarea id="finance-question" rows="2" placeholder="What would you like to understand?" disabled></textarea>
@@ -17,10 +31,11 @@
                 <button class="send-button" type="button" aria-label="Send message" disabled>↑</button>
             </div>
         </div>
-        <p id="preview-note" class="preview-note">Preview only. Chat and statement uploads are not available yet.</p>
+        <p id="preview-note" class="preview-note">Connection ready. Chat generation is not available yet.</p>
+        {% endif %}
 
         <div class="question-ideas" role="group" aria-label="Ideas for future questions">
-            <p class="eyebrow">A few questions to start with, once connected</p>
+            <p class="eyebrow">{{ chatgpt_status == statuses.Connected ? 'Ideas for your first conversation' : 'A few questions to start with, once connected' }}</p>
             <ul>
                 <li>Where did my money go this month?</li>
                 <li>How much am I spending on subscriptions?</li>

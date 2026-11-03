@@ -8,6 +8,8 @@ when@dev:
             excluded_paths:
                 - '^/\.well-known/'
                 - '^/favicon\.ico$'
+                - '^/auth/callback$'
+                - '^/home/chatgpt/'
 
 when@test:
     framework:

@@ -16,6 +16,7 @@ A finance UI preview and development tooling are implemented; authentication, fi
 ## Development rules
 
 - Keep changes small and limited to the requested scope. Use Symfony and existing project facilities before adding custom infrastructure.
+- Do not use magic strings for protocol values, domain states, or shared identifiers. Use existing framework/package constants, or define named constants or enums. This does not require constants for ordinary prose or structural field names.
 - Do not turn hypothetical failure modes into new infrastructure. Before adding coordination or recovery mechanisms, explain why existing framework behavior and a simpler implementation are insufficient, and obtain approval.
 - Record significant agreed technical choices in ADRs. Keep product requirements in `SPEC.md` and implementation plans separate.
 - Treat the legacy finance application, web template, Agent Core, sqlite-queue, and re-search checkouts as read-only references unless explicitly asked to change them.

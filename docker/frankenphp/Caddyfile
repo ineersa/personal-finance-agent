@@ -8,7 +8,20 @@
 
 http://:8080 {
 	root * /app/public
+	@privateCallback path /auth/callback
+	respond @privateCallback 404
 	encode zstd br gzip
 	reverse_proxy /.well-known/mercure* mercure:80
 	php_server
+}
+
+# No access logger on this callback-only listener.
+http://:8081 {
+	root * /app/public
+	handle /auth/callback {
+		php_server
+	}
+	handle {
+		respond 404
+	}
 }

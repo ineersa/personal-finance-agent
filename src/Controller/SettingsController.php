@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\Controller;
 
+use App\ChatGpt\Connection;
+use App\ChatGpt\ConnectionStatus;
 use App\Entity\User;
 use App\Enum\ReportingCurrency;
 use App\Security\FinanceRecordVoter;
@@ -23,7 +25,7 @@ use Symfony\Component\Security\Http\Attribute\IsGranted;
 final class SettingsController extends AbstractController
 {
     #[AdminRoute('/settings', name: 'settings', options: ['methods' => ['GET', 'POST']])]
-    public function __invoke(Request $request, #[CurrentUser] User $user, EntityManagerInterface $entityManager, \App\Demo\DemoReset $reset): Response
+    public function __invoke(Request $request, #[CurrentUser] User $user, EntityManagerInterface $entityManager, \App\Demo\DemoReset $reset, Connection $connection): Response
     {
         $form = $this->createFormBuilder($user)
             ->add('reportingCurrency', EnumType::class, [
@@ -44,6 +46,13 @@ final class SettingsController extends AbstractController
             return $this->redirectToRoute('admin_settings');
         }
 
-        return $this->render('settings/index.html.twig', ['form' => $form, 'canResetDemo' => $reset->isAllowed($user)]);
+        $status = $connection->status($user);
+
+        return $this->render('settings/index.html.twig', [
+            'form' => $form,
+            'canResetDemo' => $reset->isAllowed($user),
+            'chatgpt_status' => $status,
+            'chatgpt_identity' => ConnectionStatus::Connected === $status ? $connection->displayIdentity($user) : null,
+        ]);
     }
 }
