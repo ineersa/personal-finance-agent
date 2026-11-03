@@ -3,6 +3,7 @@
 
 {% block content_title %}Settings{% endblock %}
 {% block main %}
+    {% set statuses = enum('App\\ChatGpt\\ConnectionStatus') %}
     <p>These preferences do not convert or change stored transaction amounts. Reporting conversion is not implemented yet.</p>
     {{ form_start(form) }}
         {{ form_errors(form) }}
@@ -10,6 +11,28 @@
         {{ form_row(form.moneyLocale) }}
         <button class="btn btn-primary" type="submit">Save preferences</button>
     {{ form_end(form) }}
+    <section id="{{ constant('App\\ChatGpt\\Connection::SETTINGS_FRAGMENT') }}" class="import-summary chatgpt-settings" aria-labelledby="chatgpt-heading">
+        <h2 id="chatgpt-heading">ChatGPT connection</h2>
+        {% if chatgpt_status == statuses.Connected %}
+            <p class="chatgpt-account">{{ chatgpt_identity ?? 'Connected account · display details unavailable' }}</p>
+            <p role="status">ChatGPT connected. Chat generation is not available yet.</p>
+        {% elseif chatgpt_status == statuses.Disconnected %}
+            <p role="status">No ChatGPT account connected.</p>
+        {% endif %}
+        <p>One ChatGPT account can be active at a time. Disconnect before connecting a different account. Your Finance login is unchanged.</p>
+        <div class="chatgpt-settings-actions">
+            {% if chatgpt_status in [statuses.Connected, statuses.Permission, statuses.Reconnect] %}
+                <a class="btn btn-secondary" href="{{ constant('Symfony\\AI\\Platform\\Bridge\\OpenAIChatGPT\\Auth\\OAuthConfig::USAGE_URL') }}" rel="noreferrer">Manage usage</a>
+                <form method="post" action="{{ path(constant('App\\ChatGpt\\Connection::DISCONNECT_ROUTE')) }}" data-turbo="false">
+                    <input type="hidden" name="_token" value="{{ csrf_token(constant('App\\ChatGpt\\Connection::DISCONNECT_CSRF')) }}">
+                    <button class="btn btn-outline-danger" type="submit">Disconnect ChatGPT</button>
+                </form>
+            {% endif %}
+            {% if chatgpt_status != statuses.Connected %}
+                {% include 'chatgpt/_connect.html.twig' %}
+            {% endif %}
+        </div>
+    </section>
     {% if canResetDemo %}
         <section class="import-summary demo-reset-settings">
             <h2>Restore the local demo</h2>

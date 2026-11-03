@@ -2,6 +2,7 @@
 
 - Status: Accepted
 - Date: 2026-10-29
+- ChatGPT scheduling superseded by [ADR 0022](0022-local-chatgpt-connection.md); the three-provider and selector decisions remain accepted.
 
 ## Context
 
@@ -46,6 +47,8 @@ Use these sources as read-only references, not installation dependencies:
 Verify compatibility with the pinned Symfony AI packages and selected models during bootstrap. Reference code does not establish that this application's provider integration works.
 
 ### ChatGPT is not a delivery goal
+
+This scheduling decision is superseded by [ADR 0022](0022-local-chatgpt-connection.md), following the owner's request for local ChatGPT connection before task 11. The original rationale below is retained for context.
 
 ChatGPT sign-in is optional future exploration, not an MVP goal, delivery prerequisite, or fourth supported provider. It must not block the three selected integrations. This decision neither authorizes nor reports an OAuth experiment; its package, callback, registration, and usage-permission questions remain deferred.
 

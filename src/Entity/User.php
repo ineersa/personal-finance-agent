@@ -10,6 +10,7 @@ use Doctrine\ORM\Mapping as ORM;
 use Symfony\Bridge\Doctrine\Validator\Constraints\UniqueEntity;
 use Symfony\Component\Security\Core\User\PasswordAuthenticatedUserInterface;
 use Symfony\Component\Security\Core\User\UserInterface;
+use Symfony\Component\Uid\Uuid;
 use Symfony\Component\Validator\Constraints as Assert;
 
 #[ORM\Entity(repositoryClass: UserRepository::class)]
@@ -21,6 +22,9 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     #[ORM\GeneratedValue]
     #[ORM\Column]
     private ?int $id = null;
+
+    #[ORM\Column(length: 36, nullable: true)]
+    private ?string $chatGptIdentity = null;
 
     #[ORM\Column(length: 180)]
     #[Assert\NotBlank]
@@ -65,6 +69,21 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     public function getId(): ?int
     {
         return $this->id;
+    }
+
+    public function getChatGptIdentity(): ?string
+    {
+        return $this->chatGptIdentity;
+    }
+
+    public function initializeChatGptIdentity(): string
+    {
+        return $this->chatGptIdentity ??= Uuid::v4()->toRfc4122();
+    }
+
+    public function renewChatGptIdentity(): string
+    {
+        return $this->chatGptIdentity = Uuid::v4()->toRfc4122();
     }
 
     public function getEmail(): ?string
