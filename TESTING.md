@@ -19,13 +19,13 @@ This policy replaces the earlier broad coverage requirements. It does not remove
 | Chat preview | Existing placeholder view; generation is not implemented |
 | Settings | Save and reload reporting currency and money locale; verify localized money display |
 | Sources | Create, list, edit, detail, delete |
-| Transactions | List, detail, edit and reload |
+| Transactions | List, detail, edit, reload and delete an approved transaction |
 | Categories | Administrator create, list, edit, detail, delete |
 | Users | Administrator create, list, edit email/password, verify login, detail, delete |
 | Statements | List, detail, download |
-| Live import | Upload one canonical CSV, observe completion and drafts, delete that uploaded statement |
+| Live import | Upload one canonical CSV, correct draft fields and classifications, save and continue editing, save and return, delete another row, approve remaining statement rows, reload corrections, delete that uploaded statement |
 
-The first nine scenarios are in `tests/E2E/`. The single real-network import journey is in `tests/Live/`. It calls the configured Jev provider and uses the actual worker, broker, and Mercure stack. It verifies that drafts do not change the approved transaction list. It does not cover failure/retry, redelivery, quotas, hostile input, or concurrent processing. Those require separate permission. Reset remains untested by owner instruction.
+The first nine scenarios are in `tests/E2E/`. The single real-network import journey is in `tests/Live/`. It calls the configured Jev provider and uses the actual worker, broker, and Mercure stack. It verifies that edited drafts do not change the approved transaction list, deletes one draft through native confirmation, then approves the remaining statement rows and reloads corrections through the transaction editor. It does not cover invalid submissions, repeat approval, ownership attacks, failure/retry, redelivery, quotas, hostile input, or concurrent processing. Those require separate permission. Reset remains untested by owner instruction.
 
 ## Prepare the tooling runtime
 
@@ -93,6 +93,8 @@ vendor/bin/castor browser:stack:console -- hautelook:fixtures:load --append --no
 ```
 
 Do not rerun fixture loading over existing fixture identities or purge data to make it pass. Use `admin@test.com / admin` or `demo@test.com / demo`. Configure the provider using the existing development setup; do not put credentials in test commands or reports.
+
+After changing worker code or streamed templates, run `vendor/bin/castor browser:stack:restart-worker` before the live journey. It restarts only this checkout's isolated browser worker, leaving the web preview, broker and storage intact.
 
 Run the single live journey, then stop the owned stack when it is no longer needed:
 

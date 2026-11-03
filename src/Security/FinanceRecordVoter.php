@@ -9,6 +9,7 @@ use App\Entity\Statement;
 use App\Entity\Transaction;
 use App\Entity\User;
 use App\Entity\UserRecord;
+use App\Enum\ProcessingStatus;
 use Symfony\Component\Security\Core\Authentication\Token\TokenInterface;
 use Symfony\Component\Security\Core\Authorization\Voter\Vote;
 use Symfony\Component\Security\Core\Authorization\Voter\Voter;
@@ -42,7 +43,8 @@ final class FinanceRecordVoter extends Voter
             return false;
         }
         if ($record instanceof Transaction) {
-            return !$record->isDraft && $this->owns($user, $record->source) && $this->owns($user, $record->statement);
+            return (!$record->isDraft || ProcessingStatus::Completed === $record->statement->processingStatus)
+                && $this->owns($user, $record->source) && $this->owns($user, $record->statement);
         }
         if ($record instanceof Statement) {
             return $this->owns($user, $record->source);
