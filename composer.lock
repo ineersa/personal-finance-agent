@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "0fbdf48ce47cdeff6e04be3656b5a74c",
+    "content-hash": "1450f0ed5f9acd0169cb048eec69d53c",
     "packages": [
         {
             "name": "amphp/amp",
@@ -6277,12 +6277,12 @@
             "source": {
                 "type": "git",
                 "url": "https://github.com/symfony/filesystem.git",
-                "reference": "f07782541983ed025ac2e190e02b8fbb7f6e7bdc"
+                "reference": "f3bd7ecf74404591c8c87eb63891614d5ad58f3c"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/symfony/filesystem/zipball/f07782541983ed025ac2e190e02b8fbb7f6e7bdc",
-                "reference": "f07782541983ed025ac2e190e02b8fbb7f6e7bdc",
+                "url": "https://api.github.com/repos/symfony/filesystem/zipball/f3bd7ecf74404591c8c87eb63891614d5ad58f3c",
+                "reference": "f3bd7ecf74404591c8c87eb63891614d5ad58f3c",
                 "shasum": ""
             },
             "require": {
@@ -6341,8 +6341,8 @@
                     "type": "tidelift"
                 }
             ],
-            "time": "2026-10-06T20:06:21+00:00",
-            "published-time": "2026-10-06T20:07:43+00:00"
+            "time": "2026-11-02T10:59:16+00:00",
+            "published-time": "2026-11-02T11:01:33+00:00"
         },
         {
             "name": "symfony/finder",
@@ -6767,12 +6767,12 @@
             "source": {
                 "type": "git",
                 "url": "https://github.com/symfony/http-client.git",
-                "reference": "8502709887f2785dd73644bce9d4aa4ebd7aa0b2"
+                "reference": "8f0ad3152b7e1a07e42e068a3901f874f49283d6"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/symfony/http-client/zipball/8502709887f2785dd73644bce9d4aa4ebd7aa0b2",
-                "reference": "8502709887f2785dd73644bce9d4aa4ebd7aa0b2",
+                "url": "https://api.github.com/repos/symfony/http-client/zipball/8f0ad3152b7e1a07e42e068a3901f874f49283d6",
+                "reference": "8f0ad3152b7e1a07e42e068a3901f874f49283d6",
                 "shasum": ""
             },
             "require": {
@@ -6863,8 +6863,8 @@
                     "type": "tidelift"
                 }
             ],
-            "time": "2026-10-29T07:54:14+00:00",
-            "published-time": "2026-10-29T08:05:23+00:00"
+            "time": "2026-11-02T02:14:03+00:00",
+            "published-time": "2026-11-02T08:37:15+00:00"
         },
         {
             "name": "symfony/http-client-contracts",
@@ -17976,9 +17976,12 @@
         "symfony/ai-type-safe-platform": 10,
         "symfony/asset": 20,
         "symfony/asset-mapper": 20,
+        "symfony/clock": 20,
         "symfony/console": 20,
         "symfony/dotenv": 20,
+        "symfony/filesystem": 20,
         "symfony/framework-bundle": 20,
+        "symfony/http-client": 20,
         "symfony/lock": 20,
         "symfony/messenger": 20,
         "symfony/rate-limiter": 20,

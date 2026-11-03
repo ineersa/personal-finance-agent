@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Controller;
 
 use App\ChatGpt\Connection;
+use App\ChatGpt\ConnectionStatus;
 use App\Entity\User;
 use App\Enum\ReportingCurrency;
 use App\Security\FinanceRecordVoter;
@@ -51,7 +52,7 @@ final class SettingsController extends AbstractController
             'form' => $form,
             'canResetDemo' => $reset->isAllowed($user),
             'chatgpt_status' => $status,
-            'chatgpt_identity' => 'connected' === $status ? $connection->displayIdentity($user) : null,
+            'chatgpt_identity' => ConnectionStatus::Connected === $status ? $connection->displayIdentity($user) : null,
         ]);
     }
 }

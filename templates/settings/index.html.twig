@@ -3,6 +3,7 @@
 
 {% block content_title %}Settings{% endblock %}
 {% block main %}
+    {% set statuses = enum('App\\ChatGpt\\ConnectionStatus') %}
     <p>These preferences do not convert or change stored transaction amounts. Reporting conversion is not implemented yet.</p>
     {{ form_start(form) }}
         {{ form_errors(form) }}
@@ -10,34 +11,25 @@
         {{ form_row(form.moneyLocale) }}
         <button class="btn btn-primary" type="submit">Save preferences</button>
     {{ form_end(form) }}
-    <section id="chatgpt-connection" class="import-summary chatgpt-settings" aria-labelledby="chatgpt-heading">
+    <section id="{{ constant('App\\ChatGpt\\Connection::SETTINGS_FRAGMENT') }}" class="import-summary chatgpt-settings" aria-labelledby="chatgpt-heading">
         <h2 id="chatgpt-heading">ChatGPT connection</h2>
-        {% if chatgpt_status == 'connected' %}
+        {% if chatgpt_status == statuses.Connected %}
             <p class="chatgpt-account">{{ chatgpt_identity ?? 'Connected account · display details unavailable' }}</p>
             <p role="status">ChatGPT connected. Chat generation is not available yet.</p>
-        {% elseif chatgpt_status == 'permission' %}
-            <p role="status">Sign-in saved, but plan usage is not enabled. Reconnect to grant permission.</p>
-        {% elseif chatgpt_status == 'reconnect' %}
-            <p role="status">Your connection could not be verified. Please reconnect.</p>
-        {% elseif chatgpt_status == 'unavailable' %}
-            <p role="status">Local ChatGPT connection is not configured for this instance.</p>
-        {% else %}
+        {% elseif chatgpt_status == statuses.Disconnected %}
             <p role="status">No ChatGPT account connected.</p>
         {% endif %}
         <p>One ChatGPT account can be active at a time. Disconnect before connecting a different account. Your Finance login is unchanged.</p>
         <div class="chatgpt-settings-actions">
-            {% if chatgpt_status in ['connected', 'permission', 'reconnect'] %}
-                <a class="btn btn-secondary" href="https://chatgpt.com/settings/usage" rel="noreferrer">Manage usage</a>
-                <form method="post" action="{{ path('app_chatgpt_connection', {action: 'disconnect'}) }}" data-turbo="false">
-                    <input type="hidden" name="_token" value="{{ csrf_token('chatgpt-disconnect') }}">
+            {% if chatgpt_status in [statuses.Connected, statuses.Permission, statuses.Reconnect] %}
+                <a class="btn btn-secondary" href="{{ constant('Symfony\\AI\\Platform\\Bridge\\OpenAIChatGPT\\Auth\\OAuthConfig::USAGE_URL') }}" rel="noreferrer">Manage usage</a>
+                <form method="post" action="{{ path(constant('App\\ChatGpt\\Connection::DISCONNECT_ROUTE')) }}" data-turbo="false">
+                    <input type="hidden" name="_token" value="{{ csrf_token(constant('App\\ChatGpt\\Connection::DISCONNECT_CSRF')) }}">
                     <button class="btn btn-outline-danger" type="submit">Disconnect ChatGPT</button>
                 </form>
             {% endif %}
-            {% if chatgpt_status != 'connected' %}
-                <form method="post" action="{{ path('app_chatgpt_connection', {action: 'connect'}) }}" data-turbo="false">
-                    <input type="hidden" name="_token" value="{{ csrf_token('chatgpt-connect') }}">
-                    <button class="chatgpt-button" type="submit"{% if chatgpt_status == 'unavailable' %} disabled{% endif %}>Continue with ChatGPT</button>
-                </form>
+            {% if chatgpt_status != statuses.Connected %}
+                {% include 'chatgpt/_connect.html.twig' %}
             {% endif %}
         </div>
     </section>

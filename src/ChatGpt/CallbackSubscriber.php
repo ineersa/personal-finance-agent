@@ -23,7 +23,7 @@ final readonly class CallbackSubscriber implements EventSubscriberInterface
 
     public function onRequest(RequestEvent $event): void
     {
-        if ($event->isMainRequest() && '/auth/callback' === rawurldecode($event->getRequest()->getPathInfo())) {
+        if ($event->isMainRequest() && Connection::CALLBACK_PATH === rawurldecode($event->getRequest()->getPathInfo())) {
             try {
                 $response = $this->page->respond($event->getRequest());
             } catch (\Throwable) {

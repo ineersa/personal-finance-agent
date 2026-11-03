@@ -9,7 +9,6 @@ services:
     volumes: !override
       - .:/app:ro
       - ./var/browser-live:/app/var
-      - '${CHATGPT_KEY_PATH}:/run/secrets/chatgpt.key:ro'
   broker:
     environment:
       APP_ENV: test

@@ -18,11 +18,12 @@
 </head>
 <body>
 <main>
+    {% set statuses = enum('App\\ChatGpt\\ConnectionStatus') %}
     <div class="mark">FINANCE</div>
-    {% if status == 'connected' %}
+    {% if status == statuses.Connected %}
         <h1>ChatGPT is connected.</h1>
         <p>Your connection has been verified. You can return to Finance now. Chat generation is not available yet.</p>
-    {% elseif status == 'permission' %}
+    {% elseif status == statuses.Permission %}
         <h1>One more step.</h1>
         <p>Sign-in completed, but ChatGPT plan usage is not enabled. Return to Finance to reconnect and grant permission.</p>
     {% else %}

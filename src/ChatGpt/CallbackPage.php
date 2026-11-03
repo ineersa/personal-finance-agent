@@ -17,9 +17,9 @@ final readonly class CallbackPage
 
     public function respond(Request $request): Response
     {
-        $status = 'failed';
+        $status = ConnectionStatus::Failed;
         try {
-            if (!$request->isMethod('GET') || '127.0.0.1:'.$this->port !== $request->headers->get('host')) {
+            if (!$request->isMethod(Request::METHOD_GET) || Connection::CALLBACK_HOST.':'.$this->port !== $request->headers->get('host')) {
                 throw new \RuntimeException('Invalid local callback address.');
             }
             $status = $this->connection->complete($request->query->all());

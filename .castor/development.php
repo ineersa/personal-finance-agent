@@ -64,21 +64,9 @@ function stackCommand(string $mode): array
 function chatGptEnvironment(string $mode): array
 {
     $directory = \dirname(__DIR__).'/var/tooling';
-    $key = $directory.'/chatgpt-'.$mode.'.key';
     $portFile = $directory.'/chatgpt-'.$mode.'.port';
-    foreach ([$key, $portFile] as $path) {
-        if (is_link($path)) {
-            throw new \RuntimeException('Refusing symlinked ChatGPT configuration.');
-        }
-    }
-    if (!is_file($key)) {
-        $file = fopen($key, 'xb');
-        if (false === $file) {
-            throw new \RuntimeException('Cannot create ChatGPT encryption key.');
-        }
-        chmod($key, 0600);
-        fwrite($file, random_bytes(32));
-        fclose($file);
+    if (is_link($portFile)) {
+        throw new \RuntimeException('Refusing symlinked ChatGPT configuration.');
     }
     if (!is_file($portFile)) {
         $socket = stream_socket_server('tcp://127.0.0.1:0');
@@ -102,7 +90,7 @@ function chatGptEnvironment(string $mode): array
         throw new \RuntimeException('Invalid local callback port.');
     }
 
-    return ['CHATGPT_KEY_PATH' => $key, 'CHATGPT_CALLBACK_PORT' => $port, 'CHATGPT_FINANCE_URL' => stackUrl($mode)];
+    return ['CHATGPT_CALLBACK_PORT' => $port, 'CHATGPT_FINANCE_URL' => stackUrl($mode)];
 }
 
 /** @return array<string, string> */

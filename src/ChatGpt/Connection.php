@@ -8,107 +8,122 @@ use App\Entity\User;
 use App\Repository\UserRepository;
 use Doctrine\ORM\EntityManagerInterface;
 use Firebase\JWT\JWT;
+use Symfony\AI\Platform\Bridge\OpenAIChatGPT\Auth\AuthException;
 use Symfony\AI\Platform\Bridge\OpenAIChatGPT\Auth\AuthorizationRequestDTO;
-use Symfony\AI\Platform\Bridge\OpenAIChatGPT\Auth\IdTokenVerifier;
 use Symfony\AI\Platform\Bridge\OpenAIChatGPT\Auth\OAuthConfig;
-use Symfony\AI\Platform\Bridge\OpenAIChatGPT\Auth\OAuthService;
+use Symfony\Component\Clock\ClockInterface;
 use Symfony\Component\DependencyInjection\Attribute\Autowire;
-use Symfony\Component\HttpClient\HttpClient;
+use Symfony\Component\Filesystem\Filesystem;
+use Symfony\Component\Lock\LockFactory;
+use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 
 final readonly class Connection
 {
+    public const string CALLBACK_PATH = '/auth/callback';
+    public const string CALLBACK_HOST = '127.0.0.1';
+    public const string CONNECT_ROUTE = 'app_chatgpt_connect';
+    public const string DISCONNECT_ROUTE = 'app_chatgpt_disconnect';
+    public const string CONNECT_CSRF = 'chatgpt-connect';
+    public const string DISCONNECT_CSRF = 'chatgpt-disconnect';
+    public const string SETTINGS_ROUTE = 'admin_settings';
+    public const string SETTINGS_FRAGMENT = 'chatgpt-connection';
+    private const int ATTEMPT_LIFETIME = 300;
+    private const string STATE_PARAMETER = 'state';
+    private const string ADMIN_ROLE = 'ROLE_ADMIN';
+
     public function __construct(
-        private EncryptedVault $vault,
+        private OAuthFactory $oauth,
         private UserRepository $users,
         private EntityManagerInterface $em,
-        #[Autowire('%env(int:CHATGPT_CALLBACK_PORT)%')] private int $port,
+        private Filesystem $filesystem,
+        private LockFactory $locks,
+        private ClockInterface $clock,
+        private UrlGeneratorInterface $router,
+        #[Autowire('%kernel.project_dir%/var/private/chatgpt-attempts')] private string $attemptDirectory,
         #[Autowire('%env(CHATGPT_FINANCE_URL)%')] private string $financeUrl,
     ) {
     }
 
-    public function available(): bool
+    public function status(User $user): ConnectionStatus
     {
-        return $this->port >= 1024 && '' !== $this->financeUrl && $this->vault->available();
-    }
-
-    public function status(User $user): string
-    {
-        if (!$this->available()) {
-            return 'unavailable';
+        if ('' === $this->financeUrl) {
+            return ConnectionStatus::Unavailable;
+        }
+        $identity = $user->getChatGptIdentity();
+        if (null === $identity) {
+            return ConnectionStatus::Disconnected;
         }
         try {
-            $identity = $user->getChatGptIdentity();
-            if (null === $identity) {
-                return 'disconnected';
-            }
-            $record = (new UserAuthStorage($this->vault, $identity))->load();
+            $record = $this->oauth->storage($identity)->load();
             if (null === $record || ([] === $record->scopes && null === $record->pendingRefresh)) {
-                return 'disconnected';
+                return ConnectionStatus::Disconnected;
             }
             if (!\in_array(OAuthConfig::DIRECT_SCOPE, $record->scopes, true)) {
-                return 'permission';
+                return ConnectionStatus::Permission;
             }
-            $this->oauth($identity)->accessToken();
+            $this->oauth->create($identity)->accessToken();
 
-            return 'connected';
-        } catch (\Throwable) {
-            return 'reconnect';
+            return ConnectionStatus::Connected;
+        } catch (AuthException) {
+            return ConnectionStatus::Reconnect;
         }
     }
 
     public function begin(User $user): string
     {
-        if (!$this->available()) {
-            throw new \RuntimeException('Local ChatGPT connection is not configured.');
+        if ('' === $this->financeUrl) {
+            throw new \LogicException('Local ChatGPT connection is not configured.');
         }
         $owner = $user->getId() ?? throw new \LogicException('An application account is required.');
         $identity = $user->initializeChatGptIdentity();
-        // Persist the account-instance namespace before any provider communication.
         $this->em->flush();
-        $request = $this->oauth($identity)->beginAuthorization(true);
-        $name = 'attempt-'.$request->state;
-        $this->vault->locked($name, function () use ($name, $owner, $identity, $request): void {
-            $this->vault->write($name, [
-                'owner' => $owner,
-                'identity' => $identity,
-                'expires' => time() + 300,
-                'state' => $request->state,
-                'nonce' => $request->nonce,
-                'verifier' => $request->verifier,
-                'client' => $request->registeredClientId,
-            ]);
-        });
+        $request = $this->oauth->create($identity)->beginAuthorization(true);
+        $this->filesystem->mkdir($this->attemptDirectory, 0700);
+        $this->filesystem->chmod($this->attemptDirectory, 0700);
+        // Only the cross-host handoff is application-owned; the package owns all OAuth state.
+        $path = $this->attemptPath($request->state);
+        $this->filesystem->dumpFile($path, json_encode([
+            'owner' => $owner,
+            'identity' => $identity,
+            'expires' => $this->clock->now()->getTimestamp() + self::ATTEMPT_LIFETIME,
+            'request' => new AuthorizationRequestDTO('', $request->state, $request->nonce, $request->verifier, $request->registeredClientId),
+        ], \JSON_THROW_ON_ERROR));
+        $this->filesystem->chmod($path, 0600);
 
         return $request->url;
     }
 
     /** @param array<string, mixed> $callback */
-    public function complete(#[\SensitiveParameter] array $callback): string
+    public function complete(#[\SensitiveParameter] array $callback): ConnectionStatus
     {
-        $state = $callback['state'] ?? null;
-        if (!\is_string($state) || 1 !== preg_match('/^[a-zA-Z0-9_-]{16,256}$/D', $state)) {
-            throw new \RuntimeException('Invalid authorization attempt.');
+        $state = $callback[self::STATE_PARAMETER] ?? null;
+        if (!\is_string($state) || '' === $state) {
+            throw new AuthException('Invalid authorization attempt.');
         }
-        $name = 'attempt-'.$state;
-        $attempt = $this->vault->locked($name, function () use ($name): ?array {
-            $attempt = $this->vault->read($name);
-            $this->vault->remove($name);
-
-            return $attempt;
-        });
-        if (null === $attempt || !\is_int($attempt['owner'] ?? null) || !\is_int($attempt['expires'] ?? null) || $attempt['expires'] < time()) {
-            throw new \RuntimeException('Authorization attempt expired.');
+        $path = $this->attemptPath($state);
+        $lock = $this->locks->createLock('chatgpt.attempt.'.hash('sha256', $state));
+        $lock->acquire(true);
+        try {
+            if (!$this->filesystem->exists($path)) {
+                throw new AuthException('Authorization attempt expired or already consumed.');
+            }
+            $contents = $this->filesystem->readFile($path);
+            $this->filesystem->remove($path);
+        } finally {
+            $lock->release();
         }
-        if (null !== ($attempt['client'] ?? null) && !\is_string($attempt['client'])) {
-            throw new \RuntimeException('Invalid authorization registration.');
+        $attempt = json_decode($contents, true, flags: \JSON_THROW_ON_ERROR);
+        if ($attempt['expires'] <= $this->clock->now()->getTimestamp()) {
+            throw new AuthException('Authorization attempt expired.');
         }
         $user = $this->users->find($attempt['owner']);
-        $identity = $this->stringValue($attempt, 'identity');
-        if (null === $user || $identity !== $user->getChatGptIdentity() || \in_array('ROLE_ADMIN', $user->getRoles(), true)) {
-            throw new \RuntimeException('Connection owner is no longer available.');
+        if (null === $user || $attempt['identity'] !== $user->getChatGptIdentity() || \in_array(self::ADMIN_ROLE, $user->getRoles(), true)) {
+            throw new AuthException('Connection owner is no longer available.');
         }
-        $request = new AuthorizationRequestDTO('', $this->stringValue($attempt, 'state'), $this->stringValue($attempt, 'nonce'), $this->stringValue($attempt, 'verifier'), $attempt['client'] ?? null);
-        $this->oauth($identity)->completeAuthorization($request, $callback);
+        $request = $attempt['request'];
+        $this->oauth->create($attempt['identity'])->completeAuthorization(new AuthorizationRequestDTO(
+            '', $request['state'], $request['nonce'], $request['verifier'], $request['registeredClientId'],
+        ), $callback);
 
         return $this->status($user);
     }
@@ -117,14 +132,11 @@ final readonly class Connection
     {
         $identity = $user->getChatGptIdentity();
         if (null !== $identity) {
-            $storage = new UserAuthStorage($this->vault, $identity);
-            $host = $storage->installationId();
-            // A failed revoke throws before namespace changes: retain the existing connection.
-            $this->oauth($identity)->disconnect();
-            $freshIdentity = $user->renewChatGptIdentity();
-            (new UserAuthStorage($this->vault, $freshIdentity))->initializeRegistrationHost($host);
+            // Revoke first: failure preserves the existing grant and account namespace.
+            $this->oauth->create($identity)->disconnect();
+            $user->renewChatGptIdentity();
             $this->em->flush();
-            // Fresh registration permits another account; old pending attempts fail owner binding.
+            // A fresh package store permits another account; old pending attempts no longer match.
         }
     }
 
@@ -134,28 +146,16 @@ final readonly class Connection
         if (null === $identity) {
             return null;
         }
-        try {
-            $record = (new UserAuthStorage($this->vault, $identity))->load();
-            if (null === $record?->idToken || null === $record->access || null !== $record->pendingRefresh || OAuthConfig::ISSUER !== $record->issuer || null === $record->subject) {
-                return null;
+        $record = $this->oauth->storage($identity)->load();
+        if (null === $record?->idToken || null === $record->access || null !== $record->pendingRefresh) {
+            return null;
+        }
+        // Display only: OAuthService verified this exact saved token, not incoming or pending data.
+        $claims = json_decode(JWT::urlsafeB64Decode(explode('.', $record->idToken)[1]), true, flags: \JSON_THROW_ON_ERROR);
+        foreach (['email', 'name'] as $field) {
+            if (\is_string($claims[$field] ?? null) && '' !== trim($claims[$field])) {
+                return $claims[$field];
             }
-            // Display only: this exact saved token was verified by OAuthService before persistence.
-            // Never decode a callback token or the unverified pendingRefresh token for identity.
-            $parts = explode('.', $record->idToken);
-            if (3 !== \count($parts)) {
-                return null;
-            }
-            $claims = json_decode(JWT::urlsafeB64Decode($parts[1]), true, flags: \JSON_THROW_ON_ERROR);
-            if (!\is_array($claims) || ($claims['iss'] ?? null) !== $record->issuer || ($claims['sub'] ?? null) !== $record->subject) {
-                return null;
-            }
-            foreach (['email', 'name'] as $field) {
-                if (\is_string($claims[$field] ?? null) && '' !== trim($claims[$field])) {
-                    return $claims[$field];
-                }
-            }
-        } catch (\Throwable) {
-            // Missing display claims must not affect authorization or expose token details.
         }
 
         return null;
@@ -163,24 +163,11 @@ final readonly class Connection
 
     public function returnUrl(): string
     {
-        return rtrim($this->financeUrl, '/').'/home/settings#chatgpt-connection';
+        return rtrim($this->financeUrl, '/').$this->router->generate(self::SETTINGS_ROUTE, ['_fragment' => self::SETTINGS_FRAGMENT]);
     }
 
-    /** @param array<string, mixed> $data */
-    private function stringValue(array $data, string $key): string
+    private function attemptPath(string $state): string
     {
-        if (!\is_string($data[$key] ?? null)) {
-            throw new \RuntimeException('Invalid authorization attempt.');
-        }
-
-        return $data[$key];
-    }
-
-    private function oauth(string $identity): OAuthService
-    {
-        // Native client: tokens and provider exchanges never enter the framework profiler.
-        $http = HttpClient::create(['timeout' => 15, 'max_duration' => 30]);
-
-        return new OAuthService(new UserAuthStorage($this->vault, $identity), $http, new IdTokenVerifier($http), new OAuthConfig('Personal finance assistant', $this->port));
+        return $this->attemptDirectory.'/'.hash('sha256', $state).'.json';
     }
 }
