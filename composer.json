@@ -38,6 +38,7 @@
         "symfony/monolog-bundle": "^4.1",
         "symfony/rate-limiter": "8.2.*@dev",
         "symfony/runtime": "8.2.*@dev",
+        "symfony/scheduler": "8.2.*@dev",
         "symfony/security-bundle": "8.2.*",
         "symfony/twig-bundle": "8.2.*@dev",
         "symfony/uid": "8.2.*@dev",

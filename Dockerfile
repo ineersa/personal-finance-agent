@@ -25,6 +25,7 @@ RUN ln -s ../lib/node_modules/npm/bin/npm-cli.js /usr/local/bin/npm \
     && apt-get update && apt-get install -y --no-install-recommends curl xz-utils libnss3 libatk1.0-0 libatk-bridge2.0-0 libx11-xcb1 libxcomposite1 libxdamage1 libxfixes3 libxrandr2 libgbm1 libasound2 libpango-1.0-0 libcairo2 libcups2 libxkbcommon0 \
     && rm -rf /var/lib/apt/lists/* \
     && curl -fsSL https://github.com/symfony-cli/symfony-cli/releases/download/v5.20.0/symfony-cli_linux_amd64.tar.gz | tar -xz -C /usr/local/bin symfony
+COPY docker/frankenphp/tooling.ini /usr/local/etc/php/conf.d/tooling.ini
 ENV HOME=/app/var/tooling/home PLAYWRIGHT_BROWSERS_PATH=/app/var/tooling/browsers
 WORKDIR /app
 ENTRYPOINT []

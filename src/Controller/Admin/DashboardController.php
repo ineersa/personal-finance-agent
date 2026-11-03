@@ -52,6 +52,7 @@ final class DashboardController extends AbstractDashboardController
             yield MenuItem::section('Administration');
             yield MenuItem::linkTo(UserCrudController::class, 'Users');
             yield MenuItem::linkTo(CategoryCrudController::class, 'Categories');
+            yield MenuItem::linkTo(CurrencyRateCrudController::class, 'Currency rates');
 
             return;
         }
