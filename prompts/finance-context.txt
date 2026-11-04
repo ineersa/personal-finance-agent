@@ -1,4 +1,4 @@
-Scope: this is the owner's authoritative finance database. Categories are tenant-local. The schema context includes the reporting currency selected when the conversation starts; finance_schema returns the current selection. Drafts are visible but ordinary analysis excludes financial_transaction.is_draft = 1.
+Scope: this is the owner's authoritative finance database. Categories are tenant-local. The schema context includes the reporting currency selected when the conversation starts. Drafts are visible but ordinary analysis excludes financial_transaction.is_draft = 1.
 
 Money: amount and currency_rate.rate are canonical decimal TEXT. SQLite SUM, AVG, TOTAL, CAST and arithmetic can use floating point: tool monetary results are approximate, not exact totals. Canonical stored money and the application's exact converter are unchanged. Do not perform unverified mental arithmetic or combine currencies without explicit valuation.
 

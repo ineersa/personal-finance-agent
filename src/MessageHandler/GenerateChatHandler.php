@@ -58,7 +58,8 @@ final readonly class GenerateChatHandler
                 $project(true);
             });
             $execution = $this->agents->create($owner, $registration, $conversation->model, $output, $events)->call(
-                $this->normalizer->denormalize($conversation->history, MessageBag::class),
+                // Refresh application instructions, not the user's history or initial data context.
+                $this->normalizer->denormalize($conversation->history, MessageBag::class)->withoutSystemMessage(),
                 ['stream' => true, 'prompt_cache_key' => $conversation->id, 'reasoning' => ['effort' => $conversation->reasoningEffort, 'summary' => 'auto']],
             );
             $execution->onProgress(static function (Progress $update) use ($output, $project): void {

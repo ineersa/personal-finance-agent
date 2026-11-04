@@ -4,26 +4,29 @@ declare(strict_types=1);
 
 namespace App\Finance\Sql;
 
+use App\Entity\User;
+use App\Finance\TenantManagers;
+
 final class ReadOnlyQuery
 {
+    public const int MAX_SQL_BYTES = 16384;
+    public const int MAX_OUTPUT_BYTES = 262144;
+    public const int MAX_ROWS = 200;
+    public const int MAX_COLUMNS = 50;
     private const string MAIN_DATABASE = 'main';
+    private const array EXTERNAL_FUNCTIONS = ['load_extension', 'readfile', 'writefile'];
 
-    // No extension loading, file I/O or application/PHP callbacks are available to SQL.
-    private const array FUNCTIONS = [
-        'abs', 'avg', 'char', 'coalesce', 'concat', 'concat_ws', 'count', 'date', 'datetime',
-        'dense_rank', 'first_value', 'format', 'glob', 'group_concat', 'hex', 'if', 'ifnull',
-        'iif', 'instr', 'json', 'json_array', 'json_array_length', 'json_extract', 'json_group_array',
-        'json_group_object', 'json_object', 'json_quote', 'json_type', 'json_valid', 'julianday',
-        'lag', 'last_value', 'lead', 'length', 'like', 'likelihood', 'likely', 'lower', 'ltrim',
-        'max', 'min', 'nth_value', 'ntile', 'nullif', 'octet_length', 'percent_rank', 'printf',
-        'quote', 'random', 'randomblob', 'rank', 'replace', 'round', 'row_number', 'rtrim',
-        'sign', 'sqlite_version', 'strftime', 'string_agg', 'substr', 'substring', 'sum', 'time',
-        'timediff', 'total', 'trim', 'typeof', 'unicode', 'unixepoch', 'unlikely', 'upper', 'zeroblob',
-    ];
+    public function __construct(private readonly TenantManagers $tenants)
+    {
+    }
 
     /** @return array{columns: list<string>, rows: list<list<int|float|string|null>>, truncated: bool} */
-    public function execute(string $path, string $sql): array
+    public function execute(User $owner, string $sql): array
     {
+        if ('' === trim($sql) || \strlen($sql) > self::MAX_SQL_BYTES) {
+            throw new \RuntimeException('Provide a nonempty SQL query of at most 16384 bytes.');
+        }
+        $path = $this->tenants->path($owner);
         if (is_link($path) || is_link(\dirname($path)) || !is_file($path)) {
             throw new \RuntimeException('Tenant storage is unavailable.');
         }
@@ -49,7 +52,7 @@ final class ReadOnlyQuery
                 try {
                     $columns = [];
                     $count = $result->numColumns();
-                    if ($count > SqlExecutor::MAX_COLUMNS) {
+                    if ($count > self::MAX_COLUMNS) {
                         throw new \RuntimeException('SQL column limit reached.');
                     }
                     for ($column = 0; $column < $count; ++$column) {
@@ -63,12 +66,12 @@ final class ReadOnlyQuery
                     $bytes = \strlen(json_encode($columns, \JSON_THROW_ON_ERROR));
                     $truncated = false;
                     while (false !== $row = $result->fetchArray(\SQLITE3_NUM)) {
-                        if (\count($rows) >= SqlExecutor::MAX_ROWS) {
+                        if (\count($rows) >= self::MAX_ROWS) {
                             $truncated = true;
                             break;
                         }
                         $bytes += \strlen(json_encode($row, \JSON_THROW_ON_ERROR));
-                        if ($bytes > SqlExecutor::MAX_OUTPUT_BYTES) {
+                        if ($bytes > self::MAX_OUTPUT_BYTES) {
                             throw new \RuntimeException('SQL output limit reached.');
                         }
                         $values = [];
@@ -98,7 +101,8 @@ final class ReadOnlyQuery
         return match ($action) {
             \SQLite3::SELECT, \SQLite3::RECURSIVE => \SQLite3::OK,
             \SQLite3::READ => self::MAIN_DATABASE === $database ? \SQLite3::OK : \SQLite3::DENY,
-            \SQLite3::FUNCTION => \in_array(strtolower($second ?? ''), self::FUNCTIONS, true) ? \SQLite3::OK : \SQLite3::DENY,
+            // This fresh connection has no application callbacks or loaded extensions.
+            \SQLite3::FUNCTION => !\in_array(strtolower($second ?? ''), self::EXTERNAL_FUNCTIONS, true) ? \SQLite3::OK : \SQLite3::DENY,
             default => \SQLite3::DENY,
         };
     }
