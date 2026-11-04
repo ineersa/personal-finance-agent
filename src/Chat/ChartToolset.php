@@ -37,7 +37,7 @@ final class ChartToolset implements ToolsetInterface
         try {
             return $this->tools = $this->connection->getTools();
         } catch (\Throwable $error) {
-            $this->output->charts[] = ['file' => null, 'error' => 'Chart service unavailable. Text analysis remains available.'];
+            $this->output->charts[] = ['file' => null, 'error' => 'Chart service unavailable. No chart was generated.'];
             throw $error;
         }
     }

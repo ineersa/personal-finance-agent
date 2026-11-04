@@ -19,7 +19,7 @@ use Symfony\AI\Platform\Result\TextResult;
 use Symfony\AI\Platform\Result\ThinkingResult;
 
 /**
- * Temporary native-message adaptation: https://github.com/ineersa/personal-finance-agent/issues/13
+ * Temporary native-message adaptation: https://github.com/ineersa/personal-finance-agent/issues/13.
  *
  * @phpstan-type Chart array{file: ?string, error: ?string}
  */
