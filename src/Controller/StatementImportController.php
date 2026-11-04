@@ -107,14 +107,14 @@ final class StatementImportController extends AbstractController
         if ($request->isMethod(Request::METHOD_GET) && TurboBundle::STREAM_FORMAT === $request->getPreferredFormat()) {
             $request->setRequestFormat(TurboBundle::STREAM_FORMAT);
             $response = \in_array($statement->processingStatus, [ProcessingStatus::Completed, ProcessingStatus::Failed], true)
-                ? $this->render('statement/update.stream.html.twig', ['statement' => $statement, 'drafts' => $drafts])
+                ? $this->render('statement/update.stream.html.twig', ['statement' => $statement, 'drafts' => $drafts, 'moneyLocale' => $owner->getMoneyLocale()])
                 : new Response(status: Response::HTTP_NO_CONTENT);
             $response->headers->set('Cache-Control', 'no-store, private');
 
             return $response;
         }
 
-        $response = $this->render('statement/processing.html.twig', ['statement' => $statement, 'drafts' => $drafts, 'workflowForm' => $form, 'approvalErrors' => $approvalErrors]);
+        $response = $this->render('statement/processing.html.twig', ['statement' => $statement, 'drafts' => $drafts, 'workflowForm' => $form, 'approvalErrors' => $approvalErrors, 'moneyLocale' => $owner->getMoneyLocale()]);
         $response->headers->set('Cache-Control', 'no-store, private');
 
         return $response;

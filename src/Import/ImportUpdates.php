@@ -27,7 +27,7 @@ final readonly class ImportUpdates
         }
         // Status is already durable. A notification failure must never fail or repeat the import.
         try {
-            $this->hub->publish(new Update($this->topic->forUser($owner), $this->twig->render('statement/update.stream.html.twig', ['statement' => $statement, 'drafts' => $drafts]), true));
+            $this->hub->publish(new Update($this->topic->forUser($owner), $this->twig->render('statement/update.stream.html.twig', ['statement' => $statement, 'drafts' => $drafts, 'moneyLocale' => $owner->getMoneyLocale()]), true));
         } catch (\Throwable) {
             $this->logger->warning('Statement live update unavailable.', ['statement_id' => $statement->getId()]);
         }
