@@ -63,7 +63,7 @@ Use the dark theme throughout the application and management screens. Do not off
 
 Use a single chat containing text, tables, and inline chart images. There is no separate artifact workspace, gallery, editor, or generic artifact-management subsystem.
 
-Use a Docker-hosted AntV `mcp-server-chart` service with its documented free default hosted renderer. Aggregated chart labels and values leave the installation even when the chat model runs locally. [ADR 0014](docs/adr/0014-inline-chat-and-antv-charts.md) records this accepted trade-off and its boundaries.
+Use a Docker-hosted AntV `mcp-server-chart` service with its documented free default hosted renderer. Aggregated chart labels and values leave the installation even when the chat model runs locally. Retain private local image copies with their conversation, served only to its owner; reload does not depend on permanent remote-image availability. Deleting a conversation removes its local copies. Show image/generation failures in chat without automatic retries; externally hosted copies may still be publicly reachable. [ADR 0014](docs/adr/0014-inline-chat-and-antv-charts.md) records this accepted trade-off and its boundaries.
 
 The chat is the primary entry point for financial questions. The review workflow lets users correct the data on which those answers depend.
 
@@ -160,7 +160,6 @@ Limit uploaded files to 10 MiB each. Upload frequency, daily bytes, retained-sto
 
 - Supporting technologies, exact dependency releases within the accepted stack, and deployment setup.
 - Private storage for uploaded statements and file-lifecycle handling.
-- Safe inline rendering and chart data contracts, image/reference persistence, reload behavior, and hosted-renderer failure handling.
 - Supported banks/layouts and extraction mappings within PDF/XLSX/CSV, including complex tables, scanned/image-only PDF handling, and explicit OCR backend selection/configuration/verification.
 - Exact MarkItDown transport, versions, parser dependencies/extras, staging/cleanup integration, and compatible MCP APIs.
 - Jev decision wording/evaluation and exact LLM extraction schema, provider/model configuration, and pinned structured-output bridge compatibility.
@@ -168,7 +167,6 @@ Limit uploaded files to 10 MiB each. Upload frequency, daily bytes, retained-sto
 - Exact model IDs, supported reasoning options, enabled/default providers and models per installation, credentials, and network requirements for the selected integrations.
 - Provider configuration schema, exact integration packages, and compatible APIs.
 - Simple context-handoff trigger, token estimates, recent complete-message window, and pinned Symfony AI hooks. The approach is selected for late implementation; advanced compaction and memory engineering are not selected.
-- Exact AntV MCP packages, APIs, connection transport, and container configuration. No restricted tool catalog, runtime skill, SQL MCP access, or websearch MCP has been selected. Application chart MCP remains separate from Mate development tooling.
 - Exact conversation-storage adapters/APIs and atomic retention/admission mechanics, including safe behavior when no inactive temporary conversation can be pruned. Broader session-management features are not selected.
 - SQLite-safe decimal-string mapping and precision-preserving SQL strategy, rounding/scale, missing ECB dates/weekends, and exact history window/cache/import/backfill mechanics.
 - How answers reference the transactions used to produce them.

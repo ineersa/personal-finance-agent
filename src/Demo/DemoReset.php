@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Demo;
 
+use App\Chat\ChartImages;
 use App\Entity\User;
 use App\Finance\Entity\Statement;
 use App\Finance\TenantManagers;
@@ -20,7 +21,7 @@ use Symfony\Component\HttpKernel\KernelInterface;
 
 final readonly class DemoReset
 {
-    public function __construct(private EntityManagerInterface $em, private TenantManagers $tenants, private KernelInterface $kernel, #[Target('statements.storage')] private FilesystemOperator $storage, #[Autowire('%env(bool:LOCAL_DEMO_RESET_ENABLED)%')] private bool $enabled, private Filesystem $filesystem, private ?LoaderInterface $loader = null)
+    public function __construct(private EntityManagerInterface $em, private TenantManagers $tenants, private KernelInterface $kernel, #[Target('statements.storage')] private FilesystemOperator $storage, #[Autowire('%env(bool:LOCAL_DEMO_RESET_ENABLED)%')] private bool $enabled, private Filesystem $filesystem, private ChartImages $images, private ?LoaderInterface $loader = null)
     {
     }
 
@@ -76,6 +77,7 @@ final readonly class DemoReset
             }
         }
         try {
+            $this->images->reset();
             foreach ($this->storage->listContents('', false) as $entry) {
                 if ($entry->isFile() && !\in_array($entry->path(), $filenames, true)) {
                     $this->storage->delete($entry->path());

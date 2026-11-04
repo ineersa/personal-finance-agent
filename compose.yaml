@@ -1,6 +1,19 @@
 name: personal-finance-agent
 
 services:
+  charts:
+    build:
+      context: docker/charts
+    init: true
+    read_only: true
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    mem_limit: 256m
+    cpus: 1
+    logging:
+      driver: none
+    # Internal-only MCP; no host ports, Docker socket, database or private files.
+
   php:
     image: "${COMPOSE_PROJECT_NAME:-personal-finance-agent}-php:prod"
     build:

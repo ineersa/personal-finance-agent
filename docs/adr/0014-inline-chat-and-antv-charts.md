@@ -15,11 +15,11 @@ Use one chat containing text, tables, and inline chart images. Do not build a se
 
 Keep existing ownership checks, safe text/table rendering, and the prohibition on sensitive logging. Treat model/tool output and remote image references as untrusted; validate references before fetching or displaying them. Application access to saved chat output remains ownership-scoped; external image URLs are not guaranteed private.
 
-Retain the existing durable conversation-message and generation-state requirements independently of Mercure delivery. Represent chart output as part of chat, not separate managed artifacts. Exact image/reference persistence and display mechanics remain open. [ADR 0015](0015-sqlite-conversation-history.md) subsequently selects shared application SQLite persistence with five temporary chats per user plus saved chats, protecting queued/running work. It does not select a cache, image storage schema, or route, or guarantee remote chart-image availability.
+Retain the existing durable conversation-message and generation-state requirements independently of Mercure delivery. Represent chart output as part of chat, not separate managed artifacts. The task 13 choices below select local image copies. [ADR 0015](0015-sqlite-conversation-history.md) subsequently selects shared application SQLite persistence with five temporary chats per user plus saved chats, protecting queued/running work. It does not guarantee remote chart-image availability.
 
 ### Docker MCP server and remote renderer
 
-Use AntV `mcp-server-chart` as a separate Docker service. Reuse Symfony AI MCP facilities and the official PHP MCP SDK where compatible. Exact packages, APIs, connection transport, container configuration, and versions remain bootstrap choices; no per-chat stdio lifecycle is selected.
+Use AntV `mcp-server-chart` as a separate Docker service. Reuse Symfony AI MCP facilities and the official PHP MCP SDK where compatible. The task 13 choices below specify packages and transport; no per-chat stdio lifecycle is selected.
 
 The MCP server calls AntV's documented default hosted renderer at `https://antv-studio.alipay.com/api/gpt-vis`. The upstream README describes this rendering service as free and documents `VIS_REQUEST_SERVER` as an override. Initially use that hosted path; a private-renderer container is not required.
 
@@ -29,7 +29,19 @@ The Docker MCP server and hosted renderer are different components. No completel
 
 Aggregated chart labels and values leave the installation for rendering. Make that clear to users: choosing a local chat provider does not make chart rendering local. The owner accepts this trade-off. Do not send credentials or log raw financial data for convenience.
 
-The upstream description of a free service is not a guarantee of permanent pricing, unlimited use, availability, retention, or private external image URLs. Hosted-renderer and image failures must be handled visibly in chat without discarding existing saved conversation state. Exact failure/retry and image lifecycle behavior remains to be defined.
+The upstream description of a free service is not a guarantee of permanent pricing, unlimited use, availability, retention, or private external image URLs. Hosted-renderer and image failures must be handled visibly in chat without discarding existing saved conversation state, as specified below.
+
+### Task 13 implementation choices (2026-11-04)
+
+The owner selected **local image copies**, not remote-reference-only retention. Store supported chart images in private Flysystem storage and reference them directly from existing conversation-turn JSON. Serve them through an authenticated, owner-and-retained-conversation-scoped image route. Reload uses the same local copy without another remote request. New chat removes its conversation's copies; the explicitly enabled demo reset also clears private chart storage. This does not extend conversation retention or introduce an artifact entity, gallery, image editor or cache platform. Missing local files show “Chart unavailable”; generation/download failures remain visible in chat without automatic retries. Filesystem/database failures may leave inaccessible orphaned bytes; no recovery subsystem is selected.
+
+Use published `@antv/mcp-server-chart` **0.9.10**, running streamable HTTP at internal `http://charts:1122/mcp`. GitHub main advertises 0.9.11, but that version was not published to npm when probed. The container has no host ports, host Docker socket, database or private-file mount. Its log driver is disabled because upstream errors can contain inputs. Use Symfony AI `McpToolbox`, `ClientToolset`, `ChainToolbox` and the official PHP `mcp/sdk` client, with explicit untraced PSR-18 HTTP and native null loggers. The MCP bundle's automatically wired logger records raw RPC arguments; a bundle plus custom logger/container overrides is unnecessary here. Discover the server's complete catalog rather than selecting a restricted catalog or visualization skill.
+
+Validate arguments against the discovered JSON Schema (Opis, already used by the SDK), rejecting undeclared top-level options. Bound each generation to four chart calls, 16 KiB arguments per call, 100 items per collection, depth eight, 200 characters per string, and requested sides of 100–1600 pixels. Accept only plain labels without links, markup or control characters. These are chart-resource bounds, not the deferred account/AI quota subsystem. Keep the newer ADR 0025 approximate SQLite calculation semantics; this task does not introduce exact SQL arithmetic.
+
+Accept only HTTPS image references matching the observed `mdn.alipayobjects.com/one_clip/afts/img/…/original` destination, with no credentials, queries or fragments. Download with Symfony's `NoPrivateNetworkHttpClient`, no redirects, bounded time and streaming byte count (2 MiB). Verify PNG/JPEG magic and dimensions before storing; reject other content, including SVG. The hosted renderer produced 1800×1200 pixels for a requested 600×400 image, so bound the returned sides separately at 4800 pixels. Only locally generated opaque filenames enter the image route/template; model Markdown images remain forbidden by the existing sanitizer. The third-party service may still retain publicly reachable copies; a local private copy does not retract external disclosure.
+
+Verification evidence is task-specific, not an architecture guarantee: a synthetic 40/60 pie was generated through the actual container/SDK/toolbox and copied/read/deleted privately (27 discovered tools; 66,456-byte PNG, 1800×1200). Browser, ownership, unsafe-input and failure verification must still be reported separately; this probe does not prove those paths.
 
 ### Unchanged boundaries and open details
 
@@ -48,7 +60,7 @@ The upstream description of a free service is not a guarantee of permanent prici
 
 - This decision replaces earlier layout and separate-artifact requirements, not the otherwise-valid stack, streaming, asset-pipeline, or agent-runtime decisions.
 - Verify actual MCP/worker/Mercure chart delivery, safe inline rendering, owned chat-output access, reload behavior, and hosted failures through the headed browser workflow in [TESTING.md](../../TESTING.md). External-service tests must use synthetic data only.
-- No application code, developer or runtime skill, dependency, container, provider call, or chart rendering has been installed, run, or validated by this documentation decision.
+- The original documentation decision installed or validated no runtime integration. The task 13 implementation probe is distinguished above from outstanding browser verification.
 
 ## References
 

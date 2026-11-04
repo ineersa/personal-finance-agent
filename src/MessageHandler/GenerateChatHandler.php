@@ -53,11 +53,14 @@ final readonly class GenerateChatHandler
         try {
             // Scoped native tool events project results privately; no global listener or payload logging.
             $events = new EventDispatcher();
-            $events->addListener(ToolCallSucceeded::class, static function (ToolCallSucceeded $event) use ($output, $project): void {
+            $events->addListener(ToolCallSucceeded::class, function (ToolCallSucceeded $event) use ($output, $project, $conversation, $turnIndex): void {
                 $output->activity->completed($event->getResult());
+                // Authorize a completed local image before Mercure tells the browser to load it.
+                $conversation->turns[$turnIndex] = ['question' => $conversation->turns[$turnIndex]['question'], ...$output->transcript(), 'activity' => $output->activity->entries()];
+                $this->em->flush();
                 $project(true);
             });
-            $execution = $this->agents->create($owner, $registration, $conversation->model, $output, $events)->call(
+            $execution = $this->agents->create($owner, $registration, $conversation->model, $output, $events, $conversation->id)->call(
                 // Refresh application instructions, not the user's history or initial data context.
                 $this->normalizer->denormalize($conversation->history, MessageBag::class)->withoutSystemMessage(),
                 ['stream' => true, 'prompt_cache_key' => $conversation->id, 'reasoning' => ['effort' => $conversation->reasoningEffort, 'summary' => 'auto']],

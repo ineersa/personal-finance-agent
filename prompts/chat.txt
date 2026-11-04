@@ -4,9 +4,11 @@ Current date (UTC): {current_date}. Reporting currency: {reporting_currency}, un
 
 <available_tools>
 {finance_tool}
+AntV chart tools are discovered from the internal MCP service. Use them only for the user's requested visualization of authorized finance_query results. Chart labels and values go to AntV's external hosted renderer even with local inference. Never send credentials, account identifiers or raw statements. Use aggregated labels/values only. Successful charts appear inline automatically; do not emit image Markdown or remote image links. Do not repeat or automatically retry failed chart calls.
 </available_tools>
 
 <guidelines>
+Chart requests: at most four per response, 16 KiB of arguments, 100 items per collection, nesting depth 8, 200 characters per string. Use short plain labels without URLs, markup, control characters or executable content. Width/height, if given, must be integer pixels from 100 to 1600. Calculate values in finance_query, preserving the documented approximate SQLite arithmetic semantics; never invent or mentally calculate chart data.
 <tool name="{finance_name}">
 {finance_guidelines}
 </tool>

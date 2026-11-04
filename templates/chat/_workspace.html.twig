@@ -41,6 +41,16 @@
                         {% if turn.commentary %}<div class="chat-commentary chat-markdown">{{ turn.commentary|markdown_to_html|sanitize_html('app.chat') }}</div>{% endif %}
                     {% endif %}
                     {% if turn.answer %}<div class="chat-answer chat-markdown" {% if not chat.execution or chat.execution == execution.Completed.value %}data-chat-saved{% endif %}>{{ turn.answer|markdown_to_html|sanitize_html('app.chat') }}</div>{% endif %}
+                    {% for chart in turn.charts|default([]) %}
+                        {% if chart.file %}
+                            <figure class="chat-chart" data-controller="chart-image">
+                                <img src="{{ path(constant('App\\Chat\\ChartImages::ROUTE'), {conversation: chat.conversation_id, file: chart.file}) }}" alt="Financial chart" referrerpolicy="no-referrer" data-chart-image-target="image" data-action="load->chart-image#loaded error->chart-image#unavailable" style="max-width: 100%; height: auto;">
+                                <figcaption data-chart-image-target="status">Chart saved privately with this conversation.</figcaption>
+                            </figure>
+                        {% elseif chart.error %}
+                            <p class="chat-chart-error" role="status">{{ chart.error }}</p>
+                        {% endif %}
+                    {% endfor %}
                     {% if loop.last %}
                         {% if chat.execution %}<p class="chat-progress" role="status">{{ chat.execution == execution.Running.value ? 'Responding…' : (chat.execution == execution.Completed.value ? 'Reply complete' : chat.execution|replace({'_': ' '})|capitalize) }}</p>{% endif %}
                         {% if chat.error %}<p class="chat-error" role="alert">{{ chat.error }}</p>{% endif %}

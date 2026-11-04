@@ -7,7 +7,10 @@ namespace App\Entity;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Uid\Uuid;
 
-/** @phpstan-import-type Entry from \App\Chat\ChatActivity */
+/**
+ * @phpstan-import-type Entry from \App\Chat\ChatActivity
+ * @phpstan-import-type Chart from \App\Chat\NativeAssistantOutput
+ */
 #[ORM\Entity]
 class ChatConversation
 {
@@ -29,7 +32,7 @@ class ChatConversation
     #[ORM\Column(type: 'json')]
     public array $history = [];
 
-    /** @var list<array{question: string, reasoning: string, commentary: string, answer: string, activity?: list<Entry>}> */
+    /** @var list<array{question: string, reasoning: string, commentary: string, answer: string, activity?: list<Entry>, charts?: list<Chart>}> */
     #[ORM\Column(type: 'json')]
     public array $turns = [];
 

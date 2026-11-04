@@ -27,7 +27,7 @@ final readonly class Workspace
     public const string COMPOSER_DOM_ID = 'chat-composer-fields';
     public const string COMMENTARY_PHASE = 'commentary';
 
-    public function __construct(private EntityManagerInterface $em, private MessageBagNormalizer $normalizer, private MessageBusInterface $bus, private InitialContext $context, #[Autowire('%env(CHAT_MODEL)%')] private string $model, #[Autowire('%env(CHAT_REASONING_EFFORT)%')] private string $effort)
+    public function __construct(private EntityManagerInterface $em, private MessageBagNormalizer $normalizer, private MessageBusInterface $bus, private InitialContext $context, private ChartImages $images, #[Autowire('%env(CHAT_MODEL)%')] private string $model, #[Autowire('%env(CHAT_REASONING_EFFORT)%')] private string $effort)
     {
     }
 
@@ -47,6 +47,7 @@ final readonly class Workspace
         if (null !== $conversation) {
             $this->em->remove($conversation);
             $this->em->flush();
+            $this->images->removeConversation($conversation->id);
         }
     }
 

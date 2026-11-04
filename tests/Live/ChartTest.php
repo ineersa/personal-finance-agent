@@ -1,0 +1,66 @@
+<?php
+
+declare(strict_types=1);
+
+namespace App\Tests\Live;
+
+use App\Chat\ChatActivity;
+use PHPUnit\Framework\TestCase;
+use Playwright\PlaywrightFactory;
+
+final class ChartTest extends TestCase
+{
+    public function testFinancialChartAndReload(): void
+    {
+        $url = (string) getenv('FINANCE_IMPORT_URL');
+        self::assertMatchesRegularExpression('~^http://[a-z0-9-]+\.browser\.finance\.localhost$~D', $url);
+        $address = getenv('FINANCE_PROXY_IP');
+        self::assertNotFalse(filter_var($address, \FILTER_VALIDATE_IP, \FILTER_FLAG_IPV4));
+        $client = PlaywrightFactory::create();
+        $browser = null;
+        try {
+            $browser = $client->chromium()->withHeadless('false' !== getenv('PLAYWRIGHT_HEADLESS'))->withArgs(['--host-resolver-rules=MAP *.finance.localhost '.$address])->launch();
+            $context = $browser->newContext();
+            try {
+                $page = $context->newPage();
+                $page->goto($url.'/login');
+                $page->getByLabel('Email', ['exact' => true])->fill('demo@test.com');
+                $page->getByLabel('Password', ['exact' => true])->fill('demo');
+                $page->getByRole('button', ['name' => 'Log in', 'exact' => true])->click();
+                $page->waitForURL('**/home/**');
+                $page->goto($url.'/home/chat');
+                self::assertTrue($page->getByRole('button', ['name' => 'Send message', 'exact' => true])->isVisible(), 'Connect ChatGPT in this isolated stack before the real chart test; existing replay has no chart interaction.');
+                $question = 'Use finance_query to calculate SUM(amount) for my approved CAD credit dated 2024-11-01 with amount 2860.00. Generate exactly one pie chart using antv_generate_pie_chart with one data item: category Synthetic payroll, value equal to that SQL total. Use width 600 and height 400. Give a brief text explanation too.';
+                $page->getByLabel('Your message', ['exact' => true])->fill($question);
+                $page->getByRole('button', ['name' => 'Send message', 'exact' => true])->click();
+                $turn = $page->locator('.chat-turn')->last();
+                $turn->getByText($question, ['exact' => true])->waitFor();
+                $turn->locator('.chat-answer[data-chat-saved]')->waitFor(['timeout' => 120000]);
+                $tool = $turn->locator('.chat-tool')->filter(['hasText' => 'antv_generate_pie_chart'])->first();
+                self::assertSame(ChatActivity::COMPLETED, $tool->getAttribute('data-tool-status'));
+                $tool->locator('summary')->click();
+                $arguments = json_decode($tool->locator('.chat-tool-arguments')->textContent(), true, flags: \JSON_THROW_ON_ERROR);
+                self::assertSame('Synthetic payroll', $arguments['data'][0]['category']);
+                self::assertSame(2860.0, (float) $arguments['data'][0]['value']);
+                $image = $turn->locator('.chat-chart img');
+                $image->waitFor();
+                $src = $image->getAttribute('src');
+                self::assertStringStartsWith('/home/chat/', $src);
+                self::assertStringNotContainsString('alipayobjects.com', $src);
+                $page->waitForFunction('() => { const image = document.querySelector(".chat-turn:last-child .chat-chart img"); return image && image.complete && image.naturalWidth > 0; }');
+                self::assertTrue($image->isVisible());
+                $page->reload();
+                $image = $page->locator('.chat-turn')->last()->locator('.chat-chart img');
+                $image->waitFor();
+                $page->waitForFunction('() => { const image = document.querySelector(".chat-turn:last-child .chat-chart img"); return image && image.complete && image.naturalWidth > 0; }');
+                self::assertSame($src, $image->getAttribute('src'));
+                self::assertTrue($image->isVisible());
+            } finally {
+                $context->close();
+            }
+        } finally {
+            $browser?->close();
+            $client->close();
+        }
+    }
+}
