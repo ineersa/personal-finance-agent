@@ -2,4 +2,6 @@ doctrine_migrations:
     enable_service_migrations: false
     migrations_paths:
         'App\Migrations': '%kernel.project_dir%/src/Migrations'
+    factories:
+        'Doctrine\Migrations\Migrator': 'App\Doctrine\SqliteMigratorFactory'
     enable_profiler: false

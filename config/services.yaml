@@ -36,6 +36,7 @@ services:
             - '../src/Finance/RejectTenantConnectionMiddleware.php'
             - '../src/DataFixtures/'
             - '../src/Doctrine/ExactDecimalType.php'
+            - '../src/Doctrine/SqliteMigrator.php'
             - '../src/Doctrine/SqliteImmediateTransactionConnection.php'
             - '../src/Doctrine/SqliteImmediateTransactionDriver.php'
 
