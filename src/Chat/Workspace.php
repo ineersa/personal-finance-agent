@@ -18,7 +18,7 @@ use Symfony\Component\Uid\UuidV7;
 final readonly class Workspace
 {
     public const string CHAT_ROUTE = 'admin_chat';
-    public const string SUBMIT_ROUTE = 'app_chat_submit';
+    public const string SUBMIT_ROUTE = 'admin_chat_submit';
     public const string NEW_ROUTE = 'app_chat_new';
     public const string SNAPSHOT_ROUTE = 'app_chat_snapshot';
     public const string SUBMIT_CSRF = 'chat-submit';

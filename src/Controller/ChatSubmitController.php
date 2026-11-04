@@ -10,6 +10,7 @@ use App\ChatGpt\Connection;
 use App\ChatGpt\ConnectionStatus;
 use App\Entity\User;
 use App\Security\FinanceRecordVoter;
+use EasyCorp\Bundle\EasyAdminBundle\Attribute\AdminRoute;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -23,7 +24,7 @@ use Symfony\UX\Turbo\TurboBundle;
 #[IsGranted(FinanceRecordVoter::ACCESS)]
 final class ChatSubmitController extends AbstractController
 {
-    #[Route('/home/chat/message', name: Workspace::SUBMIT_ROUTE, methods: [Request::METHOD_POST])]
+    #[AdminRoute('/chat/message', name: 'chat_submit', options: ['methods' => [Request::METHOD_POST]])]
     #[IsCsrfTokenValid(Workspace::SUBMIT_CSRF)]
     public function __invoke(Request $request, #[CurrentUser] User $user, Workspace $workspace, Connection $connection): Response
     {
