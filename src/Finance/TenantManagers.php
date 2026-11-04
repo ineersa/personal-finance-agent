@@ -114,17 +114,17 @@ class TenantManagers implements ResetInterface
         $registry->resetManager(self::FINANCE_MANAGER);
     }
 
+    public function release(EntityManagerInterface $manager): void
+    {
+        $manager->clear();
+        $manager->getConnection()->close();
+    }
+
     private function createManager(Connection $connection): EntityManagerInterface
     {
         $configuration = clone $this->configuration;
         $configuration->setRepositoryFactory(new DefaultRepositoryFactory());
 
         return new EntityManager($connection, $configuration, $this->events);
-    }
-
-    public function release(EntityManagerInterface $manager): void
-    {
-        $manager->clear();
-        $manager->getConnection()->close();
     }
 }
