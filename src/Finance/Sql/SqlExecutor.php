@@ -47,23 +47,23 @@ final readonly class SqlExecutor
         $process->disableOutput();
         $output = '';
         $bytes = 0;
+        $overflow = false;
         try {
-            $process->start(static fn (string $type, string $chunk): bool => false);
-            $overflow = $process->waitUntil(static function (string $type, string $chunk) use (&$output, &$bytes): bool {
+            $status = $process->run(static function (string $type, string $chunk) use (&$output, &$bytes, &$overflow): void {
+                // Keep the same collector from start onward; discard any cleanup-time output after overflow.
+                if ($overflow) {
+                    return;
+                }
                 $bytes += \strlen($chunk);
                 if ($bytes > self::MAX_OUTPUT_BYTES) {
-                    return true;
+                    $overflow = true;
+                    throw new \RuntimeException('SQL output exceeds its byte limit.');
                 }
                 if (Process::OUT === $type) {
                     $output .= $chunk;
                 }
-
-                return false;
             });
-            if ($overflow) {
-                return ['error' => 'SQL output exceeds its byte limit.'];
-            }
-            if (0 !== $process->wait()) {
+            if (0 !== $status) {
                 return ['error' => 'SQL failed or exceeded its execution/resource limits.'];
             }
             $result = json_decode($output, true, flags: \JSON_THROW_ON_ERROR);
@@ -74,7 +74,7 @@ final readonly class SqlExecutor
             return ['columns' => $result['columns'], 'rows' => $result['rows'], 'truncated' => $result['truncated']];
         } catch (\Throwable) {
             // Never return process exceptions, stderr, SQL text or private filesystem paths.
-            return ['error' => 'SQL failed or exceeded its execution/output limits.'];
+            return ['error' => $overflow ? 'SQL output exceeds its byte limit.' : 'SQL failed or exceeded its execution/output limits.'];
         } finally {
             if ($process->isRunning()) {
                 $process->stop(0);
