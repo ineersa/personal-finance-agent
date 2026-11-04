@@ -47,6 +47,8 @@ final readonly class AgentFactory
             'finance_name' => TenantSqlTool::QUERY_NAME,
             'finance_tool' => TenantSqlTool::PROMPT_LINE,
             'finance_guidelines' => TenantSqlTool::GUIDELINES,
+            'current_date' => (new \DateTimeImmutable('now', new \DateTimeZone('UTC')))->format('Y-m-d'),
+            'reporting_currency' => $owner->getReportingCurrency()->value,
         ]);
 
         return new Agent(new Platform([$provider]), $model,

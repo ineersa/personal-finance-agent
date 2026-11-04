@@ -25,7 +25,6 @@ final readonly class InitialContext
 
         return $this->templates->render(Template::string(File::fromFile($this->root.'/prompts/finance-context.txt')->asBinary()), [
             'data_schemas' => htmlspecialchars(json_encode($schema, \JSON_THROW_ON_ERROR), \ENT_XML1 | \ENT_QUOTES, 'UTF-8'),
-            'reporting_currency' => $owner->getReportingCurrency()->value,
         ]);
     }
 }
