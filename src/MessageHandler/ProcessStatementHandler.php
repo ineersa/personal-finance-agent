@@ -71,7 +71,11 @@ final readonly class ProcessStatementHandler
                 $categories = $categories->findAllIndexedByName();
                 $catalog = array_map(static fn (Category $category): string => $category->description ?? $category->name, $categories);
                 $rows = $this->interpreter->interpret($rows, $statement->source->instrumentKind, $catalog);
+                $earliestDate = null;
                 foreach ($rows as $row) {
+                    if (null === $earliestDate || $row->date < $earliestDate) {
+                        $earliestDate = $row->date;
+                    }
                     $category = null === $row->categoryName ? null : $categories[$row->categoryName];
                     $em->persist(new Transaction(
                         statement: $statement,
@@ -88,6 +92,7 @@ final readonly class ProcessStatementHandler
                     ));
                 }
                 $statement->processingStatus = ProcessingStatus::Completed;
+                $statement->statementDate ??= $earliestDate;
                 $statement->processingError = null;
                 $statement->processedAt = new \DateTimeImmutable();
                 $em->flush();
