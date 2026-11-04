@@ -6,9 +6,7 @@ namespace App\Controller\Admin;
 
 use App\Enum\InstrumentKind;
 use App\Finance\Entity\Source;
-use App\Repository\SourceRepository;
 use App\Security\FinanceRecordVoter;
-use Doctrine\ORM\QueryBuilder;
 use EasyCorp\Bundle\EasyAdminBundle\Config\Crud;
 use EasyCorp\Bundle\EasyAdminBundle\Field\ChoiceField;
 use EasyCorp\Bundle\EasyAdminBundle\Field\TextareaField;
@@ -20,10 +18,6 @@ use Symfony\Component\Security\Http\Attribute\IsGranted;
 #[IsGranted(FinanceRecordVoter::ACCESS)]
 final class SourceCrudController extends OwnedCrudController
 {
-    public function __construct(private readonly SourceRepository $sources)
-    {
-    }
-
     public static function getEntityFqcn(): string
     {
         return Source::class;
@@ -46,10 +40,5 @@ final class SourceCrudController extends OwnedCrudController
     public function configureCrud(Crud $crud): Crud
     {
         return parent::configureCrud($crud)->setEntityLabelInPlural('Sources')->setSearchFields(['name', 'description']);
-    }
-
-    protected function ownedQuery(): QueryBuilder
-    {
-        return $this->sources->query();
     }
 }

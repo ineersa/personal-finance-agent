@@ -5,18 +5,25 @@ declare(strict_types=1);
 namespace App\Finance;
 
 use App\Entity\User;
+use Doctrine\Common\EventManager;
 use Doctrine\DBAL\Connection;
 use Doctrine\DBAL\DriverManager;
 use Doctrine\ORM\Configuration;
 use Doctrine\ORM\EntityManager;
 use Doctrine\ORM\EntityManagerInterface;
+use Doctrine\ORM\Repository\DefaultRepositoryFactory;
+use Doctrine\Persistence\ManagerRegistry;
 use Symfony\Bundle\SecurityBundle\Security;
 use Symfony\Component\DependencyInjection\Attribute\Autowire;
+use Symfony\Component\DependencyInjection\Attribute\AutowireServiceClosure;
+use Symfony\Component\Filesystem\Filesystem;
 use Symfony\Component\HttpFoundation\RequestStack;
 use Symfony\Contracts\Service\ResetInterface;
 
 class TenantManagers implements ResetInterface
 {
+    private const string FINANCE_MANAGER = 'finance';
+
     private ?EntityManagerInterface $requestManager = null;
 
     public function __construct(
@@ -25,6 +32,9 @@ class TenantManagers implements ResetInterface
         #[Autowire(service: 'doctrine.dbal.default_connection')] private readonly Connection $central,
         private readonly Security $security,
         private readonly RequestStack $requests,
+        #[Autowire(service: 'doctrine.dbal.finance_connection.event_manager')] private readonly EventManager $events,
+        #[AutowireServiceClosure('doctrine')] private readonly \Closure $registry,
+        private readonly Filesystem $filesystem,
     ) {
     }
 
@@ -53,8 +63,8 @@ class TenantManagers implements ResetInterface
         if (!$provision && !is_file($path)) {
             throw new \RuntimeException('Tenant database has not been provisioned.');
         }
-        if ($provision && !is_dir(\dirname($path)) && !mkdir(\dirname($path), 0700, true) && !is_dir(\dirname($path))) {
-            throw new \RuntimeException('Cannot create private tenant storage.');
+        if ($provision) {
+            $this->filesystem->mkdir(\dirname($path), 0700);
         }
         $params = $this->prototype->getParams();
         unset($params['url'], $params['memory']);
@@ -64,7 +74,7 @@ class TenantManagers implements ResetInterface
         }
         $connection = DriverManager::getConnection($params, $this->prototype->getConfiguration());
 
-        return new EntityManager($connection, $this->configuration);
+        return $this->createManager($connection);
     }
 
     public function current(): EntityManagerInterface
@@ -72,7 +82,7 @@ class TenantManagers implements ResetInterface
         // Console schema tooling uses only its explicitly configured diagnostic connection.
         // Background handlers open their own owner-bound manager instead of using this service.
         if (null === $this->requests->getMainRequest()) {
-            return new EntityManager($this->prototype, $this->configuration);
+            return $this->createManager($this->prototype);
         }
         if (null !== $this->requestManager) {
             return $this->requestManager;
@@ -86,7 +96,7 @@ class TenantManagers implements ResetInterface
             $params = $this->prototype->getParams();
             unset($params['url'], $params['path'], $params['memory']);
 
-            return new EntityManager(DriverManager::getConnection($params, $configuration), $this->configuration);
+            return $this->requestManager = $this->createManager(DriverManager::getConnection($params, $configuration));
         }
 
         return $this->requestManager = $this->open($owner);
@@ -98,6 +108,18 @@ class TenantManagers implements ResetInterface
             $this->release($this->requestManager);
             $this->requestManager = null;
         }
+        // Reset the registered lazy proxy too: clearing only our field leaves its old target alive.
+        $registry = ($this->registry)();
+        \assert($registry instanceof ManagerRegistry);
+        $registry->resetManager(self::FINANCE_MANAGER);
+    }
+
+    private function createManager(Connection $connection): EntityManagerInterface
+    {
+        $configuration = clone $this->configuration;
+        $configuration->setRepositoryFactory(new DefaultRepositoryFactory());
+
+        return new EntityManager($connection, $configuration, $this->events);
     }
 
     public function release(EntityManagerInterface $manager): void

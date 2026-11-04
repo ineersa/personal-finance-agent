@@ -15,6 +15,7 @@ use EasyCorp\Bundle\EasyAdminBundle\Controller\AbstractCrudController;
 use EasyCorp\Bundle\EasyAdminBundle\Field\ChoiceField;
 use EasyCorp\Bundle\EasyAdminBundle\Field\EmailField;
 use EasyCorp\Bundle\EasyAdminBundle\Field\TextField;
+use Symfony\Component\Filesystem\Filesystem;
 use Symfony\Component\Form\Extension\Core\Type\PasswordType;
 use Symfony\Component\Security\Http\Attribute\IsGranted;
 use Symfony\Component\Validator\Constraints as Assert;
@@ -25,7 +26,7 @@ final class UserCrudController extends AbstractCrudController
 {
     use RestrictReferencedDeletionTrait;
 
-    public function __construct(private readonly TenantSchema $schema, private readonly TenantManagers $tenants)
+    public function __construct(private readonly TenantSchema $schema, private readonly TenantManagers $tenants, private readonly Filesystem $filesystem)
     {
     }
 
@@ -53,9 +54,10 @@ final class UserCrudController extends AbstractCrudController
         parent::deleteEntity($entityManager, $entityInstance);
         if (null !== $path) {
             foreach ([$path, $path.'-wal', $path.'-shm'] as $file) {
-                if (is_link($file) || (is_file($file) && !unlink($file))) {
+                if (is_link(\dirname($file)) || is_link($file) || is_dir($file)) {
                     throw new \RuntimeException('Account deleted but tenant storage could not be removed.');
                 }
+                $this->filesystem->remove($file);
             }
         }
     }

@@ -22,11 +22,7 @@ final readonly class TransactionRepository
 
     public function find(int $id): ?Transaction
     {
-        return $this->query()
-            ->andWhere('record.id = :id')
-            ->setParameter('id', $id)
-            ->getQuery()
-            ->getOneOrNullResult();
+        return $this->entityManager->find(Transaction::class, $id);
     }
 
     /** @return list<Transaction> */

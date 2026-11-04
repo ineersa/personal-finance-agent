@@ -6,9 +6,11 @@ namespace App\Tests\Support;
 
 use App\Entity\User;
 use App\Finance\TenantManagers;
+use Doctrine\Common\EventManager;
 use Doctrine\DBAL\Connection;
 use Doctrine\ORM\EntityManager;
 use Doctrine\ORM\EntityManagerInterface;
+use Symfony\Component\Filesystem\Filesystem;
 
 // Owner-approved Alice lifecycle extension; never enabled outside APP_ENV=test.
 final class TestTenantManagers extends TenantManagers
@@ -31,8 +33,10 @@ final class TestTenantManagers extends TenantManagers
         $path = $this->path($owner);
         if (self::$active && isset(self::$connections[$path])) {
             $prototype = parent::open($owner, $provision);
+            $events = $prototype->getEventManager();
+            \assert($events instanceof EventManager);
 
-            return new EntityManager(self::$connections[$path], $prototype->getConfiguration());
+            return new EntityManager(self::$connections[$path], $prototype->getConfiguration(), $events);
         }
         $existed = is_file($path);
         $em = parent::open($owner, $provision);
@@ -68,9 +72,10 @@ final class TestTenantManagers extends TenantManagers
             }
             foreach (self::$created as $path) {
                 foreach ([$path, $path.'-wal', $path.'-shm'] as $file) {
-                    if (is_file($file) && !unlink($file)) {
-                        throw new \RuntimeException('Cannot remove test-created tenant database.');
+                    if (is_link(\dirname($file)) || is_link($file) || is_dir($file)) {
+                        throw new \RuntimeException('Refusing unsafe test-created tenant storage.');
                     }
+                    (new Filesystem())->remove($file);
                 }
             }
         } finally {

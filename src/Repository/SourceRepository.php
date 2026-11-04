@@ -21,10 +21,6 @@ final readonly class SourceRepository
 
     public function find(int $id): ?Source
     {
-        return $this->query()
-            ->andWhere('record.id = :id')
-            ->setParameter('id', $id)
-            ->getQuery()
-            ->getOneOrNullResult();
+        return $this->entityManager->find(Source::class, $id);
     }
 }

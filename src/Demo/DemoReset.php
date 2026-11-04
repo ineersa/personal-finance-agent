@@ -15,11 +15,12 @@ use League\Flysystem\FilesystemOperator;
 use Symfony\Bundle\FrameworkBundle\Console\Application;
 use Symfony\Component\DependencyInjection\Attribute\Autowire;
 use Symfony\Component\DependencyInjection\Attribute\Target;
+use Symfony\Component\Filesystem\Filesystem;
 use Symfony\Component\HttpKernel\KernelInterface;
 
 final readonly class DemoReset
 {
-    public function __construct(private EntityManagerInterface $em, private TenantManagers $tenants, private KernelInterface $kernel, #[Target('statements.storage')] private FilesystemOperator $storage, #[Autowire('%env(bool:LOCAL_DEMO_RESET_ENABLED)%')] private bool $enabled, private ?LoaderInterface $loader = null)
+    public function __construct(private EntityManagerInterface $em, private TenantManagers $tenants, private KernelInterface $kernel, #[Target('statements.storage')] private FilesystemOperator $storage, #[Autowire('%env(bool:LOCAL_DEMO_RESET_ENABLED)%')] private bool $enabled, private Filesystem $filesystem, private ?LoaderInterface $loader = null)
     {
     }
 
@@ -35,10 +36,10 @@ final readonly class DemoReset
         }
         $previous = [];
         foreach ($this->em->getRepository(User::class)->findAll() as $owner) {
+            $previous[] = $this->tenants->path($owner);
             if (\in_array('ROLE_ADMIN', $owner->getRoles(), true)) {
                 continue;
             }
-            $previous[] = $this->tenants->path($owner);
             $tenant = $this->tenants->open($owner);
             try {
                 if ((new StatementRepository($tenant))->hasActiveImports()) {
@@ -68,9 +69,10 @@ final readonly class DemoReset
         }
         foreach (array_diff($previous, $retained) as $path) {
             foreach ([$path, $path.'-wal', $path.'-shm'] as $file) {
-                if (is_link($file) || (is_file($file) && !unlink($file))) {
+                if (is_link(\dirname($file)) || is_link($file) || is_dir($file)) {
                     throw new ImportException('Demo records were restored but old tenant storage could not be removed.');
                 }
+                $this->filesystem->remove($file);
             }
         }
         try {

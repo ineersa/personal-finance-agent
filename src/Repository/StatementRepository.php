@@ -23,11 +23,7 @@ final readonly class StatementRepository
 
     public function find(int $id): ?Statement
     {
-        return $this->query()
-            ->andWhere('record.id = :id')
-            ->setParameter('id', $id)
-            ->getQuery()
-            ->getOneOrNullResult();
+        return $this->entityManager->find(Statement::class, $id);
     }
 
     public function transition(int $id, string $filename, ProcessingStatus $from, ProcessingStatus $to, ?string $error = null, bool $withoutTransactions = false): bool

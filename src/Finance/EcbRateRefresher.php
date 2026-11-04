@@ -8,11 +8,12 @@ use App\Entity\User;
 use App\Enum\ReportingCurrency;
 use App\Repository\CurrencyRateRepository;
 use Doctrine\ORM\EntityManagerInterface;
+use Psr\Log\LoggerInterface;
 use Symfony\Contracts\HttpClient\HttpClientInterface;
 
 final readonly class EcbRateRefresher
 {
-    public function __construct(private HttpClientInterface $client, private EntityManagerInterface $central, private TenantManagers $tenants)
+    public function __construct(private HttpClientInterface $client, private EntityManagerInterface $central, private TenantManagers $tenants, private LoggerInterface $logger)
     {
     }
 
@@ -21,16 +22,28 @@ final readonly class EcbRateRefresher
         $daily = $this->fetch('eurofxref-daily.xml');
         $history = null;
         $count = 0;
+        $failed = 0;
         foreach ($this->central->getRepository(User::class)->findAll() as $owner) {
             if (\in_array('ROLE_ADMIN', $owner->getRoles(), true)) {
                 continue;
             }
-            $em = $this->tenants->open($owner);
             try {
-                $count += $this->refreshTenant(new CurrencyRateRepository($em), $daily, $history);
-            } finally {
-                $this->tenants->release($em);
+                $em = null;
+                try {
+                    $em = $this->tenants->open($owner);
+                    $count += $this->refreshTenant(new CurrencyRateRepository($em), $daily, $history);
+                } finally {
+                    if (null !== $em) {
+                        $this->tenants->release($em);
+                    }
+                }
+            } catch (\Throwable) {
+                ++$failed;
+                $this->logger->warning('Tenant currency refresh failed.', ['owner_id' => $owner->getId()]);
             }
+        }
+        if (0 < $failed) {
+            throw new \RuntimeException(\sprintf('Currency refresh failed for %d tenants; updated %d calendar-day currency rates in completed writes.', $failed, $count));
         }
 
         return $count;

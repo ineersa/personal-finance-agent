@@ -6,15 +6,10 @@ namespace App\Controller\Admin;
 
 use App\Security\FinanceRecordVoter;
 use Doctrine\ORM\EntityManagerInterface;
-use Doctrine\ORM\QueryBuilder;
-use EasyCorp\Bundle\EasyAdminBundle\Collection\FieldCollection;
-use EasyCorp\Bundle\EasyAdminBundle\Collection\FilterCollection;
 use EasyCorp\Bundle\EasyAdminBundle\Config\Action;
 use EasyCorp\Bundle\EasyAdminBundle\Config\Actions;
 use EasyCorp\Bundle\EasyAdminBundle\Config\Crud;
 use EasyCorp\Bundle\EasyAdminBundle\Controller\AbstractCrudController;
-use EasyCorp\Bundle\EasyAdminBundle\Dto\EntityDto;
-use EasyCorp\Bundle\EasyAdminBundle\Dto\SearchDto;
 
 /**
  * @template TEntity of \App\Finance\Entity\FinanceRecord
@@ -35,18 +30,6 @@ abstract class OwnedCrudController extends AbstractCrudController
         return $actions->add(Crud::PAGE_INDEX, Action::DETAIL)->disable(Action::BATCH_DELETE);
     }
 
-    public function createIndexQueryBuilder(SearchDto $searchDto, EntityDto $entityDto, FieldCollection $fields, FilterCollection $filters): QueryBuilder
-    {
-        $owned = $this->ownedQuery()->select('record.id');
-        $query = parent::createIndexQueryBuilder($searchDto, $entityDto, $fields, $filters);
-        $query->andWhere('entity.id IN ('.$owned->getDQL().')');
-        foreach ($owned->getParameters() as $parameter) {
-            $query->setParameter($parameter->getName(), $parameter->getValue(), $parameter->getType());
-        }
-
-        return $query;
-    }
-
     public function persistEntity(EntityManagerInterface $entityManager, object $entityInstance): void
     {
         $this->denyAccessUnlessGranted(FinanceRecordVoter::ACCESS, $entityInstance);
@@ -59,6 +42,4 @@ abstract class OwnedCrudController extends AbstractCrudController
         $this->denyAccessUnlessGranted(FinanceRecordVoter::ACCESS, $entityInstance);
         parent::updateEntity($entityManager, $entityInstance);
     }
-
-    abstract protected function ownedQuery(): QueryBuilder;
 }

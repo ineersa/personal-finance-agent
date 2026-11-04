@@ -28,32 +28,37 @@ final readonly class ImportFailureListener
         if (!$message instanceof ProcessStatementMessage || !isset($message->storedFilename) || 'statement_import' !== $event->getReceiverName() || $event->willRetry()) {
             return;
         }
-        $owner = $this->entityManager->find(User::class, $message->ownerId);
-        if (null === $owner || \in_array('ROLE_ADMIN', $owner->getRoles(), true)) {
-            return;
-        }
-        $em = $this->tenants->open($owner);
         try {
-            $statements = new StatementRepository($em);
-            // Covers failures before handler construction, without exposing exception payloads.
-            $error = 'The worker could not handle this statement. Retry processing after checking worker availability.';
-            foreach ([ProcessingStatus::Queued, ProcessingStatus::Running] as $status) {
-                if ($statements->transition($message->statementId, $message->storedFilename, $status, ProcessingStatus::Failed, $error)) {
-                    $statement = $em->find(Statement::class, $message->statementId);
-                    if (null === $statement) {
+            $em = null;
+            try {
+                $owner = $this->entityManager->find(User::class, $message->ownerId);
+                if (null === $owner || \in_array('ROLE_ADMIN', $owner->getRoles(), true)) {
+                    return;
+                }
+                $em = $this->tenants->open($owner);
+                $statements = new StatementRepository($em);
+                // Covers failures before handler construction, without exposing exception payloads.
+                $error = 'The worker could not handle this statement. Retry processing after checking worker availability.';
+                foreach ([ProcessingStatus::Queued, ProcessingStatus::Running] as $status) {
+                    if ($statements->transition($message->statementId, $message->storedFilename, $status, ProcessingStatus::Failed, $error)) {
+                        $statement = $em->find(Statement::class, $message->statementId);
+                        if (null === $statement) {
+                            return;
+                        }
+                        $statement->processingStatus = ProcessingStatus::Failed;
+                        $statement->processingError = $error;
+                        $this->updates->publish($owner, $statement, []);
+
                         return;
                     }
-                    $statement->processingStatus = ProcessingStatus::Failed;
-                    $statement->processingError = $error;
-                    $this->updates->publish($owner, $statement, []);
-
-                    return;
+                }
+            } finally {
+                if (null !== $em) {
+                    $this->tenants->release($em);
                 }
             }
         } catch (\Throwable) {
-            $this->logger->warning('Statement failure update could not be completed.', ['statement_id' => $message->statementId]);
-        } finally {
-            $this->tenants->release($em);
+            $this->logger->warning('Statement failure update could not be completed.', ['owner_id' => $message->ownerId, 'statement_id' => $message->statementId]);
         }
     }
 }

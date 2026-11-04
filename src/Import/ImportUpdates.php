@@ -29,7 +29,7 @@ final readonly class ImportUpdates
         try {
             $this->hub->publish(new Update($this->topic->forUser($owner), $this->twig->render('statement/update.stream.html.twig', ['statement' => $statement, 'drafts' => $drafts, 'moneyLocale' => $owner->getMoneyLocale()]), true));
         } catch (\Throwable) {
-            $this->logger->warning('Statement live update unavailable.', ['statement_id' => $statement->getId()]);
+            $this->logger->warning('Statement live update unavailable.', ['owner_id' => $owner->getId(), 'statement_id' => $statement->getId()]);
         }
     }
 }
