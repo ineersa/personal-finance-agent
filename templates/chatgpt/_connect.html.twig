@@ -1,0 +1,12 @@
+{% set statuses = enum('App\\ChatGpt\\ConnectionStatus') %}
+{% if chatgpt_status == statuses.Permission %}
+    <p role="status">Sign-in saved, but plan usage is not enabled. Reconnect to grant permission.</p>
+{% elseif chatgpt_status == statuses.Reconnect %}
+    <p role="status">Your connection could not be verified. Please reconnect.</p>
+{% elseif chatgpt_status == statuses.Unavailable %}
+    <p role="status">Local ChatGPT connection is not configured for this instance.</p>
+{% endif %}
+<form method="post" action="{{ path(constant('App\\ChatGpt\\Connection::CONNECT_ROUTE')) }}" data-turbo="false">
+    <input type="hidden" name="_token" value="{{ csrf_token(constant('App\\ChatGpt\\Connection::CONNECT_CSRF')) }}">
+    <button class="chatgpt-button" type="submit"{% if chatgpt_status == statuses.Unavailable %} disabled{% endif %}>Continue with ChatGPT</button>
+</form>
