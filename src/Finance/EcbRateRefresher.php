@@ -50,9 +50,9 @@ final readonly class EcbRateRefresher
     }
 
     /** @param non-empty-array<string, non-empty-array<string, string>> $daily
-     * @param non-empty-array<string, non-empty-array<string, string>>|null $cachedHistory
+     * @param non-empty-array<string, non-empty-array<string, string>>|\Throwable|null $cachedHistory
      */
-    private function refreshTenant(CurrencyRateRepository $rates, array $daily, ?array &$cachedHistory): int
+    private function refreshTenant(CurrencyRateRepository $rates, array $daily, array|\Throwable|null &$cachedHistory): int
     {
         $published = array_key_last($daily);
         $currencies = array_keys($daily[$published]);
@@ -69,7 +69,15 @@ final readonly class EcbRateRefresher
         $firstMissing = $rates->firstUnconfirmedDay($start, $published, $currencies);
         $history = $daily;
         if (null !== $firstMissing) {
-            $history = $cachedHistory ??= $this->fetch('eurofxref-hist-90d.xml');
+            try {
+                $cachedHistory ??= $this->fetch('eurofxref-hist-90d.xml');
+            } catch (\Throwable $error) {
+                $cachedHistory = $error;
+            }
+            if ($cachedHistory instanceof \Throwable) {
+                throw new \RuntimeException('ECB recent history is unavailable.');
+            }
+            $history = $cachedHistory;
             if (array_key_last($history) !== $published) {
                 throw new \RuntimeException('ECB recent history has not caught up with the daily publication.');
             }

@@ -44,4 +44,6 @@ Tenant selection replaces per-row user ownership predicates for finance queries.
 
 Provisioning, deletion, fixture loading, test isolation and migration fan-out become application responsibilities. A private path does not replace correct connection lifetime or external-access restrictions. The clean fixture-backed cutover deliberately avoids compatibility infrastructure; destructive verification still requires verified task-owned storage.
 
+Serialize provisioning per tenant with Symfony Lock's `FlockStore` in the tenant database directory. Acquire before checking whether the database exists, and hold through migration, initial seeding and failed-initialization cleanup. Use the owner ID in the lock key, not the absolute database path, so host and container paths address the same lock file. Leave lock files to the native store lifecycle. HTTP and CLI processes must share that directory on a local filesystem supporting `flock`; this does not provide multi-host coordination. The default temporary-directory `LOCK_DSN=flock` is not used for provisioning.
+
 This ADR records the accepted target. It does not establish that tenant lifecycle, fixture setup, SQL isolation, precision or runtime bounds have been implemented or tested.
