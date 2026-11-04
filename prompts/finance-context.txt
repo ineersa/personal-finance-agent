@@ -1,5 +1,13 @@
 [user-context]
 <data_schemas>
+Tables:
+- source: financial account or card instrument associated with statements and transactions, not a merchant.
+- statement: uploaded bank statement, its private storage reference and import processing state.
+- financial_transaction: imported transaction rows, including editable drafts and approved records.
+- category: owner-local classification catalog for transactions.
+- currency_rate: ECB reference rates by calendar day and currency, quoted as currency units per EUR; EUR uses implicit rate 1.
+
+The actual SQLite definitions below include entity-maintained column comments and foreign-key relationships.
 {data_schemas}
 </data_schemas>
 <project_context>
