@@ -4,7 +4,7 @@ const NEAR_BOTTOM = 96;
 const MAX_INPUT_HEIGHT = 160;
 
 export default class extends Controller {
-    static targets = ['scroll', 'jump', 'input', 'newChat'];
+    static targets = ['scroll', 'jump', 'input'];
     following = true;
     summaries = new Set();
 
@@ -17,7 +17,6 @@ export default class extends Controller {
         this.resize();
         if (!this.hasScrollTarget) return;
         this.observer = new MutationObserver(() => {
-            this.updateNewChat();
             this.scrollTarget.querySelectorAll('details[id]').forEach(details => {
                 details.open = this.summaries.has(details.id);
             });
@@ -25,19 +24,12 @@ export default class extends Controller {
             else this.jumpTarget.hidden = false;
         });
         this.observer.observe(this.scrollTarget, { childList: true, subtree: true });
-        this.updateNewChat();
         this.jumpToLatest();
     }
 
     disconnect() {
         window.removeEventListener('resize', this.resize);
         this.observer?.disconnect();
-    }
-
-    updateNewChat() {
-        if (!this.hasNewChatTarget) return;
-        const state = this.scrollTarget.querySelector('[data-chat-state]')?.dataset.chatState;
-        this.newChatTarget.disabled = this.newChatTarget.dataset.chatBusyStates.split(' ').includes(state);
     }
 
     resizeInput() {

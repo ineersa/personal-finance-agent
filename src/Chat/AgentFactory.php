@@ -9,20 +9,21 @@ use Symfony\AI\Agent\Agent;
 use Symfony\AI\Agent\InputProcessor\SystemPromptInputProcessor;
 use Symfony\AI\Platform\Bridge\OpenAIChatGPT\Factory;
 use Symfony\AI\Platform\Bridge\OpenResponses\ModelCatalog;
+use Symfony\AI\Platform\Bridge\OpenResponses\ResponsesModel;
+use Symfony\AI\Platform\Capability;
+use Symfony\AI\Platform\Message\Content\File;
 use Symfony\AI\Platform\Platform;
 use Symfony\Component\DependencyInjection\Attribute\Autowire;
 use Symfony\Contracts\HttpClient\HttpClientInterface;
-use Twig\Environment;
 
 final readonly class AgentFactory
 {
-    public const string PROMPT_TEMPLATE = 'chat/system_prompt.txt.twig';
+    public const string PROMPT_FILE = '/prompts/chat.txt';
 
     public function __construct(
         private OAuthFactory $oauth,
         #[Autowire(service: 'app.chatgpt.http_client')] private HttpClientInterface $http,
-        #[Autowire(service: 'app.chat.model_catalog')] private ModelCatalog $catalog,
-        private Environment $twig,
+        #[Autowire('%kernel.project_dir%')] private string $projectDir,
     ) {
     }
 
@@ -31,10 +32,11 @@ final readonly class AgentFactory
         if ('' === $model) {
             throw new \LogicException('Configure a chat model.');
         }
-        $provider = Factory::createProvider($this->oauth->create($identity), $this->http, $this->catalog);
+        $catalog = new ModelCatalog([$model => ['class' => ResponsesModel::class, 'capabilities' => [Capability::INPUT_MESSAGES, Capability::OUTPUT_TEXT, Capability::THINKING]]]);
+        $provider = Factory::createProvider($this->oauth->create($identity), $this->http, $catalog);
 
         return new Agent(new Platform([$provider]), $model,
-            inputProcessors: [new SystemPromptInputProcessor($this->twig->render(self::PROMPT_TEMPLATE))],
+            inputProcessors: [new SystemPromptInputProcessor(File::fromFile($this->projectDir.self::PROMPT_FILE))],
             outputProcessors: [$output],
         );
     }

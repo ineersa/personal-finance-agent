@@ -29,10 +29,6 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     #[ORM\Column(length: 36, nullable: true)]
     private ?string $chatGptRegistrationId = null;
 
-    /** @deprecated Unused; retain mapping until a safe generated migration removes the legacy column. */
-    #[ORM\Column(length: 45, nullable: true)]
-    private ?string $chatGptHostId = null;
-
     #[ORM\Column(length: 180)]
     #[Assert\NotBlank]
     #[Assert\Email]

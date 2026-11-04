@@ -36,14 +36,14 @@ final class ChatTest extends TestCase
                 $page->getByLabel('Your message', ['exact' => true])->fill($question);
                 $page->getByRole('button', ['name' => 'Send message', 'exact' => true])->click();
                 $page->getByText($question, ['exact' => true])->waitFor();
-                $page->locator('[data-chat-status="completed"]')->waitFor(['timeout' => 120000]);
+                $page->locator('.chat-turn')->last()->locator('.chat-answer[data-chat-saved]')->waitFor(['timeout' => 120000]);
                 self::assertNotSame('', trim($page->locator('.chat-answer')->last()->textContent()));
 
                 $followUp = 'What code word did I just ask you to remember? Reply with that code only.';
                 $page->getByLabel('Your message', ['exact' => true])->fill($followUp);
                 $page->getByRole('button', ['name' => 'Send message', 'exact' => true])->click();
                 $page->getByText($followUp, ['exact' => true])->waitFor();
-                $page->locator('[data-chat-status="completed"]')->waitFor(['timeout' => 120000]);
+                $page->locator('.chat-turn')->last()->locator('.chat-answer[data-chat-saved]')->waitFor(['timeout' => 120000]);
                 self::assertStringContainsString($code, $page->locator('.chat-answer')->last()->textContent());
                 $page->reload();
                 self::assertStringContainsString($code, $page->locator('.chat-answer')->last()->textContent());

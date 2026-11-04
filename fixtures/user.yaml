@@ -4,6 +4,8 @@ App\Entity\User:
         email: demo@test.com
         password: demo
         reportingCurrency: '<(App\Enum\ReportingCurrency::CAD)>'
+        __calls:
+            - initializeChatGptIdentity: []
     administrator:
         email: admin@test.com
         password: admin

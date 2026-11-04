@@ -6,10 +6,14 @@ namespace App\Chat;
 
 use Symfony\AI\Agent\Output;
 use Symfony\AI\Agent\OutputProcessorInterface;
+use Symfony\AI\Platform\Bridge\OpenAIChatGPT\MessageItem;
 use Symfony\AI\Platform\Bridge\OpenAIChatGPT\Result\Stream\Delta\MessageComplete;
 use Symfony\AI\Platform\Result\MultiPartResult;
 use Symfony\AI\Platform\Result\ResultInterface;
+use Symfony\AI\Platform\Result\Stream\Delta\CommentaryDelta;
 use Symfony\AI\Platform\Result\Stream\Delta\DeltaInterface;
+use Symfony\AI\Platform\Result\Stream\Delta\TextDelta;
+use Symfony\AI\Platform\Result\Stream\Delta\ThinkingDelta;
 use Symfony\AI\Platform\Result\Stream\Delta\ThinkingSignature;
 use Symfony\AI\Platform\Result\TextResult;
 use Symfony\AI\Platform\Result\ThinkingResult;
@@ -22,17 +26,38 @@ final class NativeAssistantOutput implements OutputProcessorInterface
     /** @var list<ThinkingResult> */
     private array $reasoning = [];
     private int $completedItems = 0;
+    /** @var array{reasoning: string, commentary: string, answer: string} */
+    private array $transcript = ['reasoning' => '', 'commentary' => '', 'answer' => ''];
+    /** @var array<string, list<string>> */
+    private array $completedText = [];
+
+    /** @return array{reasoning: string, commentary: string, answer: string} */
+    public function transcript(): array
+    {
+        return $this->transcript;
+    }
 
     public function observe(DeltaInterface $delta): void
     {
         if ($delta instanceof MessageComplete) {
             $text = $delta->getContent();
+            $phase = $text->getPhase() ?? (MessageItem::fromText($text)['phase'] ?? null);
             $index = $delta->getOutputIndex() ?? $this->completedItems;
             if (isset($this->messages[$index])) {
                 throw new \RuntimeException('The native assistant response has ambiguous message ordering.');
             }
-            $this->messages[$index] = new TextResult($text->getText(), $text->getSignature(), $text->getPhase());
+            $this->messages[$index] = new TextResult($text->getText(), $text->getSignature(), $phase);
+            $field = Workspace::COMMENTARY_PHASE === $phase ? 'commentary' : 'answer';
+            $this->completedText[$field][] = $text->getText();
+            $this->transcript[$field] = implode("\n\n", $this->completedText[$field]);
             ++$this->completedItems;
+        } elseif ($delta instanceof TextDelta) {
+            $field = Workspace::COMMENTARY_PHASE === $delta->getPhase() ? 'commentary' : 'answer';
+            $this->transcript[$field] .= $delta->getText();
+        } elseif ($delta instanceof CommentaryDelta) {
+            $this->transcript['commentary'] .= $delta->getCommentary();
+        } elseif ($delta instanceof ThinkingDelta) {
+            $this->transcript['reasoning'] .= $delta->getThinking();
         }
         if ($delta instanceof ThinkingSignature) {
             // One full native reasoning item, not one item per readable summary fragment.

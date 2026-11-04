@@ -13,6 +13,7 @@ use App\Security\FinanceRecordVoter;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\Messenger\Exception\TransportException;
 use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\Security\Http\Attribute\CurrentUser;
 use Symfony\Component\Security\Http\Attribute\IsCsrfTokenValid;
@@ -27,30 +28,35 @@ final class ChatSubmitController extends AbstractController
     public function __invoke(Request $request, #[CurrentUser] User $user, Workspace $workspace, Connection $connection): Response
     {
         $question = trim($request->request->getString('question'));
+        $status = $connection->status($user);
         if ('' === $question) {
             $this->addFlash('warning', 'Write a message first.');
-        } elseif (ConnectionStatus::Connected !== $connection->status($user)) {
+        } elseif (ConnectionStatus::Connected !== $status) {
             $this->addFlash('warning', 'Connect ChatGPT before sending a message.');
         } else {
             try {
                 $workspace->submit($user, $question);
+
+                return $this->redirectToRoute(Workspace::CHAT_ROUTE, status: Response::HTTP_SEE_OTHER);
             } catch (\DomainException $error) {
                 $this->addFlash('warning', $error->getMessage());
+            } catch (TransportException) {
+                $this->addFlash('warning', 'The message could not be sent to the worker. Your draft is retained below.');
             }
         }
 
-        return $this->redirectToRoute(Workspace::CHAT_ROUTE, status: Response::HTTP_SEE_OTHER);
+        return $this->render('home/index.html.twig', [
+            'chatgpt_status' => $status,
+            'chat' => ChatUpdates::view($workspace->current($user)),
+            'question' => $question,
+        ], new Response(status: Response::HTTP_UNPROCESSABLE_ENTITY));
     }
 
     #[Route('/home/chat/new', name: Workspace::NEW_ROUTE, methods: [Request::METHOD_POST])]
     #[IsCsrfTokenValid(Workspace::NEW_CSRF)]
     public function startNew(#[CurrentUser] User $user, Workspace $workspace): Response
     {
-        try {
-            $workspace->startNew($user);
-        } catch (\DomainException $error) {
-            $this->addFlash('warning', $error->getMessage());
-        }
+        $workspace->startNew($user);
 
         return $this->redirectToRoute(Workspace::CHAT_ROUTE, status: Response::HTTP_SEE_OTHER);
     }

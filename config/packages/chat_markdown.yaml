@@ -7,6 +7,8 @@ framework:
     html_sanitizer:
         sanitizers:
             app.chat:
+                # Preserve complete local-demo replies; sanitization remains active, without an input-size DoS bound.
+                max_input_length: -1
                 allow_safe_elements: true
                 drop_elements: [img, picture, source, video, audio, iframe]
                 allowed_link_schemes: [https, http, mailto]

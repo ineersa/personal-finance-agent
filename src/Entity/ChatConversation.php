@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace App\Entity;
 
-use App\Enum\ProcessingStatus;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Uid\Uuid;
 
@@ -14,9 +13,6 @@ class ChatConversation extends UserRecord
     #[ORM\Id]
     #[ORM\Column(length: 36)]
     public string $id;
-
-    #[ORM\Column(length: 36, nullable: true)]
-    public ?string $generationId = null;
 
     #[ORM\Column(length: 100)]
     public string $model;
@@ -36,12 +32,6 @@ class ChatConversation extends UserRecord
     #[ORM\Column(type: 'json')]
     public array $turns = [];
 
-    #[ORM\Column(enumType: ProcessingStatus::class)]
-    public ProcessingStatus $status = ProcessingStatus::Completed;
-
-    #[ORM\Column(type: 'text', nullable: true)]
-    public ?string $error = null;
-
     public function __construct(
         User $user,
         #[ORM\Column(length: 36, unique: true)]
@@ -53,10 +43,5 @@ class ChatConversation extends UserRecord
         $this->id = Uuid::v7()->toRfc4122();
         $this->model = $model;
         $this->reasoningEffort = $reasoningEffort;
-    }
-
-    public function busy(): bool
-    {
-        return \in_array($this->status, [ProcessingStatus::Queued, ProcessingStatus::Running], true);
     }
 }

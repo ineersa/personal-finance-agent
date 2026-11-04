@@ -36,17 +36,6 @@ services:
 
     Symfony\AI\Platform\Serializer\MessageBagNormalizer: ~
 
-    app.chat.model_catalog:
-        class: Symfony\AI\Platform\Bridge\OpenResponses\ModelCatalog
-        arguments:
-            $models:
-                '%env(CHAT_MODEL)%':
-                    class: Symfony\AI\Platform\Bridge\OpenResponses\ResponsesModel
-                    capabilities:
-                        - !php/const Symfony\AI\Platform\Capability::INPUT_MESSAGES
-                        - !php/const Symfony\AI\Platform\Capability::OUTPUT_TEXT
-                        - !php/const Symfony\AI\Platform\Capability::THINKING
-
     # Native and untraced: OAuth credentials must not enter the HTTP profiler.
     app.chatgpt.http_client:
         class: Symfony\Contracts\HttpClient\HttpClientInterface
