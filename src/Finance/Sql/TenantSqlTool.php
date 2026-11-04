@@ -26,15 +26,6 @@ TEXT;
     {
     }
 
-    // The container service remains unbound; each generation receives its own copy.
-    public function forOwner(User $owner): self
-    {
-        $tool = clone $this;
-        $tool->owner = $owner;
-
-        return $tool;
-    }
-
     /**
      * @param string $sql One read-only SQLite SELECT query using the supplied data_schemas
      *
@@ -51,5 +42,14 @@ TEXT;
             // Do not expose SQL exceptions, financial record contents or private paths.
             return ['error' => 'SQL failed or exceeded its input/result limits.'];
         }
+    }
+
+    // The container service remains unbound; each generation receives its own copy.
+    public function forOwner(User $owner): self
+    {
+        $tool = clone $this;
+        $tool->owner = $owner;
+
+        return $tool;
     }
 }
