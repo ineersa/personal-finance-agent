@@ -13,6 +13,7 @@ parameters:
         - castor.php
         - .php-cs-fixer.dist.php
         - bin/console
+        - bin/finance-sql.php
         - public/index.php
         - mate/config.php
     tmpDir: var/phpstan

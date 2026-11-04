@@ -27,7 +27,7 @@ Give analysis a separate read-only connection to the selected tenant file, not t
 
 Drafts are visible within the owner's database. Instruct the model to use `is_draft = 0` for ordinary financial analysis unless the user explicitly asks about drafts. Draft exclusion is a model-behavior rule, not a security boundary. Approval still validates and atomically promotes records. This replaces earlier requirements for technically enforced approved-only SQL visibility.
 
-The tenant split does not solve exact SQL money calculations, mixed currencies, unsafe external capabilities or execution/output bounds. Those remain requirements of the SQL tool, and must be verified before exposing it. Do not describe whole-tenant read access as unrestricted process access.
+The tenant split does not solve SQL money calculations, mixed currencies, unsafe external capabilities or execution/output bounds. [ADR 0024](0024-bounded-tenant-sql-subprocess.md) selects bounded subprocess execution and amends the exact-SQL-money requirement to approximate SQLite builtins for the current slice. Capability and execution bounds still require verification before exposure. Do not describe whole-tenant read access as unrestricted process access.
 
 ## Alternatives considered
 

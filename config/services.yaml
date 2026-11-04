@@ -30,6 +30,8 @@ services:
             - '../src/Finance/Entity/'
             - '../src/Finance/Migrations/'
             - '../src/Finance/RejectTenantConnectionMiddleware.php'
+            - '../src/Finance/Sql/TenantSqlTool.php'
+            - '../src/Finance/Sql/ReadOnlyQuery.php'
             - '../src/DataFixtures/'
             - '../src/Doctrine/ExactDecimalType.php'
             - '../src/Doctrine/SqliteImmediateTransactionConnection.php'
