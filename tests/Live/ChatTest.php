@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace App\Tests\Live;
 
-use PHPUnit\Framework\TestCase;
 use App\Chat\ChatActivity;
 use App\Finance\Sql\TenantSqlTool;
+use PHPUnit\Framework\TestCase;
 use Playwright\PlaywrightFactory;
 
 final class ChatTest extends TestCase

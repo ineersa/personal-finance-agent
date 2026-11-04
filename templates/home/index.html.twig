@@ -45,11 +45,11 @@
             </div>
             <div class="chat-compose-area">
                 <button class="chat-jump" type="button" data-chat-view-target="jump" data-action="chat-view#jumpToLatest" hidden>Jump to latest ↓</button>
-                <form action="{{ path(constant('App\\Chat\\Workspace::SUBMIT_ROUTE')) }}" method="post" class="chat-composer">
+                <form action="{{ path(constant('App\\Chat\\Workspace::SUBMIT_ROUTE')) }}" method="post" class="chat-composer" data-turbo="true">
                     <input type="hidden" name="_token" value="{{ csrf_token(constant('App\\Chat\\Workspace::SUBMIT_CSRF')) }}" data-controller="csrf-protection">
                     {% include 'chat/_composer.html.twig' %}
                 </form>
-                <p class="chat-disclosure">Messages are sent to ChatGPT. Financial tools and charts are not connected yet.</p>
+                <p class="chat-disclosure">Messages and queried financial records are sent to ChatGPT. Charts are not connected yet.</p>
             </div>
         {% endif %}
     </div>

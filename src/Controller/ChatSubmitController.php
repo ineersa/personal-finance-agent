@@ -38,6 +38,13 @@ final class ChatSubmitController extends AbstractController
             try {
                 $workspace->submit($user, $question);
 
+                if (TurboBundle::STREAM_FORMAT === $request->getPreferredFormat()) {
+                    $response = $this->render('chat/submitted.stream.html.twig', ['chat' => ChatUpdates::view($workspace->current($user))]);
+                    $response->headers->set('Content-Type', TurboBundle::STREAM_MEDIA_TYPE);
+
+                    return $response;
+                }
+
                 return $this->redirectToRoute(Workspace::CHAT_ROUTE, status: Response::HTTP_SEE_OTHER);
             } catch (\DomainException $error) {
                 $this->addFlash('warning', $error->getMessage());
