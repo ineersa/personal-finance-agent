@@ -101,6 +101,7 @@ final class StatementImportTest extends TestCase
                 self::assertStringContainsString('Refund', $page->getByRole('combobox', ['name' => 'Meaning', 'exact' => true])->textContent());
                 self::assertStringContainsString('Subscription', $page->getByRole('combobox', ['name' => 'Recurrence', 'exact' => true])->textContent());
                 $page->goto($url.'/home/statement/'.$id);
+                self::assertStringStartsWith('2026-10-01T', (string) $page->locator('.field-group')->filter(['hasText' => 'Statement Date'])->locator('time')->getAttribute('datetime'));
                 $page->locator('.action-delete')->click();
                 $page->locator('#modal-action-confirmation-button')->waitFor(['state' => 'visible']);
                 $page->locator('#modal-action-confirmation-button')->click();
