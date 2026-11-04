@@ -11,16 +11,17 @@ use Symfony\Component\Mercure\HubInterface;
 use Symfony\Component\Mercure\Update;
 use Twig\Environment;
 
+/** @phpstan-import-type Entry from ChatActivity */
 final readonly class ChatUpdates
 {
     public function __construct(private HubInterface $hub, private ChatTopic $topic, private Environment $twig, private LoggerInterface $logger)
     {
     }
 
-    /** @return array{turns: list<array{question: string, reasoning: string, commentary: string, answer: string}>, execution: ?string, error: ?string} */
+    /** @return array{turns: list<array{question: string, reasoning: string, commentary: string, answer: string, activity?: list<Entry>}>, conversation_id: ?string, execution: ?string, error: ?string} */
     public static function view(?ChatConversation $conversation, ?ExecutionInterface $execution = null, ?string $error = null): array
     {
-        return ['turns' => $conversation->turns ?? [], 'execution' => $execution?->getStatus()->value, 'error' => $error];
+        return ['turns' => $conversation->turns ?? [], 'conversation_id' => $conversation?->id, 'execution' => $execution?->getStatus()->value, 'error' => $error];
     }
 
     public function publish(ChatConversation $conversation, ?ExecutionInterface $execution = null, ?string $error = null): void

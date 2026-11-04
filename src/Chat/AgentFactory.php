@@ -16,6 +16,7 @@ use Symfony\AI\Platform\Capability;
 use Symfony\AI\Platform\Message\Content\File;
 use Symfony\AI\Platform\Platform;
 use Symfony\Component\DependencyInjection\Attribute\Autowire;
+use Symfony\Contracts\EventDispatcher\EventDispatcherInterface;
 use Symfony\Contracts\HttpClient\HttpClientInterface;
 
 final readonly class AgentFactory
@@ -30,7 +31,7 @@ final readonly class AgentFactory
     ) {
     }
 
-    public function create(User $owner, string $identity, string $model, NativeAssistantOutput $output): Agent
+    public function create(User $owner, string $identity, string $model, NativeAssistantOutput $output, EventDispatcherInterface $events): Agent
     {
         if ('' === $model) {
             throw new \LogicException('Configure a chat model.');
@@ -41,7 +42,7 @@ final readonly class AgentFactory
         return new Agent(new Platform([$provider]), $model,
             inputProcessors: [new SystemPromptInputProcessor(File::fromFile($this->projectDir.self::PROMPT_FILE))],
             outputProcessors: [$output],
-            toolbox: $this->tools->create($owner),
+            toolbox: $this->tools->create($owner, $events),
         );
     }
 }

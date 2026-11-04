@@ -5,7 +5,8 @@ declare(strict_types=1);
 namespace App\Tests\Live;
 
 use PHPUnit\Framework\TestCase;
-use Playwright\Dialog\DialogInterface;
+use App\Chat\ChatActivity;
+use App\Finance\Sql\TenantSqlTool;
 use Playwright\PlaywrightFactory;
 
 final class ChatTest extends TestCase
@@ -30,30 +31,35 @@ final class ChatTest extends TestCase
                 $page->waitForURL('**/home/**');
                 $page->goto($url.'/home/chat');
                 self::assertTrue($page->getByRole('button', ['name' => 'Send message', 'exact' => true])->isVisible(), 'The owner must connect ChatGPT in this isolated stack before the live test.');
-                self::assertSame(0, $page->locator('.chat-turn')->count(), 'Start with an empty conversation; this test never clears existing owner messages.');
+                $initialTurns = $page->locator('.chat-turn')->count();
                 $code = 'cobalt-lantern';
                 $question = 'Use finance_query to find the description of the approved CAD credit dated 2024-11-01 with amount 2860.00 in my records. Quote that description in your answer, then remember the code word '.$code.'.';
                 $page->getByLabel('Your message', ['exact' => true])->fill($question);
                 $page->getByRole('button', ['name' => 'Send message', 'exact' => true])->click();
-                $page->getByText($question, ['exact' => true])->waitFor();
+                $page->locator('.chat-turn')->nth($initialTurns)->getByText($question, ['exact' => true])->waitFor();
                 $page->locator('.chat-turn')->last()->locator('.chat-answer[data-chat-saved]')->waitFor(['timeout' => 120000]);
                 self::assertStringContainsString('PAYROLL LANTERN LABS', $page->locator('.chat-answer')->last()->textContent());
+                $tool = $page->locator('.chat-turn')->nth($initialTurns)->locator('.chat-tool')->filter(['hasText' => TenantSqlTool::QUERY_NAME])->first();
+                self::assertSame(ChatActivity::COMPLETED, $tool->getAttribute('data-tool-status'));
+                self::assertNull($tool->getAttribute('open'));
+                $callId = $tool->getAttribute('data-tool-call-id');
+                self::assertNotEmpty($callId);
+                $tool->locator('summary')->click();
+                self::assertStringContainsString('SELECT', strtoupper($tool->locator('.chat-tool-arguments')->textContent()));
+                self::assertStringContainsString('PAYROLL LANTERN LABS', $tool->locator('.chat-tool-result')->textContent());
 
                 $followUp = 'What code word did I just ask you to remember? Reply with that code only.';
                 $page->getByLabel('Your message', ['exact' => true])->fill($followUp);
                 $page->getByRole('button', ['name' => 'Send message', 'exact' => true])->click();
-                $page->getByText($followUp, ['exact' => true])->waitFor();
+                $page->locator('.chat-turn')->nth($initialTurns + 1)->getByText($followUp, ['exact' => true])->waitFor();
                 $page->locator('.chat-turn')->last()->locator('.chat-answer[data-chat-saved]')->waitFor(['timeout' => 120000]);
                 self::assertStringContainsString($code, $page->locator('.chat-answer')->last()->textContent());
+                self::assertNotNull($tool->getAttribute('open'));
                 $page->reload();
                 self::assertStringContainsString($code, $page->locator('.chat-answer')->last()->textContent());
-                $page->events()->onDialog(static function (DialogInterface $dialog): void {
-                    $dialog->accept();
-                });
-                $page->getByRole('button', ['name' => 'New chat', 'exact' => true])->click();
-                $page->getByRole('heading', ['name' => 'What’s on your mind?', 'exact' => true])->waitFor();
-                self::assertSame(0, $page->locator('.chat-turn')->count());
-                self::assertTrue($page->getByRole('button', ['name' => 'Send message', 'exact' => true])->isVisible());
+                self::assertSame($callId, $tool->getAttribute('data-tool-call-id'));
+                $tool->locator('summary')->click();
+                self::assertStringContainsString('PAYROLL LANTERN LABS', $tool->locator('.chat-tool-result')->textContent());
             } finally {
                 $context->close();
             }

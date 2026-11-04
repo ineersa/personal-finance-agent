@@ -7,6 +7,7 @@ namespace App\Finance\Sql;
 use App\Entity\User;
 use App\Finance\TenantManagers;
 use Symfony\AI\Agent\Toolbox\Toolbox;
+use Symfony\Contracts\EventDispatcher\EventDispatcherInterface;
 
 final readonly class TenantSqlToolFactory
 {
@@ -15,10 +16,10 @@ final readonly class TenantSqlToolFactory
     }
 
     // Call once per generation with the persisted owner loaded by the application, never model input.
-    public function create(User $owner): Toolbox
+    public function create(User $owner, ?EventDispatcherInterface $events = null): Toolbox
     {
         // Native Toolbox defaults to NullLogger: debug logging would record SQL arguments.
-        return new Toolbox([$this->bind($owner)]);
+        return new Toolbox([$this->bind($owner)], eventDispatcher: $events);
     }
 
     /** @return array<string, mixed> */

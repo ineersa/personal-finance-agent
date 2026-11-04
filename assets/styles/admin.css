@@ -169,3 +169,11 @@ body.ea .main-content:has(.finance-chat) .content-wrapper { padding-top: 12px; }
     .finance-chat .composer-toolbar { justify-content: flex-end; }
     .chat-disclosure { font-size: 10px; }
 }
+
+.chat-activity { list-style: none; margin: 0 0 1.25rem; padding: 0 0 0 1rem; border-left: 1px solid #444449; }
+.chat-activity-entry + .chat-activity-entry { margin-top: .8rem; }
+.chat-tool { border: 1px solid #444449; border-radius: .6rem; padding: .7rem .9rem; }
+.chat-tool summary { cursor: pointer; font-family: monospace; }
+.chat-tool-status { font-family: inherit; font-size: .8em; opacity: .65; margin-left: .7rem; }
+.chat-tool h4 { font-size: .8rem; margin: 1rem 0 .4rem; }
+.chat-tool pre { white-space: pre-wrap; overflow-wrap: anywhere; max-height: 22rem; overflow: auto; margin: 0; font-size: .8rem; }

@@ -8,10 +8,13 @@ use App\Enum\ReportingCurrency;
 use Symfony\AI\Agent\Toolbox\Attribute\AsTool;
 use Symfony\AI\Platform\Tool\ToolEffectHints;
 
-#[AsTool(name: 'finance_schema', description: 'Read current tenant finance table definitions and reporting currency.', method: 'schema', effectHints: new ToolEffectHints(readOnlyHint: true, openWorldHint: false))]
-#[AsTool(name: 'finance_query', description: 'Execute one bounded read-only SQLite query against the current owner finance database.', effectHints: new ToolEffectHints(readOnlyHint: true, openWorldHint: false))]
+#[AsTool(name: self::SCHEMA_NAME, description: 'Read current tenant finance table definitions and reporting currency.', method: 'schema', effectHints: new ToolEffectHints(readOnlyHint: true, openWorldHint: false))]
+#[AsTool(name: self::QUERY_NAME, description: 'Execute one bounded read-only SQLite query against the current owner finance database.', effectHints: new ToolEffectHints(readOnlyHint: true, openWorldHint: false))]
 final readonly class TenantSqlTool
 {
+    public const string SCHEMA_NAME = 'finance_schema';
+    public const string QUERY_NAME = 'finance_query';
+
     public function __construct(private SqlExecutor $executor, private string $path, private ReportingCurrency $currency)
     {
     }
