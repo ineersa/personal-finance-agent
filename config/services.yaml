@@ -8,12 +8,15 @@
 # https://symfony.com/doc/current/best_practices.html#use-parameters-for-application-configuration
 parameters:
     env(FINANCE_DATABASE_URL): 'sqlite:///%kernel.project_dir%/var/tenant-schema.db'
+    app.chatgpt.installation_id: 'urn:uuid:8d42fa1c-26d1-448b-8a2e-45ea61c50ec4'
     env(JEV_API_KEY): ''
     env(JEV_BASE_URL): 'https://api.typesafe.ai'
     env(JEV_MODEL): 'jev-1.14.0'
     env(LOCAL_DEMO_RESET_ENABLED): '0'
     env(CHATGPT_CALLBACK_PORT): !php/const Symfony\AI\Platform\Bridge\OpenAIChatGPT\Auth\OAuthConfig::DEFAULT_PORT
     env(CHATGPT_FINANCE_URL): ''
+    env(CHAT_MODEL): 'gpt-6-luna'
+    env(CHAT_REASONING_EFFORT): 'low'
 
 services:
     # default configuration for services in *this* file
@@ -36,6 +39,8 @@ services:
             - '../src/Doctrine/ExactDecimalType.php'
             - '../src/Doctrine/SqliteImmediateTransactionConnection.php'
             - '../src/Doctrine/SqliteImmediateTransactionDriver.php'
+
+    Symfony\AI\Platform\Serializer\MessageBagNormalizer: ~
 
     # Native and untraced: OAuth credentials must not enter the HTTP profiler.
     app.chatgpt.http_client:
@@ -107,6 +112,9 @@ services:
             $httpClient: '@app.jev.http_client'
             $modelCatalog: '@app.jev.model_catalog'
             $baseUrl: '%env(JEV_BASE_URL)%'
+
+    League\CommonMark\Extension\Table\TableExtension:
+        tags: ['twig.markdown.league_extension']
 
 when@dev: &fixture_services
     services:

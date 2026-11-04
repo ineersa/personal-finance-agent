@@ -15,23 +15,26 @@
         <h2 id="chatgpt-heading">ChatGPT connection</h2>
         {% if chatgpt_status == statuses.Connected %}
             <p class="chatgpt-account">{{ chatgpt_identity ?? 'Connected account · display details unavailable' }}</p>
-            <p role="status">ChatGPT connected. Chat generation is not available yet.</p>
+            <p role="status">ChatGPT connected.</p>
         {% elseif chatgpt_status == statuses.Disconnected %}
             <p role="status">No ChatGPT account connected.</p>
         {% endif %}
-        <p>One ChatGPT account can be active at a time. Disconnect before connecting a different account. Your Finance login is unchanged.</p>
-        <div class="chatgpt-settings-actions">
-            {% if chatgpt_status in [statuses.Connected, statuses.Permission, statuses.Reconnect] %}
+        {% if chatgpt_status == statuses.Connected %}
+            <p class="chatgpt-settings-help">Disconnecting keeps this account’s registration so you can reconnect later.</p>
+        {% else %}
+            <div class="chatgpt-settings-connect">
+                {% include 'chatgpt/_connect.html.twig' %}
+            </div>
+        {% endif %}
+        {% if chatgpt_status in [statuses.Connected, statuses.Permission, statuses.Reconnect] %}
+            <div class="chatgpt-settings-actions">
                 <a class="btn btn-secondary" href="{{ constant('Symfony\\AI\\Platform\\Bridge\\OpenAIChatGPT\\Auth\\OAuthConfig::USAGE_URL') }}" rel="noreferrer">Manage usage</a>
                 <form method="post" action="{{ path(constant('App\\ChatGpt\\Connection::DISCONNECT_ROUTE')) }}" data-turbo="false">
                     <input type="hidden" name="_token" value="{{ csrf_token(constant('App\\ChatGpt\\Connection::DISCONNECT_CSRF')) }}">
                     <button class="btn btn-outline-danger" type="submit">Disconnect ChatGPT</button>
                 </form>
-            {% endif %}
-            {% if chatgpt_status != statuses.Connected %}
-                {% include 'chatgpt/_connect.html.twig' %}
-            {% endif %}
-        </div>
+            </div>
+        {% endif %}
     </section>
     {% if canResetDemo %}
         <section class="import-summary demo-reset-settings">

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\ChatGpt;
 
 use Symfony\AI\Platform\Bridge\OpenAIChatGPT\Auth\AuthFileStore;
+use Symfony\AI\Platform\Bridge\OpenAIChatGPT\Auth\AuthStorageInterface;
 use Symfony\AI\Platform\Bridge\OpenAIChatGPT\Auth\IdTokenVerifier;
 use Symfony\AI\Platform\Bridge\OpenAIChatGPT\Auth\OAuthConfig;
 use Symfony\AI\Platform\Bridge\OpenAIChatGPT\Auth\OAuthService;
@@ -24,15 +25,20 @@ final readonly class OAuthFactory
         private LockFactory $locks,
         private ClockInterface $clock,
         #[Autowire('%kernel.project_dir%/var/private/chatgpt-auth')] private string $directory,
+        #[Autowire('%app.chatgpt.installation_id%')] private string $installationId,
+        private ?AuthStorageInterface $storageOverride = null,
     ) {
     }
 
-    public function storage(string $identity): AuthFileStore
+    public function storage(string $identity): AuthStorageInterface
     {
+        if (null !== $this->storageOverride) {
+            return $this->storageOverride;
+        }
         // Separate from the previous encrypted store; existing credentials are never migrated.
         $this->filesystem->mkdir($this->directory, 0700);
 
-        return new AuthFileStore($this->directory.'/'.$identity.'.json', $this->locks, $this->filesystem);
+        return new AuthFileStore($this->directory.'/'.$identity.'.json', $this->locks, $this->filesystem, $this->installationId);
     }
 
     public function create(string $identity): OAuthService

@@ -21,10 +21,12 @@
         "fabpot/amphp-sqlite3": "dev-development",
         "firebase/php-jwt": "^7.1",
         "ineersa/sqlite-queue": "dev-main",
-        "ineersa/symfony-ai-openai-chatgpt-platform": "^0.3",
+        "ineersa/symfony-ai-openai-chatgpt-platform": "^0.3.1",
+        "league/commonmark": "^2.10",
         "league/flysystem-bundle": "^3.0",
         "symfony/ai-agent": "~1.0.0@beta",
         "symfony/ai-decision-platform": "~1.0.0@beta",
+        "symfony/ai-open-responses-platform": "~1.0.0@beta",
         "symfony/ai-platform": "~1.0.0@beta",
         "symfony/ai-type-safe-platform": "~1.0.0@beta",
         "symfony/asset": "8.2.*@dev",
@@ -35,6 +37,7 @@
         "symfony/filesystem": "8.2.*@dev",
         "symfony/flex": "^2.10",
         "symfony/framework-bundle": "8.2.*@dev",
+        "symfony/html-sanitizer": "8.2.*",
         "symfony/http-client": "8.2.*@dev",
         "symfony/lock": "8.2.*@dev",
         "symfony/mercure-bundle": "^0.6.1",
@@ -49,6 +52,7 @@
         "symfony/ux-turbo": "^3.6",
         "symfony/yaml": "8.2.*@dev",
         "twig/intl-extra": "^3.0",
+        "twig/markdown-extra": "^3.29",
         "twig/twig": "^3.24"
     },
     "repositories": [
@@ -112,6 +116,7 @@
         "symfony/ai-mate": "^0.15.0",
         "symfony/ai-monolog-mate-extension": "^0.15.0",
         "symfony/ai-symfony-mate-extension": "^0.15.0",
+        "symfony/expression-language": "8.1.9",
         "symfony/maker-bundle": "^1.68",
         "symfony/web-profiler-bundle": "8.2.*@dev"
     },

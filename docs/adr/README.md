@@ -30,6 +30,7 @@ ADRs record significant technical decisions, their context, and their consequenc
 | [0022](0022-local-chatgpt-connection.md) | Accepted | Connect ChatGPT per Finance user through a local loopback callback with package-managed private credential files before chat generation. |
 | [0023](0023-per-user-finance-databases.md) | Accepted | Keep identity central and authoritative finance data in per-user SQLite databases; categories are tenant-local, rates ECB-maintained, and SQL may see drafts. |
 | [0024](0024-bounded-tenant-sql-subprocess.md) | Accepted | Bound tenant SQL in a short-lived subprocess; use SQLite builtins with approximate monetary results. |
+| [0023](0025-basic-chatgpt-worker-chat.md) | Accepted | Start multi-turn ChatGPT chat through Agent, Messenger and private Turbo streams, with native signed history and an editable prompt. |
 
 ## Recording decisions
 
