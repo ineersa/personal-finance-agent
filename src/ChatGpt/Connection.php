@@ -49,7 +49,7 @@ final readonly class Connection
         if ('' === $this->financeUrl) {
             return ConnectionStatus::Unavailable;
         }
-        $identity = $user->getChatGptIdentity();
+        $identity = $user->getChatGptRegistrationId();
         if (null === $identity) {
             return ConnectionStatus::Disconnected;
         }
@@ -77,7 +77,7 @@ final readonly class Connection
         $owner = $user->getId() ?? throw new \LogicException('An application account is required.');
         $identity = $user->initializeChatGptIdentity();
         $this->em->flush();
-        $request = $this->oauth->create($identity)->beginAuthorization(true);
+        $request = $this->oauth->create($user->getChatGptRegistrationId() ?? $identity)->beginAuthorization();
         $this->filesystem->mkdir($this->attemptDirectory, 0700);
         $this->filesystem->chmod($this->attemptDirectory, 0700);
         // Only the cross-host handoff is application-owned; the package owns all OAuth state.
@@ -121,7 +121,7 @@ final readonly class Connection
             throw new AuthException('Connection owner is no longer available.');
         }
         $request = $attempt['request'];
-        $this->oauth->create($attempt['identity'])->completeAuthorization(new AuthorizationRequestDTO(
+        $this->oauth->create($user->getChatGptRegistrationId() ?? throw new AuthException('Connection owner is no longer available.'))->completeAuthorization(new AuthorizationRequestDTO(
             '', $request['state'], $request['nonce'], $request['verifier'], $request['registeredClientId'],
         ), $callback);
 
@@ -130,19 +130,19 @@ final readonly class Connection
 
     public function disconnect(User $user): void
     {
-        $identity = $user->getChatGptIdentity();
+        $identity = $user->getChatGptRegistrationId();
         if (null !== $identity) {
             // Revoke first: failure preserves the existing grant and account namespace.
             $this->oauth->create($identity)->disconnect();
+            $user->retainChatGptRegistration();
             $user->renewChatGptIdentity();
             $this->em->flush();
-            // A fresh package store permits another account; old pending attempts no longer match.
         }
     }
 
     public function displayIdentity(User $user): ?string
     {
-        $identity = $user->getChatGptIdentity();
+        $identity = $user->getChatGptRegistrationId();
         if (null === $identity) {
             return null;
         }

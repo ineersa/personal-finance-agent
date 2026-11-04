@@ -114,9 +114,9 @@ function browserStackRestartWorker(): int
 
 /** @param list<string> $arguments */
 #[AsTask(namespace: 'browser', name: 'stack:console', description: 'Run Symfony console in this checkout\'s running isolated browser stack; pass arguments after --.')]
-function browserStackConsole(#[AsArgsAfterOptionEnd] array $arguments = []): int
+function browserStackConsole(#[AsArgsAfterOptionEnd] array $arguments = [], bool $worker = false): int
 {
-    $command = ['exec', '-T', '--user', posix_getuid().':'.posix_getgid(), 'php', 'php', 'bin/console', ...$arguments];
+    $command = ['exec', '-T', '--user', posix_getuid().':'.posix_getgid(), $worker ? 'worker' : 'php', 'php', 'bin/console', ...$arguments];
 
     return report('browser:stack:console', [...stackCommand('browser'), ...$command], runtime: false, operation: static function () use ($command): int {
         stackRun('browser', $command);

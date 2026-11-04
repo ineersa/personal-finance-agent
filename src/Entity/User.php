@@ -26,6 +26,9 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     #[ORM\Column(length: 36, nullable: true)]
     private ?string $chatGptIdentity = null;
 
+    #[ORM\Column(length: 36, nullable: true)]
+    private ?string $chatGptRegistrationId = null;
+
     #[ORM\Column(length: 180)]
     #[Assert\NotBlank]
     #[Assert\Email]
@@ -84,6 +87,16 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     public function renewChatGptIdentity(): string
     {
         return $this->chatGptIdentity = Uuid::v4()->toRfc4122();
+    }
+
+    public function getChatGptRegistrationId(): ?string
+    {
+        return $this->chatGptRegistrationId ?? $this->chatGptIdentity;
+    }
+
+    public function retainChatGptRegistration(): void
+    {
+        $this->chatGptRegistrationId ??= $this->chatGptIdentity;
     }
 
     public function getEmail(): ?string

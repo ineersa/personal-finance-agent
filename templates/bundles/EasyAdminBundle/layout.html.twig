@@ -14,8 +14,10 @@
     {% set settings_dropdown = '' %}
     {{ parent() }}
     {% if import_updates_enabled and app.user and not is_granted('ROLE_ADMIN') %}
-        <div id="import-live-subscription" data-turbo-permanent>
-            {{ turbo_stream_from(import_topic.forUser(app.user), private: true) }}
+        <div id="import-live-subscription">
+            {% set topics = [import_topic.forUser(app.user)] %}
+            {% if app.user.chatGptIdentity %}{% set topics = topics|merge([chat_topic.forUser(app.user)]) %}{% endif %}
+            {{ turbo_stream_from(topics, private: true) }}
         </div>
     {% endif %}
 {% endblock %}

@@ -4,6 +4,7 @@ twig:
     globals:
         import_updates_enabled: '%env(bool:IMPORT_UPDATES_ENABLED)%'
         import_topic: '@App\Import\ImportTopic'
+        chat_topic: '@App\Chat\ChatTopic'
 
 when@test:
     twig:

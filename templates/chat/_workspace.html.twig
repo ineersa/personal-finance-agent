@@ -1,0 +1,29 @@
+{% set execution = enum('Symfony\\AI\\Agent\\Execution\\ExecutionStatus') %}
+<section id="{{ constant('App\\Chat\\Workspace::DOM_ID') }}" class="chat-workspace" aria-label="Conversation" data-chat-execution="{{ chat.execution }}">
+    {% if chat.turns is empty %}
+        <div class="chat-welcome">
+            <p class="eyebrow">Your conversation</p>
+            <h2>What’s on your mind?</h2>
+            <p>Start with a question. Follow up as you go.</p>
+        </div>
+    {% endif %}
+    <div class="chat-turns">
+        {% for turn in chat.turns %}
+            <article class="chat-turn" id="chat-turn-{{ loop.index }}">
+                <div class="chat-question"><span class="visually-hidden">You</span><p>{{ turn.question }}</p></div>
+                <div class="chat-reply">
+                    <span class="chat-speaker">ChatGPT</span>
+                    {% if turn.reasoning %}
+                        <details class="chat-reasoning" id="chat-reasoning-{{ loop.index }}"><summary>Reasoning summary</summary><div class="chat-markdown">{{ turn.reasoning|markdown_to_html|sanitize_html('app.chat') }}</div></details>
+                    {% endif %}
+                    {% if turn.commentary %}<div class="chat-commentary chat-markdown">{{ turn.commentary|markdown_to_html|sanitize_html('app.chat') }}</div>{% endif %}
+                    {% if turn.answer %}<div class="chat-answer chat-markdown" {% if not chat.execution or chat.execution == execution.Completed.value %}data-chat-saved{% endif %}>{{ turn.answer|markdown_to_html|sanitize_html('app.chat') }}</div>{% endif %}
+                    {% if loop.last %}
+                        {% if chat.execution %}<p class="chat-progress" role="status">{{ chat.execution == execution.Running.value ? 'Responding…' : (chat.execution == execution.Completed.value ? 'Reply complete' : chat.execution|replace({'_': ' '})|capitalize) }}</p>{% endif %}
+                        {% if chat.error %}<p class="chat-error" role="alert">{{ chat.error }}</p>{% endif %}
+                    {% endif %}
+                </div>
+            </article>
+        {% endfor %}
+    </div>
+</section>
