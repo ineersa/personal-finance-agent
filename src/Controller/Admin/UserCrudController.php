@@ -5,6 +5,9 @@ declare(strict_types=1);
 namespace App\Controller\Admin;
 
 use App\Entity\User;
+use App\Finance\TenantManagers;
+use App\Finance\TenantSchema;
+use Doctrine\ORM\EntityManagerInterface;
 use EasyCorp\Bundle\EasyAdminBundle\Config\Action;
 use EasyCorp\Bundle\EasyAdminBundle\Config\Actions;
 use EasyCorp\Bundle\EasyAdminBundle\Config\Crud;
@@ -12,6 +15,7 @@ use EasyCorp\Bundle\EasyAdminBundle\Controller\AbstractCrudController;
 use EasyCorp\Bundle\EasyAdminBundle\Field\ChoiceField;
 use EasyCorp\Bundle\EasyAdminBundle\Field\EmailField;
 use EasyCorp\Bundle\EasyAdminBundle\Field\TextField;
+use Symfony\Component\Filesystem\Filesystem;
 use Symfony\Component\Form\Extension\Core\Type\PasswordType;
 use Symfony\Component\Security\Http\Attribute\IsGranted;
 use Symfony\Component\Validator\Constraints as Assert;
@@ -21,6 +25,42 @@ use Symfony\Component\Validator\Constraints as Assert;
 final class UserCrudController extends AbstractCrudController
 {
     use RestrictReferencedDeletionTrait;
+
+    public function __construct(private readonly TenantSchema $schema, private readonly TenantManagers $tenants, private readonly Filesystem $filesystem)
+    {
+    }
+
+    public function persistEntity(EntityManagerInterface $entityManager, object $entityInstance): void
+    {
+        parent::persistEntity($entityManager, $entityInstance);
+        if ($entityInstance instanceof User && !\in_array('ROLE_ADMIN', $entityInstance->getRoles(), true)) {
+            $em = $this->schema->provision($entityInstance);
+            $this->tenants->release($em);
+        }
+    }
+
+    public function updateEntity(EntityManagerInterface $entityManager, object $entityInstance): void
+    {
+        parent::updateEntity($entityManager, $entityInstance);
+        if ($entityInstance instanceof User && !\in_array('ROLE_ADMIN', $entityInstance->getRoles(), true)) {
+            $em = $this->schema->provision($entityInstance);
+            $this->tenants->release($em);
+        }
+    }
+
+    public function deleteEntity(EntityManagerInterface $entityManager, object $entityInstance): void
+    {
+        $path = $entityInstance instanceof User ? $this->tenants->path($entityInstance) : null;
+        parent::deleteEntity($entityManager, $entityInstance);
+        if (null !== $path) {
+            foreach ([$path, $path.'-wal', $path.'-shm'] as $file) {
+                if (is_link(\dirname($file)) || is_link($file) || is_dir($file)) {
+                    throw new \RuntimeException('Account deleted but tenant storage could not be removed.');
+                }
+                $this->filesystem->remove($file);
+            }
+        }
+    }
 
     public static function getEntityFqcn(): string
     {

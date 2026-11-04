@@ -7,6 +7,7 @@
 # Put parameters here that don't need to change on each machine where the app is deployed
 # https://symfony.com/doc/current/best_practices.html#use-parameters-for-application-configuration
 parameters:
+    env(FINANCE_DATABASE_URL): 'sqlite:///%kernel.project_dir%/var/tenant-schema.db'
     env(JEV_API_KEY): ''
     env(JEV_BASE_URL): 'https://api.typesafe.ai'
     env(JEV_MODEL): 'jev-1.14.0'
@@ -26,6 +27,9 @@ services:
         resource: '../src/'
         exclude:
             - '../src/Entity/'
+            - '../src/Finance/Entity/'
+            - '../src/Finance/Migrations/'
+            - '../src/Finance/RejectTenantConnectionMiddleware.php'
             - '../src/DataFixtures/'
             - '../src/Doctrine/ExactDecimalType.php'
             - '../src/Doctrine/SqliteImmediateTransactionConnection.php'
@@ -53,6 +57,29 @@ services:
         tags:
             # Wrap the native driver before connection-caching/test middleware.
             - { name: doctrine.middleware, connection: default, priority: 1000 }
+            - { name: doctrine.middleware, connection: finance, priority: 1000 }
+
+    doctrine.orm.finance_entity_manager:
+        class: Doctrine\ORM\EntityManager
+        factory: ['@App\Finance\TenantManagers', current]
+        arguments: []
+        lazy: true
+        public: true
+
+    App\Repository\SourceRepository:
+        arguments: { $entityManager: '@doctrine.orm.finance_entity_manager' }
+    App\Repository\StatementRepository:
+        arguments: { $entityManager: '@doctrine.orm.finance_entity_manager' }
+    App\Repository\TransactionRepository:
+        arguments: { $entityManager: '@doctrine.orm.finance_entity_manager' }
+    App\Repository\CategoryRepository:
+        arguments: { $entityManager: '@doctrine.orm.finance_entity_manager' }
+    App\Repository\CurrencyRateRepository:
+        arguments: { $entityManager: '@doctrine.orm.finance_entity_manager' }
+    App\Import\StatementUpload:
+        arguments: { $entityManager: '@doctrine.orm.finance_entity_manager' }
+    App\Controller\StatementImportController:
+        bind: { $entityManager: '@doctrine.orm.finance_entity_manager' }
 
     # Native client without framework tracing: statement payloads must not enter profiler collectors.
     app.jev.http_client:
@@ -89,5 +116,11 @@ when@dev: &fixture_services
             resource: '../src/DataFixtures/'
             autowire: true
             autoconfigure: true
+        App\DataFixtures\TenantFixtureLoader:
+            autowire: true
+            autoconfigure: true
+            decorates: hautelook_alice.loader
+            arguments:
+                $inner: '@App\DataFixtures\TenantFixtureLoader.inner'
 
 when@test: *fixture_services

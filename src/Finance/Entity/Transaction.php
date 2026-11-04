@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace App\Entity;
+namespace App\Finance\Entity;
 
 use App\Enum\Direction;
 use App\Enum\RecurrenceKind;
@@ -12,7 +12,7 @@ use Symfony\Component\Validator\Constraints as Assert;
 
 #[ORM\Entity]
 #[ORM\Table(name: 'financial_transaction')]
-class Transaction extends UserRecord
+class Transaction extends FinanceRecord
 {
     #[ORM\Id]
     #[ORM\GeneratedValue]
@@ -20,7 +20,6 @@ class Transaction extends UserRecord
     private ?int $id = null;
 
     public function __construct(
-        User $user,
         #[ORM\ManyToOne(inversedBy: 'transactions')]
         #[ORM\JoinColumn(nullable: false, onDelete: 'CASCADE')]
         public Statement $statement,
@@ -52,7 +51,6 @@ class Transaction extends UserRecord
         #[ORM\Column(enumType: RecurrenceKind::class, options: ['default' => 'unknown'])]
         public RecurrenceKind $recurrence = RecurrenceKind::Unknown,
     ) {
-        parent::__construct($user);
     }
 
     public function getId(): ?int

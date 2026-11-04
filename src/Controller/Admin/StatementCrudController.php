@@ -4,15 +4,12 @@ declare(strict_types=1);
 
 namespace App\Controller\Admin;
 
-use App\Entity\Statement;
-use App\Entity\User;
 use App\Enum\ProcessingStatus;
+use App\Finance\Entity\Statement;
 use App\Import\ImportException;
-use App\Repository\StatementRepository;
 use App\Security\FinanceRecordVoter;
 use App\Storage\StatementStorage;
 use Doctrine\ORM\EntityManagerInterface;
-use Doctrine\ORM\QueryBuilder;
 use EasyCorp\Bundle\EasyAdminBundle\Config\Action;
 use EasyCorp\Bundle\EasyAdminBundle\Config\Actions;
 use EasyCorp\Bundle\EasyAdminBundle\Config\Crud;
@@ -31,7 +28,7 @@ use Symfony\Component\Security\Http\Attribute\IsGranted;
 #[IsGranted(FinanceRecordVoter::ACCESS)]
 final class StatementCrudController extends OwnedCrudController
 {
-    public function __construct(private readonly StatementRepository $statements, private readonly StatementStorage $storage)
+    public function __construct(private readonly StatementStorage $storage)
     {
     }
 
@@ -102,10 +99,5 @@ final class StatementCrudController extends OwnedCrudController
         } catch (\Throwable) {
             $this->addFlash('warning', 'Statement records were deleted, but its original file could not be removed. Orphaned bytes may remain in private storage.');
         }
-    }
-
-    protected function ownedQuery(User $user): QueryBuilder
-    {
-        return $this->statements->queryForUser($user);
     }
 }

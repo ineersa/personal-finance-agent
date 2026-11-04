@@ -1,14 +1,30 @@
 doctrine:
     dbal:
-        url: '%env(resolve:DATABASE_URL)%'
+        default_connection: default
+        connections:
+            default:
+                url: '%env(resolve:DATABASE_URL)%'
+            finance:
+                url: '%env(resolve:FINANCE_DATABASE_URL)%'
         types:
             exact_decimal: App\Doctrine\ExactDecimalType
     orm:
-        auto_mapping: false
-        naming_strategy: doctrine.orm.naming_strategy.underscore_number_aware
-        mappings:
-            App:
-                type: attribute
-                dir: '%kernel.project_dir%/src/Entity'
-                prefix: App\Entity
-                is_bundle: false
+        default_entity_manager: default
+        entity_managers:
+            default:
+                naming_strategy: doctrine.orm.naming_strategy.underscore_number_aware
+                mappings:
+                    Identity:
+                        type: attribute
+                        dir: '%kernel.project_dir%/src/Entity'
+                        prefix: App\Entity
+                        is_bundle: false
+            finance:
+                connection: finance
+                naming_strategy: doctrine.orm.naming_strategy.underscore_number_aware
+                mappings:
+                    Finance:
+                        type: attribute
+                        dir: '%kernel.project_dir%/src/Finance/Entity'
+                        prefix: App\Finance\Entity
+                        is_bundle: false

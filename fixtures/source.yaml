@@ -1,17 +1,13 @@
-App\Entity\Source:
+App\Finance\Entity\Source:
     demo_current:
-        __construct: ['@demo', 'Maple Harbour Chequing · 7318', 'CAD household chequing at the fictional Maple Harbour Bank']
+        __construct: ['Maple Harbour Chequing · 7318', 'CAD household chequing at the fictional Maple Harbour Bank']
         currency: CAD
         instrumentKind: '<(App\Enum\InstrumentKind::BankAccount)>'
     demo_card:
-        __construct: ['@demo', 'Maple Harbour Rewards Visa · 4826', 'CAD everyday purchases and monthly card settlements']
+        __construct: ['Maple Harbour Rewards Visa · 4826', 'CAD everyday purchases and monthly card settlements']
         currency: CAD
         instrumentKind: '<(App\Enum\InstrumentKind::CreditCard)>'
     demo_usd:
-        __construct: ['@demo', 'Maple Harbour US Dollar · 9054', 'USD travel, software and foreign-currency savings']
-        currency: USD
-        instrumentKind: '<(App\Enum\InstrumentKind::BankAccount)>'
-    admin_current:
-        __construct: ['@administrator', 'Admin private account', 'Separate owner for isolation checks']
+        __construct: ['Maple Harbour US Dollar · 9054', 'USD travel, software and foreign-currency savings']
         currency: USD
         instrumentKind: '<(App\Enum\InstrumentKind::BankAccount)>'

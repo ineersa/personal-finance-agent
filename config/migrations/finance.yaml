@@ -1,0 +1,3 @@
+em: finance
+migrations_paths:
+    'App\Finance\Migrations': 'src/Finance/Migrations'

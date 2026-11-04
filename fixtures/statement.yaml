@@ -1,16 +1,6 @@
-App\Entity\Statement:
-    admin_statement:
-        __construct:
-            - '@administrator'
-            - '@admin_current'
-            - a19abfd3-cbb5-4ead-8be0-a8ed2b99be03
-            - admin-september-2026.csv
-            - text/csv
-            - 0
-            - '0000000000000000000000000000000000000000000000000000000000000000'
+App\Finance\Entity\Statement:
     history_chequing_2024_11:
         __construct:
-            - '@demo'
             - '@demo_current'
             - synthetic-chequing_2024_11
             - history-chequing-2024-11.csv
@@ -23,7 +13,6 @@ App\Entity\Statement:
         processedAt: '<(new \DateTimeImmutable("2026-11-02T00:00:00+00:00"))>'
     history_credit_2024_11:
         __construct:
-            - '@demo'
             - '@demo_card'
             - synthetic-credit_2024_11
             - history-credit-2024-11.csv
@@ -36,7 +25,6 @@ App\Entity\Statement:
         processedAt: '<(new \DateTimeImmutable("2026-11-02T00:00:00+00:00"))>'
     history_usd_2024_11:
         __construct:
-            - '@demo'
             - '@demo_usd'
             - synthetic-usd_2024_11
             - history-usd-2024-11.csv
@@ -49,7 +37,6 @@ App\Entity\Statement:
         processedAt: '<(new \DateTimeImmutable("2026-11-02T00:00:00+00:00"))>'
     history_chequing_2024_12:
         __construct:
-            - '@demo'
             - '@demo_current'
             - synthetic-chequing_2024_12
             - history-chequing-2024-12.csv
@@ -62,7 +49,6 @@ App\Entity\Statement:
         processedAt: '<(new \DateTimeImmutable("2026-11-02T00:00:00+00:00"))>'
     history_credit_2024_12:
         __construct:
-            - '@demo'
             - '@demo_card'
             - synthetic-credit_2024_12
             - history-credit-2024-12.csv
@@ -75,7 +61,6 @@ App\Entity\Statement:
         processedAt: '<(new \DateTimeImmutable("2026-11-02T00:00:00+00:00"))>'
     history_usd_2024_12:
         __construct:
-            - '@demo'
             - '@demo_usd'
             - synthetic-usd_2024_12
             - history-usd-2024-12.csv
@@ -88,7 +73,6 @@ App\Entity\Statement:
         processedAt: '<(new \DateTimeImmutable("2026-11-02T00:00:00+00:00"))>'
     history_chequing_2025_01:
         __construct:
-            - '@demo'
             - '@demo_current'
             - synthetic-chequing_2025_01
             - history-chequing-2025-01.csv
@@ -101,7 +85,6 @@ App\Entity\Statement:
         processedAt: '<(new \DateTimeImmutable("2026-11-02T00:00:00+00:00"))>'
     history_credit_2025_01:
         __construct:
-            - '@demo'
             - '@demo_card'
             - synthetic-credit_2025_01
             - history-credit-2025-01.csv
@@ -114,7 +97,6 @@ App\Entity\Statement:
         processedAt: '<(new \DateTimeImmutable("2026-11-02T00:00:00+00:00"))>'
     history_usd_2025_01:
         __construct:
-            - '@demo'
             - '@demo_usd'
             - synthetic-usd_2025_01
             - history-usd-2025-01.csv
@@ -127,7 +109,6 @@ App\Entity\Statement:
         processedAt: '<(new \DateTimeImmutable("2026-11-02T00:00:00+00:00"))>'
     history_chequing_2025_02:
         __construct:
-            - '@demo'
             - '@demo_current'
             - synthetic-chequing_2025_02
             - history-chequing-2025-02.csv
@@ -140,7 +121,6 @@ App\Entity\Statement:
         processedAt: '<(new \DateTimeImmutable("2026-11-02T00:00:00+00:00"))>'
     history_credit_2025_02:
         __construct:
-            - '@demo'
             - '@demo_card'
             - synthetic-credit_2025_02
             - history-credit-2025-02.csv
@@ -153,7 +133,6 @@ App\Entity\Statement:
         processedAt: '<(new \DateTimeImmutable("2026-11-02T00:00:00+00:00"))>'
     history_usd_2025_02:
         __construct:
-            - '@demo'
             - '@demo_usd'
             - synthetic-usd_2025_02
             - history-usd-2025-02.csv
@@ -166,7 +145,6 @@ App\Entity\Statement:
         processedAt: '<(new \DateTimeImmutable("2026-11-02T00:00:00+00:00"))>'
     history_chequing_2025_03:
         __construct:
-            - '@demo'
             - '@demo_current'
             - synthetic-chequing_2025_03
             - history-chequing-2025-03.csv
@@ -179,7 +157,6 @@ App\Entity\Statement:
         processedAt: '<(new \DateTimeImmutable("2026-11-02T00:00:00+00:00"))>'
     history_credit_2025_03:
         __construct:
-            - '@demo'
             - '@demo_card'
             - synthetic-credit_2025_03
             - history-credit-2025-03.csv
@@ -192,7 +169,6 @@ App\Entity\Statement:
         processedAt: '<(new \DateTimeImmutable("2026-11-02T00:00:00+00:00"))>'
     history_usd_2025_03:
         __construct:
-            - '@demo'
             - '@demo_usd'
             - synthetic-usd_2025_03
             - history-usd-2025-03.csv
@@ -205,7 +181,6 @@ App\Entity\Statement:
         processedAt: '<(new \DateTimeImmutable("2026-11-02T00:00:00+00:00"))>'
     history_chequing_2025_04:
         __construct:
-            - '@demo'
             - '@demo_current'
             - synthetic-chequing_2025_04
             - history-chequing-2025-04.csv
@@ -218,7 +193,6 @@ App\Entity\Statement:
         processedAt: '<(new \DateTimeImmutable("2026-11-02T00:00:00+00:00"))>'
     history_credit_2025_04:
         __construct:
-            - '@demo'
             - '@demo_card'
             - synthetic-credit_2025_04
             - history-credit-2025-04.csv
@@ -231,7 +205,6 @@ App\Entity\Statement:
         processedAt: '<(new \DateTimeImmutable("2026-11-02T00:00:00+00:00"))>'
     history_usd_2025_04:
         __construct:
-            - '@demo'
             - '@demo_usd'
             - synthetic-usd_2025_04
             - history-usd-2025-04.csv
@@ -244,7 +217,6 @@ App\Entity\Statement:
         processedAt: '<(new \DateTimeImmutable("2026-11-02T00:00:00+00:00"))>'
     history_chequing_2025_05:
         __construct:
-            - '@demo'
             - '@demo_current'
             - synthetic-chequing_2025_05
             - history-chequing-2025-05.csv
@@ -257,7 +229,6 @@ App\Entity\Statement:
         processedAt: '<(new \DateTimeImmutable("2026-11-02T00:00:00+00:00"))>'
     history_credit_2025_05:
         __construct:
-            - '@demo'
             - '@demo_card'
             - synthetic-credit_2025_05
             - history-credit-2025-05.csv
@@ -270,7 +241,6 @@ App\Entity\Statement:
         processedAt: '<(new \DateTimeImmutable("2026-11-02T00:00:00+00:00"))>'
     history_usd_2025_05:
         __construct:
-            - '@demo'
             - '@demo_usd'
             - synthetic-usd_2025_05
             - history-usd-2025-05.csv
@@ -283,7 +253,6 @@ App\Entity\Statement:
         processedAt: '<(new \DateTimeImmutable("2026-11-02T00:00:00+00:00"))>'
     history_chequing_2025_06:
         __construct:
-            - '@demo'
             - '@demo_current'
             - synthetic-chequing_2025_06
             - history-chequing-2025-06.csv
@@ -296,7 +265,6 @@ App\Entity\Statement:
         processedAt: '<(new \DateTimeImmutable("2026-11-02T00:00:00+00:00"))>'
     history_credit_2025_06:
         __construct:
-            - '@demo'
             - '@demo_card'
             - synthetic-credit_2025_06
             - history-credit-2025-06.csv
@@ -309,7 +277,6 @@ App\Entity\Statement:
         processedAt: '<(new \DateTimeImmutable("2026-11-02T00:00:00+00:00"))>'
     history_usd_2025_06:
         __construct:
-            - '@demo'
             - '@demo_usd'
             - synthetic-usd_2025_06
             - history-usd-2025-06.csv
@@ -322,7 +289,6 @@ App\Entity\Statement:
         processedAt: '<(new \DateTimeImmutable("2026-11-02T00:00:00+00:00"))>'
     history_chequing_2025_07:
         __construct:
-            - '@demo'
             - '@demo_current'
             - synthetic-chequing_2025_07
             - history-chequing-2025-07.csv
@@ -335,7 +301,6 @@ App\Entity\Statement:
         processedAt: '<(new \DateTimeImmutable("2026-11-02T00:00:00+00:00"))>'
     history_credit_2025_07:
         __construct:
-            - '@demo'
             - '@demo_card'
             - synthetic-credit_2025_07
             - history-credit-2025-07.csv
@@ -348,7 +313,6 @@ App\Entity\Statement:
         processedAt: '<(new \DateTimeImmutable("2026-11-02T00:00:00+00:00"))>'
     history_usd_2025_07:
         __construct:
-            - '@demo'
             - '@demo_usd'
             - synthetic-usd_2025_07
             - history-usd-2025-07.csv
@@ -361,7 +325,6 @@ App\Entity\Statement:
         processedAt: '<(new \DateTimeImmutable("2026-11-02T00:00:00+00:00"))>'
     history_chequing_2025_08:
         __construct:
-            - '@demo'
             - '@demo_current'
             - synthetic-chequing_2025_08
             - history-chequing-2025-08.csv
@@ -374,7 +337,6 @@ App\Entity\Statement:
         processedAt: '<(new \DateTimeImmutable("2026-11-02T00:00:00+00:00"))>'
     history_credit_2025_08:
         __construct:
-            - '@demo'
             - '@demo_card'
             - synthetic-credit_2025_08
             - history-credit-2025-08.csv
@@ -387,7 +349,6 @@ App\Entity\Statement:
         processedAt: '<(new \DateTimeImmutable("2026-11-02T00:00:00+00:00"))>'
     history_usd_2025_08:
         __construct:
-            - '@demo'
             - '@demo_usd'
             - synthetic-usd_2025_08
             - history-usd-2025-08.csv
@@ -400,7 +361,6 @@ App\Entity\Statement:
         processedAt: '<(new \DateTimeImmutable("2026-11-02T00:00:00+00:00"))>'
     history_chequing_2025_09:
         __construct:
-            - '@demo'
             - '@demo_current'
             - synthetic-chequing_2025_09
             - history-chequing-2025-09.csv
@@ -413,7 +373,6 @@ App\Entity\Statement:
         processedAt: '<(new \DateTimeImmutable("2026-11-02T00:00:00+00:00"))>'
     history_credit_2025_09:
         __construct:
-            - '@demo'
             - '@demo_card'
             - synthetic-credit_2025_09
             - history-credit-2025-09.csv
@@ -426,7 +385,6 @@ App\Entity\Statement:
         processedAt: '<(new \DateTimeImmutable("2026-11-02T00:00:00+00:00"))>'
     history_usd_2025_09:
         __construct:
-            - '@demo'
             - '@demo_usd'
             - synthetic-usd_2025_09
             - history-usd-2025-09.csv
@@ -439,7 +397,6 @@ App\Entity\Statement:
         processedAt: '<(new \DateTimeImmutable("2026-11-02T00:00:00+00:00"))>'
     history_chequing_2025_10:
         __construct:
-            - '@demo'
             - '@demo_current'
             - synthetic-chequing_2025_10
             - history-chequing-2025-10.csv
@@ -452,7 +409,6 @@ App\Entity\Statement:
         processedAt: '<(new \DateTimeImmutable("2026-11-02T00:00:00+00:00"))>'
     history_credit_2025_10:
         __construct:
-            - '@demo'
             - '@demo_card'
             - synthetic-credit_2025_10
             - history-credit-2025-10.csv
@@ -465,7 +421,6 @@ App\Entity\Statement:
         processedAt: '<(new \DateTimeImmutable("2026-11-02T00:00:00+00:00"))>'
     history_usd_2025_10:
         __construct:
-            - '@demo'
             - '@demo_usd'
             - synthetic-usd_2025_10
             - history-usd-2025-10.csv
@@ -478,7 +433,6 @@ App\Entity\Statement:
         processedAt: '<(new \DateTimeImmutable("2026-11-02T00:00:00+00:00"))>'
     history_chequing_2025_11:
         __construct:
-            - '@demo'
             - '@demo_current'
             - synthetic-chequing_2025_11
             - history-chequing-2025-11.csv
@@ -491,7 +445,6 @@ App\Entity\Statement:
         processedAt: '<(new \DateTimeImmutable("2026-11-02T00:00:00+00:00"))>'
     history_credit_2025_11:
         __construct:
-            - '@demo'
             - '@demo_card'
             - synthetic-credit_2025_11
             - history-credit-2025-11.csv
@@ -504,7 +457,6 @@ App\Entity\Statement:
         processedAt: '<(new \DateTimeImmutable("2026-11-02T00:00:00+00:00"))>'
     history_usd_2025_11:
         __construct:
-            - '@demo'
             - '@demo_usd'
             - synthetic-usd_2025_11
             - history-usd-2025-11.csv
@@ -517,7 +469,6 @@ App\Entity\Statement:
         processedAt: '<(new \DateTimeImmutable("2026-11-02T00:00:00+00:00"))>'
     history_chequing_2025_12:
         __construct:
-            - '@demo'
             - '@demo_current'
             - synthetic-chequing_2025_12
             - history-chequing-2025-12.csv
@@ -530,7 +481,6 @@ App\Entity\Statement:
         processedAt: '<(new \DateTimeImmutable("2026-11-02T00:00:00+00:00"))>'
     history_credit_2025_12:
         __construct:
-            - '@demo'
             - '@demo_card'
             - synthetic-credit_2025_12
             - history-credit-2025-12.csv
@@ -543,7 +493,6 @@ App\Entity\Statement:
         processedAt: '<(new \DateTimeImmutable("2026-11-02T00:00:00+00:00"))>'
     history_usd_2025_12:
         __construct:
-            - '@demo'
             - '@demo_usd'
             - synthetic-usd_2025_12
             - history-usd-2025-12.csv
@@ -556,7 +505,6 @@ App\Entity\Statement:
         processedAt: '<(new \DateTimeImmutable("2026-11-02T00:00:00+00:00"))>'
     history_chequing_2026_01:
         __construct:
-            - '@demo'
             - '@demo_current'
             - synthetic-chequing_2026_01
             - history-chequing-2026-01.csv
@@ -569,7 +517,6 @@ App\Entity\Statement:
         processedAt: '<(new \DateTimeImmutable("2026-11-02T00:00:00+00:00"))>'
     history_credit_2026_01:
         __construct:
-            - '@demo'
             - '@demo_card'
             - synthetic-credit_2026_01
             - history-credit-2026-01.csv
@@ -582,7 +529,6 @@ App\Entity\Statement:
         processedAt: '<(new \DateTimeImmutable("2026-11-02T00:00:00+00:00"))>'
     history_usd_2026_01:
         __construct:
-            - '@demo'
             - '@demo_usd'
             - synthetic-usd_2026_01
             - history-usd-2026-01.csv
@@ -595,7 +541,6 @@ App\Entity\Statement:
         processedAt: '<(new \DateTimeImmutable("2026-11-02T00:00:00+00:00"))>'
     history_chequing_2026_02:
         __construct:
-            - '@demo'
             - '@demo_current'
             - synthetic-chequing_2026_02
             - history-chequing-2026-02.csv
@@ -608,7 +553,6 @@ App\Entity\Statement:
         processedAt: '<(new \DateTimeImmutable("2026-11-02T00:00:00+00:00"))>'
     history_credit_2026_02:
         __construct:
-            - '@demo'
             - '@demo_card'
             - synthetic-credit_2026_02
             - history-credit-2026-02.csv
@@ -621,7 +565,6 @@ App\Entity\Statement:
         processedAt: '<(new \DateTimeImmutable("2026-11-02T00:00:00+00:00"))>'
     history_usd_2026_02:
         __construct:
-            - '@demo'
             - '@demo_usd'
             - synthetic-usd_2026_02
             - history-usd-2026-02.csv
@@ -634,7 +577,6 @@ App\Entity\Statement:
         processedAt: '<(new \DateTimeImmutable("2026-11-02T00:00:00+00:00"))>'
     history_chequing_2026_03:
         __construct:
-            - '@demo'
             - '@demo_current'
             - synthetic-chequing_2026_03
             - history-chequing-2026-03.csv
@@ -647,7 +589,6 @@ App\Entity\Statement:
         processedAt: '<(new \DateTimeImmutable("2026-11-02T00:00:00+00:00"))>'
     history_credit_2026_03:
         __construct:
-            - '@demo'
             - '@demo_card'
             - synthetic-credit_2026_03
             - history-credit-2026-03.csv
@@ -660,7 +601,6 @@ App\Entity\Statement:
         processedAt: '<(new \DateTimeImmutable("2026-11-02T00:00:00+00:00"))>'
     history_usd_2026_03:
         __construct:
-            - '@demo'
             - '@demo_usd'
             - synthetic-usd_2026_03
             - history-usd-2026-03.csv
@@ -673,7 +613,6 @@ App\Entity\Statement:
         processedAt: '<(new \DateTimeImmutable("2026-11-02T00:00:00+00:00"))>'
     history_chequing_2026_04:
         __construct:
-            - '@demo'
             - '@demo_current'
             - synthetic-chequing_2026_04
             - history-chequing-2026-04.csv
@@ -686,7 +625,6 @@ App\Entity\Statement:
         processedAt: '<(new \DateTimeImmutable("2026-11-02T00:00:00+00:00"))>'
     history_credit_2026_04:
         __construct:
-            - '@demo'
             - '@demo_card'
             - synthetic-credit_2026_04
             - history-credit-2026-04.csv
@@ -699,7 +637,6 @@ App\Entity\Statement:
         processedAt: '<(new \DateTimeImmutable("2026-11-02T00:00:00+00:00"))>'
     history_usd_2026_04:
         __construct:
-            - '@demo'
             - '@demo_usd'
             - synthetic-usd_2026_04
             - history-usd-2026-04.csv
@@ -712,7 +649,6 @@ App\Entity\Statement:
         processedAt: '<(new \DateTimeImmutable("2026-11-02T00:00:00+00:00"))>'
     history_chequing_2026_05:
         __construct:
-            - '@demo'
             - '@demo_current'
             - synthetic-chequing_2026_05
             - history-chequing-2026-05.csv
@@ -725,7 +661,6 @@ App\Entity\Statement:
         processedAt: '<(new \DateTimeImmutable("2026-11-02T00:00:00+00:00"))>'
     history_credit_2026_05:
         __construct:
-            - '@demo'
             - '@demo_card'
             - synthetic-credit_2026_05
             - history-credit-2026-05.csv
@@ -738,7 +673,6 @@ App\Entity\Statement:
         processedAt: '<(new \DateTimeImmutable("2026-11-02T00:00:00+00:00"))>'
     history_usd_2026_05:
         __construct:
-            - '@demo'
             - '@demo_usd'
             - synthetic-usd_2026_05
             - history-usd-2026-05.csv
@@ -751,7 +685,6 @@ App\Entity\Statement:
         processedAt: '<(new \DateTimeImmutable("2026-11-02T00:00:00+00:00"))>'
     history_chequing_2026_06:
         __construct:
-            - '@demo'
             - '@demo_current'
             - synthetic-chequing_2026_06
             - history-chequing-2026-06.csv
@@ -764,7 +697,6 @@ App\Entity\Statement:
         processedAt: '<(new \DateTimeImmutable("2026-11-02T00:00:00+00:00"))>'
     history_credit_2026_06:
         __construct:
-            - '@demo'
             - '@demo_card'
             - synthetic-credit_2026_06
             - history-credit-2026-06.csv
@@ -777,7 +709,6 @@ App\Entity\Statement:
         processedAt: '<(new \DateTimeImmutable("2026-11-02T00:00:00+00:00"))>'
     history_usd_2026_06:
         __construct:
-            - '@demo'
             - '@demo_usd'
             - synthetic-usd_2026_06
             - history-usd-2026-06.csv
@@ -790,7 +721,6 @@ App\Entity\Statement:
         processedAt: '<(new \DateTimeImmutable("2026-11-02T00:00:00+00:00"))>'
     history_chequing_2026_07:
         __construct:
-            - '@demo'
             - '@demo_current'
             - synthetic-chequing_2026_07
             - history-chequing-2026-07.csv
@@ -803,7 +733,6 @@ App\Entity\Statement:
         processedAt: '<(new \DateTimeImmutable("2026-11-02T00:00:00+00:00"))>'
     history_credit_2026_07:
         __construct:
-            - '@demo'
             - '@demo_card'
             - synthetic-credit_2026_07
             - history-credit-2026-07.csv
@@ -816,7 +745,6 @@ App\Entity\Statement:
         processedAt: '<(new \DateTimeImmutable("2026-11-02T00:00:00+00:00"))>'
     history_usd_2026_07:
         __construct:
-            - '@demo'
             - '@demo_usd'
             - synthetic-usd_2026_07
             - history-usd-2026-07.csv
@@ -829,7 +757,6 @@ App\Entity\Statement:
         processedAt: '<(new \DateTimeImmutable("2026-11-02T00:00:00+00:00"))>'
     history_chequing_2026_08:
         __construct:
-            - '@demo'
             - '@demo_current'
             - synthetic-chequing_2026_08
             - history-chequing-2026-08.csv
@@ -842,7 +769,6 @@ App\Entity\Statement:
         processedAt: '<(new \DateTimeImmutable("2026-11-02T00:00:00+00:00"))>'
     history_credit_2026_08:
         __construct:
-            - '@demo'
             - '@demo_card'
             - synthetic-credit_2026_08
             - history-credit-2026-08.csv
@@ -855,7 +781,6 @@ App\Entity\Statement:
         processedAt: '<(new \DateTimeImmutable("2026-11-02T00:00:00+00:00"))>'
     history_usd_2026_08:
         __construct:
-            - '@demo'
             - '@demo_usd'
             - synthetic-usd_2026_08
             - history-usd-2026-08.csv
@@ -868,7 +793,6 @@ App\Entity\Statement:
         processedAt: '<(new \DateTimeImmutable("2026-11-02T00:00:00+00:00"))>'
     demo_statement:
         __construct:
-            - '@demo'
             - '@demo_current'
             - synthetic-chequing_2026_09
             - history-chequing-2026-09.csv
@@ -881,7 +805,6 @@ App\Entity\Statement:
         processedAt: '<(new \DateTimeImmutable("2026-11-02T00:00:00+00:00"))>'
     demo_card_statement:
         __construct:
-            - '@demo'
             - '@demo_card'
             - synthetic-credit_2026_09
             - history-credit-2026-09.csv
@@ -894,7 +817,6 @@ App\Entity\Statement:
         processedAt: '<(new \DateTimeImmutable("2026-11-02T00:00:00+00:00"))>'
     history_usd_2026_09:
         __construct:
-            - '@demo'
             - '@demo_usd'
             - synthetic-usd_2026_09
             - history-usd-2026-09.csv

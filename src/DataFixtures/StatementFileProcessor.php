@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\DataFixtures;
 
-use App\Entity\Statement;
+use App\Finance\Entity\Statement;
 use Fidry\AliceDataFixtures\ProcessorInterface;
 use League\Flysystem\FilesystemOperator;
 use Symfony\Component\DependencyInjection\Attribute\Target;
@@ -22,9 +22,7 @@ final readonly class StatementFileProcessor implements ProcessorInterface
             return;
         }
         // Fixture IDs are trusted definitions, never request paths or uploaded filenames.
-        if ('admin_statement' === $id) {
-            $filename = 'examples/admin_statement.csv';
-        } elseif (1 === preg_match('/\Ahistory-(chequing|credit|usd)-(20[0-9]{2}-[0-9]{2})\.csv\z/D', $object->originalFilename, $matches)) {
+        if (1 === preg_match('/\Ahistory-(chequing|credit|usd)-(20[0-9]{2}-[0-9]{2})\.csv\z/D', $object->originalFilename, $matches)) {
             $filename = $matches[1].'/'.$matches[2].'.csv';
         } else {
             throw new \LogicException('No canonical bytes for statement fixture '.$id);

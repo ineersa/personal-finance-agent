@@ -4,19 +4,56 @@ declare(strict_types=1);
 
 namespace App\Finance;
 
+use App\Entity\User;
 use App\Enum\ReportingCurrency;
 use App\Repository\CurrencyRateRepository;
+use Doctrine\ORM\EntityManagerInterface;
+use Psr\Log\LoggerInterface;
 use Symfony\Contracts\HttpClient\HttpClientInterface;
 
 final readonly class EcbRateRefresher
 {
-    public function __construct(private HttpClientInterface $client, private CurrencyRateRepository $rates)
+    public function __construct(private HttpClientInterface $client, private EntityManagerInterface $central, private TenantManagers $tenants, private LoggerInterface $logger)
     {
     }
 
     public function refresh(): int
     {
         $daily = $this->fetch('eurofxref-daily.xml');
+        $history = null;
+        $count = 0;
+        $failed = 0;
+        foreach ($this->central->getRepository(User::class)->findAll() as $owner) {
+            if (\in_array('ROLE_ADMIN', $owner->getRoles(), true)) {
+                continue;
+            }
+            try {
+                $em = null;
+                try {
+                    $em = $this->tenants->open($owner);
+                    $count += $this->refreshTenant(new CurrencyRateRepository($em), $daily, $history);
+                } finally {
+                    if (null !== $em) {
+                        $this->tenants->release($em);
+                    }
+                }
+            } catch (\Throwable) {
+                ++$failed;
+                $this->logger->warning('Tenant currency refresh failed.', ['owner_id' => $owner->getId()]);
+            }
+        }
+        if (0 < $failed) {
+            throw new \RuntimeException(\sprintf('Currency refresh failed for %d tenants; updated %d calendar-day currency rates in completed writes.', $failed, $count));
+        }
+
+        return $count;
+    }
+
+    /** @param non-empty-array<string, non-empty-array<string, string>> $daily
+     * @param non-empty-array<string, non-empty-array<string, string>>|\Throwable|null $cachedHistory
+     */
+    private function refreshTenant(CurrencyRateRepository $rates, array $daily, array|\Throwable|null &$cachedHistory): int
+    {
         $published = array_key_last($daily);
         $currencies = array_keys($daily[$published]);
         $today = new \DateTimeImmutable('today', new \DateTimeZone('UTC'));
@@ -25,22 +62,30 @@ final readonly class EcbRateRefresher
         }
         $utc = new \DateTimeZone('UTC');
         $start = (new \DateTimeImmutable($published, $utc))->modify('-89 days')->format('Y-m-d');
-        $firstStored = $this->rates->firstStoredDay();
+        $firstStored = $rates->firstStoredDay();
         if (null !== $firstStored && $firstStored > $start) {
             $start = $firstStored;
         }
-        $firstMissing = $this->rates->firstUnconfirmedDay($start, $published, $currencies);
+        $firstMissing = $rates->firstUnconfirmedDay($start, $published, $currencies);
         $history = $daily;
         if (null !== $firstMissing) {
-            $history = $this->fetch('eurofxref-hist-90d.xml');
+            try {
+                $cachedHistory ??= $this->fetch('eurofxref-hist-90d.xml');
+            } catch (\Throwable $error) {
+                $cachedHistory = $error;
+            }
+            if ($cachedHistory instanceof \Throwable) {
+                throw new \RuntimeException('ECB recent history is unavailable.');
+            }
+            $history = $cachedHistory;
             if (array_key_last($history) !== $published) {
                 throw new \RuntimeException('ECB recent history has not caught up with the daily publication.');
             }
             if (\is_string($firstStored) && array_key_first($history) > $firstMissing) {
                 throw new \RuntimeException('ECB recent history does not cover the missing date. Restore canonical historical fixtures.');
             }
-            foreach ($history as $rates) {
-                if (array_keys($rates) !== $currencies) {
+            foreach ($history as $dayRates) {
+                if (array_keys($dayRates) !== $currencies) {
                     throw new \RuntimeException('ECB recent history has incomplete currency coverage.');
                 }
             }
@@ -52,9 +97,9 @@ final readonly class EcbRateRefresher
             $start = $published;
         }
         $previous = [];
-        foreach ($history as $date => $rates) {
+        foreach ($history as $date => $dayRates) {
             if ($date < $start) {
-                $previous = $rates;
+                $previous = $dayRates;
             }
         }
         $count = 0;
@@ -63,7 +108,7 @@ final readonly class EcbRateRefresher
             $previous = $history[$date] ?? $previous;
             $provisional = $date > $published;
             // All HTTP and parsing have completed; only changed rows enter short writes.
-            $count += $this->rates->saveDay($date, $previous, $provisional);
+            $count += $rates->saveDay($date, $previous, $provisional);
         }
 
         return $count;

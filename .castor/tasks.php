@@ -197,7 +197,7 @@ function appConsole(#[AsArgsAfterOptionEnd] array $arguments = [], string $isola
             mkdir(\dirname(__DIR__).'/'.$relative, 0700, true);
         }
 
-        return report('app:console', ['env', 'DATABASE_URL=sqlite:////app/'.$relative.'/application.db', 'STATEMENT_STORAGE_DIR=/app/'.$relative.'/statements', 'IMPORT_UPDATES_ENABLED=0', 'php', 'bin/console', '--env=dev', ...$arguments]);
+        return report('app:console', ['env', 'DATABASE_URL=sqlite:////app/'.$relative.'/application.db', 'FINANCE_DATABASE_URL=sqlite:////app/'.$relative.'/finance-schema.db', 'STATEMENT_STORAGE_DIR=/app/'.$relative.'/statements', 'IMPORT_UPDATES_ENABLED=0', 'php', 'bin/console', '--env=dev', ...$arguments]);
     }
 
     return report('app:console', ['php', 'bin/console', ...$arguments]);

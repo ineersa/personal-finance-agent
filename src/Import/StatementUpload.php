@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace App\Import;
 
-use App\Entity\Source;
-use App\Entity\Statement;
 use App\Entity\User;
 use App\Enum\ProcessingStatus;
+use App\Finance\Entity\Source;
+use App\Finance\Entity\Statement;
 use App\Message\ProcessStatementMessage;
 use App\Repository\StatementRepository;
 use App\Storage\StatementStorage;
@@ -23,7 +23,7 @@ final readonly class StatementUpload
 
     public function upload(User $owner, Source $source, UploadedFile $file): Statement
     {
-        if (null === $owner->getId() || null === $source->getId() || $source->getUser()->getId() !== $owner->getId() || \in_array('ROLE_ADMIN', $owner->getRoles(), true)) {
+        if (null === $owner->getId() || null === $source->getId() || !$this->entityManager->contains($source) || \in_array('ROLE_ADMIN', $owner->getRoles(), true)) {
             throw new ImportException('The selected source is not available.');
         }
         if (null === $source->currency) {
@@ -44,7 +44,7 @@ final readonly class StatementUpload
         } catch (\Throwable) {
             throw new ImportException('Statement storage failed. No processing job was created.');
         }
-        $statement = new Statement($owner, $source, $filename, $originalFilename, $mediaType, $byteSize, $sha256, processingStatus: ProcessingStatus::Queued);
+        $statement = new Statement($source, $filename, $originalFilename, $mediaType, $byteSize, $sha256, processingStatus: ProcessingStatus::Queued);
         try {
             // Only metadata persistence is inside Doctrine's short flush transaction.
             $this->entityManager->persist($statement);
@@ -64,11 +64,11 @@ final readonly class StatementUpload
 
     public function retry(User $owner, Statement $statement): void
     {
-        if (\in_array('ROLE_ADMIN', $owner->getRoles(), true) || $statement->getUser()->getId() !== $owner->getId() || $statement->source->getUser()->getId() !== $owner->getId()) {
+        if (\in_array('ROLE_ADMIN', $owner->getRoles(), true) || !$this->entityManager->contains($statement)) {
             throw new ImportException('The statement is not available.');
         }
         foreach ([ProcessingStatus::Failed, ProcessingStatus::Running] as $status) {
-            if ($this->statements->transition($statement->getId() ?? throw new \LogicException('Statement missing.'), $owner->getId() ?? throw new \LogicException('Owner missing.'), $statement->storedFilename, $status, ProcessingStatus::Queued, withoutTransactions: true)) {
+            if ($this->statements->transition($statement->getId() ?? throw new \LogicException('Statement missing.'), $statement->storedFilename, $status, ProcessingStatus::Queued, withoutTransactions: true)) {
                 $this->dispatch($statement, $owner);
 
                 return;
@@ -84,7 +84,7 @@ final readonly class StatementUpload
             $this->bus->dispatch(new ProcessStatementMessage($id, $ownerId, $statement->storedFilename));
         } catch (\Throwable) {
             // A worker may already have claimed or completed this import.
-            $this->statements->transition($id, $ownerId, $statement->storedFilename, ProcessingStatus::Queued, ProcessingStatus::Failed, 'The processing queue is unavailable. Retry when the broker is running.');
+            $this->statements->transition($id, $statement->storedFilename, ProcessingStatus::Queued, ProcessingStatus::Failed, 'The processing queue is unavailable. Retry when the broker is running.');
             $this->entityManager->refresh($statement);
         }
     }

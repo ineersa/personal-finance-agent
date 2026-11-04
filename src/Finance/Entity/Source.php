@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace App\Entity;
+namespace App\Finance\Entity;
 
 use App\Enum\InstrumentKind;
 use Doctrine\Common\Collections\ArrayCollection;
@@ -12,7 +12,7 @@ use Symfony\Component\Validator\Constraints as Assert;
 
 #[ORM\Entity]
 #[ORM\HasLifecycleCallbacks]
-class Source extends UserRecord
+class Source extends FinanceRecord
 {
     #[ORM\Id]
     #[ORM\GeneratedValue]
@@ -24,7 +24,6 @@ class Source extends UserRecord
     private Collection $statements;
 
     public function __construct(
-        User $user,
         #[ORM\Column(length: 255)]
         #[Assert\NotBlank]
         #[Assert\Length(max: 255)]
@@ -42,7 +41,6 @@ class Source extends UserRecord
         #[ORM\Column(enumType: InstrumentKind::class, options: ['default' => 'other'])]
         public InstrumentKind $instrumentKind = InstrumentKind::Other,
     ) {
-        parent::__construct($user);
         $this->statements = new ArrayCollection();
     }
 
