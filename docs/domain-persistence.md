@@ -1,5 +1,7 @@
 # Finance persistence foundations
 
+> This page describes the existing shared-schema implementation, not the accepted storage target. [ADR 0023](adr/0023-per-user-finance-databases.md) supersedes its per-row ownership, shared-reference-data and manual-rate-CRUD contracts. The clean development cutover uses canonical fixture reloads, not legacy conversion or shared-schema runtime fallback. Update the implementation details below as the tenant cutover lands; do not infer that the ADR is already implemented.
+
 ## Current schema
 
 - `User` stores identity, password hash, roles and reporting currency, defaulting to USD. Form login, administrator user CRUD, and owner-only reporting settings use this entity. New passwords are transient form input, hashed before persistence and excluded from session serialization.

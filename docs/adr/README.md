@@ -8,7 +8,7 @@ ADRs record significant technical decisions, their context, and their consequenc
 |---|---|---|
 | [0001](0001-application-stack.md) | Accepted | Use Symfony 8.2, Symfony AI 1.0 beta, and EasyAdmin. |
 | [0002](0002-project-foundation.md) | Accepted | Adapt selected parts of the existing projects without importing their full setup. |
-| [0003](0003-shared-sqlite-database.md) | Accepted | Use a shared SQLite application database with centralized ownership enforcement. |
+| [0003](0003-shared-sqlite-database.md) | Superseded by 0023 | Original shared SQLite application database with centralized ownership enforcement. |
 | [0004](0004-sqlite-queue.md) | Accepted | Use sqlite-queue through Symfony Messenger with separate broker storage. |
 | [0005](0005-mercure-streaming.md) | Accepted | Deliver worker-generated streamed responses through private Mercure subscriptions. |
 | [0006](0006-assetmapper-and-symfony-ux.md) | Accepted | Use AssetMapper and Symfony UX without Encore or a mandatory Node.js toolchain. |
@@ -28,6 +28,7 @@ ADRs record significant technical decisions, their context, and their consequenc
 | [0020](0020-private-statement-storage.md) | Accepted | Store private statement bytes through local Flysystem storage and owner-authorized application downloads. |
 | [0021](0021-fixtures-first-jev-import.md) | Accepted | Prepare synthetic monthly inputs, use Jev for CSV decisions, separate meaning/recurrence and defer quotas beyond the 10 MiB file limit. |
 | [0022](0022-local-chatgpt-connection.md) | Accepted | Connect ChatGPT per Finance user through a local loopback callback with package-managed private credential files before chat generation. |
+| [0023](0023-per-user-finance-databases.md) | Accepted | Keep identity central and authoritative finance data in per-user SQLite databases; categories are tenant-local, rates ECB-maintained, and SQL may see drafts. |
 
 ## Recording decisions
 

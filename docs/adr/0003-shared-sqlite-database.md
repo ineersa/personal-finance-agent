@@ -1,7 +1,9 @@
 # ADR 0003: Use a shared SQLite application database
 
-- Status: Accepted
+- Status: Superseded by [ADR 0023](0023-per-user-finance-databases.md)
 - Date: 2026-10-29
+
+The original decision and rationale below are retained as history. ADR 0023 selects authoritative per-user finance databases; this record is not the current storage target.
 
 ## Context
 

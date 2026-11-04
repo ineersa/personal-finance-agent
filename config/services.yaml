@@ -27,8 +27,6 @@ services:
         exclude:
             - '../src/Entity/'
             - '../src/DataFixtures/'
-            # Unwired owner-bound SQL draft: no shared service or automatic tool registration.
-            - '../src/Finance/Sql/'
             - '../src/Doctrine/ExactDecimalType.php'
             - '../src/Doctrine/SqliteImmediateTransactionConnection.php'
             - '../src/Doctrine/SqliteImmediateTransactionDriver.php'
