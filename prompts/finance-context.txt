@@ -1,4 +1,11 @@
-Scope: this is the owner's authoritative finance database. Categories are tenant-local. The schema context includes the reporting currency selected when the conversation starts. Drafts are visible but ordinary analysis excludes financial_transaction.is_draft = 1.
+[user-context]
+<data_schemas>
+{data_schemas}
+</data_schemas>
+<project_context>
+Reporting currency at conversation start: {reporting_currency}.
+
+Scope: this is the owner's authoritative finance database. Categories are tenant-local. The reporting currency above is selected when the conversation starts. Drafts are visible but ordinary analysis excludes financial_transaction.is_draft = 1.
 
 Money: amount and currency_rate.rate are canonical decimal TEXT. SQLite SUM, AVG, TOTAL, CAST and arithmetic can use floating point: tool monetary results are approximate, not exact totals. Canonical stored money and the application's exact converter are unchanged. Do not perform unverified mental arithmetic or combine currencies without explicit valuation.
 
@@ -9,3 +16,4 @@ Meaning: direction is Credit or Debit (cash direction), not income/spending clas
 Recurrence is independent of meaning: recurring_bill, subscription, other_recurring, non_recurring or unknown. A recurring bill is not automatically a subscription; use stored classifications rather than inventing certainty from merchant names.
 
 Dates: transaction_date is the transaction's original date. statement.statement_date may be NULL; the importer preserves an explicit date or uses the earliest valid transaction date when absent. Do not invent dates from filenames or row order.
+</project_context>

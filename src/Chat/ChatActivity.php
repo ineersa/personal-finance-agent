@@ -93,7 +93,7 @@ final class ChatActivity
         $index = $this->announced($call->getId(), $call->getName());
         $this->entries[$index] = array_replace($this->entries[$index], [
             'call_id' => $call->getId(), 'name' => $call->getName(),
-            'arguments' => $this->display($call->getArguments()), 'status' => self::RUNNING,
+            'arguments' => $this->formatToolPayload($call->getArguments()), 'status' => self::RUNNING,
         ]);
         $this->beginRound();
     }
@@ -105,7 +105,7 @@ final class ChatActivity
             return;
         }
         $value = $result->getResult();
-        $this->entries[$index]['result'] = $this->display($value);
+        $this->entries[$index]['result'] = $this->formatToolPayload($value);
         $this->entries[$index]['status'] = \is_array($value) && isset($value['error']) ? self::FAILED : self::COMPLETED;
     }
 
@@ -139,7 +139,7 @@ final class ChatActivity
         return $this->calls[$id];
     }
 
-    private function display(mixed $value): string
+    private function formatToolPayload(mixed $value): string
     {
         $json = json_encode($value, \JSON_PRETTY_PRINT | \JSON_UNESCAPED_UNICODE | \JSON_INVALID_UTF8_SUBSTITUTE | \JSON_THROW_ON_ERROR);
 

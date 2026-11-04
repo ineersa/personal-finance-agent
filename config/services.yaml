@@ -40,6 +40,7 @@ services:
             - '../src/Doctrine/SqliteImmediateTransactionDriver.php'
 
     Symfony\AI\Platform\Serializer\MessageBagNormalizer: ~
+    Symfony\AI\Platform\Message\TemplateRenderer\StringTemplateRenderer: ~
 
     # Native and untraced: OAuth credentials must not enter the HTTP profiler.
     app.chatgpt.http_client:
