@@ -32,11 +32,6 @@ class ChatConversation
     #[ORM\Column(type: 'json')]
     public array $turns = [];
 
-    public function getUser(): User
-    {
-        return $this->user;
-    }
-
     public function __construct(
         #[ORM\ManyToOne]
         #[ORM\JoinColumn(nullable: false, onDelete: 'RESTRICT')]
@@ -49,5 +44,10 @@ class ChatConversation
         $this->id = Uuid::v7()->toRfc4122();
         $this->model = $model;
         $this->reasoningEffort = $reasoningEffort;
+    }
+
+    public function getUser(): User
+    {
+        return $this->user;
     }
 }
