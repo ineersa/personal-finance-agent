@@ -142,8 +142,6 @@ body.ea .main-content:has(.finance-chat) .content-wrapper { padding-top: 12px; }
 .chat-markdown th { background: #222225; font-weight: 600; }
 .chat-commentary { margin: .75rem 0; color: #a2a2aa; font-size: .9rem; }
 .chat-reasoning { margin: .75rem 0; color: #a2a2aa; font-size: .85rem; }
-.chat-reasoning summary { cursor: pointer; width: fit-content; }
-.chat-reasoning[open] .chat-markdown { padding: 12px 0 4px 14px; margin-top: 8px; border-left: 1px solid #444449; }
 .chat-progress { margin: 10px 0 0; color: #a2a2aa; font-size: 12px; }
 .chat-progress[data-chat-status="running"]::before { content: '● '; color: #b9edd1; }
 .chat-error { color: #ed9494; }

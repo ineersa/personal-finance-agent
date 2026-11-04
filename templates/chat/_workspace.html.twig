@@ -26,7 +26,7 @@
                                                 {% if entry.result is not null %}<h4>Result</h4><pre class="chat-tool-result">{{ entry.result }}</pre>{% endif %}
                                             </details>
                                         {% elseif entry.kind == constant('App\\Chat\\ChatActivity::REASONING') %}
-                                            <details class="chat-reasoning" id="chat-reasoning-{{ chat.conversation_id }}-{{ turnIndex }}-{{ loop.index }}"><summary>Reasoning summary</summary><div class="chat-markdown">{{ entry.text|markdown_to_html|sanitize_html('app.chat') }}</div></details>
+                                            <div class="chat-reasoning chat-markdown" aria-label="Reasoning summary">{{ entry.text|markdown_to_html|sanitize_html('app.chat') }}</div>
                                         {% elseif entry.kind == constant('App\\Chat\\ChatActivity::COMMENTARY') %}
                                             <div class="chat-commentary chat-markdown">{{ entry.text|markdown_to_html|sanitize_html('app.chat') }}</div>
                                         {% endif %}
@@ -36,7 +36,7 @@
                         {% endif %}
                     {% else %}
                         {% if turn.reasoning %}
-                            <details class="chat-reasoning" id="chat-reasoning-{{ loop.index }}"><summary>Reasoning summary</summary><div class="chat-markdown">{{ turn.reasoning|markdown_to_html|sanitize_html('app.chat') }}</div></details>
+                            <div class="chat-reasoning chat-markdown" aria-label="Reasoning summary">{{ turn.reasoning|markdown_to_html|sanitize_html('app.chat') }}</div>
                         {% endif %}
                         {% if turn.commentary %}<div class="chat-commentary chat-markdown">{{ turn.commentary|markdown_to_html|sanitize_html('app.chat') }}</div>{% endif %}
                     {% endif %}
