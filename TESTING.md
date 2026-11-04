@@ -120,10 +120,10 @@ vendor/bin/castor browser:stack:stop
 
 The live chat journey appends to the current conversation and never clears existing messages. Coordinate with the owner before recording: only wholly synthetic conversation history may enter a published cassette. Do not discard an existing conversation to make the test pass. The two deterministic prompts request one canonical synthetic transaction description through SQL and then recall a code word. The current prompt template must also contain no personal data.
 
-For an explicitly authorized recording, recreate the owned browser worker with recording enabled, then run the existing journey:
+For an explicitly authorized recording, recreate the owned browser stack with recording enabled, then run the existing journey. Preview-only model/effort overrides reach both web and worker; defaults remain `gpt-6-luna`/`low`. New conversations capture these settings, so changing them does not alter an existing conversation. Use New chat only with explicit permission to discard that history:
 
 ```sh
-CHAT_CASSETTE_RECORD=1 vendor/bin/castor browser:stack:up
+CHAT_MODEL=gpt-6-luna CHAT_REASONING_EFFORT=high CHAT_CASSETTE_RECORD=1 vendor/bin/castor browser:stack:up
 vendor/bin/castor browser:stack:console --worker -- debug:container 'App\Chat\AgentFactory'
 vendor/bin/castor browser:live:test -- tests/Live/ChatTest.php
 # Disable recording before any further app use, including after a failed test:
@@ -141,7 +141,7 @@ The reviewed synthetic cassette is `tests/Fixtures/chat/synthetic-chat.json`. It
 Replay requires the isolated database migrated and the canonical fixtures loaded, with synthetic conversation history suitable for recording. The ordinary demo fixture invokes `User::initializeChatGptIdentity()` through native Alice method calls to create a fresh random, nonsecret connection epoch. It does not assign a fixed namespace or include credentials, client IDs or provider registration data. Normal live mode remains disconnected until owner OAuth; replay-only DI supplies synthetic in-memory auth state and a throwing mock OAuth client without reading real auth files. A clean fixture-backed stack therefore needs no real ChatGPT sign-in for offline replay. Existing stacks without an initialized demo epoch still require initialization through their ordinary connection flow; do not reload fixtures over existing identities. Inference uses stock `CassetteHttpClient(record: false)` without a real client. Missing cassette, unmatched requests or exhausted interactions fail rather than making live requests.
 
 ```sh
-CHAT_CASSETTE_REPLAY=1 CHAT_CASSETTE_RECORD=0 vendor/bin/castor browser:stack:up
+CHAT_MODEL=gpt-6-luna CHAT_REASONING_EFFORT=high CHAT_CASSETTE_REPLAY=1 CHAT_CASSETTE_RECORD=0 vendor/bin/castor browser:stack:up
 # Restart before each replay journey to reset the worker's in-memory FIFO cursor:
 CHAT_CASSETTE_REPLAY=1 vendor/bin/castor browser:stack:restart-worker
 vendor/bin/castor browser:live:test -- tests/Live/ChatTest.php
@@ -149,7 +149,7 @@ vendor/bin/castor browser:live:test -- tests/Live/ChatTest.php
 CHAT_CASSETTE_REPLAY=0 CHAT_CASSETTE_RECORD=0 vendor/bin/castor browser:stack:up
 ```
 
-The same browser journey sends two deterministic messages, checks follow-up context and reload persistence, expands the real SQL call arguments/result and verifies the persisted call identifier/result after reload. It appends to existing history and does not invoke New chat. Native Agent execution, bridge conversion, worker, broker and private Mercure remain in use. A small test-only HTTP delegate maps only the new conversation cache UUID to the cassette's UUID through native `HttpCassette` replacements. The captured requests were plain JSON; this replay configuration does not support compressed requests. The stock client buffers responses, so replay does not establish live streaming timing. To run the opt-in live smoke instead, leave both cassette flags at zero and complete the owner-login prerequisite above.
+The same browser journey sends two deterministic messages, checks follow-up context and reload persistence, expands the real SQL call arguments/result and verifies the persisted call identifier/result after reload. It appends to existing history and does not invoke New chat. Native Agent execution, bridge conversion, worker, broker and private Mercure remain in use. A small test-only HTTP delegate maps the new conversation cache UUID and the complete `Current date (UTC): YYYY-MM-DD.` system header to the recorded values through native `HttpCassette` replacements. Bare dates, financial records, schema, tools, SQL, currency, model and reasoning effort are not normalized; those must match the reviewed recording. Replay therefore survives a different runtime day without weakening schema/tool matching. Use the same model/effort as the recording and a fresh synthetic conversation for each replay, with owner permission before discarding existing history. The captured requests were plain JSON; this replay configuration does not support compressed requests. The stock client buffers responses, so replay does not establish live streaming timing. To run the opt-in live smoke instead, leave both cassette flags at zero and complete the owner-login prerequisite above.
 
 The runner supplies the current checkout URL and proxy address internally. No manual URL flags are needed. The stack uses `var/browser-live` for its application database, private uploads, broker database, and socket. The fixed intercepted database and development data are separate. Native migrations and append-only fixture loading are the only setup; there are no test endpoints, worker-fault controls, or cross-run state files.
 
