@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace App\Entity;
+namespace App\Finance\Entity;
 
 use App\Enum\ReportingCurrency;
 use App\Repository\CurrencyRateRepository;

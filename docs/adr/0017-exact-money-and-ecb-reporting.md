@@ -1,6 +1,6 @@
 # ADR 0017: Preserve exact money and use ECB rates for reporting
 
-- Status: Accepted
+- Status: Accepted; storage and manual-rate-management policy amended by [ADR 0023](0023-per-user-finance-databases.md).
 - Date: 2026-10-29
 
 ## Context
@@ -24,7 +24,7 @@ Raw SQL `SUM` or `CAST` can still coerce textual values; SQL-based money aggrega
 - Show finances in one user-configurable reporting currency, defaulting to USD.
 - Support only currencies in the ECB reference-rate feed, with EUR as its implicit base and rate `1`.
 - Use ECB rates for statement transaction dates where available. For a source amount, cross-convert using `amount × rate(target) / rate(source)`, with exact decimal arithmetic.
-- Use public ECB HTTPS feeds; no paid FX provider or API key is required. Store rates in the existing application SQLite database.
+- Use public ECB HTTPS feeds; no paid FX provider or API key is required. Store rates in each owner's authoritative finance SQLite database under ADR 0023.
 - Seed roughly three years of historical coverage through canonical Alice fixtures. This is sufficient initial coverage, not a retention/deletion threshold.
 
 ECB reference valuation is not the bank's actual execution rate or fees. Fill missing calendar dates with each currency's previous available rate, including weekends and holidays. Never fill dates before that currency's first available reference rate. Unstored dates fail conversion explicitly.
@@ -33,7 +33,7 @@ ECB reference valuation is not the bank's actual execution rate or fees. Fill mi
 
 Bulk fixture insertion avoids constructing thousands of Alice ORM objects. Currency rates use a generated scalar ID for Doctrine identity and EasyAdmin URLs, with a separate unique constraint on `(day, currency)`. The single generated task migration preserves original dates, currencies and exact values while renaming the value column to `rate`, assigning IDs and adding provisional flags. `CurrencyRateRepository` owns rate queries and writes, including a recursive SQLite date query that checks completeness for every supported currency before the latest publication. Refresher, converter and fixture processor use that repository.
 
-Administrators can list, create, edit, inspect and delete rates through native EasyAdmin CRUD, with native date/range and currency filters. An index request without explicit filters redirects to a visible today filter in UTC; clearing filters returns to that default. Explicit filter choices are preserved. Rate forms use text fields and positive decimal-string validation, not floating-point number transformation. EUR remains implicit and is not a stored-rate choice. Scheduled refresh behavior is unchanged; manual edits receive no special overwrite protection.
+ADR 0023 removes manual currency-rate CRUD. Canonical fixtures seed each tenant's history and the ECB job maintains it. Fetch refresh data once and apply it to every tenant database, retaining short writes and exact strings. The earlier administrator CRUD implementation is superseded; it is not a tenant-administration workflow.
 
 Symfony Scheduler runs `app:currency:refresh` hourly through the existing worker's `scheduler_default` transport. The periodic trigger has a fixed UTC anchor, so hourly worker restarts do not postpone it indefinitely. Native stateful scheduling processes only the last missed occurrence after downtime. The browser-stack worker inherits the same transport configuration. Manual refresh uses `vendor/bin/castor app:console -- app:currency:refresh`.
 

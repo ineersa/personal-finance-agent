@@ -4,8 +4,7 @@ declare(strict_types=1);
 
 namespace App\Repository;
 
-use App\Entity\Source;
-use App\Entity\User;
+use App\Finance\Entity\Source;
 use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\QueryBuilder;
 
@@ -15,25 +14,13 @@ final readonly class SourceRepository
     {
     }
 
-    public function queryForUser(User $user): QueryBuilder
+    public function query(): QueryBuilder
     {
-        if (null === $user->getId()) {
-            throw new \InvalidArgumentException('A persisted trusted user is required.');
-        }
-
-        return $this->entityManager->createQueryBuilder()
-            ->select('record')
-            ->from(Source::class, 'record')
-            ->where('record.user = :user')
-            ->setParameter('user', $user->getId());
+        return $this->entityManager->createQueryBuilder()->select('record')->from(Source::class, 'record');
     }
 
-    public function findForUser(User $user, int $id): ?Source
+    public function find(int $id): ?Source
     {
-        return $this->queryForUser($user)
-            ->andWhere('record.id = :id')
-            ->setParameter('id', $id)
-            ->getQuery()
-            ->getOneOrNullResult();
+        return $this->entityManager->find(Source::class, $id);
     }
 }

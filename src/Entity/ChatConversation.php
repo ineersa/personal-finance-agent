@@ -8,7 +8,7 @@ use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Uid\Uuid;
 
 #[ORM\Entity]
-class ChatConversation extends UserRecord
+class ChatConversation
 {
     #[ORM\Id]
     #[ORM\Column(length: 36)]
@@ -32,14 +32,20 @@ class ChatConversation extends UserRecord
     #[ORM\Column(type: 'json')]
     public array $turns = [];
 
+    public function getUser(): User
+    {
+        return $this->user;
+    }
+
     public function __construct(
-        User $user,
+        #[ORM\ManyToOne]
+        #[ORM\JoinColumn(nullable: false, onDelete: 'RESTRICT')]
+        private readonly User $user,
         #[ORM\Column(length: 36, unique: true)]
         public readonly string $accountIdentity,
         string $model,
         string $reasoningEffort,
     ) {
-        parent::__construct($user);
         $this->id = Uuid::v7()->toRfc4122();
         $this->model = $model;
         $this->reasoningEffort = $reasoningEffort;

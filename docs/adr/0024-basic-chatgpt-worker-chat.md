@@ -1,4 +1,4 @@
-# ADR 0023: Start chat with ChatGPT, Messenger and private Turbo streams
+# ADR 0024: Start chat with ChatGPT, Messenger and private Turbo streams
 
 - Status: Accepted
 - Date: 2026-11-03

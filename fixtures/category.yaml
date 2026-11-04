@@ -1,4 +1,4 @@
-App\Entity\Category:
+App\Finance\Entity\Category:
     groceries:
         __construct: ['Groceries', 'Everyday food and household purchases', 'fa fa-cart-shopping']
     housing:

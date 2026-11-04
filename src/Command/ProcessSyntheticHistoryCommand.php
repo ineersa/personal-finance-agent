@@ -4,10 +4,12 @@ declare(strict_types=1);
 
 namespace App\Command;
 
-use App\Entity\Source;
-use App\Entity\Statement;
-use App\Entity\Transaction;
+use App\Entity\User;
 use App\Enum\ProcessingStatus;
+use App\Finance\Entity\Source;
+use App\Finance\Entity\Statement;
+use App\Finance\Entity\Transaction;
+use App\Finance\TenantManagers;
 use App\Message\ProcessStatementMessage;
 use App\MessageHandler\ProcessStatementHandler;
 use App\Storage\StatementStorage;
@@ -25,7 +27,9 @@ use Symfony\Component\Yaml\Yaml;
 #[AsCommand(name: 'app:demo:process-history', description: 'One-off paid processing of committed synthetic history in isolated export storage.')]
 final class ProcessSyntheticHistoryCommand extends Command
 {
-    public function __construct(private readonly EntityManagerInterface $em, private readonly StatementStorage $storage, private readonly ProcessStatementHandler $handler, private readonly ValidatorInterface $validator, #[Autowire('%kernel.project_dir%')] private readonly string $root, #[Autowire('%statement_storage_directory%')] private readonly string $storageDirectory)
+    private EntityManagerInterface $em;
+
+    public function __construct(private readonly EntityManagerInterface $central, private readonly TenantManagers $tenants, private readonly StatementStorage $storage, private readonly ProcessStatementHandler $handler, private readonly ValidatorInterface $validator, #[Autowire('%kernel.project_dir%')] private readonly string $root, #[Autowire('%statement_storage_directory%')] private readonly string $storageDirectory)
     {
         parent::__construct();
     }
@@ -37,54 +41,60 @@ final class ProcessSyntheticHistoryCommand extends Command
 
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
-        if ($this->root.'/var/browser/history-final/application.db' !== ($this->em->getConnection()->getParams()['path'] ?? null) || $this->root.'/var/browser/history-final/statements' !== $this->storageDirectory) {
+        if ($this->root.'/var/browser/history-final/application.db' !== ($this->central->getConnection()->getParams()['path'] ?? null) || $this->root.'/var/browser/history-final/statements' !== $this->storageDirectory) {
             throw new \RuntimeException('Only the fixed isolated history export database is allowed.');
         }
-        $manifest = json_decode((string) file_get_contents($this->root.'/resources/demo-statements/expected.json'), true, flags: \JSON_THROW_ON_ERROR);
-        $names = ['demo_current' => 'Maple Harbour Chequing · 7318', 'demo_card' => 'Maple Harbour Rewards Visa · 4826', 'demo_usd' => 'Maple Harbour US Dollar · 9054'];
-        $results = [];
-        foreach ($manifest['statements'] as $entry) {
-            if ('upload_holdout' === $entry['purpose']) {
-                continue;
+        $owner = $this->central->getRepository(User::class)->findOneBy(['email' => 'demo@test.com']) ?? throw new \RuntimeException('Load canonical users first.');
+        $this->em = $this->tenants->open($owner);
+        try {
+            $manifest = json_decode((string) file_get_contents($this->root.'/resources/demo-statements/expected.json'), true, flags: \JSON_THROW_ON_ERROR);
+            $names = ['demo_current' => 'Maple Harbour Chequing · 7318', 'demo_card' => 'Maple Harbour Rewards Visa · 4826', 'demo_usd' => 'Maple Harbour US Dollar · 9054'];
+            $results = [];
+            foreach ($manifest['statements'] as $entry) {
+                if ('upload_holdout' === $entry['purpose']) {
+                    continue;
+                }
+                $source = $this->em->getRepository(Source::class)->findOneBy(['name' => $names[$entry['source_fixture']]]);
+                if (null === $source) {
+                    throw new \RuntimeException('Load canonical Alice fixtures into isolated storage first.');
+                }
+                $filename = 'export-input-'.str_replace('/', '-', $entry['file']);
+                $statement = $this->em->getRepository(Statement::class)->findOneBy(['originalFilename' => $filename]);
+                if (null === $statement) {
+                    $path = $this->root.'/resources/demo-statements/'.$entry['file'];
+                    $bytes = (string) file_get_contents($path);
+                    $statement = new Statement($source, $this->storage->store(new File($path)), $filename, 'text/csv', \strlen($bytes), hash('sha256', $bytes), statementDate: new \DateTimeImmutable(substr(basename($entry['file']), 0, 7).'-01'), processingStatus: ProcessingStatus::Queued);
+                    $this->em->persist($statement);
+                    $this->em->flush();
+                }
+                $id = $statement->getId();
+                $ownerId = $owner->getId();
+                if (null === $id || null === $ownerId) {
+                    throw new \LogicException('Missing persisted identifiers.');
+                }
+                ($this->handler)(new ProcessStatementMessage($id, $ownerId, $statement->storedFilename));
+                $this->em->refresh($statement);
+                if (ProcessingStatus::Completed !== $statement->processingStatus) {
+                    throw new \RuntimeException('Synthetic processing failed: '.$entry['file'].' '.$statement->processingError);
+                }
+                $rows = $this->em->getRepository(Transaction::class)->findBy(['statement' => $statement], ['id' => 'ASC']);
+                $serialized = [];
+                foreach ($rows as $row) {
+                    $serialized[] = ['date' => $row->transactionDate?->format('Y-m-d'), 'description' => $row->description, 'amount' => $row->amount, 'currency' => $row->currency, 'direction' => $row->direction?->value, 'category' => $row->category?->name, 'meaning' => $row->meaning->value, 'recurrence' => $row->recurrence->value];
+                }
+                $results[] = ['file' => $entry['file'], 'source_fixture' => $entry['source_fixture'], 'rows' => $serialized];
+                file_put_contents($this->root.'/var/browser/history-final/results.json', json_encode($results, \JSON_PRETTY_PRINT | \JSON_THROW_ON_ERROR)."\n");
+                $output->writeln($entry['file'].': '.\count($rows).' synthetic drafts processed.');
             }
-            $source = $this->em->getRepository(Source::class)->findOneBy(['name' => $names[$entry['source_fixture']]]);
-            if (null === $source) {
-                throw new \RuntimeException('Load canonical Alice fixtures into isolated storage first.');
-            }
-            $filename = 'export-input-'.str_replace('/', '-', $entry['file']);
-            $statement = $this->em->getRepository(Statement::class)->findOneBy(['originalFilename' => $filename]);
-            if (null === $statement) {
-                $path = $this->root.'/resources/demo-statements/'.$entry['file'];
-                $bytes = (string) file_get_contents($path);
-                $statement = new Statement($source->getUser(), $source, $this->storage->store(new File($path)), $filename, 'text/csv', \strlen($bytes), hash('sha256', $bytes), statementDate: new \DateTimeImmutable(substr(basename($entry['file']), 0, 7).'-01'), processingStatus: ProcessingStatus::Queued);
-                $this->em->persist($statement);
-                $this->em->flush();
-            }
-            $id = $statement->getId();
-            $owner = $source->getUser()->getId();
-            if (null === $id || null === $owner) {
-                throw new \LogicException('Missing persisted identifiers.');
-            }
-            ($this->handler)(new ProcessStatementMessage($id, $owner, $statement->storedFilename));
-            $this->em->refresh($statement);
-            if (ProcessingStatus::Completed !== $statement->processingStatus) {
-                throw new \RuntimeException('Synthetic processing failed: '.$entry['file'].' '.$statement->processingError);
-            }
-            $rows = $this->em->getRepository(Transaction::class)->findBy(['statement' => $statement], ['id' => 'ASC']);
-            $serialized = [];
-            foreach ($rows as $row) {
-                $serialized[] = ['date' => $row->transactionDate?->format('Y-m-d'), 'description' => $row->description, 'amount' => $row->amount, 'currency' => $row->currency, 'direction' => $row->direction?->value, 'category' => $row->category?->name, 'meaning' => $row->meaning->value, 'recurrence' => $row->recurrence->value];
-            }
-            $results[] = ['file' => $entry['file'], 'source_fixture' => $entry['source_fixture'], 'rows' => $serialized];
-            file_put_contents($this->root.'/var/browser/history-final/results.json', json_encode($results, \JSON_PRETTY_PRINT | \JSON_THROW_ON_ERROR)."\n");
-            $output->writeln($entry['file'].': '.\count($rows).' synthetic drafts processed.');
-        }
 
-        if (true === $input->getOption('export')) {
-            $this->export($results, $manifest['statements']);
-        }
+            if (true === $input->getOption('export')) {
+                $this->export($results, $manifest['statements']);
+            }
 
-        return Command::SUCCESS;
+            return Command::SUCCESS;
+        } finally {
+            $this->tenants->release($this->em);
+        }
     }
 
     /**
@@ -95,9 +105,9 @@ final class ProcessSyntheticHistoryCommand extends Command
     {
         $statementDefinitions = Yaml::parseFile($this->root.'/fixtures/statement.yaml')[Statement::class];
         $transactionDefinitions = Yaml::parseFile($this->root.'/fixtures/transaction.yaml')[Transaction::class];
-        $statements = ['admin_statement' => $statementDefinitions['admin_statement']];
-        $transactions = ['admin_transaction' => $transactionDefinitions['admin_transaction']];
-        $catalog = Yaml::parseFile($this->root.'/fixtures/category.yaml')[\App\Entity\Category::class];
+        $statements = [];
+        $transactions = [];
+        $catalog = Yaml::parseFile($this->root.'/fixtures/category.yaml')[\App\Finance\Entity\Category::class];
         $categoryReferences = [];
         foreach ($catalog as $id => $definition) {
             $categoryReferences[$definition['__construct'][0]] = '@'.$id;
@@ -123,7 +133,7 @@ final class ProcessSyntheticHistoryCommand extends Command
             $bytes = (string) file_get_contents($this->root.'/resources/demo-statements/'.$entry['file']);
             $persistedStatement = $this->em->getRepository(Statement::class)->findOneBy(['originalFilename' => 'export-input-'.str_replace('/', '-', $entry['file'])]);
             $persistedRows = $this->em->getRepository(Transaction::class)->findBy(['statement' => $persistedStatement], ['id' => 'ASC']);
-            $statements[$statementId] = ['__construct' => ['@demo', '@'.$entry['source_fixture'], 'synthetic-'.$key, $filename, 'text/csv', \strlen($bytes), hash('sha256', $bytes)], 'statementDate' => '<(new \\DateTimeImmutable("'.$month.'-01"))>', 'processingStatus' => '<(App\\Enum\\ProcessingStatus::Completed)>', 'uploadedAt' => '<(new \\DateTimeImmutable("2026-11-02T00:00:00+00:00"))>', 'processedAt' => '<(new \\DateTimeImmutable("2026-11-02T00:00:00+00:00"))>'];
+            $statements[$statementId] = ['__construct' => ['@'.$entry['source_fixture'], 'synthetic-'.$key, $filename, 'text/csv', \strlen($bytes), hash('sha256', $bytes)], 'statementDate' => '<(new \\DateTimeImmutable("'.$month.'-01"))>', 'processingStatus' => '<(App\\Enum\\ProcessingStatus::Completed)>', 'uploadedAt' => '<(new \\DateTimeImmutable("2026-11-02T00:00:00+00:00"))>', 'processedAt' => '<(new \\DateTimeImmutable("2026-11-02T00:00:00+00:00"))>'];
             foreach ($entry['rows'] as $index => $row) {
                 $truth = $expectation['rows'][$index];
                 foreach (['date', 'description', 'amount'] as $fact) {
@@ -156,7 +166,7 @@ final class ProcessSyntheticHistoryCommand extends Command
                     ['usd/2026-09.csv', 3] => 'demo_draft',
                     default => 'history_'.$key.'_'.($index + 1),
                 };
-                $transactions[$reference] = ['__construct' => ['@demo', '@'.$statementId, '@'.$entry['source_fixture']], 'transactionDate' => '<(new \\DateTimeImmutable("'.$row['date'].'"))>', 'amount' => $row['amount'], 'currency' => $row['currency'], 'direction' => '<(App\\Enum\\Direction::'.$row['direction'].')>', 'description' => $row['description'], 'category' => null === $row['category'] ? null : $categoryReferences[$row['category']], 'isDraft' => !$approved, 'meaning' => '<(App\\Enum\\TransactionMeaning::'.\App\Enum\TransactionMeaning::from($row['meaning'])->name.')>', 'recurrence' => '<(App\\Enum\\RecurrenceKind::'.\App\Enum\RecurrenceKind::from($row['recurrence'])->name.')>'];
+                $transactions[$reference] = ['__construct' => ['@'.$statementId, '@'.$entry['source_fixture']], 'transactionDate' => '<(new \\DateTimeImmutable("'.$row['date'].'"))>', 'amount' => $row['amount'], 'currency' => $row['currency'], 'direction' => '<(App\\Enum\\Direction::'.$row['direction'].')>', 'description' => $row['description'], 'category' => null === $row['category'] ? null : $categoryReferences[$row['category']], 'isDraft' => !$approved, 'meaning' => '<(App\\Enum\\TransactionMeaning::'.\App\Enum\TransactionMeaning::from($row['meaning'])->name.')>', 'recurrence' => '<(App\\Enum\\RecurrenceKind::'.\App\Enum\RecurrenceKind::from($row['recurrence'])->name.')>'];
                 ++$review[$approved ? 'approved' : 'unresolved'];
             }
             ++$review['statements'];
