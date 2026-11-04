@@ -1,4 +1,4 @@
-# ADR 0024: Execute tenant SQL in a bounded subprocess
+# ADR 0025: Execute tenant SQL in a bounded subprocess
 
 - Status: Accepted
 - Date: 2026-11-04
