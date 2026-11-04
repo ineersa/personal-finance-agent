@@ -11,9 +11,12 @@ use App\Entity\ChatConversation;
 use App\Message\GenerateChat;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\AI\Agent\Execution\Update\Progress;
+use Symfony\AI\Agent\Toolbox\Event\ToolCallSucceeded;
 use Symfony\AI\Platform\Message\MessageBag;
 use Symfony\AI\Platform\Result\Stream\Delta\DeltaInterface;
+use Symfony\AI\Platform\Result\ToolCall;
 use Symfony\AI\Platform\Serializer\MessageBagNormalizer;
+use Symfony\Component\EventDispatcher\EventDispatcher;
 use Symfony\Component\Messenger\Attribute\AsMessageHandler;
 
 #[AsMessageHandler(fromTransport: GenerateChat::TRANSPORT)]
@@ -36,31 +39,52 @@ final readonly class GenerateChatHandler
             return;
         }
         $execution = null;
+        $output = new NativeAssistantOutput();
+        $turnIndex = \count($conversation->turns) - 1;
+        $lastUpdate = 0.0;
+        $project = function (bool $force = false) use (&$execution, $conversation, $output, $turnIndex, &$lastUpdate): void {
+            $conversation->turns[$turnIndex] = ['question' => $conversation->turns[$turnIndex]['question'], ...$output->transcript(), 'activity' => $output->activity->entries()];
+            if ($force || microtime(true) - $lastUpdate >= self::UPDATE_INTERVAL) {
+                $this->updates->publish($conversation, $execution);
+                $lastUpdate = microtime(true);
+            }
+        };
+        $error = null;
         try {
-            $output = new NativeAssistantOutput();
-            $execution = $this->agents->create($registration, $conversation->model, $output)->call(
-                $this->normalizer->denormalize($conversation->history, MessageBag::class),
+            // Scoped native tool events project results privately; no global listener or payload logging.
+            $events = new EventDispatcher();
+            $events->addListener(ToolCallSucceeded::class, static function (ToolCallSucceeded $event) use ($output, $project): void {
+                $output->activity->completed($event->getResult());
+                $project(true);
+            });
+            $execution = $this->agents->create($owner, $registration, $conversation->model, $output, $events)->call(
+                // Refresh application instructions, not the user's history or initial data context.
+                $this->normalizer->denormalize($conversation->history, MessageBag::class)->withoutSystemMessage(),
                 ['stream' => true, 'prompt_cache_key' => $conversation->id, 'reasoning' => ['effort' => $conversation->reasoningEffort, 'summary' => 'auto']],
             );
-            $lastUpdate = 0.0;
-            $turnIndex = \count($conversation->turns) - 1;
-            $execution->onProgress(function (Progress $update) use ($execution, $conversation, $output, $turnIndex, &$lastUpdate): void {
+            $execution->onProgress(static function (Progress $update) use ($output, $project): void {
+                if (Progress::STAGE_MODEL_REQUEST === $update->getStage()) {
+                    $output->beginRound();
+                }
                 if (Progress::STAGE_DELTA === $update->getStage() && $update->getPayload() instanceof DeltaInterface) {
                     $output->observe($update->getPayload());
-                    $conversation->turns[$turnIndex] = ['question' => $conversation->turns[$turnIndex]['question'], ...$output->transcript()];
                 }
-                if (microtime(true) - $lastUpdate >= self::UPDATE_INTERVAL) {
-                    $this->updates->publish($conversation, $execution);
-                    $lastUpdate = microtime(true);
+                $toolStarted = Progress::STAGE_TOOL_CALL === $update->getStage() && $update->getPayload() instanceof ToolCall;
+                if ($toolStarted && $update->getPayload() instanceof ToolCall) {
+                    $output->activity->started($update->getPayload());
                 }
+                $project($toolStarted);
             });
             // Agent drives its own model/tool loop; callbacks only project its progress.
             $conversation->history = $this->normalizer->normalize($execution->getMessages());
-            $this->em->flush();
-            $this->updates->publish($conversation, $execution);
+            $project();
         } catch (\Throwable) {
             // Provider exceptions can contain private input or credentials.
-            $this->updates->publish($conversation, $execution, 'The response could not be completed. Check your ChatGPT connection and model access before trying again.');
+            $output->activity->failed();
+            $conversation->turns[$turnIndex] = ['question' => $conversation->turns[$turnIndex]['question'], ...$output->transcript(), 'activity' => $output->activity->entries()];
+            $error = 'The response could not be completed. Check your ChatGPT connection and model access before trying again.';
         }
+        $this->em->flush();
+        $this->updates->publish($conversation, $execution, $error);
     }
 }

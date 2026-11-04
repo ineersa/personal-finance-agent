@@ -1,6 +1,6 @@
 # ADR 0017: Preserve exact money and use ECB rates for reporting
 
-- Status: Accepted; storage and manual-rate-management policy amended by [ADR 0023](0023-per-user-finance-databases.md).
+- Status: Accepted; storage and manual-rate-management policy amended by [ADR 0023](0023-per-user-finance-databases.md); SQL-result precision amended by [ADR 0025](0025-in-process-tenant-sql.md).
 - Date: 2026-10-29
 
 ## Context
@@ -17,7 +17,7 @@ Do not assume a Doctrine DECIMAL declaration alone guarantees exact SQLite stora
 
 Transaction amounts use Doctrine text/CLOB storage so incomplete drafts can retain unvalidated original text. Approval must validate plain decimal strings before analysis. `CurrencyRate` uses the custom `exact_decimal` type, also declared as CLOB. Both have SQLite TEXT affinity and preserve signs, zeros and precision. Migration diagnostics preserve long fractional amounts and signed, zero-padded rate strings with storage class `text`. Application round trips remain part of the later CRUD browser scenarios. Reporting currency is a User column, defaulting to USD. See [domain persistence](../domain-persistence.md).
 
-Raw SQL `SUM` or `CAST` can still coerce textual values; SQL-based money aggregates and FX calculations must preserve precision. The SQL strategy remains unresolved, not delegated to model arithmetic.
+Raw SQL `SUM` or `CAST` can still coerce textual values. The original requirement was precision-preserving SQL aggregation and FX, not model arithmetic. [ADR 0025](0025-in-process-tenant-sql.md) amends that requirement for the current tool slice: the owner selected SQLite builtins with approximate monetary results. Decimal-string storage and application BCMath conversion remain unchanged.
 
 ### Reporting currency and ECB valuation
 

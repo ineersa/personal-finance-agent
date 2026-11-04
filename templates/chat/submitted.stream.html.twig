@@ -1,0 +1,2 @@
+{% include 'chat/update.stream.html.twig' %}
+<turbo-stream action="replace" target="{{ constant('App\\Chat\\Workspace::COMPOSER_DOM_ID') }}"><template>{% include 'chat/_composer.html.twig' %}</template></turbo-stream>

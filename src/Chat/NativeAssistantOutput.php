@@ -31,14 +31,28 @@ final class NativeAssistantOutput implements OutputProcessorInterface
     /** @var array<string, list<string>> */
     private array $completedText = [];
 
+    public function __construct(public readonly ChatActivity $activity = new ChatActivity())
+    {
+    }
+
     /** @return array{reasoning: string, commentary: string, answer: string} */
     public function transcript(): array
     {
         return $this->transcript;
     }
 
+    public function beginRound(): void
+    {
+        $this->activity->beginRound();
+        // Provider output indices restart on each native tool-loop round.
+        $this->messages = [];
+        $this->reasoning = [];
+        $this->completedItems = 0;
+    }
+
     public function observe(DeltaInterface $delta): void
     {
+        $this->activity->observe($delta);
         if ($delta instanceof MessageComplete) {
             $text = $delta->getContent();
             $phase = $text->getPhase() ?? (MessageItem::fromText($text)['phase'] ?? null);

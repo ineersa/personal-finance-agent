@@ -57,7 +57,7 @@ export default class extends Controller {
     }
 
     rememberSummary(event) {
-        if (!(event.target instanceof HTMLDetailsElement)) return;
+        if (!(event.target instanceof HTMLDetailsElement) || !this.element.contains(event.target)) return;
         if (event.target.open) this.summaries.add(event.target.id);
         else this.summaries.delete(event.target.id);
     }

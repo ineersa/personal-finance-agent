@@ -7,6 +7,7 @@ namespace App\Entity;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Uid\Uuid;
 
+/** @phpstan-import-type Entry from \App\Chat\ChatActivity */
 #[ORM\Entity]
 class ChatConversation
 {
@@ -28,7 +29,7 @@ class ChatConversation
     #[ORM\Column(type: 'json')]
     public array $history = [];
 
-    /** @var list<array{question: string, reasoning: string, commentary: string, answer: string}> */
+    /** @var list<array{question: string, reasoning: string, commentary: string, answer: string, activity?: list<Entry>}> */
     #[ORM\Column(type: 'json')]
     public array $turns = [];
 

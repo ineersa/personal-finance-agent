@@ -1,4 +1,4 @@
-<div id="chat-composer-fields">
+<div id="{{ constant('App\\Chat\\Workspace::COMPOSER_DOM_ID') }}">
     <label class="visually-hidden" for="finance-question">Your message</label>
     <textarea id="finance-question" name="question" rows="1" placeholder="Ask a question or follow up…" required data-chat-view-target="input" data-action="input->chat-view#resizeInput keydown->chat-view#handleKey">{{ question|default('') }}</textarea>
     <div class="composer-toolbar">

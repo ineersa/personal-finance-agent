@@ -4,10 +4,12 @@ declare(strict_types=1);
 
 namespace App\Finance;
 
+use App\Doctrine\SqliteMigratorFactory;
 use App\Entity\User;
 use Doctrine\Migrations\Configuration\EntityManager\ExistingEntityManager;
 use Doctrine\Migrations\Configuration\Migration\ConfigurationArray;
 use Doctrine\Migrations\DependencyFactory;
+use Doctrine\Migrations\Migrator;
 use Doctrine\Migrations\MigratorConfiguration;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\DependencyInjection\Attribute\Autowire;
@@ -20,7 +22,7 @@ final readonly class TenantSchema
     private const string LATEST = 'latest';
     private const string PROVISION_LOCK_PREFIX = 'tenant-provision-';
 
-    public function __construct(private TenantManagers $tenants, private InitialReferenceData $reference, #[Autowire('%kernel.project_dir%')] private string $root, private Filesystem $filesystem)
+    public function __construct(private TenantManagers $tenants, private InitialReferenceData $reference, #[Autowire('%kernel.project_dir%')] private string $root, private Filesystem $filesystem, private SqliteMigratorFactory $migrators)
     {
     }
 
@@ -46,6 +48,7 @@ final readonly class TenantSchema
                 $factory = DependencyFactory::fromEntityManager(new ConfigurationArray([
                     'migrations_paths' => ['App\\Finance\\Migrations' => $this->root.'/src/Finance/Migrations'],
                 ]), new ExistingEntityManager($em));
+                $factory->setDefinition(Migrator::class, $this->migrators);
                 $factory->getMetadataStorage()->ensureInitialized();
                 $version = $factory->getVersionAliasResolver()->resolveVersionAlias(self::LATEST);
                 $factory->getMigrator()->migrate($factory->getMigrationPlanCalculator()->getPlanUntilVersion($version), new MigratorConfiguration());

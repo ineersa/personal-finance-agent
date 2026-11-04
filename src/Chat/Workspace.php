@@ -24,9 +24,10 @@ final readonly class Workspace
     public const string SUBMIT_CSRF = 'chat-submit';
     public const string NEW_CSRF = 'chat-new';
     public const string DOM_ID = 'chat-workspace';
+    public const string COMPOSER_DOM_ID = 'chat-composer-fields';
     public const string COMMENTARY_PHASE = 'commentary';
 
-    public function __construct(private EntityManagerInterface $em, private MessageBagNormalizer $normalizer, private MessageBusInterface $bus, #[Autowire('%env(CHAT_MODEL)%')] private string $model, #[Autowire('%env(CHAT_REASONING_EFFORT)%')] private string $effort)
+    public function __construct(private EntityManagerInterface $em, private MessageBagNormalizer $normalizer, private MessageBusInterface $bus, private InitialContext $context, #[Autowire('%env(CHAT_MODEL)%')] private string $model, #[Autowire('%env(CHAT_REASONING_EFFORT)%')] private string $effort)
     {
     }
 
@@ -57,7 +58,7 @@ final readonly class Workspace
         }
         $conversation = $this->current($user) ?? new ChatConversation($user, $identity, $this->model, $this->effort);
         $messages = [] === $conversation->history
-            ? MessageBag::forId(UuidV7::fromString($conversation->id))
+            ? MessageBag::forId(UuidV7::fromString($conversation->id))->with(Message::ofUser($this->context->forOwner($user)))
             : $this->normalizer->denormalize($conversation->history, MessageBag::class);
         $conversation->history = $this->normalizer->normalize($messages->with(Message::ofUser($question)));
         $conversation->turns[] = ['question' => $question, 'reasoning' => '', 'commentary' => '', 'answer' => ''];

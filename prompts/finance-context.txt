@@ -1,0 +1,70 @@
+[user-context]
+<data_schemas>
+Tables:
+- source: account or card instrument associated with statements and transactions, not a merchant.
+- statement: uploaded bank statement, its import state and associated transactions. statement_date may be NULL; an explicit statement date takes precedence, otherwise the earliest valid imported transaction date is used.
+- financial_transaction: transaction rows. Drafts (is_draft = 1) are imported, unreviewed transactions that can still be edited; is_draft = 0 identifies approved records. amount is signed decimal TEXT in currency. direction (Credit or Debit) describes cash flow, not income/spending classification. transaction_date is the original transaction date.
+- category: classification catalog referenced by transactions.
+- currency_rate: ECB reference rates by calendar day and currency, quoted as currency units per EUR. EUR has implicit rate 1 and no rate row. rate is decimal TEXT; is_provisional marks provisional rates. day and transaction_date use YYYY-MM-DD; (day, currency) is unique.
+
+meaning: expense, income, refund, own_account_transfer, credit_card_payment or unknown. recurrence is independent: recurring_bill, subscription, other_recurring, non_recurring or unknown. A recurring bill is not necessarily a subscription. Unknown classifications remain unresolved.
+
+{data_schemas}
+</data_schemas>
+<project_context>
+Analysis: exclude drafts by default, unless the user asks about them. Do not routinely announce this filter; mention it only when requested or material to the answer. Transfers and card payments are excluded from both income and spending; refunds reduce the corresponding purchase category. Use stored classifications, not direction or merchant-name guesses. Do not invent dates from filenames or row order.
+
+Money: SQLite monetary arithmetic is approximate. Identify the currency and approximate nature of calculated monetary results. Calculate every total, ratio, percentage and conversion in SQL. Do not combine currencies without explicit valuation.
+
+Conversion: for source currency S and target T, use amount * target_rate / source_rate on the transaction date. Source equal to target requires no rates; EUR uses rate 1. LEFT JOIN each required non-EUR rate by currency and transaction_date. Never substitute today's rate or treat missing inputs/rates as zero. Return coverage counts; do not present a partial sum as a complete total. Flag provisional valuations when used. ECB reference valuation is not actual bank execution or fees.
+
+Examples below value signed amounts, not spending or income. Adapt the date range, classifications and target to the question; examples have no date filter. For spending/income reports, apply the classification rules above before aggregating. A NULL total with missing_count > 0 means incomplete coverage; matched_count = 0 means no matching transactions, not an established zero total.
+
+Example: value approved transactions in EUR, including EUR identity and visible missing-rate/input coverage:
+```sql
+WITH valued AS (
+    SELECT CASE
+        WHEN t.amount IS NULL OR t.currency IS NULL THEN NULL
+        WHEN t.currency = 'EUR' THEN CAST(t.amount AS REAL)
+        WHEN sr.rate IS NOT NULL THEN CAST(t.amount AS REAL) / CAST(sr.rate AS REAL)
+    END AS amount_eur,
+    CASE WHEN t.currency <> 'EUR' THEN COALESCE(sr.is_provisional, 0) ELSE 0 END AS provisional
+    FROM financial_transaction t
+    LEFT JOIN currency_rate sr ON sr.day = t.transaction_date AND sr.currency = t.currency
+    WHERE t.is_draft = 0
+)
+SELECT COUNT(*) AS matched_count, COUNT(amount_eur) AS valued_count,
+       COUNT(*) - COUNT(amount_eur) AS missing_count,
+       COUNT(CASE WHEN amount_eur IS NOT NULL AND provisional = 1 THEN 1 END) AS provisional_count,
+       CASE WHEN COUNT(*) = COUNT(amount_eur) THEN SUM(amount_eur) END AS approximate_total_eur
+FROM valued
+```
+
+Example: cross-currency valuation into GBP (replace GBP with the requested/reporting currency). Same-currency rows need neither rate; EUR needs no rate row on either side:
+```sql
+WITH target AS (SELECT 'GBP' AS currency), valued AS (
+    SELECT CASE
+        WHEN t.amount IS NULL OR t.currency IS NULL THEN NULL
+        WHEN t.currency = target.currency THEN CAST(t.amount AS REAL)
+        WHEN (t.currency = 'EUR' OR sr.rate IS NOT NULL)
+         AND (target.currency = 'EUR' OR tr.rate IS NOT NULL)
+        THEN CAST(t.amount AS REAL)
+             * CASE WHEN target.currency = 'EUR' THEN 1.0 ELSE CAST(tr.rate AS REAL) END
+             / CASE WHEN t.currency = 'EUR' THEN 1.0 ELSE CAST(sr.rate AS REAL) END
+    END AS converted_amount,
+    CASE WHEN t.currency = target.currency THEN 0
+         WHEN (t.currency <> 'EUR' AND sr.is_provisional = 1)
+           OR (target.currency <> 'EUR' AND tr.is_provisional = 1) THEN 1
+         ELSE 0 END AS provisional
+    FROM financial_transaction t CROSS JOIN target
+    LEFT JOIN currency_rate sr ON sr.day = t.transaction_date AND sr.currency = t.currency
+    LEFT JOIN currency_rate tr ON tr.day = t.transaction_date AND tr.currency = target.currency
+    WHERE t.is_draft = 0
+)
+SELECT COUNT(*) AS matched_count, COUNT(converted_amount) AS valued_count,
+       COUNT(*) - COUNT(converted_amount) AS missing_count,
+       COUNT(CASE WHEN converted_amount IS NOT NULL AND provisional = 1 THEN 1 END) AS provisional_count,
+       CASE WHEN COUNT(*) = COUNT(converted_amount) THEN SUM(converted_amount) END AS approximate_total_gbp
+FROM valued
+```
+</project_context>

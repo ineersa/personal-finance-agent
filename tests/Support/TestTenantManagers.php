@@ -41,10 +41,14 @@ final class TestTenantManagers extends TenantManagers
         $existed = is_file($path);
         $em = parent::open($owner, $provision);
         if (self::$active) {
-            self::$connections[$path] = $em->getConnection();
-            $em->getConnection()->beginTransaction();
             if (!$existed) {
                 self::$created[] = $path;
+            }
+            // Schema provisioning owns its transaction; enlist only subsequent data access.
+            // Newly provisioned files are still removed by the existing teardown.
+            if (!$provision) {
+                self::$connections[$path] = $em->getConnection();
+                $em->getConnection()->beginTransaction();
             }
         }
 
@@ -53,7 +57,7 @@ final class TestTenantManagers extends TenantManagers
 
     public function release(EntityManagerInterface $manager): void
     {
-        if (self::$active) {
+        if (self::$active && \in_array($manager->getConnection(), self::$connections, true)) {
             $manager->clear();
 
             return;
