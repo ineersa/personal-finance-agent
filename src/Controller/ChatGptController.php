@@ -42,7 +42,7 @@ final class ChatGptController extends AbstractController
     {
         try {
             $connection->disconnect($user);
-            $this->addFlash('success', 'ChatGPT disconnected. You can now connect a different account.');
+            $this->addFlash('success', 'ChatGPT disconnected. Reconnect to use the same account registration.');
         } catch (AuthException) {
             $this->addFlash('danger', 'ChatGPT could not be disconnected. Your connection is unchanged. Please try again.');
         }

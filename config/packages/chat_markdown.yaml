@@ -1,0 +1,15 @@
+twig_extra:
+    commonmark:
+        html_input: strip
+        allow_unsafe_links: false
+
+framework:
+    html_sanitizer:
+        sanitizers:
+            app.chat:
+                allow_safe_elements: true
+                drop_elements: [img, picture, source, video, audio, iframe]
+                allowed_link_schemes: [https, http, mailto]
+                force_attributes:
+                    a:
+                        rel: 'noreferrer noopener'

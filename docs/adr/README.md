@@ -28,6 +28,7 @@ ADRs record significant technical decisions, their context, and their consequenc
 | [0020](0020-private-statement-storage.md) | Accepted | Store private statement bytes through local Flysystem storage and owner-authorized application downloads. |
 | [0021](0021-fixtures-first-jev-import.md) | Accepted | Prepare synthetic monthly inputs, use Jev for CSV decisions, separate meaning/recurrence and defer quotas beyond the 10 MiB file limit. |
 | [0022](0022-local-chatgpt-connection.md) | Accepted | Connect ChatGPT per Finance user through a local loopback callback with package-managed private credential files before chat generation. |
+| [0023](0023-basic-chatgpt-worker-chat.md) | Accepted | Start multi-turn ChatGPT chat through Agent, Messenger and private Turbo streams, with native signed history and an editable prompt. |
 
 ## Recording decisions
 

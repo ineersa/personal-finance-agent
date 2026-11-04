@@ -1,0 +1,40 @@
+parameters:
+    env(CHAT_CASSETTE_RECORD): '0'
+    env(CHAT_CASSETTE_REPLAY): '0'
+
+services:
+    app.chat.recording_http_client:
+        class: Symfony\Contracts\HttpClient\HttpClientInterface
+        factory: ['App\Tests\Support\ChatRecordingHttpClient', 'create']
+        autoconfigure: false
+        arguments:
+            $live: "@=env('bool:CHAT_CASSETTE_REPLAY') ? null : service('app.chatgpt.http_client')"
+            $filesystem: '@filesystem'
+            $path: '%kernel.project_dir%/var/private/chat-cassettes/synthetic-chat.json'
+            $record: '%env(bool:CHAT_CASSETTE_RECORD)%'
+            $replay: '%env(bool:CHAT_CASSETTE_REPLAY)%'
+            $replayPath: '%kernel.project_dir%/tests/Fixtures/chat/synthetic-chat.json'
+
+    app.chat.synthetic_auth:
+        class: App\Tests\Support\ReplayChatAuthStorage
+
+    app.chat.no_network:
+        class: Symfony\Component\HttpClient\MockHttpClient
+        factory: ['App\Tests\Support\ReplayChatAuthStorage', 'noNetwork']
+
+    App\ChatGpt\OAuthFactory:
+        autowire: true
+        autoconfigure: true
+        arguments:
+            $storageOverride: "@=env('bool:CHAT_CASSETTE_REPLAY') ? service('app.chat.synthetic_auth') : null"
+            $http: "@=env('bool:CHAT_CASSETTE_REPLAY') ? service('app.chat.no_network') : service('app.chatgpt.http_client')"
+
+    Symfony\AI\Platform\Bridge\OpenAIChatGPT\Auth\IdTokenVerifier:
+        arguments:
+            $httpClient: "@=env('bool:CHAT_CASSETTE_REPLAY') ? service('app.chat.no_network') : service('app.chatgpt.http_client')"
+
+    App\Chat\AgentFactory:
+        autowire: true
+        autoconfigure: true
+        arguments:
+            $http: '@app.chat.recording_http_client'

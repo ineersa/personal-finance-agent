@@ -6,6 +6,7 @@ services:
       APP_DEBUG: '1'
       APP_SECRET: browser-synthetic-only
       DATABASE_URL: 'sqlite:////app/var/browser/application.db'
+      CHAT_CASSETTE_REPLAY: '${CHAT_CASSETTE_REPLAY:-0}'
     volumes: !override
       - .:/app:ro
       - ./var/browser-live:/app/var
@@ -22,6 +23,8 @@ services:
       APP_ENV: test
       APP_DEBUG: '1'
       APP_SECRET: browser-synthetic-only
+      CHAT_CASSETTE_RECORD: '${CHAT_CASSETTE_RECORD:-0}'
+      CHAT_CASSETTE_REPLAY: '${CHAT_CASSETTE_REPLAY:-0}'
     volumes: !override
       - .:/app:ro
       - ./var/browser-live:/app/var

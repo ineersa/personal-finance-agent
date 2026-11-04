@@ -55,7 +55,7 @@ services:
       MERCURE_JWT_SECRET: '${MERCURE_JWT_SECRET}'
     volumes:
       - ./:/app
-    command: ['php', 'bin/console', 'messenger:consume', 'scheduler_default', 'statement_import', '--keepalive=5', '--memory-limit=256M', '--time-limit=3600', '--no-interaction']
+    command: ['php', 'bin/console', 'messenger:consume', 'scheduler_default', 'statement_import', 'chat', '--keepalive=5', '--memory-limit=256M', '--time-limit=3600', '--no-interaction']
     healthcheck:
       disable: true
     restart: unless-stopped

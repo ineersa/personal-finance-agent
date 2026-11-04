@@ -3,11 +3,11 @@ import { renderStreamMessage } from '@hotwired/turbo';
 
 // UX Turbo marks its native Mercure element connected on every EventSource open.
 export default class extends Controller {
-    static values = { url: String };
+    static values = { url: String, targetSelector: { type: String, default: '[data-import-state]' } };
     version = 0;
 
     connect() {
-        this.target = this.element.querySelector('[data-import-state]').id;
+        this.target = this.element.querySelector(this.targetSelectorValue).id;
         this.beforeStream = event => {
             const stream = event.detail.newStream;
             if (stream.getAttribute('target') !== this.target) return;
@@ -57,7 +57,7 @@ export default class extends Controller {
             renderStreamMessage(template.innerHTML);
         } catch (error) {
             // Native EventSource owns reconnects. No polling or page reload fallback.
-            if (error.name !== 'AbortError') console.warn('Statement status catch-up unavailable.');
+            if (error.name !== 'AbortError') console.warn('Live status catch-up unavailable.');
         }
     }
 }
