@@ -9,6 +9,7 @@
 parameters:
     env(FINANCE_DATABASE_URL): 'sqlite:///%kernel.project_dir%/var/tenant-schema.db'
     app.chatgpt.installation_id: 'urn:uuid:8d42fa1c-26d1-448b-8a2e-45ea61c50ec4'
+    app.chatgpt.client_id: 'oaiapp_cxcvQz855b4qrqrBEWXmH2fhm'
     env(JEV_API_KEY): ''
     env(JEV_BASE_URL): 'https://api.typesafe.ai'
     env(JEV_MODEL): 'jev-1.14.0'
