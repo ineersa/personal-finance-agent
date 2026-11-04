@@ -6,7 +6,6 @@ namespace App\Repository;
 
 use App\Finance\Entity\Statement;
 use App\Finance\Entity\Transaction;
-use App\Entity\User;
 use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\QueryBuilder;
 

@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace App\Controller\Admin;
 
-use App\Entity\User;
 use App\Security\FinanceRecordVoter;
 use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\QueryBuilder;
@@ -62,5 +61,4 @@ abstract class OwnedCrudController extends AbstractCrudController
     }
 
     abstract protected function ownedQuery(): QueryBuilder;
-
 }

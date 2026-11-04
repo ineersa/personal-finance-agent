@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace App\Import;
 
-use App\Finance\Entity\Source;
-use App\Finance\Entity\Statement;
 use App\Entity\User;
 use App\Enum\ProcessingStatus;
+use App\Finance\Entity\Source;
+use App\Finance\Entity\Statement;
 use App\Message\ProcessStatementMessage;
 use App\Repository\StatementRepository;
 use App\Storage\StatementStorage;

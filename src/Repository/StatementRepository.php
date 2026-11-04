@@ -4,11 +4,9 @@ declare(strict_types=1);
 
 namespace App\Repository;
 
-use App\Finance\Entity\Source;
+use App\Enum\ProcessingStatus;
 use App\Finance\Entity\Statement;
 use App\Finance\Entity\Transaction;
-use App\Entity\User;
-use App\Enum\ProcessingStatus;
 use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\QueryBuilder;
 

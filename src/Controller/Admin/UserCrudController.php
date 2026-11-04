@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace App\Controller\Admin;
 
 use App\Entity\User;
-use App\Finance\TenantSchema;
 use App\Finance\TenantManagers;
+use App\Finance\TenantSchema;
 use Doctrine\ORM\EntityManagerInterface;
 use EasyCorp\Bundle\EasyAdminBundle\Config\Action;
 use EasyCorp\Bundle\EasyAdminBundle\Config\Actions;
@@ -38,9 +38,18 @@ final class UserCrudController extends AbstractCrudController
         }
     }
 
+    public function updateEntity(EntityManagerInterface $entityManager, object $entityInstance): void
+    {
+        parent::updateEntity($entityManager, $entityInstance);
+        if ($entityInstance instanceof User && !\in_array('ROLE_ADMIN', $entityInstance->getRoles(), true)) {
+            $em = $this->schema->provision($entityInstance);
+            $this->tenants->release($em);
+        }
+    }
+
     public function deleteEntity(EntityManagerInterface $entityManager, object $entityInstance): void
     {
-        $path = $entityInstance instanceof User && !\in_array('ROLE_ADMIN', $entityInstance->getRoles(), true) ? $this->tenants->path($entityInstance) : null;
+        $path = $entityInstance instanceof User ? $this->tenants->path($entityInstance) : null;
         parent::deleteEntity($entityManager, $entityInstance);
         if (null !== $path) {
             foreach ([$path, $path.'-wal', $path.'-shm'] as $file) {

@@ -30,8 +30,8 @@ class TenantManagers implements ResetInterface
 
     public function path(User $owner): string
     {
-        if (null === $owner->getId() || \in_array('ROLE_ADMIN', $owner->getRoles(), true)) {
-            throw new \LogicException('A persisted ordinary tenant owner is required.');
+        if (null === $owner->getId()) {
+            throw new \LogicException('A persisted user is required to identify tenant storage.');
         }
         $path = $this->central->getParams()['path'] ?? null;
         if (!\is_string($path) || '' === $path) {
@@ -43,6 +43,9 @@ class TenantManagers implements ResetInterface
 
     public function open(User $owner, bool $provision = false): EntityManagerInterface
     {
+        if (\in_array('ROLE_ADMIN', $owner->getRoles(), true)) {
+            throw new \LogicException('Administrators cannot open tenant finance storage.');
+        }
         $path = $this->path($owner);
         if (is_link(\dirname($path)) || is_link($path)) {
             throw new \RuntimeException('Refusing symlinked tenant storage.');
@@ -75,8 +78,15 @@ class TenantManagers implements ResetInterface
             return $this->requestManager;
         }
         $owner = $this->security->getUser();
-        if (!$owner instanceof User) {
-            throw new \LogicException('An authenticated tenant owner is required.');
+        if (!$owner instanceof User || \in_array('ROLE_ADMIN', $owner->getRoles(), true)) {
+            // Doctrine's profiler reads every manager's metadata/UoW on public pages.
+            // Keep that inspection possible, but deny connecting to any database.
+            $configuration = clone $this->prototype->getConfiguration();
+            $configuration->setMiddlewares([...$configuration->getMiddlewares(), new RejectTenantConnectionMiddleware()]);
+            $params = $this->prototype->getParams();
+            unset($params['url'], $params['path'], $params['memory']);
+
+            return new EntityManager(DriverManager::getConnection($params, $configuration), $this->configuration);
         }
 
         return $this->requestManager = $this->open($owner);

@@ -5,11 +5,11 @@ declare(strict_types=1);
 namespace App\Command;
 
 use App\Entity\User;
-use App\Finance\TenantManagers;
+use App\Enum\ProcessingStatus;
 use App\Finance\Entity\Source;
 use App\Finance\Entity\Statement;
 use App\Finance\Entity\Transaction;
-use App\Enum\ProcessingStatus;
+use App\Finance\TenantManagers;
 use App\Message\ProcessStatementMessage;
 use App\MessageHandler\ProcessStatementHandler;
 use App\Storage\StatementStorage;
@@ -47,51 +47,51 @@ final class ProcessSyntheticHistoryCommand extends Command
         $owner = $this->central->getRepository(User::class)->findOneBy(['email' => 'demo@test.com']) ?? throw new \RuntimeException('Load canonical users first.');
         $this->em = $this->tenants->open($owner);
         try {
-        $manifest = json_decode((string) file_get_contents($this->root.'/resources/demo-statements/expected.json'), true, flags: \JSON_THROW_ON_ERROR);
-        $names = ['demo_current' => 'Maple Harbour Chequing · 7318', 'demo_card' => 'Maple Harbour Rewards Visa · 4826', 'demo_usd' => 'Maple Harbour US Dollar · 9054'];
-        $results = [];
-        foreach ($manifest['statements'] as $entry) {
-            if ('upload_holdout' === $entry['purpose']) {
-                continue;
+            $manifest = json_decode((string) file_get_contents($this->root.'/resources/demo-statements/expected.json'), true, flags: \JSON_THROW_ON_ERROR);
+            $names = ['demo_current' => 'Maple Harbour Chequing · 7318', 'demo_card' => 'Maple Harbour Rewards Visa · 4826', 'demo_usd' => 'Maple Harbour US Dollar · 9054'];
+            $results = [];
+            foreach ($manifest['statements'] as $entry) {
+                if ('upload_holdout' === $entry['purpose']) {
+                    continue;
+                }
+                $source = $this->em->getRepository(Source::class)->findOneBy(['name' => $names[$entry['source_fixture']]]);
+                if (null === $source) {
+                    throw new \RuntimeException('Load canonical Alice fixtures into isolated storage first.');
+                }
+                $filename = 'export-input-'.str_replace('/', '-', $entry['file']);
+                $statement = $this->em->getRepository(Statement::class)->findOneBy(['originalFilename' => $filename]);
+                if (null === $statement) {
+                    $path = $this->root.'/resources/demo-statements/'.$entry['file'];
+                    $bytes = (string) file_get_contents($path);
+                    $statement = new Statement($source, $this->storage->store(new File($path)), $filename, 'text/csv', \strlen($bytes), hash('sha256', $bytes), statementDate: new \DateTimeImmutable(substr(basename($entry['file']), 0, 7).'-01'), processingStatus: ProcessingStatus::Queued);
+                    $this->em->persist($statement);
+                    $this->em->flush();
+                }
+                $id = $statement->getId();
+                $ownerId = $owner->getId();
+                if (null === $id || null === $ownerId) {
+                    throw new \LogicException('Missing persisted identifiers.');
+                }
+                ($this->handler)(new ProcessStatementMessage($id, $ownerId, $statement->storedFilename));
+                $this->em->refresh($statement);
+                if (ProcessingStatus::Completed !== $statement->processingStatus) {
+                    throw new \RuntimeException('Synthetic processing failed: '.$entry['file'].' '.$statement->processingError);
+                }
+                $rows = $this->em->getRepository(Transaction::class)->findBy(['statement' => $statement], ['id' => 'ASC']);
+                $serialized = [];
+                foreach ($rows as $row) {
+                    $serialized[] = ['date' => $row->transactionDate?->format('Y-m-d'), 'description' => $row->description, 'amount' => $row->amount, 'currency' => $row->currency, 'direction' => $row->direction?->value, 'category' => $row->category?->name, 'meaning' => $row->meaning->value, 'recurrence' => $row->recurrence->value];
+                }
+                $results[] = ['file' => $entry['file'], 'source_fixture' => $entry['source_fixture'], 'rows' => $serialized];
+                file_put_contents($this->root.'/var/browser/history-final/results.json', json_encode($results, \JSON_PRETTY_PRINT | \JSON_THROW_ON_ERROR)."\n");
+                $output->writeln($entry['file'].': '.\count($rows).' synthetic drafts processed.');
             }
-            $source = $this->em->getRepository(Source::class)->findOneBy(['name' => $names[$entry['source_fixture']]]);
-            if (null === $source) {
-                throw new \RuntimeException('Load canonical Alice fixtures into isolated storage first.');
-            }
-            $filename = 'export-input-'.str_replace('/', '-', $entry['file']);
-            $statement = $this->em->getRepository(Statement::class)->findOneBy(['originalFilename' => $filename]);
-            if (null === $statement) {
-                $path = $this->root.'/resources/demo-statements/'.$entry['file'];
-                $bytes = (string) file_get_contents($path);
-                $statement = new Statement($source, $this->storage->store(new File($path)), $filename, 'text/csv', \strlen($bytes), hash('sha256', $bytes), statementDate: new \DateTimeImmutable(substr(basename($entry['file']), 0, 7).'-01'), processingStatus: ProcessingStatus::Queued);
-                $this->em->persist($statement);
-                $this->em->flush();
-            }
-            $id = $statement->getId();
-            $ownerId = $owner->getId();
-            if (null === $id || null === $ownerId) {
-                throw new \LogicException('Missing persisted identifiers.');
-            }
-            ($this->handler)(new ProcessStatementMessage($id, $ownerId, $statement->storedFilename));
-            $this->em->refresh($statement);
-            if (ProcessingStatus::Completed !== $statement->processingStatus) {
-                throw new \RuntimeException('Synthetic processing failed: '.$entry['file'].' '.$statement->processingError);
-            }
-            $rows = $this->em->getRepository(Transaction::class)->findBy(['statement' => $statement], ['id' => 'ASC']);
-            $serialized = [];
-            foreach ($rows as $row) {
-                $serialized[] = ['date' => $row->transactionDate?->format('Y-m-d'), 'description' => $row->description, 'amount' => $row->amount, 'currency' => $row->currency, 'direction' => $row->direction?->value, 'category' => $row->category?->name, 'meaning' => $row->meaning->value, 'recurrence' => $row->recurrence->value];
-            }
-            $results[] = ['file' => $entry['file'], 'source_fixture' => $entry['source_fixture'], 'rows' => $serialized];
-            file_put_contents($this->root.'/var/browser/history-final/results.json', json_encode($results, \JSON_PRETTY_PRINT | \JSON_THROW_ON_ERROR)."\n");
-            $output->writeln($entry['file'].': '.\count($rows).' synthetic drafts processed.');
-        }
 
-        if (true === $input->getOption('export')) {
-            $this->export($results, $manifest['statements']);
-        }
+            if (true === $input->getOption('export')) {
+                $this->export($results, $manifest['statements']);
+            }
 
-        return Command::SUCCESS;
+            return Command::SUCCESS;
         } finally {
             $this->tenants->release($this->em);
         }

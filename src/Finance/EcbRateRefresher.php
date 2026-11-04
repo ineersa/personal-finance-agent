@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace App\Finance;
 
-use App\Enum\ReportingCurrency;
 use App\Entity\User;
-use Doctrine\ORM\EntityManagerInterface;
+use App\Enum\ReportingCurrency;
 use App\Repository\CurrencyRateRepository;
+use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Contracts\HttpClient\HttpClientInterface;
 
 final readonly class EcbRateRefresher
@@ -63,8 +63,8 @@ final readonly class EcbRateRefresher
             if (\is_string($firstStored) && array_key_first($history) > $firstMissing) {
                 throw new \RuntimeException('ECB recent history does not cover the missing date. Restore canonical historical fixtures.');
             }
-            foreach ($history as $rates) {
-                if (array_keys($rates) !== $currencies) {
+            foreach ($history as $dayRates) {
+                if (array_keys($dayRates) !== $currencies) {
                     throw new \RuntimeException('ECB recent history has incomplete currency coverage.');
                 }
             }
@@ -76,9 +76,9 @@ final readonly class EcbRateRefresher
             $start = $published;
         }
         $previous = [];
-        foreach ($history as $date => $rates) {
+        foreach ($history as $date => $dayRates) {
             if ($date < $start) {
-                $previous = $rates;
+                $previous = $dayRates;
             }
         }
         $count = 0;

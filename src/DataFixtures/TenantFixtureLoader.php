@@ -16,10 +16,11 @@ use Fidry\AliceDataFixtures\Persistence\PurgeMode;
 use Hautelook\AliceBundle\LoaderInterface;
 use Symfony\Bundle\FrameworkBundle\Console\Application;
 use Symfony\Component\DependencyInjection\Attribute\Autowire;
+use Symfony\Component\DependencyInjection\ParameterBag\ParameterBagInterface;
 
 final readonly class TenantFixtureLoader implements LoaderInterface
 {
-    public function __construct(private LoaderInterface $inner, #[Autowire(service: 'hautelook_alice.data_fixtures.append_loader')] private DataLoader&PersisterAwareInterface $loader, private TenantSchema $schema, private InitialReferenceData $reference, #[Autowire('%kernel.project_dir%')] private string $root)
+    public function __construct(private LoaderInterface $inner, #[Autowire(service: 'hautelook_alice.data_fixtures.append_loader')] private DataLoader&PersisterAwareInterface $loader, private TenantSchema $schema, private InitialReferenceData $reference, #[Autowire('%kernel.project_dir%')] private string $root, private ParameterBagInterface $parameters)
     {
     }
 
@@ -45,7 +46,7 @@ final readonly class TenantFixtureLoader implements LoaderInterface
                         $files[] = $this->root.'/fixtures/'.$name.'.yaml';
                     }
                 }
-                $loaded = $this->loader->withPersister(new ObjectManagerPersister($em))->load($files, $application->getKernel()->getContainer()->getParameterBag()->all());
+                $loaded = $this->loader->withPersister(new ObjectManagerPersister($em))->load($files, $this->parameters->all());
                 $this->reference->seedRates($em);
                 $tenantFixtures += $loaded;
             } finally {

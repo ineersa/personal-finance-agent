@@ -29,6 +29,7 @@ services:
             - '../src/Entity/'
             - '../src/Finance/Entity/'
             - '../src/Finance/Migrations/'
+            - '../src/Finance/RejectTenantConnectionMiddleware.php'
             - '../src/DataFixtures/'
             - '../src/Doctrine/ExactDecimalType.php'
             - '../src/Doctrine/SqliteImmediateTransactionConnection.php'

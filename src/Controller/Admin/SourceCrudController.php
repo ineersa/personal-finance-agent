@@ -4,9 +4,8 @@ declare(strict_types=1);
 
 namespace App\Controller\Admin;
 
-use App\Finance\Entity\Source;
-use App\Entity\User;
 use App\Enum\InstrumentKind;
+use App\Finance\Entity\Source;
 use App\Repository\SourceRepository;
 use App\Security\FinanceRecordVoter;
 use Doctrine\ORM\QueryBuilder;

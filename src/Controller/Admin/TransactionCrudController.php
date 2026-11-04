@@ -4,9 +4,8 @@ declare(strict_types=1);
 
 namespace App\Controller\Admin;
 
-use App\Finance\Entity\Transaction;
-use App\Entity\User;
 use App\Enum\Direction;
+use App\Finance\Entity\Transaction;
 use App\Repository\SourceRepository;
 use App\Repository\TransactionRepository;
 use App\Security\FinanceRecordVoter;

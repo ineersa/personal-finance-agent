@@ -5,9 +5,9 @@ declare(strict_types=1);
 namespace App\Import;
 
 use App\Entity\User;
-use App\Finance\TenantManagers;
-use App\Finance\Entity\Statement;
 use App\Enum\ProcessingStatus;
+use App\Finance\Entity\Statement;
+use App\Finance\TenantManagers;
 use App\Message\ProcessStatementMessage;
 use App\Repository\StatementRepository;
 use Doctrine\ORM\EntityManagerInterface;

@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace App\Demo;
 
-use App\Finance\Entity\Statement;
 use App\Entity\User;
+use App\Finance\Entity\Statement;
 use App\Finance\TenantManagers;
 use App\Import\ImportException;
 use App\Repository\StatementRepository;
