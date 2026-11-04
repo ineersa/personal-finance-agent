@@ -37,6 +37,14 @@ final class NativeAssistantOutput implements OutputProcessorInterface
         return $this->transcript;
     }
 
+    public function beginRound(): void
+    {
+        // Provider output indices restart on each native tool-loop round.
+        $this->messages = [];
+        $this->reasoning = [];
+        $this->completedItems = 0;
+    }
+
     public function observe(DeltaInterface $delta): void
     {
         if ($delta instanceof MessageComplete) {

@@ -32,12 +32,12 @@ final class ChatTest extends TestCase
                 self::assertTrue($page->getByRole('button', ['name' => 'Send message', 'exact' => true])->isVisible(), 'The owner must connect ChatGPT in this isolated stack before the live test.');
                 self::assertSame(0, $page->locator('.chat-turn')->count(), 'Start with an empty conversation; this test never clears existing owner messages.');
                 $code = 'cobalt-lantern';
-                $question = 'For a fictional savings example, compare saving 20 euros weekly with saving 80 euros monthly. Give a brief explanation of the annual difference, then remember the code word '.$code.'.';
+                $question = 'Use finance_query to find the description of the approved CAD credit dated 2024-11-01 with amount 2860.00 in my records. Quote that description in your answer, then remember the code word '.$code.'.';
                 $page->getByLabel('Your message', ['exact' => true])->fill($question);
                 $page->getByRole('button', ['name' => 'Send message', 'exact' => true])->click();
                 $page->getByText($question, ['exact' => true])->waitFor();
                 $page->locator('.chat-turn')->last()->locator('.chat-answer[data-chat-saved]')->waitFor(['timeout' => 120000]);
-                self::assertNotSame('', trim($page->locator('.chat-answer')->last()->textContent()));
+                self::assertStringContainsString('PAYROLL LANTERN LABS', $page->locator('.chat-answer')->last()->textContent());
 
                 $followUp = 'What code word did I just ask you to remember? Reply with that code only.';
                 $page->getByLabel('Your message', ['exact' => true])->fill($followUp);

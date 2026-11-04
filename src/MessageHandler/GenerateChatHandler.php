@@ -38,13 +38,16 @@ final readonly class GenerateChatHandler
         $execution = null;
         try {
             $output = new NativeAssistantOutput();
-            $execution = $this->agents->create($registration, $conversation->model, $output)->call(
+            $execution = $this->agents->create($owner, $registration, $conversation->model, $output)->call(
                 $this->normalizer->denormalize($conversation->history, MessageBag::class),
                 ['stream' => true, 'prompt_cache_key' => $conversation->id, 'reasoning' => ['effort' => $conversation->reasoningEffort, 'summary' => 'auto']],
             );
             $lastUpdate = 0.0;
             $turnIndex = \count($conversation->turns) - 1;
             $execution->onProgress(function (Progress $update) use ($execution, $conversation, $output, $turnIndex, &$lastUpdate): void {
+                if (Progress::STAGE_MODEL_REQUEST === $update->getStage()) {
+                    $output->beginRound();
+                }
                 if (Progress::STAGE_DELTA === $update->getStage() && $update->getPayload() instanceof DeltaInterface) {
                     $output->observe($update->getPayload());
                     $conversation->turns[$turnIndex] = ['question' => $conversation->turns[$turnIndex]['question'], ...$output->transcript()];

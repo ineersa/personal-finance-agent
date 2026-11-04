@@ -17,6 +17,18 @@ final readonly class TenantSqlToolFactory
     // Call once per generation with the persisted owner loaded by the application, never model input.
     public function create(User $owner): Toolbox
     {
+        // Native Toolbox defaults to NullLogger: debug logging would record SQL arguments.
+        return new Toolbox([$this->bind($owner)]);
+    }
+
+    /** @return array<string, mixed> */
+    public function schema(User $owner): array
+    {
+        return $this->bind($owner)->schema();
+    }
+
+    private function bind(User $owner): TenantSqlTool
+    {
         if (\in_array('ROLE_ADMIN', $owner->getRoles(), true)) {
             throw new \LogicException('Administrators cannot query tenant finance storage.');
         }
@@ -25,7 +37,6 @@ final readonly class TenantSqlToolFactory
             throw new \RuntimeException('Tenant database is unavailable.');
         }
 
-        // Native Toolbox defaults to NullLogger: its debug logger would record SQL arguments.
-        return new Toolbox([new TenantSqlTool($this->executor, $path, $owner->getReportingCurrency())]);
+        return new TenantSqlTool($this->executor, $path, $owner->getReportingCurrency());
     }
 }
