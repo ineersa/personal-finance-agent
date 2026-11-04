@@ -23,7 +23,7 @@ final class StatementDownloadController extends AbstractController
     #[Route('/home/statement/{id}/download', name: 'app_statement_download', requirements: ['id' => '\d+'], methods: ['GET'])]
     public function __invoke(int $id, #[CurrentUser] User $owner, StatementRepository $statements, StatementStorage $storage): StreamedResponse
     {
-        $statement = $statements->findForUser($owner, $id) ?? throw $this->createNotFoundException();
+        $statement = $statements->find($id) ?? throw $this->createNotFoundException();
         try {
             $stream = $storage->read($statement->storedFilename);
         } catch (UnableToReadFile) {

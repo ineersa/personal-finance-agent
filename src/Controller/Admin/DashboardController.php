@@ -51,8 +51,6 @@ final class DashboardController extends AbstractDashboardController
         if ($this->isGranted('ROLE_ADMIN')) {
             yield MenuItem::section('Administration');
             yield MenuItem::linkTo(UserCrudController::class, 'Users');
-            yield MenuItem::linkTo(CategoryCrudController::class, 'Categories');
-            yield MenuItem::linkTo(CurrencyRateCrudController::class, 'Currency rates');
 
             return;
         }
@@ -60,6 +58,7 @@ final class DashboardController extends AbstractDashboardController
         yield MenuItem::linkToRoute('Chat', null, 'admin_chat');
         yield MenuItem::section('Finance management');
         yield MenuItem::linkTo(SourceCrudController::class, 'Sources');
+        yield MenuItem::linkTo(CategoryCrudController::class, 'Categories');
         yield MenuItem::linkTo(StatementCrudController::class, 'Statements');
         yield MenuItem::linkTo(TransactionCrudController::class, 'Transactions');
         yield MenuItem::linkToRoute('Settings', null, 'admin_settings');

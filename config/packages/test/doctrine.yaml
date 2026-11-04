@@ -1,4 +1,8 @@
 doctrine:
     dbal:
-        # SQLite ignores dbname_suffix. Never resolve this path from ambient URLs.
-        url: 'sqlite:///%kernel.project_dir%/var/browser/application.db'
+        connections:
+            default:
+                # SQLite ignores dbname_suffix. Never resolve this path from ambient URLs.
+                url: 'sqlite:///%kernel.project_dir%/var/browser/application.db'
+            finance:
+                url: 'sqlite:///%kernel.project_dir%/var/browser/finance-schema.db'

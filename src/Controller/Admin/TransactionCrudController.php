@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Controller\Admin;
 
-use App\Entity\Transaction;
+use App\Finance\Entity\Transaction;
 use App\Entity\User;
 use App\Enum\Direction;
 use App\Repository\SourceRepository;
@@ -63,7 +63,7 @@ final class TransactionCrudController extends OwnedCrudController
         yield ChoiceField::new('recurrence')->hideOnIndex();
         yield AssociationField::new('source')->renderAsNativeWidget()->setFormTypeOption('choice_label', 'name')
             ->setFormTypeOption('empty_data', static fn (FormInterface $form): never => throw new TransformationFailedException('A transaction source is required.'))
-            ->setFormTypeOption('query_builder', fn (): QueryBuilder => $this->sources->queryForUser($this->owner()));
+            ->setFormTypeOption('query_builder', fn (): QueryBuilder => $this->sources->query());
         yield AssociationField::new('category')->renderAsNativeWidget()->setFormTypeOption('choice_label', 'name')
             ->setRequired(false);
     }
@@ -81,9 +81,9 @@ final class TransactionCrudController extends OwnedCrudController
         return $response;
     }
 
-    protected function ownedQuery(User $user): QueryBuilder
+    protected function ownedQuery(): QueryBuilder
     {
-        return $this->transactions->queryForUser($user)->andWhere('record.isDraft = false');
+        return $this->transactions->query()->andWhere('record.isDraft = false');
     }
 
     protected function getRedirectResponseAfterSave(AdminContext $context, string $action): RedirectResponse

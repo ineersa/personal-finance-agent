@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Controller\Admin;
 
-use App\Entity\Source;
+use App\Finance\Entity\Source;
 use App\Entity\User;
 use App\Enum\InstrumentKind;
 use App\Repository\SourceRepository;
@@ -32,7 +32,7 @@ final class SourceCrudController extends OwnedCrudController
 
     public function createEntity(string $entityFqcn): Source
     {
-        return new Source($this->owner(), '');
+        return new Source('');
     }
 
     public function configureFields(string $pageName): iterable
@@ -49,8 +49,8 @@ final class SourceCrudController extends OwnedCrudController
         return parent::configureCrud($crud)->setEntityLabelInPlural('Sources')->setSearchFields(['name', 'description']);
     }
 
-    protected function ownedQuery(User $user): QueryBuilder
+    protected function ownedQuery(): QueryBuilder
     {
-        return $this->sources->queryForUser($user);
+        return $this->sources->query();
     }
 }

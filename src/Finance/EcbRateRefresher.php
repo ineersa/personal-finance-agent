@@ -5,18 +5,42 @@ declare(strict_types=1);
 namespace App\Finance;
 
 use App\Enum\ReportingCurrency;
+use App\Entity\User;
+use Doctrine\ORM\EntityManagerInterface;
 use App\Repository\CurrencyRateRepository;
 use Symfony\Contracts\HttpClient\HttpClientInterface;
 
 final readonly class EcbRateRefresher
 {
-    public function __construct(private HttpClientInterface $client, private CurrencyRateRepository $rates)
+    public function __construct(private HttpClientInterface $client, private EntityManagerInterface $central, private TenantManagers $tenants)
     {
     }
 
     public function refresh(): int
     {
         $daily = $this->fetch('eurofxref-daily.xml');
+        $history = null;
+        $count = 0;
+        foreach ($this->central->getRepository(User::class)->findAll() as $owner) {
+            if (\in_array('ROLE_ADMIN', $owner->getRoles(), true)) {
+                continue;
+            }
+            $em = $this->tenants->open($owner);
+            try {
+                $count += $this->refreshTenant(new CurrencyRateRepository($em), $daily, $history);
+            } finally {
+                $this->tenants->release($em);
+            }
+        }
+
+        return $count;
+    }
+
+    /** @param non-empty-array<string, non-empty-array<string, string>> $daily
+     * @param non-empty-array<string, non-empty-array<string, string>>|null $cachedHistory
+     */
+    private function refreshTenant(CurrencyRateRepository $rates, array $daily, ?array &$cachedHistory): int
+    {
         $published = array_key_last($daily);
         $currencies = array_keys($daily[$published]);
         $today = new \DateTimeImmutable('today', new \DateTimeZone('UTC'));
@@ -25,14 +49,14 @@ final readonly class EcbRateRefresher
         }
         $utc = new \DateTimeZone('UTC');
         $start = (new \DateTimeImmutable($published, $utc))->modify('-89 days')->format('Y-m-d');
-        $firstStored = $this->rates->firstStoredDay();
+        $firstStored = $rates->firstStoredDay();
         if (null !== $firstStored && $firstStored > $start) {
             $start = $firstStored;
         }
-        $firstMissing = $this->rates->firstUnconfirmedDay($start, $published, $currencies);
+        $firstMissing = $rates->firstUnconfirmedDay($start, $published, $currencies);
         $history = $daily;
         if (null !== $firstMissing) {
-            $history = $this->fetch('eurofxref-hist-90d.xml');
+            $history = $cachedHistory ??= $this->fetch('eurofxref-hist-90d.xml');
             if (array_key_last($history) !== $published) {
                 throw new \RuntimeException('ECB recent history has not caught up with the daily publication.');
             }
@@ -63,7 +87,7 @@ final readonly class EcbRateRefresher
             $previous = $history[$date] ?? $previous;
             $provisional = $date > $published;
             // All HTTP and parsing have completed; only changed rows enter short writes.
-            $count += $this->rates->saveDay($date, $previous, $provisional);
+            $count += $rates->saveDay($date, $previous, $provisional);
         }
 
         return $count;

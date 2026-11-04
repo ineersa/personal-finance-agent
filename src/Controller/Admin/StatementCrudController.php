@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Controller\Admin;
 
-use App\Entity\Statement;
+use App\Finance\Entity\Statement;
 use App\Entity\User;
 use App\Enum\ProcessingStatus;
 use App\Import\ImportException;
@@ -104,8 +104,8 @@ final class StatementCrudController extends OwnedCrudController
         }
     }
 
-    protected function ownedQuery(User $user): QueryBuilder
+    protected function ownedQuery(): QueryBuilder
     {
-        return $this->statements->queryForUser($user);
+        return $this->statements->query();
     }
 }

@@ -20,7 +20,7 @@ This policy replaces the earlier broad coverage requirements. It does not remove
 | Settings | Save and reload reporting currency and money locale; verify localized money display |
 | Sources | Create, list, edit, detail, delete |
 | Transactions | List, detail, edit, reload and delete an approved transaction |
-| Categories | Administrator create, list, edit, detail, delete |
+| Categories | Ordinary-owner create, list, edit, detail, delete |
 | Users | Administrator create, list, edit email/password, verify login, detail, delete |
 | Statements | List, detail, download |
 | Live import | Upload one canonical CSV, correct draft fields and classifications, save and continue editing, save and return, delete another row, approve remaining statement rows, reload corrections, delete that uploaded statement |
@@ -68,9 +68,13 @@ Report actual elapsed time, results, and any gaps. Do not inflate assertion coun
 
 ## Fixtures and isolation
 
-Both development and tests use the canonical `fixtures/*.yaml` definitions. Do not create a supplementary test dataset or mutate development data for verification.
+Both development and tests use the canonical `fixtures/central/*.yaml` account definitions and `fixtures/*.yaml` tenant definitions. Do not create a supplementary test dataset or mutate development data for verification. Manual currency-rate CRUD and its scenario have been removed; rates are maintained by canonical history and ECB refresh.
 
-The intercepted suite uses `var/browser/application.db`. `castor test` prepares it with native Doctrine migrations; it does not drop the database. Fixture-backed scenarios extend `tests/Support/FinanceBrowserTest.php`, which uses Hautelook Alice's native `RefreshDatabaseTrait` and the documented DAMA `SkipDatabaseRollback` attribute. Alice seeds the isolated database and rolls back each scenario. Read records through `FixtureStore`, not deprecated static properties. The installed DAMA extension remains available for other intercepted scenarios.
+The intercepted suite uses `var/browser/application.db` for identity and `var/browser/tenants/<user-id>.db` for finance. `castor test` prepares central storage with native Doctrine migrations; it does not drop the database. The native Alice loader is decorated to provision/migrate tenant storage and load the same canonical definitions with Alice's `ObjectManagerPersister` and purger. No finance entities are persisted through the central entity manager.
+
+Fixture-backed scenarios extend `tests/Support/FinanceBrowserTest.php`. The owner-approved `RefreshTenantDatabasesTrait` composes/aliases Hautelook Alice's native `RefreshDatabaseTrait`: Alice retains the central fixture lifecycle, while the project extension starts and rolls back tenant transactions. The test-only `TestTenantManagers` retains connections across intercepted requests and includes tenants opened during a scenario; newly created tenant files are removed after rollback. The documented DAMA `SkipDatabaseRollback` attribute remains, so Alice/project fixture transactions have one owner. DAMA remains installed for other intercepted scenarios. Read records through `FixtureStore`, not deprecated static properties. This narrow lifecycle exception does not authorize another fixture framework, dataset or runner.
+
+The tenant redesign uses a clean fixture-backed development cutover, not an upgrade converter. Before resetting existing disposable dev/test databases, main must verify exact paths and active stack ownership. Do not delete uploads, OAuth credentials, unrelated volumes or another checkout's data. Fresh storage applies central migrations normally; fixture loading provisions tenant schemas automatically. For subsequent finance migrations, use `vendor/bin/castor app:console -- app:tenant:migrate` (or the matching browser-stack console). Generate finance migrations with `doctrine:migrations:diff --em=finance --configuration=config/migrations/finance.yaml` through Castor's isolated-database option, not against published tenant files.
 
 Use `loginUser()` when authentication is setup rather than the action under test. Use the existing `SubmitsBrowserForms` helper for native form submissions and redirects through the pinned interception bridge. Do not replace that helper with test-only application behavior. Assert a persisted result, not just a successful click.
 

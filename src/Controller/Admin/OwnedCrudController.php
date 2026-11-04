@@ -18,7 +18,7 @@ use EasyCorp\Bundle\EasyAdminBundle\Dto\EntityDto;
 use EasyCorp\Bundle\EasyAdminBundle\Dto\SearchDto;
 
 /**
- * @template TEntity of \App\Entity\UserRecord
+ * @template TEntity of \App\Finance\Entity\FinanceRecord
  *
  * @extends AbstractCrudController<TEntity>
  */
@@ -38,7 +38,7 @@ abstract class OwnedCrudController extends AbstractCrudController
 
     public function createIndexQueryBuilder(SearchDto $searchDto, EntityDto $entityDto, FieldCollection $fields, FilterCollection $filters): QueryBuilder
     {
-        $owned = $this->ownedQuery($this->owner())->select('record.id');
+        $owned = $this->ownedQuery()->select('record.id');
         $query = parent::createIndexQueryBuilder($searchDto, $entityDto, $fields, $filters);
         $query->andWhere('entity.id IN ('.$owned->getDQL().')');
         foreach ($owned->getParameters() as $parameter) {
@@ -61,15 +61,6 @@ abstract class OwnedCrudController extends AbstractCrudController
         parent::updateEntity($entityManager, $entityInstance);
     }
 
-    abstract protected function ownedQuery(User $user): QueryBuilder;
+    abstract protected function ownedQuery(): QueryBuilder;
 
-    protected function owner(): User
-    {
-        $user = $this->getUser();
-        if (!$user instanceof User) {
-            throw $this->createAccessDeniedException();
-        }
-
-        return $user;
-    }
 }

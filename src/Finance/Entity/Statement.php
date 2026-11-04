@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace App\Entity;
+namespace App\Finance\Entity;
 
 use App\Enum\ProcessingStatus;
 use Doctrine\Common\Collections\ArrayCollection;
@@ -11,7 +11,7 @@ use Doctrine\ORM\Mapping as ORM;
 
 #[ORM\Entity]
 #[ORM\UniqueConstraint(name: 'UNIQ_STATEMENT_STORED_FILENAME', columns: ['stored_filename'])]
-class Statement extends UserRecord
+class Statement extends FinanceRecord
 {
     #[ORM\Id]
     #[ORM\GeneratedValue]
@@ -23,7 +23,6 @@ class Statement extends UserRecord
     private Collection $transactions;
 
     public function __construct(
-        User $user,
         #[ORM\ManyToOne(inversedBy: 'statements')]
         #[ORM\JoinColumn(nullable: false)]
         public Source $source,
@@ -48,7 +47,6 @@ class Statement extends UserRecord
         #[ORM\Column(type: 'text', nullable: true)]
         public ?string $processingError = null,
     ) {
-        parent::__construct($user);
         $this->transactions = new ArrayCollection();
     }
 

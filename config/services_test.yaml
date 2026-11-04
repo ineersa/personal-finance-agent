@@ -1,0 +1,6 @@
+services:
+    App\Finance\TenantManagers:
+        class: App\Tests\Support\TestTenantManagers
+        autowire: true
+        autoconfigure: true
+        public: true

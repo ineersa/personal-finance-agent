@@ -4,7 +4,8 @@ declare(strict_types=1);
 
 namespace App\Controller\Admin;
 
-use App\Entity\Category;
+use App\Finance\Entity\Category;
+use App\Security\FinanceRecordVoter;
 use EasyCorp\Bundle\EasyAdminBundle\Config\Action;
 use EasyCorp\Bundle\EasyAdminBundle\Config\Actions;
 use EasyCorp\Bundle\EasyAdminBundle\Config\Crud;
@@ -14,7 +15,7 @@ use EasyCorp\Bundle\EasyAdminBundle\Field\TextField;
 use Symfony\Component\Security\Http\Attribute\IsGranted;
 
 /** @extends AbstractCrudController<Category> */
-#[IsGranted('ROLE_ADMIN')]
+#[IsGranted(FinanceRecordVoter::ACCESS)]
 final class CategoryCrudController extends AbstractCrudController
 {
     use RestrictReferencedDeletionTrait;
@@ -36,7 +37,7 @@ final class CategoryCrudController extends AbstractCrudController
 
     public function configureCrud(Crud $crud): Crud
     {
-        return $crud->setEntityPermission('ROLE_ADMIN')->setEntityLabelInPlural('Categories')->setSearchFields(['name', 'description'])->setDefaultSort(['name' => 'ASC'])->setPaginatorPageSize(50);
+        return $crud->setEntityPermission(FinanceRecordVoter::ACCESS)->setEntityLabelInPlural('Categories')->setSearchFields(['name', 'description'])->setDefaultSort(['name' => 'ASC'])->setPaginatorPageSize(50);
     }
 
     public function configureFields(string $pageName): iterable

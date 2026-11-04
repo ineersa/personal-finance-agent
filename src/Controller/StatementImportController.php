@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Controller;
 
-use App\Entity\Source;
+use App\Finance\Entity\Source;
 use App\Entity\User;
 use App\Enum\ProcessingStatus;
 use App\Import\ImportException;
@@ -39,7 +39,7 @@ final class StatementImportController extends AbstractController
     public function upload(Request $request, #[CurrentUser] User $owner, SourceRepository $sources, StatementUpload $uploads, #[Autowire('%env(JEV_BASE_URL)%')] string $providerUrl): Response
     {
         $form = $this->createFormBuilder()
-            ->add('source', EntityType::class, ['class' => Source::class, 'choice_label' => 'name', 'query_builder' => static fn () => $sources->queryForUser($owner), 'placeholder' => 'Select your account or card'])
+            ->add('source', EntityType::class, ['class' => Source::class, 'choice_label' => 'name', 'query_builder' => static fn () => $sources->query(), 'placeholder' => 'Select your account or card'])
             ->add('file', FileType::class, ['label' => 'CSV statement', 'constraints' => [new Assert\NotNull(), new Assert\File(maxSize: 10 * 1024 * 1024, extensions: ['csv' => ['text/plain', 'text/csv', 'application/csv', 'application/vnd.ms-excel']])]])
             ->add('providerConsent', CheckboxType::class, ['label' => 'I agree to send statement samples and transaction details to the configured Jev provider for interpretation.', 'constraints' => [new Assert\IsTrue(message: 'Consent is required before provider processing.')]])
             ->getForm();
@@ -65,7 +65,7 @@ final class StatementImportController extends AbstractController
     #[AdminRoute('/statement-processing/{id}', name: 'statement_processing', options: ['methods' => ['GET', 'POST'], 'requirements' => ['id' => '\d+']])]
     public function processing(int $id, Request $request, #[CurrentUser] User $owner, StatementRepository $statements, TransactionRepository $transactions, StatementUpload $uploads, ValidatorInterface $validator, EntityManagerInterface $entityManager): Response
     {
-        $statement = $statements->findForUser($owner, $id) ?? throw $this->createNotFoundException();
+        $statement = $statements->find($id) ?? throw $this->createNotFoundException();
         $form = $this->createFormBuilder(null, ['csrf_token_id' => 'statement-workflow-'.$id])
             ->add('retry', SubmitType::class)
             ->add('approve', SubmitType::class)
@@ -82,7 +82,7 @@ final class StatementImportController extends AbstractController
 
             return $this->redirectToRoute('admin_statement_processing', ['id' => $id]);
         }
-        $drafts = $transactions->draftsForStatement($owner, $statement);
+        $drafts = $transactions->draftsForStatement($statement);
         $approvalErrors = [];
         if ($form->isSubmitted() && $form->isValid() && $approve instanceof ClickableInterface && $approve->isClicked() && ProcessingStatus::Completed === $statement->processingStatus) {
             foreach ($drafts as $draft) {

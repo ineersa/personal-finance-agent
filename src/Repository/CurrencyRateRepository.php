@@ -4,22 +4,22 @@ declare(strict_types=1);
 
 namespace App\Repository;
 
-use App\Entity\CurrencyRate;
+use App\Finance\Entity\CurrencyRate;
 use App\Enum\ReportingCurrency;
-use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
+use Doctrine\ORM\EntityRepository;
 use Doctrine\DBAL\ArrayParameterType;
 use Doctrine\DBAL\Connection;
 use Doctrine\DBAL\ParameterType;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\AbstractQuery;
-use Doctrine\Persistence\ManagerRegistry;
+use Doctrine\ORM\EntityManagerInterface;
 
-/** @extends ServiceEntityRepository<CurrencyRate> */
-final class CurrencyRateRepository extends ServiceEntityRepository
+/** @extends EntityRepository<CurrencyRate> */
+final class CurrencyRateRepository extends EntityRepository
 {
-    public function __construct(ManagerRegistry $registry)
+    public function __construct(EntityManagerInterface $entityManager)
     {
-        parent::__construct($registry, CurrencyRate::class);
+        parent::__construct($entityManager, $entityManager->getClassMetadata(CurrencyRate::class));
     }
 
     public function rateFor(ReportingCurrency $currency, \DateTimeImmutable $day): string
