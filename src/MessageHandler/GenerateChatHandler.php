@@ -24,7 +24,7 @@ use Symfony\Component\Messenger\Attribute\AsMessageHandler;
 #[AsMessageHandler(fromTransport: GenerateChat::TRANSPORT)]
 final readonly class GenerateChatHandler
 {
-    private const float UPDATE_INTERVAL = 0.1;
+    private const float UPDATE_INTERVAL = 0.05;
 
     public function __construct(private EntityManagerInterface $em, private AgentFactory $agents, private MessageBagNormalizer $normalizer, private ChatUpdates $updates)
     {
