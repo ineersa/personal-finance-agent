@@ -18,9 +18,16 @@ use Symfony\AI\Platform\Result\Stream\Delta\ThinkingSignature;
 use Symfony\AI\Platform\Result\TextResult;
 use Symfony\AI\Platform\Result\ThinkingResult;
 
-/** Temporary native-message adaptation: https://github.com/ineersa/personal-finance-agent/issues/13 */
+/**
+ * Temporary native-message adaptation: https://github.com/ineersa/personal-finance-agent/issues/13.
+ *
+ * @phpstan-type Chart array{file: ?string, error: ?string}
+ */
 final class NativeAssistantOutput implements OutputProcessorInterface
 {
+    /** @var list<Chart> */
+    public array $charts = [];
+
     /** @var array<int, TextResult> */
     private array $messages = [];
     /** @var list<ThinkingResult> */
@@ -35,10 +42,10 @@ final class NativeAssistantOutput implements OutputProcessorInterface
     {
     }
 
-    /** @return array{reasoning: string, commentary: string, answer: string} */
+    /** @return array{reasoning: string, commentary: string, answer: string, charts: list<Chart>} */
     public function transcript(): array
     {
-        return $this->transcript;
+        return [...$this->transcript, 'charts' => $this->charts];
     }
 
     public function beginRound(): void

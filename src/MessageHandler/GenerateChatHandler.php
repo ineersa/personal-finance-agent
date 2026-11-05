@@ -11,7 +11,9 @@ use App\Entity\ChatConversation;
 use App\Message\GenerateChat;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\AI\Agent\Execution\Update\Progress;
+use Symfony\AI\Agent\Toolbox\Event\ToolCallFailed;
 use Symfony\AI\Agent\Toolbox\Event\ToolCallSucceeded;
+use Symfony\AI\Agent\Toolbox\Exception\ToolExecutionExceptionInterface;
 use Symfony\AI\Platform\Message\MessageBag;
 use Symfony\AI\Platform\Result\Stream\Delta\DeltaInterface;
 use Symfony\AI\Platform\Result\ToolCall;
@@ -22,7 +24,7 @@ use Symfony\Component\Messenger\Attribute\AsMessageHandler;
 #[AsMessageHandler(fromTransport: GenerateChat::TRANSPORT)]
 final readonly class GenerateChatHandler
 {
-    private const float UPDATE_INTERVAL = 0.1;
+    private const float UPDATE_INTERVAL = 0.05;
 
     public function __construct(private EntityManagerInterface $em, private AgentFactory $agents, private MessageBagNormalizer $normalizer, private ChatUpdates $updates)
     {
@@ -53,11 +55,20 @@ final readonly class GenerateChatHandler
         try {
             // Scoped native tool events project results privately; no global listener or payload logging.
             $events = new EventDispatcher();
-            $events->addListener(ToolCallSucceeded::class, static function (ToolCallSucceeded $event) use ($output, $project): void {
-                $output->activity->completed($event->getResult());
+            $events->addListener(ToolCallFailed::class, static function (ToolCallFailed $event) use ($output, $project): void {
+                $error = $event->getException();
+                $detail = $error instanceof ToolExecutionExceptionInterface ? $error->getToolCallResult() : 'Tool execution failed.';
+                $output->activity->toolFailed($event->getDefinition()->getName(), $detail);
                 $project(true);
             });
-            $execution = $this->agents->create($owner, $registration, $conversation->model, $output, $events)->call(
+            $events->addListener(ToolCallSucceeded::class, function (ToolCallSucceeded $event) use ($output, $project, $conversation, $turnIndex): void {
+                $output->activity->completed($event->getResult());
+                // Authorize a completed local document before Mercure tells the browser to load it.
+                $conversation->turns[$turnIndex] = ['question' => $conversation->turns[$turnIndex]['question'], ...$output->transcript(), 'activity' => $output->activity->entries()];
+                $this->em->flush();
+                $project(true);
+            });
+            $execution = $this->agents->create($owner, $registration, $conversation->model, $output, $events, $conversation->id)->call(
                 // Refresh application instructions, not the user's history or initial data context.
                 $this->normalizer->denormalize($conversation->history, MessageBag::class)->withoutSystemMessage(),
                 ['stream' => true, 'prompt_cache_key' => $conversation->id, 'reasoning' => ['effort' => $conversation->reasoningEffort, 'summary' => 'auto']],
@@ -82,7 +93,7 @@ final readonly class GenerateChatHandler
             // Provider exceptions can contain private input or credentials.
             $output->activity->failed();
             $conversation->turns[$turnIndex] = ['question' => $conversation->turns[$turnIndex]['question'], ...$output->transcript(), 'activity' => $output->activity->entries()];
-            $error = 'The response could not be completed. Check your ChatGPT connection and model access before trying again.';
+            $error = 'The response could not be completed. Please try again.';
         }
         $this->em->flush();
         $this->updates->publish($conversation, $execution, $error);

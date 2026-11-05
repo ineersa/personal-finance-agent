@@ -38,9 +38,10 @@ TEXT;
         }
         try {
             return $this->query->execute($this->owner, $sql);
-        } catch (\Throwable) {
-            // Do not expose SQL exceptions, financial record contents or private paths.
-            return ['error' => 'SQL failed or exceeded its input/result limits.'];
+        } catch (\Exception $error) {
+            // ReadOnlyQuery handles private storage-open failures at their boundary.
+            // Preserve SQLite diagnostics and named bounds so the model can correct its query.
+            return ['error' => $error->getMessage()];
         }
     }
 

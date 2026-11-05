@@ -105,7 +105,7 @@ Before the chat journey, ask the owner to sign into this stack's Finance URL as 
 
 Chat uses the package-managed store at `var/private/chatgpt-auth` inside the application, mapped to `var/browser-live/private/chatgpt-auth` in this isolated stack. Web and worker share those files and the same user registration-store identifier. Pending attempts and topics use a separate connection epoch; chat jobs carry only a conversation identifier and the worker derives the owner and epoch from that record. Disconnect retains registration for reconnecting. The committed public client ID and installation ID are shared across worktrees and users; grants and attempts remain isolated. Fresh stores receive only the configured registration through the native atomic store API; matching saved grants are unchanged and mismatched client registrations fail without a rewrite. Fresh-store authorization reuse and provider UI deduplication remain unverified; do not reconnect or copy credentials merely to test this configuration. There is no account-switch action. Do not copy credentials from another checkout, inspect token contents, or put credentials in fixtures, cassettes, commands or reports. The live chat test sends synthetic text only and makes real provider requests. It requires access to `gpt-6-luna`; model registration alone does not establish entitlement. Missing login or model access is a failure, not a skipped/passing integration.
 
-The editable system prompt is `prompts/chat.txt`, loaded by Symfony AI's file-based prompt processor. Defaults are `CHAT_MODEL=gpt-6-luna` and `CHAT_REASONING_EFFORT=low`; new conversations capture them and the factory registers each conversation's saved model. Only provider-emitted readable summaries/commentary are displayed, so those sections may be absent. The worker binds the finance toolbox to the conversation owner; charts are not connected. Initial user-role context supplies the schema and `prompts/finance-context.txt` once before the first question; only real questions appear as visible turns. Progress comes from the native Agent execution and is not persisted as a separate state machine. The sanitizer still filters HTML and links, but its input-length limit is disabled for complete long replies; this removes its input-size denial-of-service bound.
+The editable system prompt is `prompts/chat.txt`, loaded by Symfony AI's file-based prompt processor. Defaults are `CHAT_MODEL=gpt-6-luna` and `CHAT_REASONING_EFFORT=low`; new conversations capture them and the factory registers each conversation's saved model. Only provider-emitted readable summaries/commentary are displayed, so those sections may be absent. The worker binds the finance toolbox to the conversation owner and chart storage to that trusted conversation. Initial user-role context supplies the schema and `prompts/finance-context.txt` once before the first question; only real questions appear as visible turns. Progress comes from the native Agent execution and is not persisted as a separate state machine. The sanitizer still filters HTML and links, but its input-length limit is disabled for complete long replies; this removes its input-size denial-of-service bound.
 
 Run the relevant live journey, then stop the owned stack when it is no longer needed:
 
@@ -116,7 +116,24 @@ vendor/bin/castor browser:live:test -- tests/Live/StatementImportTest.php
 vendor/bin/castor browser:stack:stop
 ```
 
-### Private synthetic chat recording
+### Inline chart validation
+
+`tests/Live/ChartTest.php` is the single chart happy-path journey: actual finance SQL → discovered Unovis bar tool → known synthetic payroll value 2860 → private sandboxed interactive document → real hover tooltip → same document and tooltip after reload. It requires ordinary live mode (`CHAT_CASSETTE_REPLAY=0`), fresh isolated migrated/fixture-backed storage and the owner's ChatGPT connection. The chart container starts with the normal stack; it has no host port. Local chart files live at `var/browser-live/browser/charts` for this stack, `var/browser/charts` for intercepted tests, and `var/charts` for development. New chat deletes only its conversation's copies. Do not invoke New chat or reset owner history merely to prepare tests.
+
+Build the pinned fork without affecting running services with `vendor/bin/castor charts:build --browser`. Once the operator confirms there is no active generation, `vendor/bin/castor browser:stack:up` deploys the changed chart service and PHP/worker mounts; no reset or fixture reload is needed for an existing isolated stack. The Compose-project-scoped `chart_output` volume is staging only, not retained conversation storage. Node creates ordinary readable documents there and PHP/worker can remove them through the writable directory. Verify actual cross-container permissions during the live journey, not just source inspection. Never remove this or other volumes to update the service.
+
+```sh
+vendor/bin/castor browser:stack:restart-worker
+vendor/bin/castor browser:live:test -- tests/Live/ChartTest.php
+# Task 13 explicitly requests visible proof; requires working display access:
+vendor/bin/castor browser:live:test --headed -- tests/Live/ChartTest.php
+```
+
+The generic live runner defaults to headless; `--headed` supplies the existing display-enabled QA runtime and `PLAYWRIGHT_HEADLESS=false`. The chart scenario honors it. No chart-specific runner, dataset or test endpoint is introduced. Tool-owned validation feedback and local renderer/MCP failure-to-model-continuation browser verification are explicitly requested by task 13, but are **not covered by this happy-path scenario** and remain required verification work. Do not infer those checks pass from source inspection or the backend integration probe.
+
+**Existing replay is stale for the chart-enabled toolbox:** `tests/Fixtures/chat/synthetic-chat.json` captured finance-only tool definitions, while generation now advertises discovered Unovis tools as well. Stock cassette request matching includes that request body. Its recorded provider frames were not edited or fabricated. Re-record the existing synthetic journey with explicit permission and inspect/publish the native result using the recording procedure below before claiming offline chat replay works. Live chart proof must still be distinguished from provider replay; chart requests and local HTML generation are not wrapped by the inference cassette.
+
+### Private synthetic chat recording procedure
 
 The live chat journey appends to the current conversation and never clears existing messages. Coordinate with the owner before recording: only wholly synthetic conversation history may enter a published cassette. Do not discard an existing conversation to make the test pass. The two deterministic prompts request one canonical synthetic transaction description through SQL and then recall a code word. The current prompt template must also contain no personal data.
 

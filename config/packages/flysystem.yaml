@@ -1,8 +1,14 @@
 parameters:
     statement_storage_directory: '%env(resolve:STATEMENT_STORAGE_DIR)%'
+    chart_storage_directory: '%kernel.project_dir%/var/charts'
 
 flysystem:
     storages:
+        charts.storage:
+            local:
+                directory: '%chart_storage_directory%'
+            visibility: private
+            directory_visibility: private
         statements.storage:
             local:
                 directory: '%statement_storage_directory%'
@@ -12,3 +18,4 @@ flysystem:
 when@test:
     parameters:
         statement_storage_directory: '%kernel.project_dir%/var/browser/statements'
+        chart_storage_directory: '%kernel.project_dir%/var/browser/charts'

@@ -134,7 +134,7 @@ Monolog uses the web template's configuration unchanged: development writes to `
 1. Log in and upload bank statements.
 2. Review extracted transactions, correct them, and manage sources.
 3. Ask questions in chat.
-4. Read answers, tables, and inline chart images in the same conversation. There is no separate artifact workspace.
+4. Read answers, tables, and inline interactive charts in the same conversation. There is no separate artifact workspace.
 
 Example questions:
 
@@ -146,7 +146,7 @@ The development fixtures already provide known demo identities and synthetic fin
 
 PDF/XLSX conversion will run locally through official MarkItDown MCP in Docker; CSV will be parsed in PHP. Scanned-PDF/OCR support remains unresolved.
 
-Charts will use a Docker-hosted AntV MCP server and its documented free hosted renderer. Aggregated chart labels and values leave the installation, even with a local chat model. [ADR 0014](docs/adr/0014-inline-chat-and-antv-charts.md) records the decision and service limitations.
+Charts use a Docker-hosted Unovis MCP service with local HTML generation and private conversation-scoped retention. Sandboxed iframes allow the packaged chart runtime, not model-generated JavaScript, and deny same-origin privileges and external network access. Existing PNG/JPG charts remain readable. [ADR 0026](docs/adr/0026-local-unovis-charts.md) records the isolation boundary and pinned fork. Build without restarting services with `vendor/bin/castor charts:build` (or `--browser` for the isolated stack).
 
 Chat history will use the existing application SQLite database: five temporary chats per user plus saved chats, with a Save chat button. Only inactive temporary chats can be pruned; queued/running work is protected. See [ADR 0015](docs/adr/0015-sqlite-conversation-history.md).
 

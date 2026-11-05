@@ -12,6 +12,7 @@ services:
     volumes: !override
       - .:/app:ro
       - ./var/browser-live:/app/var
+      - chart_output:/chart-output
   broker:
     environment:
       APP_ENV: test
@@ -32,3 +33,4 @@ services:
     volumes: !override
       - .:/app:ro
       - ./var/browser-live:/app/var
+      - chart_output:/chart-output

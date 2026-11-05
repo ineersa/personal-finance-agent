@@ -4,9 +4,11 @@ Current date (UTC): {current_date}. Reporting currency: {reporting_currency}, un
 
 <available_tools>
 {finance_tool}
+{chart_tool}
 </available_tools>
 
 <guidelines>
+{chart_guidelines}
 <tool name="{finance_name}">
 {finance_guidelines}
 </tool>

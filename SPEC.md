@@ -15,7 +15,7 @@ This document defines the product requirements. Technical decisions and their ra
 3. The application prepares an editable draft of extracted transactions and associated information, including categories and sources.
 4. The user edits/approves the draft and manages sources and categories; ordinary analysis uses approved records unless the user asks about drafts.
 5. The user asks financial questions in the main chat interface.
-6. The assistant presents text, tables, and chart images inline in chat.
+6. The assistant presents text, tables, and interactive charts inline in chat.
 
 ## Statement inputs and extraction
 
@@ -61,9 +61,9 @@ Provide a model-written SQL analysis tool through a separate read-only connectio
 
 Use the dark theme throughout the application and management screens. Do not offer a light or system-theme selector; saved appearance preferences and operating-system settings must not change the theme.
 
-Use a single chat containing text, tables, and inline chart images. There is no separate artifact workspace, gallery, editor, or generic artifact-management subsystem.
+Use a single chat containing text, tables, and inline interactive charts. There is no separate artifact workspace, gallery, editor, or generic artifact-management subsystem.
 
-Use a Docker-hosted AntV `mcp-server-chart` service with its documented free default hosted renderer. Aggregated chart labels and values leave the installation even when the chat model runs locally. [ADR 0014](docs/adr/0014-inline-chat-and-antv-charts.md) records this accepted trade-off and its boundaries.
+Use a Docker-hosted Unovis MCP service to generate interactive HTML locally. Retain private documents with their conversation, served only to its owner inside script-enabled sandboxed iframes without same-origin privileges or external network access. Reload uses the saved document; deleting a conversation removes its copies. Existing saved PNG/JPG charts remain readable. Return tool errors to the model for correction and retry through native Symfony AI fault tolerance. Chart schemas, labels, titles, values and dimensions are validated by the tool, not application argument rules. The application controls only private output destinations/presentation and authenticated sandboxed delivery. [ADR 0026](docs/adr/0026-local-unovis-charts.md) supersedes the hosted AntV choice in ADR 0014.
 
 The chat is the primary entry point for financial questions. The review workflow lets users correct the data on which those answers depend.
 
@@ -81,7 +81,7 @@ Store conversations and messages in the existing shared application SQLite datab
 
 When creating a sixth temporary chat, remove the owner's oldest inactive temporary chat. Never prune saved chats or chats with queued/running work. If no eligible victim exists, do not delete protected work or silently exceed five; safe admission details remain open. Coordinate save, creation, work admission, and pruning atomically. All retained conversations are reloadable by their owner.
 
-Saved protects against temporary-chat pruning, not all storage limits or separately authorized demo/account lifecycle operations. The five-chat count does not promise unlimited model context or remote chart-image availability. AI admission quotas are deferred by ADR 0021. [ADR 0015](docs/adr/0015-sqlite-conversation-history.md) records the persistence and retention boundaries.
+Saved protects against temporary-chat pruning, not all storage limits or separately authorized demo/account lifecycle operations. The five-chat count does not promise unlimited model context or external chart availability. AI admission quotas are deferred by ADR 0021. [ADR 0015](docs/adr/0015-sqlite-conversation-history.md) records the persistence and retention boundaries.
 
 For late implementation, use the simple context handoff in [ADR 0013](docs/adr/0013-symfony-ai-agent-runtime.md): watch context size with summary headroom, summarize with the same configured model and tools disabled at a complete tool-call/result boundary, then use application instructions, the handoff, and recent complete messages. Preserve canonical history. The summary is not security instructions or authoritative financial data; query financial facts again. Summarization is subject to provider context limits; application AI budgets are deferred by ADR 0021. This is not an advanced compactor, low-memory guarantee, or unlimited-context promise.
 
@@ -102,7 +102,7 @@ For late implementation, use the simple context handoff in [ADR 0013](docs/adr/0
 - Chat provider, model, and supported reasoning selection.
 - Reloadable temporary conversations and a Save chat button, with five temporary chats per user plus saved chats.
 - Streamed assistant responses while generation is in progress.
-- Answers presented as text, tables, and inline chart images in chat.
+- Answers presented as text, tables, and inline interactive charts in chat.
 - A locally installable demo for judges.
 
 ## User roles
@@ -150,7 +150,7 @@ Limit uploaded files to 10 MiB each. Upload frequency, daily bytes, retained-sto
 - [Fixtures-first Jev import and deferred quotas](docs/adr/0021-fixtures-first-jev-import.md), superseding [ADR 0011](docs/adr/0011-layered-rate-limiting.md).
 - [Configurable AI providers and chat selection](docs/adr/0012-configurable-ai-providers.md).
 - [Symfony AI-first agent runtime with concurrent execution](docs/adr/0013-symfony-ai-agent-runtime.md).
-- [Inline chat and AntV charts with hosted rendering](docs/adr/0014-inline-chat-and-antv-charts.md).
+- [Local interactive Unovis charts](docs/adr/0026-local-unovis-charts.md), superseding the historical AntV decision.
 - [SQLite conversation history and temporary/saved retention](docs/adr/0015-sqlite-conversation-history.md).
 - [Local MarkItDown MCP document conversion](docs/adr/0016-local-markitdown-conversion.md).
 - [Exact money and ECB reporting](docs/adr/0017-exact-money-and-ecb-reporting.md).
@@ -160,7 +160,6 @@ Limit uploaded files to 10 MiB each. Upload frequency, daily bytes, retained-sto
 
 - Supporting technologies, exact dependency releases within the accepted stack, and deployment setup.
 - Private storage for uploaded statements and file-lifecycle handling.
-- Safe inline rendering and chart data contracts, image/reference persistence, reload behavior, and hosted-renderer failure handling.
 - Supported banks/layouts and extraction mappings within PDF/XLSX/CSV, including complex tables, scanned/image-only PDF handling, and explicit OCR backend selection/configuration/verification.
 - Exact MarkItDown transport, versions, parser dependencies/extras, staging/cleanup integration, and compatible MCP APIs.
 - Jev decision wording/evaluation and exact LLM extraction schema, provider/model configuration, and pinned structured-output bridge compatibility.
@@ -168,7 +167,6 @@ Limit uploaded files to 10 MiB each. Upload frequency, daily bytes, retained-sto
 - Exact model IDs, supported reasoning options, enabled/default providers and models per installation, credentials, and network requirements for the selected integrations.
 - Provider configuration schema, exact integration packages, and compatible APIs.
 - Simple context-handoff trigger, token estimates, recent complete-message window, and pinned Symfony AI hooks. The approach is selected for late implementation; advanced compaction and memory engineering are not selected.
-- Exact AntV MCP packages, APIs, connection transport, and container configuration. No restricted tool catalog, runtime skill, SQL MCP access, or websearch MCP has been selected. Application chart MCP remains separate from Mate development tooling.
 - Exact conversation-storage adapters/APIs and atomic retention/admission mechanics, including safe behavior when no inactive temporary conversation can be pruned. Broader session-management features are not selected.
 - SQLite-safe decimal-string mapping and precision-preserving SQL strategy, rounding/scale, missing ECB dates/weekends, and exact history window/cache/import/backfill mechanics.
 - How answers reference the transactions used to produce them.

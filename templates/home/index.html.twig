@@ -49,7 +49,7 @@
                     <input type="hidden" name="_token" value="{{ csrf_token(constant('App\\Chat\\Workspace::SUBMIT_CSRF')) }}" data-controller="csrf-protection">
                     {% include 'chat/_composer.html.twig' %}
                 </form>
-                <p class="chat-disclosure">Messages and queried financial records are sent to ChatGPT. Charts are not connected yet.</p>
+                <p class="chat-disclosure">Messages and queried financial records are sent to ChatGPT. Charts are generated locally by Unovis and saved privately with this conversation. Interactive charts run in a restricted sandbox without external network access.</p>
             </div>
         {% endif %}
     </div>
