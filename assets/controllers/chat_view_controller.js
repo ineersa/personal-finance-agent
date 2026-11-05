@@ -4,7 +4,8 @@ const NEAR_BOTTOM = 96;
 const MAX_INPUT_HEIGHT = 160;
 
 export default class extends Controller {
-    static targets = ['scroll', 'jump', 'input'];
+    static targets = ['scroll', 'jump', 'input', 'error'];
+    inputRevision = 0;
     following = true;
     summaries = new Set();
 
@@ -32,10 +33,32 @@ export default class extends Controller {
         this.observer?.disconnect();
     }
 
-    resizeInput() {
+    resizeInput(event) {
+        if (event?.type === 'input') ++this.inputRevision;
         if (!this.hasInputTarget) return;
         this.inputTarget.style.height = 'auto';
         this.inputTarget.style.height = `${Math.min(this.inputTarget.scrollHeight, MAX_INPUT_HEIGHT)}px`;
+    }
+
+    submissionStarted(event) {
+        if (event.target.dataset.turbo !== 'true') return;
+        this.submittedRevision = this.inputRevision;
+        this.submittedButton = event.target.querySelector('[data-chat-send]');
+        if (this.hasErrorTarget) this.errorTarget.textContent = '';
+    }
+
+    submissionFinished(event) {
+        if (event.target.dataset.turbo !== 'true' || !event.detail.success) return;
+        // Turbo restores its original submitter before submit-end. If no live state
+        // replaced that button, wait for authoritative catch-up instead of enabling Send.
+        const send = event.target.querySelector('[data-chat-send]');
+        if (send === this.submittedButton) send.disabled = true;
+        // A delayed HTTP acknowledgement cannot erase a later edited draft.
+        if (this.hasInputTarget && this.submittedRevision === this.inputRevision) {
+            this.inputTarget.value = '';
+            this.resizeInput();
+        }
+        this.dispatch('acknowledged', { target: event.target });
     }
 
     handleKey(event) {

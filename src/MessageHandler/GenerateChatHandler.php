@@ -56,9 +56,13 @@ final readonly class GenerateChatHandler
         $lastUpdate = 0.0;
         $project = function (bool $force = false) use (&$execution, $conversation, $turnId, $attemptId, $output, &$lastUpdate): void {
             if ($force || microtime(true) - $lastUpdate >= self::UPDATE_INTERVAL) {
-                // Persist chart authorization and the readable projection before browser delivery.
-                $this->workspace->project($conversation, $turnId, $attemptId, $output);
-                $this->updates->publish($conversation, $execution);
+                if ($force) {
+                    // Tool/chart and lifecycle output is durable before delivery.
+                    $this->workspace->project($conversation, $turnId, $attemptId, $output);
+                } else {
+                    $this->workspace->assertAttempt($conversation, $turnId, $attemptId);
+                }
+                $this->updates->publish($conversation, $execution, output: $output);
                 $lastUpdate = microtime(true);
             }
         };

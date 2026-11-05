@@ -6,32 +6,39 @@ namespace App\Twig\Components;
 
 use App\Chat\Workspace;
 use App\Entity\User;
+use Symfony\Component\HttpFoundation\RequestStack;
 use Symfony\UX\TwigComponent\Attribute\AsTwigComponent;
 
 #[AsTwigComponent]
 final class ChatNavigation
 {
     public const int VISIBLE = 5;
+    public const string FAVOURITES_BEFORE = 'favourites_before';
+    public const string CHATS_BEFORE = 'chats_before';
 
-    /** @var list<array{id: string, label: string, favourite: bool, active: bool}> */
-    public array $chats = [];
-    /** @var list<array{id: string, label: string, favourite: bool, active: bool}> */
-    public array $favourites = [];
+    /** @var list<array{id: string, title: string, rows: list<array{id: string, label: string, favourite: bool, active: bool}>, parameter: string, before: string, next: ?string}> */
+    public array $groups = [];
     public string $selected = '';
 
-    public function __construct(private readonly Workspace $workspace)
+    public function __construct(private readonly Workspace $workspace, private readonly RequestStack $requests)
     {
     }
 
     public function mount(User $owner, string $selected = ''): void
     {
         $this->selected = $selected;
-        foreach ($this->workspace->navigation($owner) as $chat) {
-            if ($chat['favourite']) {
-                $this->favourites[] = $chat;
-            } else {
-                $this->chats[] = $chat;
+        $selection = '' === $selected ? null : $this->workspace->navigationSelection($owner, $selected);
+        foreach ([true, false] as $favourite) {
+            $parameter = $favourite ? self::FAVOURITES_BEFORE : self::CHATS_BEFORE;
+            $before = $this->requests->getCurrentRequest()?->query->getString($parameter) ?? '';
+            $rows = $this->workspace->navigation($owner, $favourite, $before, self::VISIBLE + 1);
+            $next = \count($rows) > self::VISIBLE ? $rows[self::VISIBLE - 1]['id'] : null;
+            $rows = \array_slice($rows, 0, self::VISIBLE);
+            // A distant selected chat costs one scalar lookup, not an expanded history page.
+            if (null !== $selection && $selection['favourite'] === $favourite && !\in_array($selected, array_column($rows, 'id'), true)) {
+                $rows[] = $selection;
             }
+            $this->groups[] = ['id' => $favourite ? 'favourites' : 'chats', 'title' => $favourite ? 'Favourites' : 'Chats', 'rows' => $rows, 'parameter' => $parameter, 'before' => $before, 'next' => $next];
         }
     }
 }

@@ -61,6 +61,7 @@ final class ExportDemoChatsCommand extends Command
                 '__construct' => ['@demo', null, $chat->model, $chat->reasoningEffort],
                 'id' => $chat->id,
                 'favourite' => $index < self::FAVOURITE_RECORDINGS,
+                'label' => $chat->label,
                 'history' => $this->literalArray($chat->history),
                 'turns' => $this->literalArray($chat->turns),
             ];

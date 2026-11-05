@@ -8,6 +8,7 @@ use Symfony\AI\Agent\Toolbox\ToolResult;
 use Symfony\AI\Platform\Bridge\OpenAIChatGPT\MessageItem;
 use Symfony\AI\Platform\Bridge\OpenAIChatGPT\Result\Stream\Delta\MessageComplete;
 use Symfony\AI\Platform\Message\AssistantMessage;
+use Symfony\AI\Platform\Message\Content\Commentary;
 use Symfony\AI\Platform\Message\Content\Text;
 use Symfony\AI\Platform\Message\Content\Thinking;
 use Symfony\AI\Platform\Message\MessageInterface;
@@ -58,6 +59,8 @@ final class ChatActivity
                 foreach ($message->getContent() as $part) {
                     if ($part instanceof Thinking) {
                         $this->entries[$this->append(self::REASONING)]['text'] = $part->getContent();
+                    } elseif ($part instanceof Commentary) {
+                        $this->entries[$this->append(self::COMMENTARY)]['text'] = $part->getContent();
                     } elseif ($part instanceof Text && Workspace::COMMENTARY_PHASE === ($part->getPhase() ?? (MessageItem::fromText($part)['phase'] ?? null))) {
                         $this->entries[$this->append(self::COMMENTARY)]['text'] = $part->getText();
                     } elseif ($part instanceof ToolCall) {

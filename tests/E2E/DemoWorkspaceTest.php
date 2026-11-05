@@ -42,6 +42,12 @@ final class DemoWorkspaceTest extends FinanceBrowserTest
         $this->submit(static fn () => $favouriteRow->getByRole('button', ['name' => 'Favourite', 'exact' => true])->click());
         $page->locator('.chat-favourites-group .chat-navigation-row.is-active')->waitFor();
 
+        // Exercise a bookmarked older-page cursor using the same five canonical chats.
+        $before = FixtureStore::getFixtures()['demo_chat_4']->id;
+        $this->visit('/home/chat?conversation='.$favourite.'&'.\App\Twig\Components\ChatNavigation::FAVOURITES_BEFORE.'='.$before);
+        self::assertSame(4, $page->locator('.chat-favourites-group .chat-navigation-row')->count());
+        self::assertSame($favourite, $page->locator('.chat-navigation-row.is-active')->getAttribute('data-conversation-id'));
+        $this->visit($page->locator('.chat-favourites-group')->getByRole('link', ['name' => 'Show latest', 'exact' => true])->getAttribute('href'));
         $other = FixtureStore::getFixtures()['demo_chat_1']->id;
         $this->visit($page->locator('.chat-navigation-row[data-conversation-id="'.$other.'"] a.ea-sidebar-item-link')->getAttribute('href'));
         $this->visit($favouriteRow->locator('a.ea-sidebar-item-link')->getAttribute('href'));

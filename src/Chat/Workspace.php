@@ -54,11 +54,19 @@ final readonly class Workspace
     }
 
     /** @return list<array{id: string, label: string, favourite: bool, active: bool}> */
-    public function navigation(User $user): array
+    public function navigation(User $user, bool $favourite, string $before, int $limit): array
     {
-        $rows = $this->em->getConnection()->fetchAllAssociative("SELECT id, saved AS favourite, generation_status, json_extract(turns, '$[0].question') AS label FROM chat_conversation WHERE user_id = ? ORDER BY id DESC", [$user->getId()]);
+        $rows = $this->em->getConnection()->fetchAllAssociative('SELECT id, label, saved AS favourite, generation_status FROM chat_conversation WHERE user_id = ? AND saved = ?'.('' === $before ? '' : ' AND id < ?').' ORDER BY id DESC LIMIT ?', '' === $before ? [$user->getId(), (int) $favourite, $limit] : [$user->getId(), (int) $favourite, $before, $limit], '' === $before ? [\Doctrine\DBAL\ParameterType::INTEGER, \Doctrine\DBAL\ParameterType::INTEGER, \Doctrine\DBAL\ParameterType::INTEGER] : [\Doctrine\DBAL\ParameterType::INTEGER, \Doctrine\DBAL\ParameterType::INTEGER, \Doctrine\DBAL\ParameterType::STRING, \Doctrine\DBAL\ParameterType::INTEGER]);
 
         return array_map(static fn (array $row): array => ['id' => (string) $row['id'], 'label' => (string) ($row['label'] ?? 'New chat'), 'favourite' => (bool) $row['favourite'], 'active' => !ExecutionStatus::from($row['generation_status'])->isFinished()], $rows);
+    }
+
+    /** @return array{id: string, label: string, favourite: bool, active: bool}|null */
+    public function navigationSelection(User $user, string $id): ?array
+    {
+        $row = $this->em->getConnection()->fetchAssociative('SELECT id, label, saved, generation_status FROM chat_conversation WHERE id = ? AND user_id = ?', [$id, $user->getId()]);
+
+        return false === $row ? null : ['id' => (string) $row['id'], 'label' => (string) $row['label'], 'favourite' => (bool) $row['saved'], 'active' => !ExecutionStatus::from($row['generation_status'])->isFinished()];
     }
 
     public function delete(User $user, string $id): void
@@ -109,6 +117,9 @@ final readonly class Workspace
                 ? MessageBag::forId(UuidV7::fromString($conversation->id))->with(Message::ofUser($initial ?? throw new \LogicException('Initial context unavailable.')))
                 : $this->normalizer->denormalize($conversation->history, MessageBag::class)->withoutSystemMessage();
             $conversation->history = $this->normalizer->normalize($messages->with(Message::ofUser($question)));
+            if ([] === $conversation->turns) {
+                $conversation->label = $question;
+            }
             $conversation->turns[] = ['question' => $question, 'reasoning' => '', 'commentary' => '', 'answer' => ''];
             $conversation->generationId = Uuid::v7()->toRfc4122();
             $conversation->attemptId = null;
@@ -156,6 +167,15 @@ final readonly class Workspace
 
             return $conversation;
         });
+    }
+
+    public function assertAttempt(ChatConversation $conversation, string $turnId, string $attemptId): void
+    {
+        // Ephemeral delivery needs fencing, not hydration or a write transaction.
+        $current = $this->em->getConnection()->fetchOne('SELECT 1 FROM chat_conversation WHERE id = ? AND user_id = ? AND generation_id = ? AND attempt_id = ? AND generation_status = ?', [$conversation->id, $conversation->getUser()->getId(), $turnId, $attemptId, ExecutionStatus::Running->value]);
+        if (false === $current) {
+            throw new ConflictException('This attempt is no longer active.');
+        }
     }
 
     public function project(ChatConversation $conversation, string $turnId, string $attemptId, NativeAssistantOutput $output, ExecutionStatus $status = ExecutionStatus::Running, ?string $error = null): void

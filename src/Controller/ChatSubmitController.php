@@ -32,27 +32,35 @@ final class ChatSubmitController extends AbstractController
         $id = $request->request->getString('conversation');
         $conversation = '' === $id ? null : $workspace->current($user, $id);
         $status = $connection->status($user);
+        $stream = '' !== $id && TurboBundle::STREAM_FORMAT === $request->getPreferredFormat();
+        $error = null;
         if ('' === $question) {
-            $this->addFlash('warning', 'Write a message first.');
+            $error = 'Write a message first.';
         } elseif (ConnectionStatus::Connected !== $status) {
-            $this->addFlash('warning', 'Connect ChatGPT before sending a message.');
+            $error = 'Connect ChatGPT before sending a message.';
         } else {
             try {
                 $conversation = $workspace->submit($user, $question, $id);
-                if ('' !== $id && TurboBundle::STREAM_FORMAT === $request->getPreferredFormat()) {
-                    $response = $this->render('chat/submitted.stream.html.twig', ['chat' => ChatUpdates::view($conversation)]);
-                    $response->headers->set('Content-Type', TurboBundle::STREAM_MEDIA_TYPE);
-
-                    return $response;
+                if ($stream) {
+                    // Acknowledgement only: worker/catch-up owns all chat state.
+                    return new Response(status: Response::HTTP_NO_CONTENT);
                 }
 
                 return $this->redirectToRoute(Workspace::CHAT_ROUTE, ['conversation' => $conversation->id], Response::HTTP_SEE_OTHER);
-            } catch (\DomainException $error) {
-                $this->addFlash('warning', $error->getMessage());
+            } catch (\DomainException $exception) {
+                $error = $exception->getMessage();
             } catch (TransportException) {
-                $this->addFlash('warning', 'The message could not be sent to the worker. Your draft is retained below.');
+                $error = 'The message could not be sent to the worker. Your draft is retained below.';
             }
         }
+
+        if ($stream) {
+            $response = $this->render('chat/error.stream.html.twig', ['chat' => ChatUpdates::view($conversation), 'error' => $error], new Response(status: Response::HTTP_UNPROCESSABLE_ENTITY));
+            $response->headers->set('Content-Type', TurboBundle::STREAM_MEDIA_TYPE);
+
+            return $response;
+        }
+        $this->addFlash('warning', $error);
 
         return $this->render('home/index.html.twig', [
             'chatgpt_status' => $status,

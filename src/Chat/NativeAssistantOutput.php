@@ -9,6 +9,7 @@ use Symfony\AI\Agent\OutputProcessorInterface;
 use Symfony\AI\Platform\Bridge\OpenAIChatGPT\MessageItem;
 use Symfony\AI\Platform\Bridge\OpenAIChatGPT\Result\Stream\Delta\MessageComplete;
 use Symfony\AI\Platform\Message\AssistantMessage;
+use Symfony\AI\Platform\Message\Content\Commentary;
 use Symfony\AI\Platform\Message\Content\Text;
 use Symfony\AI\Platform\Message\Content\Thinking;
 use Symfony\AI\Platform\Message\MessageBag;
@@ -78,6 +79,9 @@ final class NativeAssistantOutput implements OutputProcessorInterface
             foreach ($message->getContent() as $part) {
                 if ($part instanceof Thinking) {
                     $this->transcript['reasoning'] .= $part->getContent();
+                } elseif ($part instanceof Commentary) {
+                    $this->completedText['commentary'][] = $part->getContent();
+                    $this->transcript['commentary'] = implode("\n\n", $this->completedText['commentary']);
                 } elseif ($part instanceof Text) {
                     $phase = $part->getPhase() ?? (MessageItem::fromText($part)['phase'] ?? null);
                     $field = Workspace::COMMENTARY_PHASE === $phase ? 'commentary' : 'answer';

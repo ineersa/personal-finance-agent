@@ -44,8 +44,9 @@ export default class extends Controller {
         this.request?.abort();
     }
 
-    async catchUp() {
-        if (!this.source.hasAttribute('connected')) return;
+    async catchUp(event) {
+        // Submission acknowledgements also fetch state when live delivery is unavailable.
+        if (!event && !this.source?.hasAttribute('connected')) return;
         this.request?.abort();
         const version = ++this.version;
         const request = this.request = new AbortController();

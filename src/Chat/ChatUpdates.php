@@ -29,10 +29,16 @@ final readonly class ChatUpdates
         return ['turns' => $conversation->turns ?? [], 'conversation_id' => $conversation?->id, 'execution' => $execution?->getStatus()->value ?? $conversation?->generationStatus->value, 'error' => $error ?? $conversation?->error, 'active' => $conversation?->isActive() ?? false, 'label' => $conversation?->getLabel() ?? 'New chat', 'dom_id' => Workspace::DOM_ID.'-'.$id, 'composer_id' => Workspace::COMPOSER_DOM_ID.'-'.$id, 'send_id' => Workspace::SEND_DOM_ID.'-'.$id];
     }
 
-    public function publish(ChatConversation $conversation, ?ExecutionInterface $execution = null, ?string $error = null): void
+    public function publish(ChatConversation $conversation, ?ExecutionInterface $execution = null, ?string $error = null, ?NativeAssistantOutput $output = null): void
     {
+        // Build a detached view; never dirty the ORM entity with incomplete token frames.
+        $chat = self::view($conversation, $execution, $error);
+        if (null !== $output) {
+            $index = \count($chat['turns']) - 1;
+            $chat['turns'][$index] = [...$chat['turns'][$index], ...$output->transcript(), 'activity' => $output->activity->entries()];
+        }
         try {
-            $this->hub->publish(new Update($this->topic->forUser($conversation->getUser()), $this->twig->render('chat/update.stream.html.twig', ['chat' => self::view($conversation, $execution, $error), 'chat_navigation' => null === $execution]), true));
+            $this->hub->publish(new Update($this->topic->forUser($conversation->getUser()), $this->twig->render('chat/update.stream.html.twig', ['chat' => $chat, 'chat_navigation' => null === $execution]), true));
         } catch (\Throwable) {
             // Delivery failures must not repeat inference.
             $this->logger->warning('Chat live update unavailable.', ['conversation_id' => $conversation->id]);

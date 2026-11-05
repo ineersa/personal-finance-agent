@@ -26,6 +26,9 @@ class ChatConversation
     #[ORM\Column(length: 20)]
     public string $reasoningEffort;
 
+    #[ORM\Column(type: 'text', options: ['default' => 'New chat'])]
+    public string $label = 'New chat';
+
     // Retain the historical physical column without rewriting existing conversations.
     #[ORM\Column(name: 'saved', options: ['default' => false])]
     public bool $favourite = false;
@@ -91,7 +94,7 @@ class ChatConversation
 
     public function getLabel(): string
     {
-        return $this->turns[0]['question'] ?? 'New chat';
+        return $this->label;
     }
 
     public function getCreatedAt(): \DateTimeImmutable

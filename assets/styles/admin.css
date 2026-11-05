@@ -132,7 +132,7 @@ body.ea .chat-navigation-row .ea-sidebar-item-label { min-width: 0; overflow: hi
 .chat-search-results span { display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; color: #a2a2aa; }
 .chat-navigation-group { margin-top: 22px; }
 .chat-navigation-group h2 { padding: 0 10px 10px; }
-.chat-navigation-more summary { padding: 9px 10px; color: #a2a2aa; cursor: pointer; font-size: 12px; }
+.chat-navigation-more { display: inline-block; padding: 9px 10px; color: #a2a2aa; cursor: pointer; font-size: 12px; }
 @media (max-width: 767px) {
     .chat-navigation { margin-top: 18px; }
     body.ea .chat-navigation + .ea-sidebar-content { margin-top: 18px; }
