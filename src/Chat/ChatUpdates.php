@@ -21,12 +21,12 @@ final readonly class ChatUpdates
     {
     }
 
-    /** @return array{turns: list<array{question: string, reasoning: string, commentary: string, answer: string, activity?: list<Entry>, charts?: list<Chart>, execution?: string, error?: ?string}>, conversation_id: ?string, execution: ?string, error: ?string, saved: bool, active: bool, has_turn: bool, label: string, dom_id: string, composer_id: string, send_id: string} */
+    /** @return array{turns: list<array{question: string, reasoning: string, commentary: string, answer: string, activity?: list<Entry>, charts?: list<Chart>, execution?: string, error?: ?string}>, conversation_id: ?string, execution: ?string, error: ?string, active: bool, label: string, dom_id: string, composer_id: string, send_id: string} */
     public static function view(?ChatConversation $conversation, ?ExecutionInterface $execution = null, ?string $error = null): array
     {
         $id = $conversation->id ?? Workspace::EMPTY_ID;
 
-        return ['turns' => $conversation->turns ?? [], 'conversation_id' => $conversation?->id, 'execution' => $execution?->getStatus()->value ?? $conversation?->generationStatus->value, 'error' => $error ?? $conversation?->error, 'saved' => $conversation->saved ?? false, 'active' => $conversation?->isActive() ?? false, 'has_turn' => [] !== ($conversation->turns ?? []), 'label' => $conversation?->getLabel() ?? 'New chat', 'dom_id' => Workspace::DOM_ID.'-'.$id, 'composer_id' => Workspace::COMPOSER_DOM_ID.'-'.$id, 'send_id' => Workspace::SEND_DOM_ID.'-'.$id];
+        return ['turns' => $conversation->turns ?? [], 'conversation_id' => $conversation?->id, 'execution' => $execution?->getStatus()->value ?? $conversation?->generationStatus->value, 'error' => $error ?? $conversation?->error, 'active' => $conversation?->isActive() ?? false, 'label' => $conversation?->getLabel() ?? 'New chat', 'dom_id' => Workspace::DOM_ID.'-'.$id, 'composer_id' => Workspace::COMPOSER_DOM_ID.'-'.$id, 'send_id' => Workspace::SEND_DOM_ID.'-'.$id];
     }
 
     public function publish(ChatConversation $conversation, ?ExecutionInterface $execution = null, ?string $error = null): void

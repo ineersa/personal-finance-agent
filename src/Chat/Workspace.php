@@ -25,24 +25,20 @@ final readonly class Workspace
 {
     public const string CHAT_ROUTE = 'admin_chat';
     public const string SUBMIT_ROUTE = 'admin_chat_submit';
-    public const string NEW_ROUTE = 'app_chat_new';
-    public const string SAVE_ROUTE = 'app_chat_save';
+    public const string FAVOURITE_ROUTE = 'app_chat_favourite';
     public const string DELETE_ROUTE = 'app_chat_delete';
     public const string SNAPSHOT_ROUTE = 'app_chat_snapshot';
     public const string SUBMIT_CSRF = 'chat-submit';
-    public const string NEW_CSRF = 'chat-new';
-    public const string SAVE_CSRF = 'chat-save';
+    public const string FAVOURITE_CSRF = 'chat-favourite';
     public const string DELETE_CSRF = 'chat-delete';
     public const string DOM_ID = 'chat-workspace';
     public const string COMPOSER_DOM_ID = 'chat-composer-fields';
     public const string SEND_DOM_ID = 'chat-send';
     public const string NAVIGATION_DOM_ID = 'chat-navigation-row';
     public const string DELETE_DOM_ID = 'chat-delete';
-    public const string SAVE_DOM_ID = 'chat-save';
     public const string LINK_DOM_ID = 'chat-link';
     public const string EMPTY_ID = 'empty';
     public const string COMMENTARY_PHASE = 'commentary';
-    public const int TEMPORARY_LIMIT = 5;
 
     public function __construct(private EntityManagerInterface $em, private MessageBagNormalizer $normalizer, private MessageBusInterface $bus, private InitialContext $context, private ChartFiles $files, private LoggerInterface $logger, #[Autowire('%env(CHAT_MODEL)%')] private string $model, #[Autowire('%env(CHAT_REASONING_EFFORT)%')] private string $effort)
     {
@@ -51,24 +47,18 @@ final readonly class Workspace
     public function current(User $user, string $id = ''): ?ChatConversation
     {
         if ('' === $id) {
-            return $this->em->getRepository(ChatConversation::class)->findOneBy(['user' => $user], ['id' => 'DESC']);
+            return null;
         }
 
         return $this->em->getRepository(ChatConversation::class)->findOneBy(['id' => $id, 'user' => $user]) ?? throw new NotFoundHttpException('Conversation unavailable.');
     }
 
-    /** @return list<ChatConversation> */
-    public function history(User $user): array
-    {
-        return $this->em->getRepository(ChatConversation::class)->findBy(['user' => $user], ['id' => 'DESC']);
-    }
-
-    /** @return list<array{id: string, label: string, saved: bool, active: bool, has_turn: bool}> */
+    /** @return list<array{id: string, label: string, favourite: bool, active: bool}> */
     public function navigation(User $user): array
     {
-        $rows = $this->em->getConnection()->fetchAllAssociative("SELECT id, saved, generation_status, json_array_length(turns) AS turn_count, json_extract(turns, '$[0].question') AS label FROM chat_conversation WHERE user_id = ? ORDER BY id DESC", [$user->getId()]);
+        $rows = $this->em->getConnection()->fetchAllAssociative("SELECT id, saved AS favourite, generation_status, json_extract(turns, '$[0].question') AS label FROM chat_conversation WHERE user_id = ? ORDER BY id DESC", [$user->getId()]);
 
-        return array_map(static fn (array $row): array => ['id' => (string) $row['id'], 'label' => (string) ($row['label'] ?? 'New chat'), 'saved' => (bool) $row['saved'], 'active' => !ExecutionStatus::from($row['generation_status'])->isFinished(), 'has_turn' => 0 < (int) $row['turn_count']], $rows);
+        return array_map(static fn (array $row): array => ['id' => (string) $row['id'], 'label' => (string) ($row['label'] ?? 'New chat'), 'favourite' => (bool) $row['favourite'], 'active' => !ExecutionStatus::from($row['generation_status'])->isFinished()], $rows);
     }
 
     public function delete(User $user, string $id): void
@@ -85,29 +75,12 @@ final readonly class Workspace
         $this->removeCharts([$id]);
     }
 
-    public function startNew(User $user): ChatConversation
+    public function favourite(User $user, string $id, bool $favourite): ChatConversation
     {
-        $removed = [];
-        $conversation = $this->em->getConnection()->transactional(function () use ($user, &$removed): ChatConversation {
-            $conversation = $this->create($user, $removed);
-            $this->em->flush();
-
-            return $conversation;
-        });
-        $this->removeCharts($removed);
-
-        return $conversation;
-    }
-
-    public function save(User $user, string $id): ChatConversation
-    {
-        return $this->em->getConnection()->transactional(function () use ($user, $id): ChatConversation {
+        return $this->em->getConnection()->transactional(function () use ($user, $id, $favourite): ChatConversation {
             $conversation = $this->current($user, $id) ?? throw new NotFoundHttpException();
             $this->em->refresh($conversation);
-            if ([] === $conversation->turns) {
-                throw new \DomainException('Send a message before saving this chat.');
-            }
-            $conversation->saved = true;
+            $conversation->favourite = $favourite;
             $this->em->flush();
 
             return $conversation;
@@ -118,14 +91,13 @@ final readonly class Workspace
     {
         // Schema/file reads must not extend the central admission write transaction.
         $initial = '' === $id || [] === $this->current($user, $id)?->history ? $this->context->forOwner($user) : null;
-        $removed = [];
-        $conversation = $this->em->getConnection()->transactional(function () use ($user, $question, $id, $initial, &$removed): ChatConversation {
+        $conversation = $this->em->getConnection()->transactional(function () use ($user, $question, $id, $initial): ChatConversation {
             $this->em->refresh($user);
             $identity = $user->getChatGptIdentity();
             if (null === $identity) {
                 throw new \DomainException('Connect ChatGPT before sending a message.');
             }
-            $conversation = '' === $id ? $this->create($user, $removed) : $this->current($user, $id);
+            $conversation = '' === $id ? $this->create($user) : $this->current($user, $id);
             \assert($conversation instanceof ChatConversation);
             if ('' !== $id) {
                 $this->em->refresh($conversation);
@@ -153,8 +125,6 @@ final readonly class Workspace
         } catch (TransportException $error) {
             $this->finishDispatchFailure($message);
             throw $error;
-        } finally {
-            $this->removeCharts($removed);
         }
 
         return $conversation;
@@ -203,26 +173,8 @@ final readonly class Workspace
         });
     }
 
-    /** @param list<string> $removed */
-    private function create(User $user, array &$removed): ChatConversation
+    private function create(User $user): ChatConversation
     {
-        $temporary = [];
-        // UUIDv7 IDs encode creation time, so ascending IDs give oldest-created order (not last use).
-        foreach (array_reverse($this->history($user)) as $chat) {
-            $this->em->refresh($chat);
-            if (!$chat->saved) {
-                $temporary[] = $chat;
-            }
-        }
-        $needed = \count($temporary) - self::TEMPORARY_LIMIT + 1;
-        $victims = array_values(array_filter($temporary, static fn (ChatConversation $chat): bool => !$chat->isActive()));
-        if ($needed > \count($victims)) {
-            throw new \DomainException('All temporary chats are busy. Wait for a reply to finish or save a chat before starting another.');
-        }
-        foreach (\array_slice($victims, 0, max(0, $needed)) as $victim) {
-            $removed[] = $victim->id;
-            $this->em->remove($victim);
-        }
         $conversation = new ChatConversation($user, $user->getChatGptIdentity(), $this->model, $this->effort);
         $this->em->persist($conversation);
 

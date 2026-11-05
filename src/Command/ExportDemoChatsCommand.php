@@ -20,7 +20,7 @@ use Symfony\Component\Yaml\Yaml;
 final class ExportDemoChatsCommand extends Command
 {
     private const int RECORDINGS = 5;
-    private const int SAVED_RECORDINGS = 4;
+    private const int FAVOURITE_RECORDINGS = 4;
 
     public function __construct(private readonly EntityManagerInterface $em, #[Autowire('%kernel.project_dir%')] private readonly string $root, #[Autowire('%kernel.environment%')] private readonly string $environment)
     {
@@ -29,7 +29,7 @@ final class ExportDemoChatsCommand extends Command
 
     protected function configure(): void
     {
-        $this->addArgument('ids', InputArgument::IS_ARRAY | InputArgument::REQUIRED, 'Exactly five recorded English conversation IDs; first four become saved fixtures.');
+        $this->addArgument('ids', InputArgument::IS_ARRAY | InputArgument::REQUIRED, 'Exactly five recorded English conversation IDs; first four become favourite fixtures.');
     }
 
     protected function execute(InputInterface $input, OutputInterface $output): int
@@ -60,7 +60,7 @@ final class ExportDemoChatsCommand extends Command
             $definitions['demo_chat_'.($index + 1)] = [
                 '__construct' => ['@demo', null, $chat->model, $chat->reasoningEffort],
                 'id' => $chat->id,
-                'saved' => $index < self::SAVED_RECORDINGS,
+                'favourite' => $index < self::FAVOURITE_RECORDINGS,
                 'history' => $this->literalArray($chat->history),
                 'turns' => $this->literalArray($chat->turns),
             ];
@@ -73,7 +73,7 @@ final class ExportDemoChatsCommand extends Command
         if (false === file_put_contents($this->root.'/var/demo-chat-export.yaml', $yaml)) {
             throw new \RuntimeException('Unable to write canonical chat fixtures.');
         }
-        $output->writeln('Exported five selected English chat fixtures to var/demo-chat-export.yaml (four saved, one temporary). Review and copy to fixtures/central/chat.yaml on the host.');
+        $output->writeln('Exported five selected English chat fixtures to var/demo-chat-export.yaml (four favourites, one ordinary chat). Review and copy to fixtures/central/chat.yaml on the host.');
 
         return Command::SUCCESS;
     }

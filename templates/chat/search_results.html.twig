@@ -1,0 +1,14 @@
+<turbo-frame id="{{ constant('App\\Chat\\ChatSearch::FRAME_ID') }}">
+    <section class="chat-search-results" aria-label="Search results" aria-live="polite">
+        {% if query %}
+            <ul>
+                {% for result in results %}
+                    <li><a data-turbo="false" href="{{ path(constant('App\\Chat\\Workspace::CHAT_ROUTE'), {conversation: result.id}) }}"><strong>{{ result.label }}</strong><span>{{ result.snippet }}</span></a></li>
+                {% else %}
+                    <li>No chats found.</li>
+                {% endfor %}
+            </ul>
+            {% if results|length == constant('App\\Chat\\ChatSearch::RESULT_LIMIT') %}<p>Showing the first {{ constant('App\\Chat\\ChatSearch::RESULT_LIMIT') }} matches. Refine your search for more.</p>{% endif %}
+        {% else %}<p>Search your chat titles, questions and answers.</p>{% endif %}
+    </section>
+</turbo-frame>

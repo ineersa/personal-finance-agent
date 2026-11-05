@@ -1,59 +1,30 @@
 <nav {{ attributes.defaults({class: 'chat-navigation', 'aria-label': 'Chats'}) }}>
-    <form action="{{ path(constant('App\\Chat\\Workspace::NEW_ROUTE')) }}" method="post" class="chat-navigation-new">
-        <input type="hidden" name="_token" value="{{ csrf_token(constant('App\\Chat\\Workspace::NEW_CSRF')) }}" data-controller="csrf-protection">
-        <input type="hidden" name="conversation" value="{{ selected }}">
-        <button type="submit"><twig:ea:Icon name="internal:plus" />New chat</button>
-    </form>
-    <form action="{{ path(constant('App\\Chat\\Workspace::CHAT_ROUTE')) }}" method="get" class="chat-search" role="search" aria-label="Chat search">
-        {% if selected %}<input type="hidden" name="conversation" value="{{ selected }}">{% endif %}
-        <label for="chat-search-query" class="visually-hidden">Search chats</label>
-        <input id="chat-search-query" type="search" name="{{ constant('App\\Chat\\ChatSearch::QUERY_PARAMETER') }}" value="{{ query }}" maxlength="{{ constant('App\\Chat\\ChatSearch::QUERY_LENGTH') }}" placeholder="Search chats…" enterkeyhint="search">
-    </form>
-    {% if query %}
-        <section class="chat-search-results" aria-labelledby="chat-search-heading">
-            <h2 id="chat-search-heading">Search results</h2>
-            <a href="{{ path(constant('App\\Chat\\Workspace::CHAT_ROUTE'), selected ? {conversation: selected} : {}) }}">Clear search</a>
-            <ul>
-                {% for result in results %}
-                    <li><a href="{{ path(constant('App\\Chat\\Workspace::CHAT_ROUTE'), {conversation: result.id, q: query}) }}"{% if selected == result.id %} aria-current="page"{% endif %}><strong>{{ result.label }}</strong><span>{{ result.snippet }}</span></a></li>
+    <div class="chat-navigation-heading">
+        <h2>Chats</h2>
+        <button type="button" class="chat-search-trigger" aria-label="Search chats" data-bs-toggle="modal" data-bs-target="#{{ constant('App\\Chat\\ChatSearch::MODAL_ID') }}"><twig:ea:Icon name="internal:search" /></button>
+    </div>
+    <a class="chat-navigation-new" href="{{ path(constant('App\\Chat\\Workspace::CHAT_ROUTE')) }}"><twig:ea:Icon name="internal:edit" />New chat</a>
+    {% for group in [{id: 'favourites', title: 'Favourites', rows: favourites, empty: 'No favourites yet'}, {id: 'chats', title: 'Chats', rows: chats, empty: 'No chats yet'}] %}
+        <section aria-labelledby="{{ group.id }}-heading" class="chat-navigation-group chat-{{ group.id }}-group">
+            <h2 id="{{ group.id }}-heading">{{ group.title }}</h2>
+            <ul class="ea-sidebar-group-items">
+                {% for retained in group.rows|slice(0, constant('App\\Twig\\Components\\ChatNavigation::VISIBLE')) %}
+                    {{ include('chat/_navigation_row.html.twig', {retained: retained, selected: selected}) }}
                 {% else %}
-                    <li class="chat-navigation-empty">No chats found.</li>
+                    <li class="chat-navigation-empty">{{ group.empty }}</li>
                 {% endfor %}
             </ul>
-            {% if results|length == constant('App\\Chat\\ChatSearch::RESULT_LIMIT') %}<p>Showing the first {{ constant('App\\Chat\\ChatSearch::RESULT_LIMIT') }} matches. Refine your search for more.</p>{% endif %}
+            {% set additional = group.rows|slice(constant('App\\Twig\\Components\\ChatNavigation::VISIBLE')) %}
+            {% if additional is not empty %}
+                <details class="chat-navigation-more"{% if selected in additional|map(chat => chat.id) %} open{% endif %}>
+                    <summary>Show more</summary>
+                    <ul class="ea-sidebar-group-items">
+                        {% for retained in additional %}
+                            {{ include('chat/_navigation_row.html.twig', {retained: retained, selected: selected}) }}
+                        {% endfor %}
+                    </ul>
+                </details>
+            {% endif %}
         </section>
-    {% endif %}
-    <section aria-labelledby="temporary-chats-heading">
-        <div class="chat-navigation-heading">
-            <h2 id="temporary-chats-heading">Temporary chats</h2>
-        </div>
-        <ul class="ea-sidebar-group-items">
-            {% for retained in temporary %}
-                {{ include('chat/_navigation_row.html.twig', {retained: retained, selected: selected}) }}
-            {% else %}
-                <li class="chat-navigation-empty">No temporary chats yet</li>
-            {% endfor %}
-        </ul>
-    </section>
-    <section aria-labelledby="saved-chats-heading" class="chat-saved-group">
-        <h2 id="saved-chats-heading"><twig:ea:Icon name="internal:folder-open" />Saved chats</h2>
-        <ul class="ea-sidebar-group-items">
-            {% for retained in saved|slice(0, constant('App\\Twig\\Components\\ChatNavigation::SAVED_VISIBLE')) %}
-                {{ include('chat/_navigation_row.html.twig', {retained: retained, selected: selected}) }}
-            {% else %}
-                <li class="chat-navigation-empty">Save a chat to keep it here</li>
-            {% endfor %}
-        </ul>
-        {% set additional = saved|slice(constant('App\\Twig\\Components\\ChatNavigation::SAVED_VISIBLE')) %}
-        {% if additional is not empty %}
-            <details class="chat-saved-more"{% if selected in additional|map(chat => chat.id) %} open{% endif %}>
-                <summary>Show more</summary>
-                <ul class="ea-sidebar-group-items">
-                    {% for retained in additional %}
-                        {{ include('chat/_navigation_row.html.twig', {retained: retained, selected: selected}) }}
-                    {% endfor %}
-                </ul>
-            </details>
-        {% endif %}
-    </section>
+    {% endfor %}
 </nav>

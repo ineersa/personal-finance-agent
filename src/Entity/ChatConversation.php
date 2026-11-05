@@ -26,8 +26,9 @@ class ChatConversation
     #[ORM\Column(length: 20)]
     public string $reasoningEffort;
 
-    #[ORM\Column(options: ['default' => false])]
-    public bool $saved = false;
+    // Retain the historical physical column without rewriting existing conversations.
+    #[ORM\Column(name: 'saved', options: ['default' => false])]
+    public bool $favourite = false;
 
     #[ORM\Column(length: 36, nullable: true)]
     public ?string $generationId = null;

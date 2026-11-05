@@ -13,6 +13,9 @@
     {# The native layout shares this captured fragment between both responsive headers. #}
     {% set settings_dropdown = '' %}
     {{ parent() }}
+    {% if app.user and not is_granted('ROLE_ADMIN') %}
+        {{ include('chat/search_modal.html.twig') }}
+    {% endif %}
     {% if app.user and not is_granted('ROLE_ADMIN') and (ea.crud is null or ea.crud.currentAction == constant('EasyCorp\\Bundle\\EasyAdminBundle\\Config\\Action::NEW')) %}
         {{ include('@EasyAdmin/crud/includes/_action_confirmation_modal.html.twig', with_context: false) }}
     {% endif %}

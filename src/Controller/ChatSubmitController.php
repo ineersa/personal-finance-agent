@@ -61,38 +61,15 @@ final class ChatSubmitController extends AbstractController
         ], new Response(status: Response::HTTP_UNPROCESSABLE_ENTITY));
     }
 
-    #[Route('/home/chat/new', name: Workspace::NEW_ROUTE, methods: [Request::METHOD_POST])]
-    #[IsCsrfTokenValid(Workspace::NEW_CSRF)]
-    public function startNew(Request $request, #[CurrentUser] User $user, Workspace $workspace): Response
-    {
-        $id = $request->request->getString('conversation');
-        if ('' !== $id) {
-            $workspace->current($user, $id);
-        }
-        try {
-            $conversation = $workspace->startNew($user);
-
-            return $this->redirectToRoute(Workspace::CHAT_ROUTE, ['conversation' => $conversation->id], Response::HTTP_SEE_OTHER);
-        } catch (\DomainException $error) {
-            $this->addFlash('warning', $error->getMessage());
-        }
-
-        return $this->redirectToRoute(Workspace::CHAT_ROUTE, '' === $id ? [] : ['conversation' => $id], Response::HTTP_SEE_OTHER);
-    }
-
-    #[Route('/home/chat/save', name: Workspace::SAVE_ROUTE, methods: [Request::METHOD_POST])]
-    #[IsCsrfTokenValid(Workspace::SAVE_CSRF)]
-    public function save(Request $request, #[CurrentUser] User $user, Workspace $workspace): Response
+    #[Route('/home/chat/favourite', name: Workspace::FAVOURITE_ROUTE, methods: [Request::METHOD_POST])]
+    #[IsCsrfTokenValid(Workspace::FAVOURITE_CSRF)]
+    public function favourite(Request $request, #[CurrentUser] User $user, Workspace $workspace): Response
     {
         $id = $request->request->getString('conversation');
         if ('' === $id) {
             throw $this->createNotFoundException();
         }
-        try {
-            $workspace->save($user, $id);
-        } catch (\DomainException $error) {
-            $this->addFlash('warning', $error->getMessage());
-        }
+        $workspace->favourite($user, $id, $request->request->getBoolean('favourite'));
 
         return $this->redirectToRoute(Workspace::CHAT_ROUTE, ['conversation' => $id], Response::HTTP_SEE_OTHER);
     }

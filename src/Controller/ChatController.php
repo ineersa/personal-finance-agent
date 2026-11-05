@@ -14,6 +14,7 @@ use EasyCorp\Bundle\EasyAdminBundle\Attribute\AdminRoute;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\Security\Http\Attribute\CurrentUser;
 use Symfony\Component\Security\Http\Attribute\IsGranted;
 
@@ -25,13 +26,20 @@ final class ChatController extends AbstractController
     {
         $id = $request->query->getString('conversation');
         $conversation = $workspace->current($user, $id);
-        if ('' === $id && null !== $conversation) {
-            return $this->redirectToRoute(Workspace::CHAT_ROUTE, ['conversation' => $conversation->id, ChatSearch::QUERY_PARAMETER => $request->query->getString(ChatSearch::QUERY_PARAMETER)]);
-        }
 
         return $this->render('home/index.html.twig', [
             'chatgpt_status' => $connection->status($user),
             'chat' => ChatUpdates::view($conversation),
         ]);
+    }
+
+    #[Route('/home/chat/search', name: ChatSearch::ROUTE, methods: [Request::METHOD_GET])]
+    public function search(Request $request, ChatSearch $search, #[CurrentUser] User $user): Response
+    {
+        $query = mb_substr(trim($request->query->getString(ChatSearch::QUERY_PARAMETER)), 0, ChatSearch::QUERY_LENGTH);
+        $response = $this->render('chat/search_results.html.twig', ['query' => $query, 'results' => '' === $query ? [] : $search->find($user, $query)]);
+        $response->headers->set('Cache-Control', 'no-store');
+
+        return $response;
     }
 }

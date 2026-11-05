@@ -13,7 +13,6 @@ parameters:
     env(JEV_API_KEY): ''
     env(JEV_BASE_URL): 'https://api.typesafe.ai'
     env(JEV_MODEL): 'jev-1.14.0'
-    env(LOCAL_DEMO_RESET_ENABLED): '0'
     env(CHATGPT_CALLBACK_PORT): !php/const Symfony\AI\Platform\Bridge\OpenAIChatGPT\Auth\OAuthConfig::DEFAULT_PORT
     env(CHATGPT_FINANCE_URL): ''
     env(CHAT_MODEL): 'gpt-6-luna'
