@@ -125,7 +125,16 @@ body.ea .chat-navigation-row .ea-sidebar-item-label { min-width: 0; overflow: hi
 .chat-row-menu:hover, .chat-row-menu:focus-visible, .chat-retention-help:hover { background: #303035; color: #ededee; }
 .chat-navigation :is(button, a, summary):focus-visible { outline: 2px solid #b9edd1; outline-offset: 2px; }
 .chat-navigation form { margin: 0; }
+.chat-save-action:has(button[hidden]), .chat-save-action button[hidden] { display: none; }
 .chat-navigation-empty { padding: 9px 10px; color: #777780; font-size: 12px; }
+.chat-navigation .chat-search { margin-bottom: 18px; }
+.chat-search input[type="search"] { width: 100%; min-width: 0; padding: 9px 10px; border: 1px solid #38383d; border-radius: 6px; background: #222225; color: #ededee; font-size: 12px; }
+.chat-search-results { margin-bottom: 20px; font-size: 12px; }
+.chat-search-results ul { list-style: none; padding: 0; margin: 8px 0; }
+.chat-search-results li a { display: block; padding: 8px; border-radius: 6px; overflow-wrap: anywhere; }
+.chat-search-results li a:hover, .chat-search-results a[aria-current] { background: #303035; }
+.chat-search-results strong { display: block; color: #ededee; font-weight: 500; }
+.chat-search-results span { display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; color: #a2a2aa; }
 .chat-saved-group { margin-top: 22px; }
 .chat-saved-group h2 { padding: 0 10px 10px; }
 .chat-saved-more summary { padding: 9px 10px; color: #a2a2aa; cursor: pointer; font-size: 12px; }

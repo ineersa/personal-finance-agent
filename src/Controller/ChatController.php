@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Controller;
 
+use App\Chat\ChatSearch;
 use App\Chat\ChatUpdates;
 use App\Chat\Workspace;
 use App\ChatGpt\Connection;
@@ -25,7 +26,7 @@ final class ChatController extends AbstractController
         $id = $request->query->getString('conversation');
         $conversation = $workspace->current($user, $id);
         if ('' === $id && null !== $conversation) {
-            return $this->redirectToRoute(Workspace::CHAT_ROUTE, ['conversation' => $conversation->id]);
+            return $this->redirectToRoute(Workspace::CHAT_ROUTE, ['conversation' => $conversation->id, ChatSearch::QUERY_PARAMETER => $request->query->getString(ChatSearch::QUERY_PARAMETER)]);
         }
 
         return $this->render('home/index.html.twig', [

@@ -1,4 +1,7 @@
 {% if chat.conversation_id %}
+    {% if not chat.saved %}
+        <turbo-stream action="replace" method="morph" target="{{ constant('App\\Chat\\Workspace::SAVE_DOM_ID') }}-{{ chat.conversation_id }}"><template>{% include 'chat/_save_button.html.twig' with {retained: {id: chat.conversation_id, has_turn: chat.has_turn}} %}</template></turbo-stream>
+    {% endif %}
     {# Only text and one stable button change; selection, open menu and form tokens stay local. #}
     <turbo-stream action="update" targets="#{{ constant('App\\Chat\\Workspace::NAVIGATION_DOM_ID') }}-{{ chat.conversation_id }} .ea-sidebar-item-label, #{{ constant('App\\Chat\\Workspace::NAVIGATION_DOM_ID') }}-{{ chat.conversation_id }} .ea-sidebar-item-tooltip"><template>{{ chat.label }}</template></turbo-stream>
     <turbo-stream action="replace" method="morph" target="{{ constant('App\\Chat\\Workspace::DELETE_DOM_ID') }}-{{ chat.conversation_id }}"><template>{% include 'chat/_delete_button.html.twig' with {retained: {id: chat.conversation_id, active: chat.active}} %}</template></turbo-stream>

@@ -38,6 +38,7 @@ final readonly class Workspace
     public const string SEND_DOM_ID = 'chat-send';
     public const string NAVIGATION_DOM_ID = 'chat-navigation-row';
     public const string DELETE_DOM_ID = 'chat-delete';
+    public const string SAVE_DOM_ID = 'chat-save';
     public const string LINK_DOM_ID = 'chat-link';
     public const string EMPTY_ID = 'empty';
     public const string COMMENTARY_PHASE = 'commentary';
@@ -62,12 +63,12 @@ final readonly class Workspace
         return $this->em->getRepository(ChatConversation::class)->findBy(['user' => $user], ['id' => 'DESC']);
     }
 
-    /** @return list<array{id: string, label: string, saved: bool, active: bool}> */
+    /** @return list<array{id: string, label: string, saved: bool, active: bool, has_turn: bool}> */
     public function navigation(User $user): array
     {
-        $rows = $this->em->getConnection()->fetchAllAssociative("SELECT id, saved, generation_status, json_extract(turns, '$[0].question') AS label FROM chat_conversation WHERE user_id = ? ORDER BY id DESC", [$user->getId()]);
+        $rows = $this->em->getConnection()->fetchAllAssociative("SELECT id, saved, generation_status, json_array_length(turns) AS turn_count, json_extract(turns, '$[0].question') AS label FROM chat_conversation WHERE user_id = ? ORDER BY id DESC", [$user->getId()]);
 
-        return array_map(static fn (array $row): array => ['id' => (string) $row['id'], 'label' => (string) ($row['label'] ?? 'New chat'), 'saved' => (bool) $row['saved'], 'active' => !ExecutionStatus::from($row['generation_status'])->isFinished()], $rows);
+        return array_map(static fn (array $row): array => ['id' => (string) $row['id'], 'label' => (string) ($row['label'] ?? 'New chat'), 'saved' => (bool) $row['saved'], 'active' => !ExecutionStatus::from($row['generation_status'])->isFinished(), 'has_turn' => 0 < (int) $row['turn_count']], $rows);
     }
 
     public function delete(User $user, string $id): void
@@ -103,6 +104,9 @@ final readonly class Workspace
         return $this->em->getConnection()->transactional(function () use ($user, $id): ChatConversation {
             $conversation = $this->current($user, $id) ?? throw new NotFoundHttpException();
             $this->em->refresh($conversation);
+            if ([] === $conversation->turns) {
+                throw new \DomainException('Send a message before saving this chat.');
+            }
             $conversation->saved = true;
             $this->em->flush();
 

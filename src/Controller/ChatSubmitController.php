@@ -88,9 +88,13 @@ final class ChatSubmitController extends AbstractController
         if ('' === $id) {
             throw $this->createNotFoundException();
         }
-        $conversation = $workspace->save($user, $id);
+        try {
+            $workspace->save($user, $id);
+        } catch (\DomainException $error) {
+            $this->addFlash('warning', $error->getMessage());
+        }
 
-        return $this->redirectToRoute(Workspace::CHAT_ROUTE, ['conversation' => $conversation->id], Response::HTTP_SEE_OTHER);
+        return $this->redirectToRoute(Workspace::CHAT_ROUTE, ['conversation' => $id], Response::HTTP_SEE_OTHER);
     }
 
     #[Route('/home/chat/delete', name: Workspace::DELETE_ROUTE, methods: [Request::METHOD_POST])]

@@ -1,9 +1,28 @@
 <nav {{ attributes.defaults({class: 'chat-navigation', 'aria-label': 'Chats'}) }}>
-    <form action="{{ path(constant('App\\Chat\\Workspace::NEW_ROUTE')) }}" method="post" class="chat-navigation-new" data-turbo="true">
+    <form action="{{ path(constant('App\\Chat\\Workspace::NEW_ROUTE')) }}" method="post" class="chat-navigation-new">
         <input type="hidden" name="_token" value="{{ csrf_token(constant('App\\Chat\\Workspace::NEW_CSRF')) }}" data-controller="csrf-protection">
         <input type="hidden" name="conversation" value="{{ selected }}">
         <button type="submit"><twig:ea:Icon name="internal:plus" />New chat</button>
     </form>
+    <form action="{{ path(constant('App\\Chat\\Workspace::CHAT_ROUTE')) }}" method="get" class="chat-search" role="search" aria-label="Chat search">
+        {% if selected %}<input type="hidden" name="conversation" value="{{ selected }}">{% endif %}
+        <label for="chat-search-query" class="visually-hidden">Search chats</label>
+        <input id="chat-search-query" type="search" name="{{ constant('App\\Chat\\ChatSearch::QUERY_PARAMETER') }}" value="{{ query }}" maxlength="{{ constant('App\\Chat\\ChatSearch::QUERY_LENGTH') }}" placeholder="Search chats…" enterkeyhint="search">
+    </form>
+    {% if query %}
+        <section class="chat-search-results" aria-labelledby="chat-search-heading">
+            <h2 id="chat-search-heading">Search results</h2>
+            <a href="{{ path(constant('App\\Chat\\Workspace::CHAT_ROUTE'), selected ? {conversation: selected} : {}) }}">Clear search</a>
+            <ul>
+                {% for result in results %}
+                    <li><a href="{{ path(constant('App\\Chat\\Workspace::CHAT_ROUTE'), {conversation: result.id, q: query}) }}"{% if selected == result.id %} aria-current="page"{% endif %}><strong>{{ result.label }}</strong><span>{{ result.snippet }}</span></a></li>
+                {% else %}
+                    <li class="chat-navigation-empty">No chats found.</li>
+                {% endfor %}
+            </ul>
+            {% if results|length == constant('App\\Chat\\ChatSearch::RESULT_LIMIT') %}<p>Showing the first {{ constant('App\\Chat\\ChatSearch::RESULT_LIMIT') }} matches. Refine your search for more.</p>{% endif %}
+        </section>
+    {% endif %}
     <section aria-labelledby="temporary-chats-heading">
         <div class="chat-navigation-heading">
             <h2 id="temporary-chats-heading">Temporary chats</h2>

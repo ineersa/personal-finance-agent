@@ -33,6 +33,7 @@ ADRs record significant technical decisions, their context, and their consequenc
 | [0025](0025-in-process-tenant-sql.md) | Accepted | Run read-only tenant SQL in-process with result limits and approximate SQLite monetary results. |
 | [0026](0026-local-unovis-charts.md) | Accepted | Generate local interactive Unovis HTML, retain privately and serve through restricted sandboxed iframes. |
 | [0027](0027-owned-chat-history-controls.md) | Accepted | Retain owned native chat history with New/Save/history controls, five temporary chats plus saved, and short durable generation writes. |
+| [0028](0028-native-chat-search.md) | Accepted | Search owned readable chat text with native SQLite FTS5 and an explicitly approved SQLite-specific migration exception. |
 
 ## Recording decisions
 
