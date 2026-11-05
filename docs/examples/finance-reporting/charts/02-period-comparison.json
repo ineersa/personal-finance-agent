@@ -1,0 +1,36 @@
+{
+  "tool": "unovis_generate_bar_chart",
+  "arguments": {
+    "data": [
+      {
+        "month": "2026-08",
+        "Gross purchases (CAD)": 2876.86,
+        "Net spending (CAD)": 2731.93
+      },
+      {
+        "month": "2026-09",
+        "Gross purchases (CAD)": 2905.29,
+        "Net spending (CAD)": 2905.29
+      }
+    ],
+    "x": "month",
+    "y": [
+      "Gross purchases (CAD)",
+      "Net spending (CAD)"
+    ],
+    "type": "grouped",
+    "seriesLabels": [
+      "Gross purchases",
+      "Net spending after refunds"
+    ],
+    "yAxisLabel": "Approximate CAD",
+    "title": "Gross purchases vs net spending · Aug–Sep 2026 · CAD",
+    "colors": [
+      "#8EA9C1",
+      "#68C5AF"
+    ],
+    "theme": "dark",
+    "width": 800,
+    "height": 400
+  }
+}

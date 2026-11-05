@@ -1,0 +1,40 @@
+{
+  "tool": "unovis_generate_bar_chart",
+  "arguments": {
+    "data": [
+      {
+        "category": "Education",
+        "Net spending (CAD)": 109.05
+      },
+      {
+        "category": "Internet & Phone",
+        "Net spending (CAD)": 117.95
+      },
+      {
+        "category": "Loan Payments",
+        "Net spending (CAD)": 185.0
+      },
+      {
+        "category": "Groceries",
+        "Net spending (CAD)": 485.84
+      },
+      {
+        "category": "Other categories",
+        "Net spending (CAD)": 527.45
+      },
+      {
+        "category": "Housing",
+        "Net spending (CAD)": 1480.0
+      }
+    ],
+    "x": "category",
+    "y": "Net spending (CAD)",
+    "orientation": "horizontal",
+    "xAxisLabel": "Approximate CAD",
+    "title": "Recorded net spending · September 2026 · CAD",
+    "legend": false,
+    "theme": "dark",
+    "width": 800,
+    "height": 400
+  }
+}
