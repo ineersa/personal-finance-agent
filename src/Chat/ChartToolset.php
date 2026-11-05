@@ -52,7 +52,7 @@ final readonly class ChartToolset implements ToolsetInterface
                     }
                 }
 
-                return CallToolResult::error($messages ?: [new TextContent('The chart service returned an error without text details.')]);
+                return CallToolResult::error([] !== $messages ? $messages : [new TextContent('The chart service returned an error without text details.')]);
             }
             try {
                 $filename = $this->files->retain($this->conversation, $path);
