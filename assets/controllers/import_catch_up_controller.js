@@ -3,14 +3,21 @@ import { renderStreamMessage } from '@hotwired/turbo';
 
 // UX Turbo marks its native Mercure element connected on every EventSource open.
 export default class extends Controller {
-    static values = { url: String, targetSelector: { type: String, default: '[data-import-state]' } };
+    static values = { url: String, targetSelector: { type: String, default: '[data-import-state]' }, externalTargetSelector: String };
     version = 0;
 
     connect() {
         this.streamTargets = new Set([...this.element.querySelectorAll(this.targetSelectorValue)].map(target => target.id));
+        if (this.hasExternalTargetSelectorValue) {
+            document.querySelectorAll(this.externalTargetSelectorValue).forEach(target => this.streamTargets.add(target.id));
+        }
         this.beforeStream = event => {
             const stream = event.detail.newStream;
-            if (!this.streamTargets.has(stream.getAttribute('target'))) return;
+            const matchesTarget = this.streamTargets.has(stream.getAttribute('target'));
+            // Native Turbo resolves CSS targets; only the explicitly configured sibling IDs qualify.
+            const matchesExternalTargets = this.hasExternalTargetSelectorValue && stream.hasAttribute('targets') &&
+                stream.targetElements.some(target => this.streamTargets.has(target.closest('[id]')?.id));
+            if (!matchesTarget && !matchesExternalTargets) return;
             if (stream.hasAttribute('data-import-snapshot')) {
                 // Turbo renders asynchronously; recheck at render time, not just after fetch.
                 const render = event.detail.render;

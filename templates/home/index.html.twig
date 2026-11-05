@@ -4,43 +4,13 @@
 {% block content_header_wrapper %}{% endblock %}
 {% block main %}
     {% set statuses = enum('App\\ChatGpt\\ConnectionStatus') %}
-    <div class="finance-chat" data-controller="chat-view import-catch-up" data-import-catch-up-url-value="{{ path(constant('App\\Chat\\Workspace::SNAPSHOT_ROUTE'), {conversation: chat.conversation_id}) }}" data-import-catch-up-target-selector-value="[data-chat-execution], [data-chat-send]">
+    <div class="finance-chat" data-controller="chat-view import-catch-up" data-import-catch-up-url-value="{{ path(constant('App\\Chat\\Workspace::SNAPSHOT_ROUTE'), {conversation: chat.conversation_id}) }}" data-import-catch-up-target-selector-value="[data-chat-execution], [data-chat-send]"{% if chat.conversation_id %} data-import-catch-up-external-target-selector-value="#{{ constant('App\\Chat\\Workspace::NAVIGATION_DOM_ID') }}-{{ chat.conversation_id }}, #{{ constant('App\\Chat\\Workspace::LINK_DOM_ID') }}-{{ chat.conversation_id }}, #{{ constant('App\\Chat\\Workspace::DELETE_DOM_ID') }}-{{ chat.conversation_id }}"{% endif %}>
         <header class="chat-header">
-            <div class="chat-heading">
-                <h1>Chat</h1>
-                <form action="{{ path(constant('App\\Chat\\Workspace::NEW_ROUTE')) }}" method="post" data-turbo="true">
-                    <input type="hidden" name="_token" value="{{ csrf_token(constant('App\\Chat\\Workspace::NEW_CSRF')) }}" data-controller="csrf-protection">
-                    <input type="hidden" name="conversation" value="{{ chat.conversation_id }}">
-                    <button class="chat-new" type="submit">New chat</button>
-                </form>
-                {% if chat.conversation_id %}
-                    {% if chat.saved %}
-                        <span class="chat-saved" role="status">Saved chat</span>
-                    {% else %}
-                        <form action="{{ path(constant('App\\Chat\\Workspace::SAVE_ROUTE')) }}" method="post" data-turbo="true">
-                            <input type="hidden" name="_token" value="{{ csrf_token(constant('App\\Chat\\Workspace::SAVE_CSRF')) }}" data-controller="csrf-protection">
-                            <input type="hidden" name="conversation" value="{{ chat.conversation_id }}">
-                            <button class="chat-new" type="submit">Save chat</button>
-                        </form>
-                    {% endif %}
-                {% endif %}
-            </div>
+            <h1>Chat</h1>
             {% if chatgpt_status == statuses.Connected %}
                 <p class="chatgpt-status">ChatGPT connected <span aria-hidden="true">·</span> <a href="{{ path(constant('App\\ChatGpt\\Connection::SETTINGS_ROUTE'), {_fragment: constant('App\\ChatGpt\\Connection::SETTINGS_FRAGMENT')}) }}">Manage</a></p>
             {% endif %}
         </header>
-        {% if chat_history is not empty %}
-            <form class="chat-history" action="{{ path(constant('App\\Chat\\Workspace::CHAT_ROUTE')) }}" method="get">
-                <label for="chat-history">Chat history</label>
-                <select id="chat-history" name="conversation">
-                    {% for retained in chat_history %}
-                        <option value="{{ retained.id }}"{% if retained.id == chat.conversation_id %} selected{% endif %}>{{ retained.saved ? 'Saved · ' : 'Temporary · ' }}{{ retained.createdAt|date('Y-m-d H:i') }} · {{ retained.label|slice(0, 60) }}</option>
-                    {% endfor %}
-                </select>
-                <button class="chat-new" type="submit">Open chat</button>
-                <span class="preview-note">Five temporary chats, plus saved chats.</span>
-            </form>
-        {% endif %}
         {% if chatgpt_status != statuses.Connected %}
             <section class="chat-empty" aria-labelledby="welcome-heading">
                 <span class="intro-mark" aria-hidden="true">pf</span>

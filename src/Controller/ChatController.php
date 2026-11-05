@@ -31,7 +31,6 @@ final class ChatController extends AbstractController
         return $this->render('home/index.html.twig', [
             'chatgpt_status' => $connection->status($user),
             'chat' => ChatUpdates::view($conversation),
-            'chat_history' => $workspace->history($user),
         ]);
     }
 }

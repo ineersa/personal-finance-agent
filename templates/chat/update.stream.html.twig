@@ -1,2 +1,3 @@
 <turbo-stream action="replace" method="morph" target="{{ chat.dom_id }}"><template>{% include 'chat/_workspace.html.twig' %}</template></turbo-stream>
 <turbo-stream action="replace" target="{{ chat.send_id }}"><template>{% include 'chat/_send.html.twig' %}</template></turbo-stream>
+{% if chat_navigation|default(false) %}{% include 'chat/navigation.stream.html.twig' %}{% endif %}

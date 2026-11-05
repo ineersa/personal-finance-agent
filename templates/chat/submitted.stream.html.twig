@@ -1,2 +1,2 @@
-{% include 'chat/update.stream.html.twig' %}
+{% include 'chat/update.stream.html.twig' with {chat_navigation: true} %}
 <turbo-stream action="replace" target="{{ chat.composer_id }}"><template>{% include 'chat/_composer.html.twig' %}</template></turbo-stream>

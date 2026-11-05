@@ -57,7 +57,6 @@ final class ChatSubmitController extends AbstractController
         return $this->render('home/index.html.twig', [
             'chatgpt_status' => $status,
             'chat' => ChatUpdates::view($conversation),
-            'chat_history' => $workspace->history($user),
             'question' => $question,
         ], new Response(status: Response::HTTP_UNPROCESSABLE_ENTITY));
     }
@@ -94,11 +93,35 @@ final class ChatSubmitController extends AbstractController
         return $this->redirectToRoute(Workspace::CHAT_ROUTE, ['conversation' => $conversation->id], Response::HTTP_SEE_OTHER);
     }
 
+    #[Route('/home/chat/delete', name: Workspace::DELETE_ROUTE, methods: [Request::METHOD_POST])]
+    #[IsCsrfTokenValid(Workspace::DELETE_CSRF)]
+    public function delete(Request $request, #[CurrentUser] User $user, Workspace $workspace): Response
+    {
+        $id = $request->request->getString('conversation');
+        if ('' === $id) {
+            throw $this->createNotFoundException();
+        }
+        $selected = $request->request->getString('selected');
+        if ('' !== $selected) {
+            $workspace->current($user, $selected);
+        }
+        try {
+            $workspace->delete($user, $id);
+            if ($id === $selected) {
+                $selected = '';
+            }
+        } catch (\DomainException $error) {
+            $this->addFlash('warning', $error->getMessage());
+        }
+
+        return $this->redirectToRoute(Workspace::CHAT_ROUTE, '' === $selected ? [] : ['conversation' => $selected], Response::HTTP_SEE_OTHER);
+    }
+
     #[Route('/home/chat/snapshot', name: Workspace::SNAPSHOT_ROUTE, methods: [Request::METHOD_GET])]
     public function snapshot(Request $request, #[CurrentUser] User $user, Workspace $workspace): Response
     {
         $id = $request->query->getString('conversation');
-        $response = $this->render('chat/update.stream.html.twig', ['chat' => ChatUpdates::view('' === $id ? null : $workspace->current($user, $id))]);
+        $response = $this->render('chat/update.stream.html.twig', ['chat' => ChatUpdates::view('' === $id ? null : $workspace->current($user, $id)), 'chat_navigation' => true]);
         $response->headers->set('Content-Type', TurboBundle::STREAM_MEDIA_TYPE);
         $response->headers->set('Cache-Control', 'no-store');
 

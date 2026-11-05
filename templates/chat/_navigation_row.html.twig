@@ -1,0 +1,33 @@
+<twig:ea:Sidebar:Item label="{{ retained.label|e }}" href="{{ path(constant('App\\Chat\\Workspace::CHAT_ROUTE'), {conversation: retained.id}) }}" :active="retained.id == selected" id="{{ constant('App\\Chat\\Workspace::NAVIGATION_DOM_ID') }}-{{ retained.id }}" :htmlAttributes="{id: constant('App\\Chat\\Workspace::LINK_DOM_ID') ~ '-' ~ retained.id, 'data-turbo': 'true'}" class="chat-navigation-row{{ not retained.saved ? ' is-temporary' : '' }}" data-conversation-id="{{ retained.id }}">
+    <twig:block name="submenu">
+        {% if not retained.saved %}
+            <button type="button" class="chat-retention-help" data-bs-toggle="tooltip" data-bs-trigger="hover focus click" title="Keep up to five temporary chats. Starting another removes the oldest inactive temporary chat. Saved chats and queued or responding chats are protected." aria-label="Temporary chat retention"><twig:ea:Icon name="internal:circle-info" /></button>
+        {% endif %}
+        <twig:ea:ActionMenu class="chat-row-actions">
+            <twig:ea:ActionMenu:Button withoutDropdownToggleMarker aria-label="Chat actions" aria-describedby="{{ constant('App\\Chat\\Workspace::LINK_DOM_ID') }}-{{ retained.id }}" class="chat-row-menu">
+                <twig:ea:Icon name="internal:dots-horizontal" />
+            </twig:ea:ActionMenu:Button>
+            <twig:ea:ActionMenu:Overlay>
+                <twig:ea:ActionMenu:ActionList>
+                    {% if not retained.saved %}
+                        <twig:ea:ActionMenu:ActionList:Content>
+                            <form action="{{ path(constant('App\\Chat\\Workspace::SAVE_ROUTE')) }}" method="post" data-turbo="true">
+                                <input type="hidden" name="_token" value="{{ csrf_token(constant('App\\Chat\\Workspace::SAVE_CSRF')) }}" data-controller="csrf-protection">
+                                <input type="hidden" name="conversation" value="{{ retained.id }}">
+                                <button type="submit" class="dropdown-item"><twig:ea:Icon name="internal:download" />Save chat</button>
+                            </form>
+                        </twig:ea:ActionMenu:ActionList:Content>
+                    {% endif %}
+                    <twig:ea:ActionMenu:ActionList:Content>
+                        <form action="{{ path(constant('App\\Chat\\Workspace::DELETE_ROUTE')) }}" method="post">
+                            <input type="hidden" name="_token" value="{{ csrf_token(constant('App\\Chat\\Workspace::DELETE_CSRF')) }}" data-controller="csrf-protection">
+                            <input type="hidden" name="conversation" value="{{ retained.id }}">
+                            <input type="hidden" name="selected" value="{{ selected }}">
+                            {% include 'chat/_delete_button.html.twig' %}
+                        </form>
+                    </twig:ea:ActionMenu:ActionList:Content>
+                </twig:ea:ActionMenu:ActionList>
+            </twig:ea:ActionMenu:Overlay>
+        </twig:ea:ActionMenu>
+    </twig:block>
+</twig:ea:Sidebar:Item>

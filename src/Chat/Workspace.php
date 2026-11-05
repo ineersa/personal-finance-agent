@@ -27,13 +27,18 @@ final readonly class Workspace
     public const string SUBMIT_ROUTE = 'admin_chat_submit';
     public const string NEW_ROUTE = 'app_chat_new';
     public const string SAVE_ROUTE = 'app_chat_save';
+    public const string DELETE_ROUTE = 'app_chat_delete';
     public const string SNAPSHOT_ROUTE = 'app_chat_snapshot';
     public const string SUBMIT_CSRF = 'chat-submit';
     public const string NEW_CSRF = 'chat-new';
     public const string SAVE_CSRF = 'chat-save';
+    public const string DELETE_CSRF = 'chat-delete';
     public const string DOM_ID = 'chat-workspace';
     public const string COMPOSER_DOM_ID = 'chat-composer-fields';
     public const string SEND_DOM_ID = 'chat-send';
+    public const string NAVIGATION_DOM_ID = 'chat-navigation-row';
+    public const string DELETE_DOM_ID = 'chat-delete';
+    public const string LINK_DOM_ID = 'chat-link';
     public const string EMPTY_ID = 'empty';
     public const string COMMENTARY_PHASE = 'commentary';
     public const int TEMPORARY_LIMIT = 5;
@@ -55,6 +60,28 @@ final readonly class Workspace
     public function history(User $user): array
     {
         return $this->em->getRepository(ChatConversation::class)->findBy(['user' => $user], ['id' => 'DESC']);
+    }
+
+    /** @return list<array{id: string, label: string, saved: bool, active: bool}> */
+    public function navigation(User $user): array
+    {
+        $rows = $this->em->getConnection()->fetchAllAssociative("SELECT id, saved, generation_status, json_extract(turns, '$[0].question') AS label FROM chat_conversation WHERE user_id = ? ORDER BY id DESC", [$user->getId()]);
+
+        return array_map(static fn (array $row): array => ['id' => (string) $row['id'], 'label' => (string) ($row['label'] ?? 'New chat'), 'saved' => (bool) $row['saved'], 'active' => !ExecutionStatus::from($row['generation_status'])->isFinished()], $rows);
+    }
+
+    public function delete(User $user, string $id): void
+    {
+        $this->em->getConnection()->transactional(function () use ($user, $id): void {
+            $conversation = $this->current($user, $id) ?? throw new NotFoundHttpException();
+            $this->em->refresh($conversation);
+            if ($conversation->isActive()) {
+                throw new \DomainException('This chat is queued or responding. Wait for it to finish before deleting it.');
+            }
+            $this->em->remove($conversation);
+            $this->em->flush();
+        });
+        $this->removeCharts([$id]);
     }
 
     public function startNew(User $user): ChatConversation
@@ -220,7 +247,7 @@ final readonly class Workspace
             try {
                 $this->files->removeConversation($id);
             } catch (\Throwable) {
-                $this->logger->warning('Pruned conversation chart cleanup unavailable.', ['conversation_id' => $id]);
+                $this->logger->warning('Conversation chart cleanup unavailable.', ['conversation_id' => $id]);
             }
         }
     }

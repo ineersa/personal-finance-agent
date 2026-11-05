@@ -5,10 +5,13 @@ declare(strict_types=1);
 namespace App\Tests\E2E;
 
 use App\Tests\Support\FinanceBrowserTest;
+use App\Tests\Support\SubmitsBrowserForms;
 use Hautelook\AliceBundle\PhpUnit\FixtureStore;
 
 final class DemoWorkspaceTest extends FinanceBrowserTest
 {
+    use SubmitsBrowserForms;
+
     public function testChatConnectionGate(): void
     {
         $this->loginUser(FixtureStore::getFixtures()['demo']);
@@ -24,20 +27,27 @@ final class DemoWorkspaceTest extends FinanceBrowserTest
         $this->loginUser(FixtureStore::getFixtures()['demo']);
         $page = $this->visit('/home/chat');
         $page->getByRole('button', ['name' => 'New chat', 'exact' => true])->click();
-        $page->getByRole('button', ['name' => 'Save chat', 'exact' => true])->waitFor();
-        $saved = $page->locator('#chat-history option[selected]')->getAttribute('value');
+        $active = $page->locator('.chat-navigation-row.is-active');
+        $active->waitFor();
+        $saved = $active->getAttribute('data-conversation-id');
         self::assertNotEmpty($saved);
-        $page->getByRole('button', ['name' => 'Save chat', 'exact' => true])->click();
-        $page->getByText('Saved chat', ['exact' => true])->waitFor();
+        $active->getByRole('button', ['name' => 'Chat actions', 'exact' => true])->click();
+        $active->getByRole('button', ['name' => 'Save chat', 'exact' => true])->click();
+        $page->locator('.chat-saved-group .chat-navigation-row.is-active')->waitFor();
 
         $page->getByRole('button', ['name' => 'New chat', 'exact' => true])->click();
-        $page->getByRole('button', ['name' => 'Save chat', 'exact' => true])->waitFor();
-        self::assertSame(2, $page->locator('#chat-history option')->count());
-        $page->getByLabel('Chat history', ['exact' => true])->selectOption($saved);
-        $page->getByRole('button', ['name' => 'Open chat', 'exact' => true])->click();
-        $page->getByText('Saved chat', ['exact' => true])->waitFor();
+        $page->locator('.chat-navigation > section:first-of-type .chat-navigation-row.is-active')->waitFor();
+        self::assertSame(2, $page->locator('.chat-navigation-row')->count());
+        $savedRow = $page->locator('.chat-navigation-row[data-conversation-id="'.$saved.'"]');
+        $savedRow->locator('a.ea-sidebar-item-link')->click();
+        $page->locator('.chat-saved-group .chat-navigation-row.is-active')->waitFor();
         $page->reload();
-        self::assertTrue($page->getByText('Saved chat', ['exact' => true])->isVisible());
-        self::assertSame($saved, $page->locator('#chat-history option[selected]')->getAttribute('value'));
+        self::assertSame($saved, $page->locator('.chat-navigation-row.is-active')->getAttribute('data-conversation-id'));
+        $savedRow->getByRole('button', ['name' => 'Chat actions', 'exact' => true])->click();
+        $savedRow->getByRole('button', ['name' => 'Delete chat', 'exact' => true])->click();
+        $page->locator('#modal-action-confirmation-button')->waitFor(['state' => 'visible']);
+        $this->submit(static fn () => $page->locator('#modal-action-confirmation-button')->click());
+        self::assertSame(0, $savedRow->count());
+        self::assertSame(1, $page->locator('.chat-navigation-row')->count());
     }
 }

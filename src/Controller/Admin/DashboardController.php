@@ -55,7 +55,6 @@ final class DashboardController extends AbstractDashboardController
             return;
         }
 
-        yield MenuItem::linkToRoute('Chat', null, 'admin_chat');
         yield MenuItem::section('Finance management');
         yield MenuItem::linkTo(SourceCrudController::class, 'Sources');
         yield MenuItem::linkTo(CategoryCrudController::class, 'Categories');

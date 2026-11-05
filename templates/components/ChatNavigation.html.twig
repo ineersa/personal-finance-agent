@@ -1,0 +1,40 @@
+<nav {{ attributes.defaults({class: 'chat-navigation', 'aria-label': 'Chats'}) }}>
+    <form action="{{ path(constant('App\\Chat\\Workspace::NEW_ROUTE')) }}" method="post" class="chat-navigation-new" data-turbo="true">
+        <input type="hidden" name="_token" value="{{ csrf_token(constant('App\\Chat\\Workspace::NEW_CSRF')) }}" data-controller="csrf-protection">
+        <input type="hidden" name="conversation" value="{{ selected }}">
+        <button type="submit"><twig:ea:Icon name="internal:plus" />New chat</button>
+    </form>
+    <section aria-labelledby="temporary-chats-heading">
+        <div class="chat-navigation-heading">
+            <h2 id="temporary-chats-heading">Temporary chats</h2>
+        </div>
+        <ul class="ea-sidebar-group-items">
+            {% for retained in temporary %}
+                {{ include('chat/_navigation_row.html.twig', {retained: retained, selected: selected}) }}
+            {% else %}
+                <li class="chat-navigation-empty">No temporary chats yet</li>
+            {% endfor %}
+        </ul>
+    </section>
+    <section aria-labelledby="saved-chats-heading" class="chat-saved-group">
+        <h2 id="saved-chats-heading"><twig:ea:Icon name="internal:folder-open" />Saved chats</h2>
+        <ul class="ea-sidebar-group-items">
+            {% for retained in saved|slice(0, constant('App\\Twig\\Components\\ChatNavigation::SAVED_VISIBLE')) %}
+                {{ include('chat/_navigation_row.html.twig', {retained: retained, selected: selected}) }}
+            {% else %}
+                <li class="chat-navigation-empty">Save a chat to keep it here</li>
+            {% endfor %}
+        </ul>
+        {% set additional = saved|slice(constant('App\\Twig\\Components\\ChatNavigation::SAVED_VISIBLE')) %}
+        {% if additional is not empty %}
+            <details class="chat-saved-more"{% if selected in additional|map(chat => chat.id) %} open{% endif %}>
+                <summary>Show more</summary>
+                <ul class="ea-sidebar-group-items">
+                    {% for retained in additional %}
+                        {{ include('chat/_navigation_row.html.twig', {retained: retained, selected: selected}) }}
+                    {% endfor %}
+                </ul>
+            </details>
+        {% endif %}
+    </section>
+</nav>
