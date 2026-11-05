@@ -1,0 +1,30 @@
+{
+  "tool": "unovis_generate_line_chart",
+  "arguments": {
+    "data": [
+      {
+        "month": "2026-07-01",
+        "Net spending (CAD)": 3062.77
+      },
+      {
+        "month": "2026-08-01",
+        "Net spending (CAD)": 2731.93
+      },
+      {
+        "month": "2026-09-01",
+        "Net spending (CAD)": 2905.29
+      }
+    ],
+    "x": "month",
+    "y": "Net spending (CAD)",
+    "xIsTime": true,
+    "curve": "linear",
+    "interpolateMissing": false,
+    "yDomainMin": 0,
+    "yAxisLabel": "Approximate CAD",
+    "title": "Recorded monthly net spending · Jul–Sep 2026 · CAD",
+    "theme": "dark",
+    "width": 800,
+    "height": 400
+  }
+}

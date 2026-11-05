@@ -1,0 +1,41 @@
+{
+  "tool": "unovis_generate_donut_chart",
+  "arguments": {
+    "data": [
+      {
+        "category": "Housing",
+        "Net spending (CAD)": 1480.0
+      },
+      {
+        "category": "Groceries",
+        "Net spending (CAD)": 485.84
+      },
+      {
+        "category": "Loan Payments",
+        "Net spending (CAD)": 185.0
+      },
+      {
+        "category": "Internet & Phone",
+        "Net spending (CAD)": 117.95
+      },
+      {
+        "category": "Education",
+        "Net spending (CAD)": 109.05
+      },
+      {
+        "category": "Other categories",
+        "Net spending (CAD)": 527.45
+      }
+    ],
+    "value": "Net spending (CAD)",
+    "label": "category",
+    "variant": "donut",
+    "sortDescending": true,
+    "centralLabel": "CAD 2,905.29",
+    "centralSubLabel": "Approximate net spending",
+    "title": "Recorded net spending mix · September 2026 · CAD",
+    "theme": "dark",
+    "width": 800,
+    "height": 400
+  }
+}

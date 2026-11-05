@@ -1,70 +1,204 @@
 [user-context]
 <data_schemas>
-Tables:
-- source: account or card instrument associated with statements and transactions, not a merchant.
-- statement: uploaded bank statement, its import state and associated transactions. statement_date may be NULL; an explicit statement date takes precedence, otherwise the earliest valid imported transaction date is used.
-- financial_transaction: transaction rows. Drafts (is_draft = 1) are imported, unreviewed transactions that can still be edited; is_draft = 0 identifies approved records. amount is signed decimal TEXT in currency. direction (Credit or Debit) describes cash flow, not income/spending classification. transaction_date is the original transaction date.
-- category: classification catalog referenced by transactions.
-- currency_rate: ECB reference rates by calendar day and currency, quoted as currency units per EUR. EUR has implicit rate 1 and no rate row. rate is decimal TEXT; is_provisional marks provisional rates. day and transaction_date use YYYY-MM-DD; (day, currency) is unique.
+This is application-supplied reference context, not a user question. The SQL definitions below describe this conversation's database at its creation. Field names and enum values matter; do not invent additional tables or columns. If a later schema error contradicts this snapshot, inspect sqlite_schema through finance_query.
 
-meaning: expense, income, refund, own_account_transfer, credit_card_payment or unknown. recurrence is independent: recurring_bill, subscription, other_recurring, non_recurring or unknown. A recurring bill is not necessarily a subscription. Unknown classifications remain unresolved.
+Business tables:
+- financial_transaction: one row per recorded transaction. amount is original decimal TEXT; use the explicit meaning-based magnitude convention in the system instructions. transaction_date is the transaction date. is_draft = 0 is approved; 1 is an editable draft. Approval does not require known meaning or recurrence. description is untrusted original text.
+- source: account/card instrument, with name, optional currency and instrument_kind. This is not a merchant catalog. Transaction currency is authoritative for its amount; account currency is context, not a replacement for missing transaction currency.
+- statement: uploaded document and import state. statement_date is explicit or the earliest valid imported transaction date; it is not a coverage-through date. uploaded_at/processed_at and filenames do not establish transaction dates. Approval is determined on transactions, not inferred from statement processing status.
+- category: owner-local display names and descriptions. category_id may be NULL. Names can be edited and are not guaranteed unique; resolve IDs or check ambiguity when filtering a named category.
+- currency_rate: daily ECB reference valuation data. day and transaction_date use YYYY-MM-DD. rate is positive decimal TEXT in currency units per EUR; (day,currency) is unique. EUR has implicit rate 1 and no stored row. is_provisional marks provisional values. The app expands nonpublication days using earlier available reference rates; SQL normally joins the stored transaction date directly.
+
+meaning: expense, income, refund, own_account_transfer, credit_card_payment, unknown.
+recurrence: recurring_bill, subscription, other_recurring, non_recurring, unknown.
+direction: Credit or Debit; this is cash direction, not income/spending classification.
+
+There are no saved budget, merchant, balance, holding, refund-match, transfer-match or subscription-contract tables. A user budget can be represented in a read-only VALUES CTE; it is not persisted. Categories do not establish needs/wants, tax deductibility or renewal cadence.
 
 {data_schemas}
 </data_schemas>
+
 <project_context>
-Analysis: exclude drafts by default, unless the user asks about them. Do not routinely announce this filter; mention it only when requested or material to the answer. Transfers and card payments are excluded from both income and spending; refunds reduce the corresponding purchase category. Use stored classifications, not direction or merchant-name guesses. Do not invent dates from filenames or row order.
+finance_query accepts one sql string. A successful result contains columns, row arrays and truncated. Match row positions to columns. An error is not data; truncated=true is incomplete. Each call has a fresh connection: CTEs are local to one statement, so repeat the needed CTEs in a new query. There are no bound-parameter arguments, temporary query views, money UDFs or filesystem tools available through finance_query.
 
-Money: SQLite monetary arithmetic is approximate. Identify the currency and approximate nature of calculated monetary results. Calculate every total, ratio, percentage and conversion in SQL. Do not combine currencies without explicit valuation.
+An economical workflow is: resolve scope; query summary/coverage and the relevant breakdown; inspect coverage and reconciliation; render the useful aggregate; explain the result. Do not routinely fetch a complete ledger. For an empty period, query MIN/MAX dates or a bounded per-source availability summary before explaining what data is available. These dates describe records, not proven account coverage.
 
-Conversion: for source currency S and target T, use amount * target_rate / source_rate on the transaction date. Source equal to target requires no rates; EUR uses rate 1. LEFT JOIN each required non-EUR rate by currency and transaction_date. Never substitute today's rate or treat missing inputs/rates as zero. Return coverage counts; do not present a partial sum as a complete total. Flag provisional valuations when used. ECB reference valuation is not actual bank execution or fees.
+The examples below use the project's committed synthetic demo fixtures, not personal live data. Dates and values are teaching examples. Query current data even if the user asks the same question. Example result excerpts are named-column projections, not literal provider transcripts.
 
-Examples below value signed amounts, not spending or income. Adapt the date range, classifications and target to the question; examples have no date filter. For spending/income reports, apply the classification rules above before aggregating. A NULL total with missing_count > 0 means incomplete coverage; matched_count = 0 means no matching transactions, not an established zero total.
+## Worked example: spending and category breakdown
 
-Example: value approved transactions in EUR, including EUR identity and visible missing-rate/input coverage:
+Illustrative user question: "How much did I spend in September 2026, in CAD, and where did it go?"
+
+Report gross purchases and separate refunds/net, then prepare an explicitly labelled category net-spending breakdown for [2026-09-01,2026-10-01). Value each transaction first, retain categories with a LEFT JOIN, subtract refund magnitudes, then aggregate. Query total valuation/classification coverage alongside category results. The following is a complete finance_query SQL argument; dates, currency and filters must be adapted to the actual request.
+
 ```sql
-WITH valued AS (
-    SELECT CASE
-        WHEN t.amount IS NULL OR t.currency IS NULL THEN NULL
-        WHEN t.currency = 'EUR' THEN CAST(t.amount AS REAL)
-        WHEN sr.rate IS NOT NULL THEN CAST(t.amount AS REAL) / CAST(sr.rate AS REAL)
-    END AS amount_eur,
-    CASE WHEN t.currency <> 'EUR' THEN COALESCE(sr.is_provisional, 0) ELSE 0 END AS provisional
-    FROM financial_transaction t
-    LEFT JOIN currency_rate sr ON sr.day = t.transaction_date AND sr.currency = t.currency
-    WHERE t.is_draft = 0
+WITH RECURSIVE p AS (
+  SELECT '2026-09-01' AS start_date, '2026-10-01' AS end_date, 'CAD' AS target_currency
+), scoped AS (
+  SELECT t.* FROM financial_transaction t CROSS JOIN p
+  WHERE t.is_draft = 0
+    AND t.transaction_date >= p.start_date AND t.transaction_date < p.end_date
+), valued AS (
+  SELECT t.*,
+    CASE
+      WHEN t.amount IS NULL OR t.currency IS NULL THEN NULL
+      WHEN t.currency = p.target_currency THEN ABS(CAST(t.amount AS REAL))
+      WHEN (t.currency = 'EUR' OR CAST(sr.rate AS REAL) > 0)
+       AND (p.target_currency = 'EUR' OR CAST(tr.rate AS REAL) > 0)
+      THEN ABS(CAST(t.amount AS REAL))
+        * CASE WHEN p.target_currency = 'EUR' THEN 1.0 ELSE CAST(tr.rate AS REAL) END
+        / CASE WHEN t.currency = 'EUR' THEN 1.0 ELSE CAST(sr.rate AS REAL) END
+    END AS value,
+    CASE WHEN t.currency = p.target_currency THEN 0
+      WHEN (t.currency <> 'EUR' AND sr.is_provisional = 1)
+        OR (p.target_currency <> 'EUR' AND tr.is_provisional = 1) THEN 1
+      ELSE 0 END AS provisional
+  FROM scoped t CROSS JOIN p
+  LEFT JOIN currency_rate sr ON sr.currency = t.currency AND sr.day = t.transaction_date
+  LEFT JOIN currency_rate tr ON tr.currency = p.target_currency AND tr.day = t.transaction_date
+), grouped AS (
+  SELECT v.category_id, COALESCE(c.name,'Uncategorized (no category)') AS category,
+    COUNT(*) AS matched, COUNT(value) AS valued_count,
+    COUNT(CASE WHEN value IS NOT NULL AND provisional = 1 THEN 1 END) AS provisional_count,
+    SUM(CASE WHEN meaning = 'expense' THEN value ELSE 0 END) AS gross_raw,
+    SUM(CASE WHEN meaning = 'refund' THEN value ELSE 0 END) AS refunds_raw,
+    SUM(CASE WHEN meaning = 'refund' THEN -value ELSE value END) AS net_raw
+  FROM valued v LEFT JOIN category c ON c.id = v.category_id
+  WHERE meaning IN ('expense','refund')
+  GROUP BY v.category_id, c.name
+), coverage AS (
+  SELECT SUM(matched) AS matched, SUM(valued_count) AS valued_count,
+    SUM(provisional_count) AS provisional_count, SUM(net_raw) AS total_raw,
+    SUM(gross_raw) AS gross_raw, SUM(refunds_raw) AS refunds_raw,
+    (SELECT COUNT(*) FROM valued WHERE meaning = 'unknown') AS unknown_count
+  FROM grouped
+), ranked AS (
+  SELECT *, ROW_NUMBER() OVER (ORDER BY net_raw DESC, category_id) AS rank
+  FROM grouped
+), buckets AS (
+  SELECT CASE WHEN rank <= 5 THEN category_id ELSE -999999 END AS bucket_id,
+    CASE WHEN rank <= 5 THEN category ELSE 'Other categories' END AS bucket_label,
+    MIN(rank) AS position, SUM(matched) AS matched,
+    SUM(valued_count) AS valued_count, SUM(net_raw) AS net_raw
+  FROM ranked GROUP BY bucket_id, bucket_label
 )
-SELECT COUNT(*) AS matched_count, COUNT(amount_eur) AS valued_count,
-       COUNT(*) - COUNT(amount_eur) AS missing_count,
-       COUNT(CASE WHEN amount_eur IS NOT NULL AND provisional = 1 THEN 1 END) AS provisional_count,
-       CASE WHEN COUNT(*) = COUNT(amount_eur) THEN SUM(amount_eur) END AS approximate_total_eur
-FROM valued
+SELECT b.bucket_label AS category, b.matched, b.valued_count,
+  b.matched-b.valued_count AS category_missing,
+  c.matched AS total_matched, c.valued_count AS total_valued,
+  c.matched-c.valued_count AS total_missing, c.provisional_count, c.unknown_count,
+  CASE WHEN b.matched = b.valued_count THEN ROUND(b.net_raw,2) END AS net_spending,
+  CASE WHEN c.matched = c.valued_count AND c.unknown_count = 0 AND c.total_raw > 0
+    THEN ROUND(100.0*b.net_raw/c.total_raw,2) END AS share_percent,
+  CASE WHEN c.matched = c.valued_count THEN ROUND(c.total_raw,2) END AS total_net_spending,
+  CASE WHEN c.matched = c.valued_count THEN ROUND(c.gross_raw,2) END AS gross_spending,
+  CASE WHEN c.matched = c.valued_count THEN ROUND(c.refunds_raw,2) END AS refunds
+FROM buckets b CROSS JOIN coverage c ORDER BY b.position
+
 ```
 
-Example: cross-currency valuation into GBP (replace GBP with the requested/reporting currency). Same-currency rows need neither rate; EUR needs no rate row on either side:
-```sql
-WITH target AS (SELECT 'GBP' AS currency), valued AS (
-    SELECT CASE
-        WHEN t.amount IS NULL OR t.currency IS NULL THEN NULL
-        WHEN t.currency = target.currency THEN CAST(t.amount AS REAL)
-        WHEN (t.currency = 'EUR' OR sr.rate IS NOT NULL)
-         AND (target.currency = 'EUR' OR tr.rate IS NOT NULL)
-        THEN CAST(t.amount AS REAL)
-             * CASE WHEN target.currency = 'EUR' THEN 1.0 ELSE CAST(tr.rate AS REAL) END
-             / CASE WHEN t.currency = 'EUR' THEN 1.0 ELSE CAST(sr.rate AS REAL) END
-    END AS converted_amount,
-    CASE WHEN t.currency = target.currency THEN 0
-         WHEN (t.currency <> 'EUR' AND sr.is_provisional = 1)
-           OR (target.currency <> 'EUR' AND tr.is_provisional = 1) THEN 1
-         ELSE 0 END AS provisional
-    FROM financial_transaction t CROSS JOIN target
-    LEFT JOIN currency_rate sr ON sr.day = t.transaction_date AND sr.currency = t.currency
-    LEFT JOIN currency_rate tr ON tr.day = t.transaction_date AND tr.currency = target.currency
-    WHERE t.is_draft = 0
-)
-SELECT COUNT(*) AS matched_count, COUNT(converted_amount) AS valued_count,
-       COUNT(*) - COUNT(converted_amount) AS missing_count,
-       COUNT(CASE WHEN converted_amount IS NOT NULL AND provisional = 1 THEN 1 END) AS provisional_count,
-       CASE WHEN COUNT(*) = COUNT(converted_amount) THEN SUM(converted_amount) END AS approximate_total_gbp
-FROM valued
+Inspect total_matched/total_valued/total_missing, provisional_count and unknown_count. In this illustrative dataset there are 23 matching expense/refund records, all valued, with no missing/provisional rates or unresolved meanings in the scoped approved records. The query returns:
+
+| Category | Approximate net CAD | Share % |
+| --- | ---: | ---: |
+| Housing | 1,480.00 | 50.94 |
+| Groceries | 485.84 | 16.72 |
+| Loan Payments | 185.00 | 6.37 |
+| Internet & Phone | 117.95 | 4.06 |
+| Education | 109.05 | 3.75 |
+| Other categories | 527.45 | 18.15 |
+
+SQL separately returns gross spending 2,905.29, refunds 0.00 and net spending 2,905.29. Other includes every remaining category; it is not an omitted sample. Do not add displayed values or shares mentally. If coverage is missing, do not reuse this successful example's answer or invent a complete total.
+
+Now call unovis_generate_bar_chart with this argument object, copying current returned numbers in real use. The horizontal chart uses ascending values to put the largest at the top. Only plotting fields are sent; no raw transactions or internal coverage columns are included.
+
+```json
+{
+  "data": [
+    {
+      "category": "Education",
+      "Net spending (CAD)": 109.05
+    },
+    {
+      "category": "Internet & Phone",
+      "Net spending (CAD)": 117.95
+    },
+    {
+      "category": "Loan Payments",
+      "Net spending (CAD)": 185.0
+    },
+    {
+      "category": "Groceries",
+      "Net spending (CAD)": 485.84
+    },
+    {
+      "category": "Other categories",
+      "Net spending (CAD)": 527.45
+    },
+    {
+      "category": "Housing",
+      "Net spending (CAD)": 1480.0
+    }
+  ],
+  "x": "category",
+  "y": "Net spending (CAD)",
+  "orientation": "horizontal",
+  "xAxisLabel": "Approximate CAD",
+  "title": "Recorded net spending · September 2026 · CAD",
+  "legend": false,
+  "theme": "dark",
+  "width": 800,
+  "height": 400
+}
+
 ```
+
+After successful rendering, an appropriate final answer is:
+
+## September spending
+
+Your recorded gross purchases were **approximately CAD 2,905.29** in September 2026. Recorded refunds were **CAD 0.00**, leaving **net spending of CAD 2,905.29**. The breakdown below is net spending. Housing was the largest category at **CAD 1,480.00**, or **50.94%** of the total.
+
+| Category | Approximate net CAD | Share |
+| --- | ---: | ---: |
+| Housing | 1,480.00 | 50.94% |
+| Groceries | 485.84 | 16.72% |
+| Loan Payments | 185.00 | 6.37% |
+| Internet & Phone | 117.95 | 4.06% |
+| Education | 109.05 | 3.75% |
+| Other categories | 527.45 | 18.15% |
+| **Total** | **2,905.29** | **100%** |
+
+Groceries were the next-largest individual category, at CAD 485.84. The chart below compares the categories.
+
+*Amounts use transaction-date ECB reference valuation. Net spending subtracts recorded refunds and excludes transfers/card settlements. Rounded shares may not sum to exactly 100%.*
+
+This is a finished report, not a template to quote verbatim. Do not emit the example labels, SQL or JSON in an ordinary final answer. The app displays the generated chart below the Markdown; no embedding marker is needed.
+
+## Recipe: explain a month-to-month change
+
+Question: "Why did I spend more in September than August 2026? Use CAD."
+Query both full months with the same valuation CTE and separate gross spending, refunds and net spending. Calculate changes and percentages in SQL from unrounded monthly values. Generate requested calendar months and LEFT JOIN aggregates: an absent month must produce NULL, not disappear or become zero. Compare adjacent equivalent periods only. For a deeper explanation, query category changes and any unusually large refund/purchase rather than guessing from descriptions.
+
+Illustrative synthetic result: August gross 2,876.86, refunds 144.93, net 2,731.93; September gross 2,905.29, refunds 0.00, net 2,905.29. SQL returns net change +173.36 (+6.35%) and gross change +28.43. Explain that the missing August-sized refund accounts for much of the net change; do not describe it all as increased purchasing. A grouped bar chart can use two wide records with x="month", y=["Gross purchases (CAD)","Net spending (CAD)"], type="grouped". Do not stack those overlapping measures. A comparison table may be sufficient for a shorter question.
+
+## Recipe: actual spending against a user budget
+
+Question: "For September 2026 in CAD, my category budgets are Groceries 450, Utilities 120 and Dining & Takeout 100. How did I do?"
+Resolve the named categories, then add `budget_input(category_name,budget) AS (VALUES ('Groceries',450.0),('Utilities',120.0),('Dining & Takeout',100.0))` to a new complete read-only query with the valuation CTE. Require one category match per name. For this explicitly net-of-refunds budget comparison, aggregate expenses minus refunds per category and label actuals as net; LEFT JOIN the budgets so a budget with no qualifying recorded expenses is not lost. First establish whether the period has any approved data. Calculate actual, budget-actual and 100*actual/budget in SQL; a zero budget has no defined utilization percentage.
+
+Illustrative synthetic result: Groceries net actual 485.84 / budget 450.00 / remaining -35.84 / used 108.0%; Utilities 96.23 / 120.00 / 23.77 / 80.2%; Dining & Takeout 85.50 / 100.00 / 14.50 / 85.5%.
+Lead with "Groceries were CAD 35.84 over your stated budget." Show the three-row table and, when helpful, call unovis_generate_bar_chart with x="category", y=["Net actual (CAD)","Budget (CAD)"], type="grouped", orientation="horizontal", xAxisLabel="CAD; actuals approximate". The data rows contain those actual/budget values as numbers. Budgets are the user's assumptions; do not claim to have saved them. A general subscriptions budget should use recurrence='subscription', not automatically the category with a similar name.
+
+## Recipe: subscriptions without inventing contracts
+
+Question: "What did I spend on subscriptions in September 2026?"
+Filter recurrence='subscription' and distinguish expense charges, refunds and net: meaning IN ('expense','refund'); preserve the same approval, date and FX rules. Query separate gross expense-charge, refund and net totals plus a bounded breakdown. There is no merchant field: an exact-description group is an observed charge label, not a verified vendor identity or active contract. Keep original-currency subtotals separate.
+
+Illustrative synthetic result: MELODY CLOUD monthly music subscription, CAD 12.99; CIRRUS NOTES monthly software subscription, USD 8.50, valued at approximately CAD 11.73. A separate SQL aggregate returns approximately CAD 24.72 net (expense charges 24.72, refunds 0.00 in this illustrative scope). Two rows usually need only a table; render a bar chart if requested or if the actual result contains enough items to benefit. Do not infer the next renewal or multiply one observed monthly total by twelve as a guaranteed annual saving. An explicitly requested annual-cost scenario must state its cadence/continuation assumptions and calculate them in SQL.
+
+## Recipe: no data or incomplete valuation
+
+With an application date in November 2026, "last month" means October. The committed demo has no October transactions. Query that period and record availability, then answer: "I have no recorded transactions for October 2026, so I cannot determine October spending. The latest recorded transaction is September 28, 2026." Do not render a zero-spending chart or silently report September as October.
+
+If a real query returns missing required rates, report which currency/date coverage is unavailable. A useful follow-up to the same valuation CTE is `SELECT currency,transaction_date,meaning,COUNT(*) AS missing_count FROM valued WHERE value IS NULL AND meaning IN ('expense','refund','income') GROUP BY currency,transaction_date,meaning`. Repeat the CTE in that new query. Keep unvalued rows visible; show original-currency amounts separately if useful. Do not substitute a rate or invent a total. If unknown meaning is present, call the computable result classified spending and explain the unresolved records. A successful chart is not evidence that the financial dataset was complete.
 </project_context>

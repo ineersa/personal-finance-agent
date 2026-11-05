@@ -1,0 +1,24 @@
+{
+  "tool": "unovis_generate_bar_chart",
+  "arguments": {
+    "data": [
+      {
+        "description": "CIRRUS NOTES",
+        "Recorded charge (CAD)": 11.73
+      },
+      {
+        "description": "MELODY CLOUD",
+        "Recorded charge (CAD)": 12.99
+      }
+    ],
+    "x": "description",
+    "y": "Recorded charge (CAD)",
+    "orientation": "horizontal",
+    "legend": false,
+    "xAxisLabel": "Approximate CAD",
+    "title": "Recorded subscription charges · September 2026 · CAD",
+    "theme": "dark",
+    "width": 800,
+    "height": 400
+  }
+}

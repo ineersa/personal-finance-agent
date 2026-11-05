@@ -1,0 +1,197 @@
+# Worked reporting examples
+
+All observed financial values in this document come from the committed synthetic demo fixtures at application commit f40562d8. They are not the user's personal finances. Each SQL file is a complete independent finance_query(sql: string) argument. Read the full columns/rows/truncated tool response in the application; the named-column values below are teaching projections of actual scratch SQLite query output, not recorded model/tool traffic.
+
+The chart JSON files contain {tool, arguments}. Invoke the named tool with the inner arguments object. The application chooses HTML output and its private destination. On success, write the final report in Markdown; the chart appears below it automatically. Do not repeat SQL, JSON, private paths or chart placeholders in a normal user-facing report.
+
+## 1. How much did I spend, and where?
+
+User: "How much did I spend in September 2026, in CAD, and where did it go?"
+
+### Obtain the evidence
+
+Run sql/01-september-summary.sql for totals and coverage and sql/02-september-categories.sql for the breakdown. Both scope approved transactions to [2026-09-01,2026-10-01), value every transaction on its date, use magnitudes and stored meaning, and exclude transfers/card settlements from income/spending. The category query LEFT JOINs categories, retains unknown-category expenses, and computes top five plus Other in SQL.
+
+Summary evidence: 31 approved records; 23 expense/refund records, all valued; 3 income records, all valued; 5 transfers/card-payment records excluded; 0 unknown meanings; 0 missing/provisional relevant valuations; 1 draft record outside the report.
+
+Gross spending = net spending = approximately CAD 2,905.29; recorded refunds = CAD 0.00. The separate income and surplus values need not be added to the answer unless the question calls for them. The report should stay focused on spending.
+
+### Render
+
+Use charts/01-category-bars.json. It carries only category labels and display values. The Markdown table lists individual categories by size with Other last; the horizontal chart sorts its resulting six bars ascending so the largest is at the top. These are different display orders of the same values.
+
+The optional charts/06-category-donut-optional.json uses the same complete, nonnegative breakdown. Choose the bar OR donut; rendering both usually duplicates the same message. If refunds make a category negative, use bars and do not take ABS of the category net just to make a donut.
+
+### Example final report
+
+## September spending
+
+Your recorded gross purchases were **approximately CAD 2,905.29** in September 2026. Refunds were **CAD 0.00**, leaving **net spending of CAD 2,905.29**. The table and chart show net spending. Housing accounted for **50.94%** of the total.
+
+| Category | Approximate net CAD | Share |
+| --- | ---: | ---: |
+| Housing | 1,480.00 | 50.94% |
+| Groceries | 485.84 | 16.72% |
+| Loan Payments | 185.00 | 6.37% |
+| Internet & Phone | 117.95 | 4.06% |
+| Education | 109.05 | 3.75% |
+| Other categories | 527.45 | 18.15% |
+| **Total** | **2,905.29** | **100%** |
+
+Groceries were your next-largest individual category at CAD 485.84. The chart below compares the categories.
+
+*Amounts use transaction-date ECB reference valuation. Net spending subtracts refunds and excludes transfers/card settlements. One transaction is still awaiting review and is outside these figures. Rounded shares may not sum to exactly 100%.*
+
+### What this teaches
+
+The headline, total, share, table and chart all come from the same definition. Approval is not a completeness guarantee for every real-world account. The one draft is disclosed here because a complete monthly report can be affected by a pending transaction; short answers need not mechanically list every routine filter.
+
+## 2. Why did spending increase?
+
+User: "Why did I spend more in September than August 2026? Use CAD."
+
+Run sql/03-august-september-comparison.sql. It creates calendar buckets, groups valued records, guards incomplete totals and computes changes using unrounded values. For more detail, adapt the category query to both periods and compare category aggregates. Do not assume all net changes reflect new purchasing.
+
+### Example final report
+
+## September versus August
+
+Recorded net spending increased by **approximately CAD 173.36 (6.35%)**, but gross purchases rose by only **CAD 28.43**. The main difference is that August included a **CAD 144.93 refund** and September did not.
+
+| Metric, approximate CAD | August | September |
+| --- | ---: | ---: |
+| Gross purchases | 2,876.86 | 2,905.29 |
+| Refunds | 144.93 | 0.00 |
+| **Net spending** | **2,731.93** | **2,905.29** |
+
+This is mainly a refund-timing difference in the recorded data, rather than a similarly large rise in purchases. The grouped chart compares gross and net spending for each month.
+
+*Same date-bounded, approved-record scope and transaction-date CAD valuation in both periods. Totals reflect the records available for analysis.*
+
+### Render and interpretation
+
+Use charts/02-period-comparison.json when the visual comparison helps. It uses grouped bars with actual y array ["Gross purchases (CAD)","Net spending (CAD)"]. These overlapping metrics must not be stacked. No refunds-to-purchase link exists, so the refund stays in August rather than being reassigned to another period.
+
+The source includes two August drafts and one September draft. If the user wants the complete import/review picture, query pending records separately and explain their status; do not add them to approved totals.
+
+## 3. Compare actuals with my budget
+
+User: "For September 2026 in CAD, my category budgets are Groceries 450, Utilities 120 and Dining & Takeout 100. How did I do?"
+
+Run sql/04-september-budget.sql. Its budget_input VALUES are user-supplied assumptions, not stored records. The query verifies that each named category has exactly one match, checks the scope has records, retains categories with no qualifying expenses, and returns coverage, actual, budget, remaining and utilization. For a zero budget, a utilization percentage is undefined.
+
+If category_matches is not 1, resolve the intended category before claiming an amount. If unknown meaning is present, identify that the comparison only covers classified transactions. If valuation is incomplete, report that instead of treating missing actual as zero.
+
+### Example final report
+
+## September budget check
+
+**Groceries were CAD 35.84 over your stated budget.** Utilities and Dining & Takeout were below their limits.
+
+| Category | Budget, CAD | Recorded net actual, CAD | Remaining, CAD | Used |
+| --- | ---: | ---: | ---: | ---: |
+| Groceries | 450.00 | 485.84 | -35.84 | 108.0% |
+| Utilities | 120.00 | 96.23 | 23.77 | 80.2% |
+| Dining & Takeout | 100.00 | 85.50 | 14.50 | 85.5% |
+
+If the grocery limit still fits your goals, that is the category to review first. These figures explicitly compare recorded September net spending (expenses less refunds) with the budget amounts you supplied; they do not create or save a budget.
+
+*Calculated actuals are approximate. Negative remaining means over budget.*
+
+Use charts/03-budget-comparison.json for paired bars. Each category has a separate actual and budget; do not model different category budgets with one global threshold line. An explicit category budget differs from a general "subscriptions" budget, which should use recurrence rather than a similarly named category.
+
+## 4. What subscriptions am I paying for?
+
+User: "What did I spend on subscriptions in September 2026?"
+
+Run sql/05-september-subscriptions.sql and sql/10-subscriptions-total.sql. They filter recurrence='subscription' independently of category, and net expense/refund meanings. Original subtotals stay grouped by currency. Full descriptions are returned because there is no normalized merchant table.
+
+### Example final report
+
+Your recorded gross subscription charges in September totalled **approximately CAD 24.72**; recorded refunds were **CAD 0.00**, so net subscription spending was **CAD 24.72**. The supplied September summary establishes that this synthetic period has no refunds; do not assume this for live reports.
+
+| Recorded charge | Original amount | Approximate CAD |
+| --- | ---: | ---: |
+| MELODY CLOUD monthly music subscription | CAD 12.99 | 12.99 |
+| CIRRUS NOTES monthly software subscription | USD 8.50 | 11.73 |
+
+*The USD charge uses its September 8 ECB reference valuation. This lists charges recorded in the period; it does not establish every currently active subscription or the next renewal date.*
+
+A table is enough for these two entries. charts/04-subscription-bars.json is an optional schema example for an explicit chart request or a larger result. Its labels are faithful shortened versions of the full descriptions; they are not a new merchant-identity field.
+
+Do not multiply this total by twelve and call it guaranteed annual savings. For an annual budgeting question, inspect a longer period and distinguish the charge paid from a proposed monthly provision. Recurrence classification alone does not specify monthly versus annual billing, and past payments do not prove a future renewal.
+
+## 5. Build a proposed spending plan
+
+User: "Using September as a baseline, show what my grocery and dining budgets would be if I cut groceries by 10% and dining by 20%."
+
+Run sql/09-proposed-savings-scenario.sql. The reduction percentages are supplied by the user and applied in SQL to the recorded net-spending baseline. The query guards each baseline/derived amount on complete valuation and returns provisional/unknown classification counts. Review category identity if adapting this example to a catalog with duplicate names.
+
+### Example final report
+
+Using your explicitly net-of-refunds recorded September spending as the baseline, those proposed reductions give these monthly limits:
+
+| Category | September net baseline, CAD | Proposed cut | Proposed limit, CAD | Estimated reduction, CAD |
+| --- | ---: | ---: | ---: | ---: |
+| Groceries | 485.84 | 10% | 437.26 | 48.58 |
+| Dining & Takeout | 85.50 | 20% | 68.40 | 17.10 |
+
+*These are planning scenarios, not forecasts or saved budgets. They assume the same baseline mix and apply the reductions you requested; calculated amounts are approximate.*
+
+Do not sum the displayed reductions mentally. If the user asks for a combined reduction or target gap, add the appropriate aggregate to the same SQL statement and use its returned value. A table is usually enough for this small scenario.
+
+For "Can I save CAD 500 a month?", first distinguish recorded surplus from a feasible ongoing plan. Obtain a representative period, evaluate incomplete/irregular data, ask for material goals/commitments only when necessary, and calculate a proposed plan in SQL. The schema does not supply all future liabilities or account balances, so neither a historical surplus nor an own-account transfer is proof of sustainable future saving.
+
+## 6. Explain FX and handle missing coverage
+
+User: "Why is my USD 8.50 software charge shown as CAD 11.73?"
+
+Run sql/07-september-fx-detail.sql with the appropriate transaction scope. The example returns the original amount, transaction date, both stored reference rates, converted value and provisional flag.
+
+Example answer:
+
+"The September 8 charge is USD 8.50. Using that date's stored ECB reference rates—CAD 1.6033 and USD 1.1614 per EUR—the query values it at approximately CAD 11.734157, displayed as CAD 11.73. This is a reporting valuation, not a claim about your bank's execution rate or fees."
+
+Use no chart for this one-step explanation. The query returns EUR's effective source rate as 1 when relevant. Same-currency totals require no rate rows.
+
+For a mixed-currency report, inspect missing/provisional counts before displaying totals. sql/11-missing-valuation-diagnostics.sql demonstrates a focused currency/date/meaning breakdown of unvalued relevant rows; it returns an empty list on the selected complete canonical September data. The prompt's missing-rate branch is source-reviewed, not established by a fabricated runtime failure.
+
+If coverage is missing, the answer should say which records cannot be valued and avoid a complete combined total. A separately labelled valued subtotal or original-currency breakdown may still help. Do not quietly drop rows, replace NULL with zero, reuse today's rates or hide missing records in an Other bucket. Do not make a whole-spending donut from partial data.
+
+## 7. Answer an empty period correctly
+
+User: "How much did I spend last month?" Application reference date: a day in November 2026.
+
+Resolve the previous calendar month as October. Run sql/06-october-empty-period.sql, then sql/00-availability.sql. The former returns approved_count=0 and NULL monetary totals; the latter establishes the latest recorded date of September 28.
+
+Example answer:
+
+"I have no recorded transactions for October 2026, so I cannot determine October spending. The latest recorded transaction is September 28, 2026. Upload October's statements to report that month."
+
+Do not say the user spent zero. Do not silently reinterpret "last month" as the latest month in the database. Do not generate an empty or zero-filled chart. If the user instead asks for the latest available month, explicitly scope the next query to September and label it accordingly.
+
+## 8. Show a short spending trend
+
+User: "Show my recorded monthly spending from July through September 2026 in CAD."
+
+Run sql/08-july-september-trend.sql. Its calendar CTE ensures every requested month exists. A month with no approved records has NULL monetary values; this gives the chart an actual missing point. The current canonical results are complete:
+
+| Month | Approximate net spending, CAD |
+| --- | ---: |
+| July | 3,062.77 |
+| August | 2,731.93 |
+| September | 2,905.29 |
+
+charts/05-trend-line-optional.json demonstrates chronological ISO month-start dates, xIsTime=true, curve='linear', interpolateMissing=false. Its yDomainMin=0 is appropriate for these nonnegative values; remove that bound if a real result includes negative net spending. For just three discrete monthly totals, vertical bars are also reasonable. Use the line when the user asks for a trend; a table alone may be enough for a short numerical question.
+
+July also illustrates display rounding: independently rounded gross spending is 3,097.84 and refunds are 35.06, while the unrounded net rounds to 3,062.77. Do not recompute the net from those rounded components or "fix" the result to 3,062.78. Calculate from full-precision SQL values, then round each displayed metric.
+
+## Reuse rules
+
+- Adapt dates, reporting currency, source scope and requested metric in every query. The CAD suffixes in these example names/labels are illustrative; replace them consistently for another target currency.
+- Do not copy example totals into live answers. Current SQL results are required evidence.
+- Keep account/category filters consistent across summary, detail and chart; the example scope is all sources.
+- Use matching approved/classified evidence for comparisons. Do not let unknown meanings disappear from limitations.
+- For drafts, do not reuse approved-record numeric casts without checking invalid/incomplete original values; SQLite can cast invalid text to zero.
+- A category/refund total may be negative. Preserve its sign and select an appropriate chart.
+- No financial writes, new budget persistence, saved subscriptions or interactive drilldown are performed by these examples.

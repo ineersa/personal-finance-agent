@@ -1,0 +1,42 @@
+{
+  "tool": "unovis_generate_bar_chart",
+  "arguments": {
+    "data": [
+      {
+        "category": "Dining & Takeout",
+        "Net actual (CAD)": 85.5,
+        "Budget (CAD)": 100.0
+      },
+      {
+        "category": "Utilities",
+        "Net actual (CAD)": 96.23,
+        "Budget (CAD)": 120.0
+      },
+      {
+        "category": "Groceries",
+        "Net actual (CAD)": 485.84,
+        "Budget (CAD)": 450.0
+      }
+    ],
+    "x": "category",
+    "y": [
+      "Net actual (CAD)",
+      "Budget (CAD)"
+    ],
+    "type": "grouped",
+    "orientation": "horizontal",
+    "seriesLabels": [
+      "Recorded net actual",
+      "User budget"
+    ],
+    "colors": [
+      "#68C5AF",
+      "#8EA9C1"
+    ],
+    "xAxisLabel": "CAD; net actuals approximate",
+    "title": "Your budget versus recorded net spending · September 2026 · CAD",
+    "theme": "dark",
+    "width": 800,
+    "height": 400
+  }
+}

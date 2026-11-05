@@ -14,10 +14,11 @@ use Symfony\Component\DependencyInjection\Attribute\Exclude;
 final readonly class ChartToolset implements ToolsetInterface
 {
     public const string NAME = 'unovis';
+    public const string INFO_TOOL = 'get_unovis_info';
     public const string ENDPOINT = 'http://charts:3737/mcp';
     public const string OUTPUT_TYPE = 'html';
     public const string PROMPT_LINE = 'Unovis chart tools are discovered from the local MCP service and save interactive HTML inline in this conversation.';
-    public const string GUIDELINES = 'Use the discovered chart tools for requested visualizations of authorized SQL results. Calculate values in {finance_name}; do not invent or mentally calculate chart data. Rendering is local. The application manages outputType and outputPath for private inline HTML presentation. Follow each tool schema for chart options. If a tool returns an error, use its feedback to correct the call and try again when appropriate. Charts appear inline automatically; do not emit HTML, scripts, image Markdown or chart links.';
+    public const string GUIDELINES = 'Use the discovered chart tools when a visualization materially helps answer the user question, using authorized SQL results. Calculate values in {finance_name}; do not invent or mentally calculate chart data. Rendering is local. The application manages outputType and outputPath for private inline HTML presentation. The info tool returns server information as text, not a chart. Follow each tool schema for chart options. If a tool returns an error, use its feedback to correct the call and try again when appropriate. Charts appear inline automatically; do not emit HTML, scripts, image Markdown or chart links.';
 
     public function __construct(private ToolsetInterface $connection, private ChartFiles $files, private string $conversation, private NativeAssistantOutput $output)
     {
@@ -35,6 +36,11 @@ final readonly class ChartToolset implements ToolsetInterface
 
     public function callTool(string $name, array $arguments = []): CallToolResult
     {
+        // The pinned server registers this text-only tool separately from chart recipes.
+        if (self::INFO_TOOL === $name) {
+            return $this->connection->callTool($name, $arguments);
+        }
+
         $path = $this->files->outputPath();
         try {
             try {

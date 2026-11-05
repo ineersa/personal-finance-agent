@@ -1,0 +1,397 @@
+{
+  "application_commit": "f40562d8bba0eeadf1109437fbbbbe33f88dafce",
+  "unovis_commit": "e57001218dd00995aa13331bf731bd0bb4644fb9",
+  "latest_pr_head_checked": "52427e3a1d8aa4d676002e6df7657ada9d411166",
+  "head_followup": "Only chat stream update interval changed from 100 ms to 50 ms; reviewed prompt/data/tool contracts unchanged.",
+  "scope": "Documentation examples executed with Python SQLite on canonical synthetic fixture data; not application or live-model tests.",
+  "sqlite_version": "3.53.1",
+  "query_count": 12,
+  "chart_call_count": 6,
+  "sql_limits": "All example SQL <16 KiB, outputs <=200 rows and <=50 columns.",
+  "charts": "JSON field references checked; schema checked against pinned source. No live chart rendering claimed.",
+  "ids": "Local analysis IDs are not actual application IDs; examples avoid hard-coding them.",
+  "results": {
+    "00-availability": [
+      {
+        "currency": "CAD",
+        "is_draft": 0,
+        "record_count": 652,
+        "first_date": "2024-11-01",
+        "latest_date": "2026-09-28"
+      },
+      {
+        "currency": "CAD",
+        "is_draft": 1,
+        "record_count": 2,
+        "first_date": "2025-05-19",
+        "latest_date": "2026-08-19"
+      },
+      {
+        "currency": "USD",
+        "is_draft": 0,
+        "record_count": 81,
+        "first_date": "2024-11-02",
+        "latest_date": "2026-09-27"
+      },
+      {
+        "currency": "USD",
+        "is_draft": 1,
+        "record_count": 23,
+        "first_date": "2024-11-28",
+        "latest_date": "2026-09-28"
+      }
+    ],
+    "01-september-summary": [
+      {
+        "start_date": "2026-09-01",
+        "end_date": "2026-10-01",
+        "target_currency": "CAD",
+        "approved_count": 31,
+        "spending_matched": 23,
+        "spending_valued": 23,
+        "spending_missing": 0,
+        "income_matched": 3,
+        "income_valued": 3,
+        "income_missing": 0,
+        "unknown_count": 0,
+        "excluded_count": 5,
+        "provisional_count": 0,
+        "draft_count": 1,
+        "gross_spending": 2905.29,
+        "refunds": 0.0,
+        "net_spending": 2905.29,
+        "income": 6230.81,
+        "recorded_surplus": 3325.52,
+        "recorded_surplus_percent": 53.37
+      }
+    ],
+    "02-september-categories": [
+      {
+        "category": "Housing",
+        "matched": 1,
+        "valued_count": 1,
+        "category_missing": 0,
+        "total_matched": 23,
+        "total_valued": 23,
+        "total_missing": 0,
+        "provisional_count": 0,
+        "unknown_count": 0,
+        "net_spending": 1480.0,
+        "share_percent": 50.94,
+        "total_spending": 2905.29
+      },
+      {
+        "category": "Groceries",
+        "matched": 4,
+        "valued_count": 4,
+        "category_missing": 0,
+        "total_matched": 23,
+        "total_valued": 23,
+        "total_missing": 0,
+        "provisional_count": 0,
+        "unknown_count": 0,
+        "net_spending": 485.84,
+        "share_percent": 16.72,
+        "total_spending": 2905.29
+      },
+      {
+        "category": "Loan Payments",
+        "matched": 1,
+        "valued_count": 1,
+        "category_missing": 0,
+        "total_matched": 23,
+        "total_valued": 23,
+        "total_missing": 0,
+        "provisional_count": 0,
+        "unknown_count": 0,
+        "net_spending": 185.0,
+        "share_percent": 6.37,
+        "total_spending": 2905.29
+      },
+      {
+        "category": "Internet & Phone",
+        "matched": 2,
+        "valued_count": 2,
+        "category_missing": 0,
+        "total_matched": 23,
+        "total_valued": 23,
+        "total_missing": 0,
+        "provisional_count": 0,
+        "unknown_count": 0,
+        "net_spending": 117.95,
+        "share_percent": 4.06,
+        "total_spending": 2905.29
+      },
+      {
+        "category": "Education",
+        "matched": 1,
+        "valued_count": 1,
+        "category_missing": 0,
+        "total_matched": 23,
+        "total_valued": 23,
+        "total_missing": 0,
+        "provisional_count": 0,
+        "unknown_count": 0,
+        "net_spending": 109.05,
+        "share_percent": 3.75,
+        "total_spending": 2905.29
+      },
+      {
+        "category": "Other categories",
+        "matched": 14,
+        "valued_count": 14,
+        "category_missing": 0,
+        "total_matched": 23,
+        "total_valued": 23,
+        "total_missing": 0,
+        "provisional_count": 0,
+        "unknown_count": 0,
+        "net_spending": 527.45,
+        "share_percent": 18.15,
+        "total_spending": 2905.29
+      }
+    ],
+    "03-august-september-comparison": [
+      {
+        "month": "2026-08-01",
+        "approved_count": 31,
+        "unknown_count": 0,
+        "spending_matched": 23,
+        "spending_missing": 0,
+        "income_missing": 0,
+        "provisional_count": 0,
+        "gross_spending": 2876.86,
+        "refunds": 144.93,
+        "net_spending": 2731.93,
+        "income": 6231.16,
+        "recorded_surplus": 3499.23,
+        "net_change": null,
+        "net_change_percent": null,
+        "gross_change": null,
+        "refunds_change": null
+      },
+      {
+        "month": "2026-09-01",
+        "approved_count": 31,
+        "unknown_count": 0,
+        "spending_matched": 23,
+        "spending_missing": 0,
+        "income_missing": 0,
+        "provisional_count": 0,
+        "gross_spending": 2905.29,
+        "refunds": 0.0,
+        "net_spending": 2905.29,
+        "income": 6230.81,
+        "recorded_surplus": 3325.52,
+        "net_change": 173.36,
+        "net_change_percent": 6.35,
+        "gross_change": 28.43,
+        "refunds_change": -144.93
+      }
+    ],
+    "04-september-budget": [
+      {
+        "category": "Groceries",
+        "category_matches": 1,
+        "scope_count": 31,
+        "unknown_count": 0,
+        "matched": 4,
+        "valued_count": 4,
+        "missing_count": 0,
+        "provisional_count": 0,
+        "actual": 485.84,
+        "budget": 450.0,
+        "remaining": -35.84,
+        "used_percent": 108.0
+      },
+      {
+        "category": "Utilities",
+        "category_matches": 1,
+        "scope_count": 31,
+        "unknown_count": 0,
+        "matched": 1,
+        "valued_count": 1,
+        "missing_count": 0,
+        "provisional_count": 0,
+        "actual": 96.23,
+        "budget": 120.0,
+        "remaining": 23.77,
+        "used_percent": 80.2
+      },
+      {
+        "category": "Dining & Takeout",
+        "category_matches": 1,
+        "scope_count": 31,
+        "unknown_count": 0,
+        "matched": 4,
+        "valued_count": 4,
+        "missing_count": 0,
+        "provisional_count": 0,
+        "actual": 85.5,
+        "budget": 100.0,
+        "remaining": 14.5,
+        "used_percent": 85.5
+      }
+    ],
+    "05-september-subscriptions": [
+      {
+        "description": "MELODY CLOUD monthly music subscription",
+        "currency": "CAD",
+        "matched": 1,
+        "valued_count": 1,
+        "missing_count": 0,
+        "provisional_count": 0,
+        "original_net": 12.99,
+        "net_cad": 12.99
+      },
+      {
+        "description": "CIRRUS NOTES monthly software subscription",
+        "currency": "USD",
+        "matched": 1,
+        "valued_count": 1,
+        "missing_count": 0,
+        "provisional_count": 0,
+        "original_net": 8.5,
+        "net_cad": 11.73
+      }
+    ],
+    "06-october-empty-period": [
+      {
+        "start_date": "2026-10-01",
+        "end_date": "2026-11-01",
+        "target_currency": "CAD",
+        "approved_count": 0,
+        "spending_matched": 0,
+        "spending_valued": 0,
+        "spending_missing": 0,
+        "income_matched": 0,
+        "income_valued": 0,
+        "income_missing": 0,
+        "unknown_count": 0,
+        "excluded_count": 0,
+        "provisional_count": 0,
+        "draft_count": 0,
+        "gross_spending": null,
+        "refunds": null,
+        "net_spending": null,
+        "income": null,
+        "recorded_surplus": null,
+        "recorded_surplus_percent": null
+      }
+    ],
+    "07-september-fx-detail": [
+      {
+        "transaction_date": "2026-09-08",
+        "description": "CIRRUS NOTES monthly software subscription",
+        "amount": "8.50",
+        "currency": "USD",
+        "source_rate": "1.1614",
+        "target_rate": "1.6033",
+        "approximate_cad": 11.734157,
+        "provisional": 0
+      },
+      {
+        "transaction_date": "2026-09-27",
+        "description": "MONTHLY USD ACCOUNT FEE",
+        "amount": "3.95",
+        "currency": "USD",
+        "source_rate": "1.1403",
+        "target_rate": "1.6127",
+        "approximate_cad": 5.586394,
+        "provisional": 0
+      }
+    ],
+    "08-july-september-trend": [
+      {
+        "month": "2026-07-01",
+        "approved_count": 33,
+        "unknown_count": 0,
+        "spending_matched": 25,
+        "spending_missing": 0,
+        "income_missing": 0,
+        "provisional_count": 0,
+        "gross_spending": 3097.84,
+        "refunds": 35.06,
+        "net_spending": 3062.77,
+        "income": 6230.37,
+        "recorded_surplus": 3167.6,
+        "net_change": null,
+        "net_change_percent": null,
+        "gross_change": null,
+        "refunds_change": null
+      },
+      {
+        "month": "2026-08-01",
+        "approved_count": 31,
+        "unknown_count": 0,
+        "spending_matched": 23,
+        "spending_missing": 0,
+        "income_missing": 0,
+        "provisional_count": 0,
+        "gross_spending": 2876.86,
+        "refunds": 144.93,
+        "net_spending": 2731.93,
+        "income": 6231.16,
+        "recorded_surplus": 3499.23,
+        "net_change": -330.85,
+        "net_change_percent": -10.8,
+        "gross_change": -220.98,
+        "refunds_change": 109.87
+      },
+      {
+        "month": "2026-09-01",
+        "approved_count": 31,
+        "unknown_count": 0,
+        "spending_matched": 23,
+        "spending_missing": 0,
+        "income_missing": 0,
+        "provisional_count": 0,
+        "gross_spending": 2905.29,
+        "refunds": 0.0,
+        "net_spending": 2905.29,
+        "income": 6230.81,
+        "recorded_surplus": 3325.52,
+        "net_change": 173.36,
+        "net_change_percent": 6.35,
+        "gross_change": 28.43,
+        "refunds_change": -144.93
+      }
+    ],
+    "09-proposed-savings-scenario": [
+      {
+        "category": "Dining & Takeout",
+        "matched": 4,
+        "valued_count": 4,
+        "missing_count": 0,
+        "provisional_count": 0,
+        "unknown_count": 0,
+        "baseline": 85.5,
+        "proposed_reduction_percent": 20.0,
+        "estimated_reduction": 17.1,
+        "proposed_budget": 68.4
+      },
+      {
+        "category": "Groceries",
+        "matched": 4,
+        "valued_count": 4,
+        "missing_count": 0,
+        "provisional_count": 0,
+        "unknown_count": 0,
+        "baseline": 485.84,
+        "proposed_reduction_percent": 10.0,
+        "estimated_reduction": 48.58,
+        "proposed_budget": 437.26
+      }
+    ],
+    "10-subscriptions-total": [
+      {
+        "matched": 2,
+        "valued_count": 2,
+        "missing_count": 0,
+        "provisional_count": 0,
+        "subscription_net_cad": 24.72
+      }
+    ],
+    "11-missing-valuation-diagnostics": []
+  }
+}
