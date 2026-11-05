@@ -30,7 +30,12 @@ final class ReadOnlyQuery
         if (is_link($path) || is_link(\dirname($path)) || !is_file($path)) {
             throw new \RuntimeException('Tenant storage is unavailable.');
         }
-        $database = new \SQLite3($path, \SQLITE3_OPEN_READONLY);
+        try {
+            $database = new \SQLite3($path, \SQLITE3_OPEN_READONLY);
+        } catch (\Exception) {
+            // Opening storage can include the private filename; query diagnostics below must remain useful.
+            throw new \RuntimeException('Tenant storage could not be opened read-only.');
+        }
         $database->enableExceptions(true);
         try {
             $database->busyTimeout(100);
