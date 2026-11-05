@@ -28,7 +28,7 @@ final readonly class ChartFiles
 
     public function retain(string $conversation, string $path): string
     {
-        if (is_link($path) || !is_file($path) || \dirname($path) !== self::OUTPUT_DIRECTORY || realpath($path) !== $path) {
+        if (is_link($path) || !is_file($path) || self::OUTPUT_DIRECTORY !== \dirname($path) || realpath($path) !== $path) {
             throw new \DomainException('The chart document is unavailable.');
         }
         $stream = fopen($path, 'rb');
