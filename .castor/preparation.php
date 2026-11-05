@@ -88,6 +88,18 @@ function testDatabaseFresh(): int
     return report('test:database:fresh-schema', [...$command, 'doctrine:schema:validate', '--env=dev']);
 }
 
+#[AsTask(namespace: 'charts', name: 'build', description: 'Build the pinned chart service without restarting any running service.')]
+function chartsBuild(bool $browser = false): int
+{
+    $mode = $browser ? 'browser' : 'dev';
+
+    return report('charts:build', [...stackCommand($mode), 'build', 'charts'], runtime: false, operation: static function () use ($mode): int {
+        stackRun($mode, ['build', 'charts']);
+
+        return 0;
+    });
+}
+
 #[AsTask(namespace: 'browser', name: 'stack:up', description: 'Build and start only the isolated browser-test application.')]
 function browserStackUp(): int
 {

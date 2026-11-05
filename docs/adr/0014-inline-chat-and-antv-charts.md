@@ -1,6 +1,6 @@
 # ADR 0014: Display AntV charts inline in chat using hosted rendering
 
-- Status: Accepted
+- Status: Superseded by [ADR 0026](0026-local-unovis-charts.md) on 2026-11-05
 - Date: 2026-10-29
 
 ## Context

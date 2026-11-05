@@ -10,6 +10,8 @@ services:
     security_opt: [no-new-privileges:true]
     mem_limit: 256m
     cpus: 1
+    volumes:
+      - chart_output:/chart-output
     logging:
       driver: none
     # Internal-only MCP; no host ports, Docker socket, database or private files.
@@ -24,6 +26,8 @@ services:
       COMPOSER_CACHE_DIR: /tmp/composer/cache
       XDG_CONFIG_HOME: /tmp/caddy-config
       XDG_DATA_HOME: /tmp/caddy-data
+    volumes:
+      - chart_output:/chart-output
     ports:
       - "127.0.0.1:${HTTP_PORT:-8080}:8080"
     healthcheck:
@@ -49,6 +53,7 @@ services:
 ###< symfony/mercure-bundle ###
 
 volumes:
+  chart_output:
 ###> symfony/mercure-bundle ###
   mercure_data:
   mercure_config:

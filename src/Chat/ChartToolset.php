@@ -6,24 +6,26 @@ namespace App\Chat;
 
 use Mcp\Schema\Content\TextContent;
 use Mcp\Schema\Result\CallToolResult;
-use Mcp\Schema\Tool;
-use Opis\JsonSchema\Validator;
 use Symfony\AI\Agent\Bridge\Mcp\ToolsetInterface;
 use Symfony\Component\DependencyInjection\Attribute\Exclude;
 
+/** Adds conversation policy/file retention; discovery and execution remain native MCP responsibilities. */
 #[Exclude]
 final class ChartToolset implements ToolsetInterface
 {
-    public const string NAME = 'antv';
+    public const string NAME = 'unovis';
+    public const string ENDPOINT = 'http://charts:3737/mcp';
+    public const string OUTPUT_TYPE = 'html';
+    public const string PROMPT_LINE = 'Unovis chart tools are discovered from the local MCP service and save interactive HTML inline in this conversation.';
     public const int MAX_CHARTS = 4;
     public const int MAX_ARGUMENT_BYTES = 16384;
     public const int MAX_ITEMS = 100;
+    public const int MAX_DEPTH = 8;
     public const int MAX_TEXT = 200;
+    public const string GUIDELINES = 'Use the discovered chart tools only for requested visualizations of authorized SQL results. Calculate values in {finance_name}; do not invent or mentally calculate chart data. Rendering is local. Use outputType="{chart_output_type}"; never supply outputPath, executable code or external resources. Charts appear inline automatically; do not emit HTML, scripts, image Markdown or chart links. Do not repeat or automatically retry failed calls. Limits: {chart_max_calls} calls per response, {chart_max_bytes} bytes of arguments per call, {chart_max_items} items per collection, depth {chart_max_depth}, {chart_max_text} characters per string. Use plain labels without links, markup or control characters. Requested width/height, if present, must be integer pixels from 100 to {chart_max_side}.';
     private int $calls = 0;
-    /** @var list<Tool> */
-    private array $tools = [];
 
-    public function __construct(private readonly ToolsetInterface $connection, private readonly ChartImages $images, private readonly string $conversation, private readonly NativeAssistantOutput $output)
+    public function __construct(private readonly ToolsetInterface $connection, private readonly ChartFiles $files, private readonly string $conversation, private readonly NativeAssistantOutput $output)
     {
     }
 
@@ -35,7 +37,7 @@ final class ChartToolset implements ToolsetInterface
     public function getTools(): array
     {
         try {
-            return $this->tools = $this->connection->getTools();
+            return $this->connection->getTools();
         } catch (\Throwable $error) {
             $this->output->charts[] = ['file' => null, 'error' => 'Chart service unavailable. No chart was generated.'];
             throw $error;
@@ -44,54 +46,45 @@ final class ChartToolset implements ToolsetInterface
 
     public function callTool(string $name, array $arguments = []): CallToolResult
     {
+        $path = $this->files->outputPath();
         try {
             if (++$this->calls > self::MAX_CHARTS || \strlen(json_encode($arguments, \JSON_THROW_ON_ERROR)) > self::MAX_ARGUMENT_BYTES) {
                 throw new \DomainException('Chart request limit exceeded.');
             }
+            if (\array_key_exists('outputPath', $arguments) || (isset($arguments['outputType']) && self::OUTPUT_TYPE !== $arguments['outputType'])) {
+                throw new \DomainException('Only application-managed HTML output is supported.');
+            }
             $this->validate($arguments);
-            $schema = null;
-            foreach ($this->tools as $tool) {
-                if ($name === $tool->name) {
-                    $schema = $tool->inputSchema;
-                    break;
-                }
-            }
-            if (null === $schema) {
-                throw new \DomainException('Unknown chart tool.');
-            }
-            // AntV validates with Zod, but forwards the original argument object to the renderer.
-            // Refuse undeclared top-level options (notably overriding the renderer's chart type).
-            $schema['additionalProperties'] = false;
-            $document = json_decode(json_encode((object) $arguments, \JSON_THROW_ON_ERROR), flags: \JSON_THROW_ON_ERROR);
-            $definition = json_decode(json_encode($schema, \JSON_THROW_ON_ERROR), flags: \JSON_THROW_ON_ERROR);
-            if (!(new Validator())->validate($document, $definition)->isValid()) {
-                throw new \DomainException('Invalid chart arguments.');
-            }
             foreach (['width', 'height'] as $dimension) {
-                if (isset($arguments[$dimension]) && (!\is_int($arguments[$dimension]) || $arguments[$dimension] < 100 || $arguments[$dimension] > ChartImages::MAX_SIDE)) {
-                    throw new \DomainException('Chart dimensions must be between 100 and 1600 pixels.');
+                if (isset($arguments[$dimension]) && (!\is_int($arguments[$dimension]) || $arguments[$dimension] < 100 || $arguments[$dimension] > ChartFiles::MAX_SIDE)) {
+                    throw new \DomainException('Chart dimensions exceed their resource limits.');
                 }
             }
-            $result = $this->connection->callTool($name, $arguments);
-            if ($result->isError || 1 !== \count($result->content) || !$result->content[0] instanceof TextContent) {
-                throw new \DomainException('The chart renderer did not return an image.');
+            // The server validates its published recipe schema. It never receives a model-selected path.
+            $result = $this->connection->callTool($name, [...$arguments, 'outputType' => self::OUTPUT_TYPE, 'outputPath' => $path]);
+            if ($result->isError) {
+                throw new \DomainException('The chart service did not generate a document.');
             }
-            $filename = $this->images->copy($this->conversation, $result->content[0]->text);
+            $filename = $this->files->retain($this->conversation, $path);
             $this->output->charts[] = ['file' => $filename, 'error' => null];
 
-            return CallToolResult::success([new TextContent('Chart image saved and displayed inline. Do not insert remote images or repeat this chart call.')]);
+            // Do not expose server paths, generated source or model-controlled result text to chat/history.
+            return CallToolResult::success([new TextContent('Interactive chart saved privately and displayed inline. Do not repeat this chart call.')]);
         } catch (\Throwable) {
-            // Never project upstream exception messages/URLs or provider payloads.
-            $message = 'Chart unavailable: the input was unsupported, a resource limit was reached, or the rendering service failed. No image was saved. Do not retry automatically.';
+            $message = 'Chart unavailable: the input was unsupported, a resource limit was reached, or the local rendering service failed. No chart was saved. Do not retry automatically.';
             $this->output->charts[] = ['file' => null, 'error' => $message];
 
             return CallToolResult::error([new TextContent($message)]);
+        } finally {
+            if (is_file($path) || is_link($path)) {
+                unlink($path);
+            }
         }
     }
 
     private function validate(mixed $value, int $depth = 0): void
     {
-        if ($depth > 8) {
+        if ($depth > self::MAX_DEPTH) {
             throw new \DomainException('Chart input is too deeply nested.');
         }
         if (\is_array($value)) {
