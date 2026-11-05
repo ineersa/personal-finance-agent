@@ -7,6 +7,11 @@ namespace App\Chat;
 use Symfony\AI\Agent\Toolbox\ToolResult;
 use Symfony\AI\Platform\Bridge\OpenAIChatGPT\MessageItem;
 use Symfony\AI\Platform\Bridge\OpenAIChatGPT\Result\Stream\Delta\MessageComplete;
+use Symfony\AI\Platform\Message\AssistantMessage;
+use Symfony\AI\Platform\Message\Content\Text;
+use Symfony\AI\Platform\Message\Content\Thinking;
+use Symfony\AI\Platform\Message\MessageInterface;
+use Symfony\AI\Platform\Message\ToolCallMessage;
 use Symfony\AI\Platform\Result\Stream\Delta\CommentaryComplete;
 use Symfony\AI\Platform\Result\Stream\Delta\CommentaryDelta;
 use Symfony\AI\Platform\Result\Stream\Delta\DeltaInterface;
@@ -40,6 +45,39 @@ final class ChatActivity
     public function entries(): array
     {
         return $this->entries;
+    }
+
+    /**
+     * @param list<MessageInterface> $messages current turn's durable messages only
+     * @param list<Entry>            $previous previously projected tool display, matched by native call ID
+     */
+    public function restore(array $messages, array $previous): void
+    {
+        foreach ($messages as $message) {
+            if ($message instanceof AssistantMessage) {
+                foreach ($message->getContent() as $part) {
+                    if ($part instanceof Thinking) {
+                        $this->entries[$this->append(self::REASONING)]['text'] = $part->getContent();
+                    } elseif ($part instanceof Text && Workspace::COMMENTARY_PHASE === ($part->getPhase() ?? (MessageItem::fromText($part)['phase'] ?? null))) {
+                        $this->entries[$this->append(self::COMMENTARY)]['text'] = $part->getText();
+                    } elseif ($part instanceof ToolCall) {
+                        $this->started($part);
+                    }
+                }
+            } elseif ($message instanceof ToolCallMessage) {
+                $call = $message->getToolCall();
+                $index = $this->calls[$call->getId()] ?? $this->announced($call->getId(), $call->getName());
+                $this->entries[$index]['result'] = mb_strcut($message->asText() ?? '', 0, self::DISPLAY_BYTES, 'UTF-8');
+                $this->entries[$index]['status'] = self::COMPLETED;
+                foreach ($previous as $entry) {
+                    if ($call->getId() === $entry['call_id'] && \in_array($entry['status'], [self::COMPLETED, self::FAILED], true)) {
+                        $this->entries[$index] = $entry;
+                        break;
+                    }
+                }
+            }
+        }
+        $this->beginRound();
     }
 
     public function beginRound(): void

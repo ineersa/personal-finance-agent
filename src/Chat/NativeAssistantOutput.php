@@ -8,6 +8,11 @@ use Symfony\AI\Agent\Output;
 use Symfony\AI\Agent\OutputProcessorInterface;
 use Symfony\AI\Platform\Bridge\OpenAIChatGPT\MessageItem;
 use Symfony\AI\Platform\Bridge\OpenAIChatGPT\Result\Stream\Delta\MessageComplete;
+use Symfony\AI\Platform\Message\AssistantMessage;
+use Symfony\AI\Platform\Message\Content\Text;
+use Symfony\AI\Platform\Message\Content\Thinking;
+use Symfony\AI\Platform\Message\MessageBag;
+use Symfony\AI\Platform\Message\UserMessage;
 use Symfony\AI\Platform\Result\MultiPartResult;
 use Symfony\AI\Platform\Result\ResultInterface;
 use Symfony\AI\Platform\Result\Stream\Delta\CommentaryDelta;
@@ -20,6 +25,8 @@ use Symfony\AI\Platform\Result\ThinkingResult;
 
 /**
  * Temporary native-message adaptation: https://github.com/ineersa/personal-finance-agent/issues/13.
+ *
+ * @phpstan-import-type Entry from ChatActivity
  *
  * @phpstan-type Chart array{file: ?string, error: ?string}
  */
@@ -40,6 +47,57 @@ final class NativeAssistantOutput implements OutputProcessorInterface
 
     public function __construct(public readonly ChatActivity $activity = new ChatActivity())
     {
+    }
+
+    /**
+     * Discard interrupted streaming fragments; replay only the native durable boundary.
+     *
+     * @param list<Chart> $charts   already authorized private chart references survive retries
+     * @param list<Entry> $activity previously projected tool display
+     *
+     * @return bool whether the current turn already has a persisted final answer
+     */
+    public function restore(MessageBag $history, array $charts, array $activity): bool
+    {
+        $messages = [];
+        foreach ($history as $message) {
+            if ($message instanceof UserMessage) {
+                $messages = [];
+            } else {
+                $messages[] = $message;
+            }
+        }
+        $this->charts = $charts;
+        $this->activity->restore($messages, $activity);
+        $last = null;
+        foreach ($messages as $message) {
+            $last = $message;
+            if (!$message instanceof AssistantMessage) {
+                continue;
+            }
+            foreach ($message->getContent() as $part) {
+                if ($part instanceof Thinking) {
+                    $this->transcript['reasoning'] .= $part->getContent();
+                } elseif ($part instanceof Text) {
+                    $phase = $part->getPhase() ?? (MessageItem::fromText($part)['phase'] ?? null);
+                    $field = Workspace::COMMENTARY_PHASE === $phase ? 'commentary' : 'answer';
+                    $this->completedText[$field][] = $part->getText();
+                    $this->transcript[$field] = implode("\n\n", $this->completedText[$field]);
+                }
+            }
+        }
+
+        // A tool round ends in ToolCallMessage, not AssistantMessage. Reasoning/commentary
+        // alone are not a final answer, and messages before the last user never qualify.
+        if ($last instanceof AssistantMessage && !$last->hasToolCalls()) {
+            foreach ($last->getContent() as $part) {
+                if ($part instanceof Text && '' !== $part->getText() && Workspace::COMMENTARY_PHASE !== ($part->getPhase() ?? (MessageItem::fromText($part)['phase'] ?? null))) {
+                    return true;
+                }
+            }
+        }
+
+        return false;
     }
 
     /** @return array{reasoning: string, commentary: string, answer: string, charts: list<Chart>} */

@@ -11,6 +11,7 @@ use App\Chat\NativeAssistantOutput;
 use App\Chat\Workspace;
 use App\Message\GenerateChat;
 use Doctrine\ORM\EntityManagerInterface;
+use Symfony\AI\Agent\Exception\ConflictException;
 use Symfony\AI\Agent\Execution\ExecutionStatus;
 use Symfony\AI\Agent\Execution\Update\Progress;
 use Symfony\AI\Agent\Toolbox\Event\ToolCallFailed;
@@ -47,21 +48,33 @@ final readonly class GenerateChatHandler
         $owner = $conversation->getUser();
         $registration = $owner->getChatGptRegistrationId();
         $turnId = $conversation->generationId;
+        $attemptId = $conversation->attemptId;
         $ownerId = $owner->getId();
-        \assert(null !== $registration && null !== $turnId && null !== $ownerId);
+        \assert(null !== $registration && null !== $turnId && null !== $attemptId && null !== $ownerId);
         $execution = null;
         $output = new NativeAssistantOutput();
         $lastUpdate = 0.0;
-        $project = function (bool $force = false) use (&$execution, $conversation, $turnId, $output, &$lastUpdate): void {
+        $project = function (bool $force = false) use (&$execution, $conversation, $turnId, $attemptId, $output, &$lastUpdate): void {
             if ($force || microtime(true) - $lastUpdate >= self::UPDATE_INTERVAL) {
                 // Persist chart authorization and the readable projection before browser delivery.
-                $this->workspace->project($conversation, $turnId, $output);
+                $this->workspace->project($conversation, $turnId, $attemptId, $output);
                 $this->updates->publish($conversation, $execution);
                 $lastUpdate = microtime(true);
             }
         };
         $error = null;
         try {
+            $store = new ConversationMessageStore($this->em->getConnection(), $this->normalizer, $ownerId, $conversation->id, $turnId, $attemptId);
+            $history = $store->load(UuidV7::fromString($conversation->id));
+            $turn = $conversation->turns[\count($conversation->turns) - 1];
+            if ($output->restore($history, $turn['charts'] ?? [], $turn['activity'] ?? [])) {
+                // Native final output committed before the prior worker died; no second inference.
+                $this->workspace->project($conversation, $turnId, $attemptId, $output, ExecutionStatus::Completed);
+                $this->updates->publish($conversation);
+
+                return;
+            }
+            $project(true);
             $events = new EventDispatcher();
             $events->addListener(ToolCallFailed::class, static function (ToolCallFailed $event) use ($output, $project): void {
                 $error = $event->getException();
@@ -73,7 +86,6 @@ final readonly class GenerateChatHandler
                 $output->activity->completed($event->getResult());
                 $project(true);
             });
-            $store = new ConversationMessageStore($this->em->getConnection(), $this->normalizer, $ownerId, $conversation->id, $turnId);
             $execution = $this->agents->create($owner, $registration, $conversation->model, $output, $events, $conversation->id, $store)->call(
                 // Agent loads canonical history and saves input, complete tool rounds and final native output.
                 MessageBag::forId(UuidV7::fromString($conversation->id)),
@@ -93,12 +105,19 @@ final readonly class GenerateChatHandler
                 $project($toolStarted);
             });
             $execution->getMessages();
+        } catch (ConflictException) {
+            // A redelivery owns this generation now. Never mark its work failed or overwrite it.
+            return;
         } catch (\Throwable) {
             // Provider exceptions can contain private input or credentials.
             $output->activity->failed();
             $error = 'The response could not be completed. Please try again.';
         }
-        $this->workspace->project($conversation, $turnId, $output, null === $error ? ExecutionStatus::Completed : ExecutionStatus::Failed, $error);
+        try {
+            $this->workspace->project($conversation, $turnId, $attemptId, $output, null === $error ? ExecutionStatus::Completed : ExecutionStatus::Failed, $error);
+        } catch (ConflictException) {
+            return;
+        }
         $this->updates->publish($conversation);
     }
 }

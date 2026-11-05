@@ -32,6 +32,9 @@ class ChatConversation
     #[ORM\Column(length: 36, nullable: true)]
     public ?string $generationId = null;
 
+    #[ORM\Column(length: 36, nullable: true)]
+    public ?string $attemptId = null;
+
     #[ORM\Column(length: 20, enumType: ExecutionStatus::class, options: ['default' => ExecutionStatus::Completed->value])]
     public ExecutionStatus $generationStatus = ExecutionStatus::Completed;
 

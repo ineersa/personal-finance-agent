@@ -9,6 +9,7 @@ use App\Entity\User;
 use App\Message\GenerateChat;
 use Doctrine\ORM\EntityManagerInterface;
 use Psr\Log\LoggerInterface;
+use Symfony\AI\Agent\Exception\ConflictException;
 use Symfony\AI\Agent\Execution\ExecutionStatus;
 use Symfony\AI\Platform\Message\Message;
 use Symfony\AI\Platform\Message\MessageBag;
@@ -107,6 +108,7 @@ final readonly class Workspace
             $conversation->history = $this->normalizer->normalize($messages->with(Message::ofUser($question)));
             $conversation->turns[] = ['question' => $question, 'reasoning' => '', 'commentary' => '', 'answer' => ''];
             $conversation->generationId = Uuid::v7()->toRfc4122();
+            $conversation->attemptId = null;
             $conversation->markGeneration(ExecutionStatus::Pending);
             $conversation->accountIdentity = $identity;
             $this->em->flush();
@@ -135,12 +137,14 @@ final readonly class Workspace
                 return null;
             }
             $this->em->refresh($conversation);
-            if (null === $message->turnId || $message->turnId !== $conversation->generationId || ExecutionStatus::Pending !== $conversation->generationStatus) {
+            if (!isset($message->turnId) || $message->turnId !== $conversation->generationId || !$conversation->isActive()) {
                 return null;
             }
+            // Each broker delivery owns a fresh attempt. Expiry can redeliver while an old worker lives.
+            $conversation->attemptId = Uuid::v7()->toRfc4122();
             $owner = $conversation->getUser();
             $this->em->refresh($owner);
-            if (null === $message->accountIdentity || $message->accountIdentity !== $owner->getChatGptIdentity() || null === $owner->getChatGptRegistrationId()) {
+            if (!isset($message->accountIdentity) || $message->accountIdentity !== $owner->getChatGptIdentity() || null === $owner->getChatGptRegistrationId()) {
                 $conversation->markGeneration(ExecutionStatus::Cancelled, 'ChatGPT was disconnected before this message started. Reconnect to continue this chat.');
                 $this->em->flush();
 
@@ -153,13 +157,13 @@ final readonly class Workspace
         });
     }
 
-    public function project(ChatConversation $conversation, string $turnId, NativeAssistantOutput $output, ExecutionStatus $status = ExecutionStatus::Running, ?string $error = null): void
+    public function project(ChatConversation $conversation, string $turnId, string $attemptId, NativeAssistantOutput $output, ExecutionStatus $status = ExecutionStatus::Running, ?string $error = null): void
     {
-        $this->em->getConnection()->transactional(function () use ($conversation, $turnId, $output, $status, $error): void {
+        $this->em->getConnection()->transactional(function () use ($conversation, $turnId, $attemptId, $output, $status, $error): void {
             // Native saves and other tabs may have changed history/Save since the last callback.
             $this->em->refresh($conversation);
-            if ($turnId !== $conversation->generationId || ExecutionStatus::Running !== $conversation->generationStatus) {
-                throw new \LogicException('This generation is no longer active.');
+            if ($turnId !== $conversation->generationId || $attemptId !== $conversation->attemptId || ExecutionStatus::Running !== $conversation->generationStatus) {
+                throw new ConflictException('This attempt is no longer active.');
             }
             $index = \count($conversation->turns) - 1;
             $conversation->turns[$index] = ['question' => $conversation->turns[$index]['question'], ...$output->transcript(), 'activity' => $output->activity->entries()];
