@@ -7,10 +7,10 @@ export default class extends Controller {
     version = 0;
 
     connect() {
-        this.target = this.element.querySelector(this.targetSelectorValue).id;
+        this.streamTargets = new Set([...this.element.querySelectorAll(this.targetSelectorValue)].map(target => target.id));
         this.beforeStream = event => {
             const stream = event.detail.newStream;
-            if (stream.getAttribute('target') !== this.target) return;
+            if (!this.streamTargets.has(stream.getAttribute('target'))) return;
             if (stream.hasAttribute('data-import-snapshot')) {
                 // Turbo renders asynchronously; recheck at render time, not just after fetch.
                 const render = event.detail.render;

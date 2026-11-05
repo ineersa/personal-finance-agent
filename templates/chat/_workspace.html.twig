@@ -1,5 +1,5 @@
 {% set execution = enum('Symfony\\AI\\Agent\\Execution\\ExecutionStatus') %}
-<section id="{{ constant('App\\Chat\\Workspace::DOM_ID') }}" class="chat-workspace" aria-label="Conversation" data-chat-execution="{{ chat.execution }}">
+<section id="{{ chat.dom_id }}" class="chat-workspace" aria-label="Conversation" data-chat-execution="{{ chat.execution }}">
     {% if chat.turns is empty %}
         <div class="chat-welcome">
             <p class="eyebrow">Your conversation</p>
@@ -9,6 +9,8 @@
     {% endif %}
     <div class="chat-turns">
         {% for turn in chat.turns %}
+            {% set turnExecution = loop.last ? chat.execution : turn.execution|default(null) %}
+            {% set turnError = loop.last ? chat.error : turn.error|default(null) %}
             <article class="chat-turn" id="chat-turn-{{ loop.index }}">
                 <div class="chat-question"><span class="visually-hidden">You</span><p>{{ turn.question }}</p></div>
                 <div class="chat-reply">
@@ -40,7 +42,7 @@
                         {% endif %}
                         {% if turn.commentary %}<div class="chat-commentary chat-markdown">{{ turn.commentary|markdown_to_html|sanitize_html('app.chat') }}</div>{% endif %}
                     {% endif %}
-                    {% if turn.answer %}<div class="chat-answer chat-markdown" {% if not chat.execution or chat.execution == execution.Completed.value %}data-chat-saved{% endif %}>{{ turn.answer|markdown_to_html|sanitize_html('app.chat') }}</div>{% endif %}
+                    {% if turn.answer %}<div class="chat-answer chat-markdown" {% if not turnExecution or turnExecution == execution.Completed.value %}data-chat-saved{% endif %}>{{ turn.answer|markdown_to_html|sanitize_html('app.chat') }}</div>{% endif %}
                     {% for chart in turn.charts|default([]) %}
                         {% if chart.file %}
                             {% if chart.file ends with '.html' %}
@@ -58,10 +60,8 @@
                             <p class="chat-chart-error" role="status">{{ chart.error }}</p>
                         {% endif %}
                     {% endfor %}
-                    {% if loop.last %}
-                        {% if chat.execution %}<p class="chat-progress" role="status">{{ chat.execution == execution.Running.value ? 'Responding…' : (chat.execution == execution.Completed.value ? 'Reply complete' : chat.execution|replace({'_': ' '})|capitalize) }}</p>{% endif %}
-                        {% if chat.error %}<p class="chat-error" role="alert">{{ chat.error }}</p>{% endif %}
-                    {% endif %}
+                    {% if turnExecution %}<p class="chat-progress" role="status">{{ turnExecution == execution.Pending.value ? 'Queued…' : (turnExecution == execution.Running.value ? 'Responding…' : (turnExecution == execution.Completed.value ? 'Reply complete' : turnExecution|replace({'_': ' '})|capitalize)) }}</p>{% endif %}
+                    {% if turnError %}<p class="chat-error" role="alert">{{ turnError }}</p>{% endif %}
                 </div>
             </article>
         {% endfor %}

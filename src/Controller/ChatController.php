@@ -11,6 +11,7 @@ use App\Entity\User;
 use App\Security\FinanceRecordVoter;
 use EasyCorp\Bundle\EasyAdminBundle\Attribute\AdminRoute;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Security\Http\Attribute\CurrentUser;
 use Symfony\Component\Security\Http\Attribute\IsGranted;
@@ -19,11 +20,18 @@ use Symfony\Component\Security\Http\Attribute\IsGranted;
 final class ChatController extends AbstractController
 {
     #[AdminRoute('/chat', name: 'chat', options: ['methods' => ['GET']])]
-    public function __invoke(Connection $connection, Workspace $workspace, #[CurrentUser] User $user): Response
+    public function __invoke(Request $request, Connection $connection, Workspace $workspace, #[CurrentUser] User $user): Response
     {
+        $id = $request->query->getString('conversation');
+        $conversation = $workspace->current($user, $id);
+        if ('' === $id && null !== $conversation) {
+            return $this->redirectToRoute(Workspace::CHAT_ROUTE, ['conversation' => $conversation->id]);
+        }
+
         return $this->render('home/index.html.twig', [
             'chatgpt_status' => $connection->status($user),
-            'chat' => ChatUpdates::view($workspace->current($user)),
+            'chat' => ChatUpdates::view($conversation),
+            'chat_history' => $workspace->history($user),
         ]);
     }
 }

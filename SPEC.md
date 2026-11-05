@@ -85,7 +85,9 @@ Keep credentials in the package-managed server-side file store and short-lived O
 
 Store conversations and messages in the existing shared application SQLite database, available to the web application and workers. Conversations are temporary by default, with a **Save chat** button. Keep five temporary chats per user, plus saved chats outside that five-chat count.
 
-When creating a sixth temporary chat, remove the owner's oldest inactive temporary chat. Never prune saved chats or chats with queued/running work. If no eligible victim exists, do not delete protected work or silently exceed five; safe admission details remain open. Coordinate save, creation, work admission, and pruning atomically. All retained conversations are reloadable by their owner.
+When creating a sixth temporary chat, remove the owner's oldest-created inactive temporary chat. Never prune saved chats or chats with queued/running work. If no eligible victim exists, refuse New chat with clear busy feedback rather than deleting protected work or exceeding five. Coordinate save, creation, work admission, and pruning atomically. All retained conversations are reloadable by their owner through an explicit history selector, with the selection carried by URL/forms rather than global per-user state.
+
+Disable/refuse Send while that same chat is queued/responding; other chats remain usable. Persist stable queued-turn identity and native generation status with short atomic writes, without a per-user quota, scheduler, outbox or recovery subsystem. Reload reads durable state independently of Mercure. There is one ChatGPT account per Finance user: retained chats remain owned/readable while disconnected and continuable after reconnect with current credentials. Reject stale queued credential epochs rather than introducing separate old-account/read-only history partitions. See [ADR 0027](docs/adr/0027-owned-chat-history-controls.md).
 
 Saved protects against temporary-chat pruning, not all storage limits or separately authorized demo/account lifecycle operations. The five-chat count does not promise unlimited model context or external chart availability. AI admission quotas are deferred by ADR 0021. [ADR 0015](docs/adr/0015-sqlite-conversation-history.md) records the persistence and retention boundaries.
 
@@ -173,7 +175,7 @@ Limit uploaded files to 10 MiB each. Upload frequency, daily bytes, retained-sto
 - Exact model IDs, supported reasoning options, enabled/default providers and models per installation, credentials, and network requirements for the selected integrations.
 - Provider configuration schema, exact integration packages, and compatible APIs.
 - Simple context-handoff trigger, token estimates, recent complete-message window, and pinned Symfony AI hooks. The approach is selected for late implementation; advanced compaction and memory engineering are not selected.
-- Exact conversation-storage adapters/APIs and atomic retention/admission mechanics, including safe behavior when no inactive temporary conversation can be pruned. Broader session-management features are not selected.
+- Abandoned-worker recovery and live validation of conversation storage/retention remain separate from the short-write history/admission design in ADR 0027. Broader session-management features are not selected.
 - SQLite-safe decimal-string mapping and precision-preserving SQL strategy, rounding/scale, missing ECB dates/weekends, and exact history window/cache/import/backfill mechanics.
 - How answers reference the transactions used to produce them.
 - Whether the assistant can propose or apply edits, or only analyze reviewed data.

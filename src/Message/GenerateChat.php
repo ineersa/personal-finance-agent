@@ -8,7 +8,7 @@ final readonly class GenerateChat
 {
     public const string TRANSPORT = 'chat';
 
-    public function __construct(public string $conversationId)
+    public function __construct(public string $conversationId, public ?string $turnId = null, public ?string $accountIdentity = null)
     {
     }
 }

@@ -3,6 +3,7 @@
 - Status: Accepted
 - Date: 2026-11-03
 - Amends: ADRs 0012, 0013 and 0015 for the first chat slice only.
+- Amended by: [ADR 0027](0027-owned-chat-history-controls.md) for retained owner history, explicit selection, same-chat busy refusal and short durable generation transitions. The original first-slice limitations below remain historical context.
 
 ## Context
 

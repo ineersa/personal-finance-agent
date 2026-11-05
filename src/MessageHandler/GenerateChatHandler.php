@@ -6,10 +6,12 @@ namespace App\MessageHandler;
 
 use App\Chat\AgentFactory;
 use App\Chat\ChatUpdates;
+use App\Chat\ConversationMessageStore;
 use App\Chat\NativeAssistantOutput;
-use App\Entity\ChatConversation;
+use App\Chat\Workspace;
 use App\Message\GenerateChat;
 use Doctrine\ORM\EntityManagerInterface;
+use Symfony\AI\Agent\Execution\ExecutionStatus;
 use Symfony\AI\Agent\Execution\Update\Progress;
 use Symfony\AI\Agent\Toolbox\Event\ToolCallFailed;
 use Symfony\AI\Agent\Toolbox\Event\ToolCallSucceeded;
@@ -20,40 +22,46 @@ use Symfony\AI\Platform\Result\ToolCall;
 use Symfony\AI\Platform\Serializer\MessageBagNormalizer;
 use Symfony\Component\EventDispatcher\EventDispatcher;
 use Symfony\Component\Messenger\Attribute\AsMessageHandler;
+use Symfony\Component\Uid\UuidV7;
 
 #[AsMessageHandler(fromTransport: GenerateChat::TRANSPORT)]
 final readonly class GenerateChatHandler
 {
     private const float UPDATE_INTERVAL = 0.05;
 
-    public function __construct(private EntityManagerInterface $em, private AgentFactory $agents, private MessageBagNormalizer $normalizer, private ChatUpdates $updates)
+    public function __construct(private EntityManagerInterface $em, private AgentFactory $agents, private MessageBagNormalizer $normalizer, private ChatUpdates $updates, private Workspace $workspace)
     {
     }
 
     public function __invoke(GenerateChat $message): void
     {
-        $conversation = $this->em->find(ChatConversation::class, $message->conversationId);
+        $conversation = $this->workspace->claim($message);
         if (null === $conversation) {
             return;
         }
-        $owner = $conversation->getUser();
-        if ($owner->getChatGptIdentity() !== $conversation->accountIdentity || null === $registration = $owner->getChatGptRegistrationId()) {
+        if (ExecutionStatus::Running !== $conversation->generationStatus) {
+            $this->updates->publish($conversation);
+
             return;
         }
+        $owner = $conversation->getUser();
+        $registration = $owner->getChatGptRegistrationId();
+        $turnId = $conversation->generationId;
+        $ownerId = $owner->getId();
+        \assert(null !== $registration && null !== $turnId && null !== $ownerId);
         $execution = null;
         $output = new NativeAssistantOutput();
-        $turnIndex = \count($conversation->turns) - 1;
         $lastUpdate = 0.0;
-        $project = function (bool $force = false) use (&$execution, $conversation, $output, $turnIndex, &$lastUpdate): void {
-            $conversation->turns[$turnIndex] = ['question' => $conversation->turns[$turnIndex]['question'], ...$output->transcript(), 'activity' => $output->activity->entries()];
+        $project = function (bool $force = false) use (&$execution, $conversation, $turnId, $output, &$lastUpdate): void {
             if ($force || microtime(true) - $lastUpdate >= self::UPDATE_INTERVAL) {
+                // Persist chart authorization and the readable projection before browser delivery.
+                $this->workspace->project($conversation, $turnId, $output);
                 $this->updates->publish($conversation, $execution);
                 $lastUpdate = microtime(true);
             }
         };
         $error = null;
         try {
-            // Scoped native tool events project results privately; no global listener or payload logging.
             $events = new EventDispatcher();
             $events->addListener(ToolCallFailed::class, static function (ToolCallFailed $event) use ($output, $project): void {
                 $error = $event->getException();
@@ -61,16 +69,14 @@ final readonly class GenerateChatHandler
                 $output->activity->toolFailed($event->getDefinition()->getName(), $detail);
                 $project(true);
             });
-            $events->addListener(ToolCallSucceeded::class, function (ToolCallSucceeded $event) use ($output, $project, $conversation, $turnIndex): void {
+            $events->addListener(ToolCallSucceeded::class, static function (ToolCallSucceeded $event) use ($output, $project): void {
                 $output->activity->completed($event->getResult());
-                // Authorize a completed local document before Mercure tells the browser to load it.
-                $conversation->turns[$turnIndex] = ['question' => $conversation->turns[$turnIndex]['question'], ...$output->transcript(), 'activity' => $output->activity->entries()];
-                $this->em->flush();
                 $project(true);
             });
-            $execution = $this->agents->create($owner, $registration, $conversation->model, $output, $events, $conversation->id)->call(
-                // Refresh application instructions, not the user's history or initial data context.
-                $this->normalizer->denormalize($conversation->history, MessageBag::class)->withoutSystemMessage(),
+            $store = new ConversationMessageStore($this->em->getConnection(), $this->normalizer, $ownerId, $conversation->id, $turnId);
+            $execution = $this->agents->create($owner, $registration, $conversation->model, $output, $events, $conversation->id, $store)->call(
+                // Agent loads canonical history and saves input, complete tool rounds and final native output.
+                MessageBag::forId(UuidV7::fromString($conversation->id)),
                 ['stream' => true, 'prompt_cache_key' => $conversation->id, 'reasoning' => ['effort' => $conversation->reasoningEffort, 'summary' => 'auto']],
             );
             $execution->onProgress(static function (Progress $update) use ($output, $project): void {
@@ -86,16 +92,13 @@ final readonly class GenerateChatHandler
                 }
                 $project($toolStarted);
             });
-            // Agent drives its own model/tool loop; callbacks only project its progress.
-            $conversation->history = $this->normalizer->normalize($execution->getMessages());
-            $project();
+            $execution->getMessages();
         } catch (\Throwable) {
             // Provider exceptions can contain private input or credentials.
             $output->activity->failed();
-            $conversation->turns[$turnIndex] = ['question' => $conversation->turns[$turnIndex]['question'], ...$output->transcript(), 'activity' => $output->activity->entries()];
             $error = 'The response could not be completed. Please try again.';
         }
-        $this->em->flush();
-        $this->updates->publish($conversation, $execution, $error);
+        $this->workspace->project($conversation, $turnId, $output, null === $error ? ExecutionStatus::Completed : ExecutionStatus::Failed, $error);
+        $this->updates->publish($conversation);
     }
 }

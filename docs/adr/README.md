@@ -32,6 +32,7 @@ ADRs record significant technical decisions, their context, and their consequenc
 | [0024](0024-basic-chatgpt-worker-chat.md) | Accepted | Start multi-turn ChatGPT chat through Agent, Messenger and private Turbo streams, with native signed history and an editable prompt. |
 | [0025](0025-in-process-tenant-sql.md) | Accepted | Run read-only tenant SQL in-process with result limits and approximate SQLite monetary results. |
 | [0026](0026-local-unovis-charts.md) | Accepted | Generate local interactive Unovis HTML, retain privately and serve through restricted sandboxed iframes. |
+| [0027](0027-owned-chat-history-controls.md) | Accepted | Retain owned native chat history with New/Save/history controls, five temporary chats plus saved, and short durable generation writes. |
 
 ## Recording decisions
 

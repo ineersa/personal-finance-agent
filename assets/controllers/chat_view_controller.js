@@ -21,7 +21,7 @@ export default class extends Controller {
                 details.open = this.summaries.has(details.id);
             });
             if (this.following) this.jumpToLatest();
-            else this.jumpTarget.hidden = false;
+            else if (this.hasJumpTarget) this.jumpTarget.hidden = false;
         });
         this.observer.observe(this.scrollTarget, { childList: true, subtree: true });
         this.jumpToLatest();
@@ -41,19 +41,20 @@ export default class extends Controller {
     handleKey(event) {
         if (event.key !== 'Enter' || event.shiftKey || event.isComposing || event.keyCode === 229) return;
         event.preventDefault();
-        if (this.inputTarget.value.trim()) this.inputTarget.form.requestSubmit();
+        const send = this.inputTarget.form.querySelector('[data-chat-send]');
+        if (this.inputTarget.value.trim() && send && !send.disabled) this.inputTarget.form.requestSubmit(send);
     }
 
     trackScroll() {
         const scroll = this.scrollTarget;
         this.following = scroll.scrollHeight - scroll.scrollTop - scroll.clientHeight < NEAR_BOTTOM;
-        this.jumpTarget.hidden = this.following;
+        if (this.hasJumpTarget) this.jumpTarget.hidden = this.following;
     }
 
     jumpToLatest() {
         this.scrollTarget.scrollTop = this.scrollTarget.scrollHeight;
         this.following = true;
-        this.jumpTarget.hidden = true;
+        if (this.hasJumpTarget) this.jumpTarget.hidden = true;
     }
 
     rememberSummary(event) {

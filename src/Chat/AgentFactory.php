@@ -14,6 +14,7 @@ use Symfony\AI\Agent\Agent;
 use Symfony\AI\Agent\Bridge\Mcp\ClientToolset;
 use Symfony\AI\Agent\Bridge\Mcp\McpToolbox;
 use Symfony\AI\Agent\InputProcessor\SystemPromptInputProcessor;
+use Symfony\AI\Agent\MessageStore\MessageStoreInterface;
 use Symfony\AI\Agent\Toolbox\ChainToolbox;
 use Symfony\AI\Agent\Toolbox\FaultTolerantToolbox;
 use Symfony\AI\Agent\Toolbox\Toolbox;
@@ -45,7 +46,7 @@ final readonly class AgentFactory
     ) {
     }
 
-    public function create(User $owner, string $identity, string $model, NativeAssistantOutput $output, EventDispatcherInterface $events, string $conversationId): Agent
+    public function create(User $owner, string $identity, string $model, NativeAssistantOutput $output, EventDispatcherInterface $events, string $conversationId, MessageStoreInterface $store): Agent
     {
         if ('' === $model) {
             throw new \LogicException('Configure a chat model.');
@@ -80,6 +81,7 @@ final readonly class AgentFactory
                 new Toolbox([$this->tool->forOwner($owner)], eventDispatcher: $events),
                 new McpToolbox(new ChartToolset($chartTools, $this->files, $conversationId, $output), eventDispatcher: $events),
             ])),
+            messageStore: $store,
         );
     }
 }
