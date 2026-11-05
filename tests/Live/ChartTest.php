@@ -31,7 +31,7 @@ final class ChartTest extends TestCase
                 $page->goto($url.'/home/chat');
                 self::assertTrue($page->getByRole('button', ['name' => 'Send message', 'exact' => true])->isVisible(), 'Connect ChatGPT in this isolated stack before the real chart test; existing replay has no chart interaction.');
                 $turnIndex = $page->locator('.chat-turn')->count();
-                $question = 'Use finance_query to calculate SUM(amount) for my approved CAD credit dated 2024-11-01 with amount 2860.00. Generate exactly one interactive bar chart using unovis_generate_bar_chart with one data item: category Synthetic payroll, value equal to that SQL total. Use x category, y value, width 600, height 400 and outputType html. Do not supply outputPath. Give a brief text explanation too.';
+                $question = 'Use finance_query to calculate SUM(amount) for my approved CAD credit dated 2024-11-01 with amount 2860.00. Generate exactly one interactive bar chart using unovis_generate_bar_chart with one data item: category Synthetic payroll, value equal to that SQL total. Use title "Synthetic payroll: CAD", x category, y value, width 600, height 400 and outputType html. Do not supply outputPath. Give a brief text explanation too.';
                 $page->getByLabel('Your message', ['exact' => true])->fill($question);
                 $page->getByRole('button', ['name' => 'Send message', 'exact' => true])->click();
                 $turn = $page->locator('.chat-turn')->nth($turnIndex);

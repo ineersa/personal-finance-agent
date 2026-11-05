@@ -15,6 +15,7 @@ use Symfony\AI\Agent\Bridge\Mcp\ClientToolset;
 use Symfony\AI\Agent\Bridge\Mcp\McpToolbox;
 use Symfony\AI\Agent\InputProcessor\SystemPromptInputProcessor;
 use Symfony\AI\Agent\Toolbox\ChainToolbox;
+use Symfony\AI\Agent\Toolbox\FaultTolerantToolbox;
 use Symfony\AI\Agent\Toolbox\Toolbox;
 use Symfony\AI\Platform\Bridge\OpenAIChatGPT\Factory;
 use Symfony\AI\Platform\Bridge\OpenResponses\ModelCatalog;
@@ -54,13 +55,6 @@ final readonly class AgentFactory
 
         $chartGuidelines = $this->templates->render(Template::string(ChartToolset::GUIDELINES), [
             'finance_name' => TenantSqlTool::QUERY_NAME,
-            'chart_output_type' => ChartToolset::OUTPUT_TYPE,
-            'chart_max_calls' => ChartToolset::MAX_CHARTS,
-            'chart_max_bytes' => ChartToolset::MAX_ARGUMENT_BYTES,
-            'chart_max_items' => ChartToolset::MAX_ITEMS,
-            'chart_max_depth' => ChartToolset::MAX_DEPTH,
-            'chart_max_text' => ChartToolset::MAX_TEXT,
-            'chart_max_side' => ChartFiles::MAX_SIDE,
         ]);
         $prompt = $this->templates->render(Template::string(File::fromFile($this->projectDir.self::PROMPT_FILE)->asBinary()), [
             'finance_name' => TenantSqlTool::QUERY_NAME,
@@ -82,10 +76,10 @@ final readonly class AgentFactory
             inputProcessors: [new SystemPromptInputProcessor($prompt)],
             outputProcessors: [$output],
             // Keep native NullLogger: debug tool logging would expose SQL arguments.
-            toolbox: new ChainToolbox([
+            toolbox: new FaultTolerantToolbox(new ChainToolbox([
                 new Toolbox([$this->tool->forOwner($owner)], eventDispatcher: $events),
                 new McpToolbox(new ChartToolset($chartTools, $this->files, $conversationId, $output), eventDispatcher: $events),
-            ]),
+            ])),
         );
     }
 }

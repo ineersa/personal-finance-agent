@@ -14,7 +14,6 @@ final readonly class ChartFiles
     public const string ROUTE = 'app_chat_chart';
     public const string OUTPUT_DIRECTORY = '/chart-output';
     public const int MAX_BYTES = 2097152;
-    public const int MAX_SIDE = 1600;
     public const string HTML_CSP = "sandbox allow-scripts; default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; img-src data:; connect-src 'none'; object-src 'none'; frame-src 'none'; base-uri 'none'; form-action 'none'; frame-ancestors 'self'";
 
     public function __construct(#[Target('charts.storage')] private FilesystemOperator $storage)

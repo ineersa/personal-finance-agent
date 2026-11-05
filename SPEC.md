@@ -63,7 +63,7 @@ Use the dark theme throughout the application and management screens. Do not off
 
 Use a single chat containing text, tables, and inline interactive charts. There is no separate artifact workspace, gallery, editor, or generic artifact-management subsystem.
 
-Use a Docker-hosted Unovis MCP service to generate interactive HTML locally. Retain private documents with their conversation, served only to its owner inside script-enabled sandboxed iframes without same-origin privileges or external network access. Reload uses the saved document; deleting a conversation removes its copies. Existing saved PNG/JPG charts remain readable. Show generation failures without automatic retries. [ADR 0026](docs/adr/0026-local-unovis-charts.md) supersedes the hosted AntV choice in ADR 0014.
+Use a Docker-hosted Unovis MCP service to generate interactive HTML locally. Retain private documents with their conversation, served only to its owner inside script-enabled sandboxed iframes without same-origin privileges or external network access. Reload uses the saved document; deleting a conversation removes its copies. Existing saved PNG/JPG charts remain readable. Return tool errors to the model for correction and retry through native Symfony AI fault tolerance. Chart schemas, labels, titles, values and dimensions are validated by the tool, not application argument rules. The application controls only private output destinations/presentation and authenticated sandboxed delivery. [ADR 0026](docs/adr/0026-local-unovis-charts.md) supersedes the hosted AntV choice in ADR 0014.
 
 The chat is the primary entry point for financial questions. The review workflow lets users correct the data on which those answers depend.
 

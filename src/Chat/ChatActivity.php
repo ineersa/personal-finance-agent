@@ -109,6 +109,18 @@ final class ChatActivity
         $this->entries[$index]['status'] = \is_array($value) && isset($value['error']) ? self::FAILED : self::COMPLETED;
     }
 
+    public function toolFailed(string $name, mixed $message): void
+    {
+        foreach ($this->entries as &$entry) {
+            if (self::RUNNING === $entry['status'] && $name === $entry['name']) {
+                $entry['status'] = self::FAILED;
+                $entry['result'] = $this->formatToolPayload($message);
+
+                return;
+            }
+        }
+    }
+
     public function failed(): void
     {
         foreach ($this->entries as &$entry) {
