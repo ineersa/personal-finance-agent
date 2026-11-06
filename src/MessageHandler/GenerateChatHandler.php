@@ -72,10 +72,15 @@ final readonly class GenerateChatHandler
             $execution = $this->agents->create($owner, $registration, $this->model, $events, $conversation, $question->getId()->toRfc4122())->call($request,
                 ['stream' => true, 'prompt_cache_key' => $conversation->id, 'reasoning' => ['effort' => $this->effort, 'summary' => 'auto']],
             );
-            $this->updates->publish($conversation, 'chat/start.stream.html.twig', ['user' => $question]);
+            $started = false;
             $nextAnchor = $anchor;
-            $execution->onProgress(function (Progress $update) use ($conversation, $question, $listener, $publishContent, &$anchor, &$nextAnchor): void {
+            $execution->onProgress(function (Progress $update) use ($conversation, $question, $listener, $publishContent, &$anchor, &$nextAnchor, &$started): void {
                 if (Progress::STAGE_MODEL_REQUEST === $update->getStage()) {
+                    if (!$started) {
+                        // The native input checkpoint now exists for acknowledgement snapshots.
+                        $this->updates->publish($conversation, 'chat/start.stream.html.twig', ['user' => $question]);
+                        $started = true;
+                    }
                     $listener->reset();
                     $anchor = $nextAnchor;
                     $this->updates->publish($conversation, 'chat/round.stream.html.twig', ['user' => $question, 'anchor' => $anchor]);

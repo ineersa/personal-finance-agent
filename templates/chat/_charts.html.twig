@@ -4,7 +4,7 @@
             {% set chartId = 'chat-chart-' ~ conversation.id ~ '-' ~ chart.file|replace({'.': '-'}) %}
             <figure class="chat-chart" id="{{ chartId }}">
                 {% if chart.file ends with '.html' %}
-                    <iframe id="{{ chartId }}-frame" data-turbo-permanent src="{{ path(constant('App\\Chat\\ChartFiles::ROUTE'), {conversation: conversation.id, file: chart.file}) }}" title="Interactive financial chart" sandbox="allow-scripts" referrerpolicy="no-referrer" style="width: 100%; height: 520px; border: 0;"></iframe>
+                    <iframe id="{{ chartId }}-frame" src="{{ path(constant('App\\Chat\\ChartFiles::ROUTE'), {conversation: conversation.id, file: chart.file}) }}" title="Interactive financial chart" sandbox="allow-scripts" referrerpolicy="no-referrer" style="width: 100%; height: 520px; border: 0;"></iframe>
                     <figcaption>Interactive chart saved privately with this conversation.</figcaption>
                 {% else %}
                     <div data-controller="chart-image">
