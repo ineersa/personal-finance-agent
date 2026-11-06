@@ -35,7 +35,7 @@ final readonly class Workspace
     public const string EMPTY_ID = 'empty';
     public const string COMMENTARY_PHASE = 'commentary';
 
-    public function __construct(private ChatConversationRepository $conversations, private MessageStoreInterface $store, private MessageBusInterface $bus, private InitialContext $context, private ChartFiles $files, private LoggerInterface $logger)
+    public function __construct(private ChatConversationRepository $conversations, private MessageStoreInterface $store, private MessageBusInterface $bus, private ChartFiles $files, private LoggerInterface $logger)
     {
     }
 
@@ -76,10 +76,6 @@ final readonly class Workspace
         if ('' === $id) {
             $conversation->label = $question;
             $this->conversations->save($conversation);
-        }
-        if (0 === $this->store->load($input->getId())->count()) {
-            // Initial reference context stays native user content, not a second application transcript.
-            $input = $input->with(Message::ofUser($this->context->forOwner($user)));
         }
         // Native message IDs survive Messenger redelivery; Agent owns continuation and conflicts.
         $input = $input->with(Message::ofUser($question));
