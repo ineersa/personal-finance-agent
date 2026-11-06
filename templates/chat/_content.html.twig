@@ -1,0 +1,15 @@
+{% for part in content %}
+    {% if part is chat_text %}
+        {% if part.phase == constant('App\\Chat\\Workspace::COMMENTARY_PHASE') %}
+            <div class="chat-commentary chat-markdown">{{ part.text|markdown_to_html|sanitize_html('app.chat') }}</div>
+        {% else %}
+            <div class="chat-answer chat-markdown" {% if completed|default(false) %}data-chat-saved{% endif %}>{{ part.text|markdown_to_html|sanitize_html('app.chat') }}</div>
+        {% endif %}
+    {% elseif part is chat_thinking %}
+        <div class="chat-reasoning chat-markdown" aria-label="Reasoning summary">{{ part.content|markdown_to_html|sanitize_html('app.chat') }}</div>
+    {% elseif part is chat_commentary %}
+        <div class="chat-commentary chat-markdown">{{ part.content|markdown_to_html|sanitize_html('app.chat') }}</div>
+    {% elseif part is chat_tool_call %}
+        {% include 'chat/_tool.html.twig' with {tool: part, result: results[part.id]|default(null)} %}
+    {% endif %}
+{% endfor %}

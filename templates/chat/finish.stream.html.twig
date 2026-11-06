@@ -1,0 +1,5 @@
+{% set exchange = chat_exchanges(messages)[user.id.toRfc4122]|default([]) %}
+{% if exchange %}
+    <turbo-stream action="update" method="morph" target="chat-reply-{{ conversation.id }}-{{ user.id }}"><template>{% include 'chat/_reply.html.twig' %}</template></turbo-stream>
+{% endif %}
+<turbo-stream action="update" target="chat-error-{{ conversation.id }}"><template>{% if error %}<p class="chat-error" role="alert">{{ error }}</p>{% endif %}</template></turbo-stream>

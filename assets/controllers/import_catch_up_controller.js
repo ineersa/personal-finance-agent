@@ -10,7 +10,9 @@ export default class extends Controller {
         this.streamTargets = new Set([...this.element.querySelectorAll(this.targetSelectorValue)].map(target => target.id));
         this.beforeStream = event => {
             const stream = event.detail.newStream;
-            const matchesTarget = this.streamTargets.has(stream.getAttribute('target'));
+            // Targeted chat updates live below the snapshot root; they invalidate stale catch-up too.
+            const matchesTarget = this.streamTargets.has(stream.getAttribute('target')) ||
+                stream.targetElements.some(target => [...this.element.querySelectorAll(this.targetSelectorValue)].some(root => root.contains(target)));
             if (!matchesTarget) return;
             if (stream.hasAttribute('data-import-snapshot')) {
                 // Turbo renders asynchronously; recheck at render time, not just after fetch.

@@ -1,0 +1,6 @@
+<article class="chat-turn" id="chat-turn-{{ conversation.id }}-{{ user.id }}">
+    <div class="chat-question"><span class="visually-hidden">You</span><p>{{ user.asText }}</p></div>
+    <div class="chat-reply" id="chat-reply-{{ conversation.id }}-{{ user.id }}">
+        {% include 'chat/_reply.html.twig' %}
+    </div>
+</article>

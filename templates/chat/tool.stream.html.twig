@@ -1,0 +1,6 @@
+{% if result %}
+    <turbo-stream action="replace" method="morph" target="chat-tool-{{ conversation.id }}-{{ user.id }}-{{ tool.id }}"><template>{% include 'chat/_tool.html.twig' %}</template></turbo-stream>
+    <turbo-stream action="replace" method="morph" target="chat-charts-{{ conversation.id }}-{{ user.id }}"><template>{% include 'chat/_charts.html.twig' %}</template></turbo-stream>
+{% else %}
+    <turbo-stream action="append" target="chat-content-{{ conversation.id }}-{{ user.id }}-{{ anchor }}"><template>{% include 'chat/_tool.html.twig' %}</template></turbo-stream>
+{% endif %}
