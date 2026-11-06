@@ -8,6 +8,7 @@ use App\Entity\ChatConversation;
 use App\Entity\User;
 use App\Message\GenerateChat;
 use App\Repository\ChatConversationRepository;
+use Doctrine\ORM\EntityManagerInterface;
 use Psr\Log\LoggerInterface;
 use Symfony\AI\Agent\MessageStore\MessageStoreInterface;
 use Symfony\AI\Platform\Message\Message;
@@ -35,7 +36,7 @@ final readonly class Workspace
     public const string EMPTY_ID = 'empty';
     public const string COMMENTARY_PHASE = 'commentary';
 
-    public function __construct(private ChatConversationRepository $conversations, private MessageStoreInterface $store, private MessageBusInterface $bus, private ChartFiles $files, private LoggerInterface $logger)
+    public function __construct(private ChatConversationRepository $conversations, private EntityManagerInterface $entityManager, private MessageStoreInterface $store, private MessageBusInterface $bus, private ChartFiles $files, private LoggerInterface $logger)
     {
     }
 
@@ -48,7 +49,8 @@ final readonly class Workspace
     {
         $conversation = $this->current($user, $id) ?? throw new NotFoundHttpException();
         $this->store->delete(UuidV7::fromString($id));
-        $this->conversations->remove($conversation);
+        $this->entityManager->remove($conversation);
+        $this->entityManager->flush();
         try {
             $this->files->removeConversation($id);
         } catch (\Throwable) {
@@ -60,7 +62,7 @@ final readonly class Workspace
     {
         $conversation = $this->current($user, $id) ?? throw new NotFoundHttpException();
         $conversation->favourite = $favourite;
-        $this->conversations->save($conversation);
+        $this->entityManager->flush();
 
         return $conversation;
     }
@@ -75,7 +77,8 @@ final readonly class Workspace
         \assert(null !== $conversation);
         if ('' === $id) {
             $conversation->label = $question;
-            $this->conversations->save($conversation);
+            $this->entityManager->persist($conversation);
+            $this->entityManager->flush();
         }
         // Native message IDs survive Messenger redelivery; Agent owns continuation and conflicts.
         $input = $input->with(Message::ofUser($question));

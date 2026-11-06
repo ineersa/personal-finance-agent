@@ -23,9 +23,9 @@
                         <p><a href="{{ path(constant('App\\ChatGpt\\Connection::SETTINGS_ROUTE'), {_fragment: constant('App\\ChatGpt\\Connection::SETTINGS_FRAGMENT')}) }}">Manage connection in Settings</a></p>
                     {% endif %}
                     <p class="preview-note">Authorization opens OpenAI. Credentials stay in private files on this server, not in your browser.</p>
-                    {% if question|default('') %}
+                    {% if form.question.vars.value %}
                         <label for="unsent-question">Your unsent message</label>
-                        <textarea id="unsent-question" readonly>{{ question }}</textarea>
+                        <textarea id="unsent-question" readonly>{{ form.question.vars.value }}</textarea>
                     {% endif %}
                 </section>
             </section>
@@ -36,11 +36,11 @@
         {% if chatgpt_status == statuses.Connected %}
             <div class="chat-compose-area">
                 <button class="chat-jump" type="button" data-chat-view-target="jump" data-action="chat-view#jumpToLatest" hidden>Jump to latest ↓</button>
-                <form action="{{ path(constant('App\\Chat\\Workspace::SUBMIT_ROUTE'), app.request.query.all) }}" method="post" class="chat-composer" data-action="turbo:submit-start->chat-view#submissionStarted turbo:submit-end->chat-view#submissionFinished chat-view:acknowledged->import-catch-up#catchUp" data-turbo="{{ chat.conversation_id ? 'true' : 'false' }}">
-                    <input type="hidden" name="_token" value="{{ csrf_token(constant('App\\Chat\\Workspace::SUBMIT_CSRF')) }}" data-controller="csrf-protection">
-                    <input type="hidden" name="conversation" value="{{ chat.conversation_id }}">
+                {{ form_start(form, {action: path(constant('App\\Chat\\Workspace::SUBMIT_ROUTE'), app.request.query.all), attr: {class: 'chat-composer', 'data-action': 'turbo:submit-start->chat-view#submissionStarted turbo:submit-end->chat-view#submissionFinished chat-view:acknowledged->import-catch-up#catchUp', 'data-turbo': chat.conversation_id ? 'true' : 'false'}}) }}
+                    {{ form_widget(form.conversation) }}
+                    {{ form_widget(form._token, {attr: {'data-controller': 'csrf-protection'}}) }}
                     {% include 'chat/_composer.html.twig' %}
-                </form>
+                {{ form_end(form) }}
                 <p class="chat-disclosure">Messages and queried financial records are sent to ChatGPT. Charts are generated locally by Unovis and saved privately with this conversation. Interactive charts run in a restricted sandbox without external network access.</p>
             </div>
         {% endif %}

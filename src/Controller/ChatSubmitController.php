@@ -11,13 +11,10 @@ use App\Chat\Workspace;
 use App\ChatGpt\Connection;
 use App\ChatGpt\ConnectionStatus;
 use App\Entity\User;
+use App\Form\ChatMessageType;
 use App\Security\FinanceRecordVoter;
 use EasyCorp\Bundle\EasyAdminBundle\Attribute\AdminRoute;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
-use Symfony\Component\Form\Extension\Core\Type\FormType;
-use Symfony\Component\Form\Extension\Core\Type\HiddenType;
-use Symfony\Component\Form\Extension\Core\Type\TextareaType;
-use Symfony\Component\Form\FormFactoryInterface;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpKernel\Attribute\MapQueryString;
@@ -27,20 +24,15 @@ use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\Security\Http\Attribute\CurrentUser;
 use Symfony\Component\Security\Http\Attribute\IsCsrfTokenValid;
 use Symfony\Component\Security\Http\Attribute\IsGranted;
-use Symfony\Component\Validator\Constraints\NotBlank;
-use Symfony\Component\Validator\Constraints\Uuid;
 use Symfony\UX\Turbo\TurboBundle;
 
 #[IsGranted(FinanceRecordVoter::ACCESS)]
 final class ChatSubmitController extends AbstractController
 {
     #[AdminRoute('/chat/message', name: 'chat_submit', options: ['methods' => [Request::METHOD_POST]])]
-    public function __invoke(Request $request, #[CurrentUser] User $user, Workspace $workspace, ChatUpdates $updates, Connection $connection, FormFactoryInterface $forms): Response
+    public function __invoke(Request $request, #[CurrentUser] User $user, Workspace $workspace, ChatUpdates $updates, Connection $connection): Response
     {
-        $form = $forms->createNamed('', FormType::class, null, ['csrf_token_id' => Workspace::SUBMIT_CSRF, 'allow_extra_fields' => true])
-            ->add('question', TextareaType::class, ['constraints' => [new NotBlank(message: 'Write a message first.')]])
-            ->add('conversation', HiddenType::class, ['required' => false, 'constraints' => [new Uuid()]])
-            ->handleRequest($request);
+        $form = $this->createForm(ChatMessageType::class)->handleRequest($request);
         $question = (string) $form->get('question')->getData();
         $id = (string) $form->get('conversation')->getData();
         $conversation = '' === $id ? null : $workspace->current($user, $id);
@@ -81,7 +73,7 @@ final class ChatSubmitController extends AbstractController
         return $this->render('home/index.html.twig', [
             'chatgpt_status' => $status,
             'chat' => $updates->view($conversation),
-            'question' => $question,
+            'form' => $form->createView(),
         ], new Response(status: Response::HTTP_UNPROCESSABLE_ENTITY));
     }
 

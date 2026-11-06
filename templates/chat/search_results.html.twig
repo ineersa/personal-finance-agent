@@ -9,7 +9,7 @@
                     <li>No chats found.</li>
                 {% endfor %}
             </ul>
-            {% if results|length == constant('App\\Chat\\ChatSearch::RESULT_LIMIT') %}<p>Showing the first {{ constant('App\\Chat\\ChatSearch::RESULT_LIMIT') }} matches. Refine your search for more.</p>{% endif %}
+            {% if results|length == limit %}<p>Showing the first {{ limit }} matches. Refine your search for more.</p>{% endif %}
         {% else %}<p>Search your chat titles, questions and answers.</p>{% endif %}
     </section>
 </turbo-frame>

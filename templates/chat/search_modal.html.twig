@@ -2,7 +2,7 @@
     <twig:block name="body">
         <form action="{{ path(constant('App\\Chat\\ChatSearch::ROUTE')) }}" method="get" class="chat-search" role="search" data-turbo="true" data-turbo-frame="{{ constant('App\\Chat\\ChatSearch::FRAME_ID') }}">
             <label for="chat-search-query" class="visually-hidden">Search chats</label>
-            <input id="chat-search-query" data-chat-search-target="input" type="search" name="{{ constant('App\\Chat\\ChatSearch::QUERY_PARAMETER') }}" maxlength="{{ constant('App\\Chat\\ChatSearch::QUERY_LENGTH') }}" placeholder="Search chats…" enterkeyhint="search">
+            <input id="chat-search-query" data-chat-search-target="input" type="search" name="q" maxlength="200" placeholder="Search chats…" enterkeyhint="search">
         </form>
         {{ include('chat/search_results.html.twig', {query: '', results: []}) }}
     </twig:block>

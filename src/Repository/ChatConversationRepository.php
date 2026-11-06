@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace App\Repository;
 
-use App\Chat\ChatSearch;
 use App\Entity\ChatConversation;
 use App\Entity\User;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
@@ -33,18 +32,6 @@ final class ChatConversationRepository extends ServiceEntityRepository
             ->getQuery()->getOneOrNullResult(\Doctrine\ORM\AbstractQuery::HYDRATE_ARRAY);
     }
 
-    public function save(ChatConversation $conversation): void
-    {
-        $this->getEntityManager()->persist($conversation);
-        $this->getEntityManager()->flush();
-    }
-
-    public function remove(ChatConversation $conversation): void
-    {
-        $this->getEntityManager()->remove($conversation);
-        $this->getEntityManager()->flush();
-    }
-
     public function attachChart(ChatConversation $conversation, string $message, string $file): void
     {
         $this->getEntityManager()->wrapInTransaction(function () use ($conversation, $message, $file): void {
@@ -69,7 +56,7 @@ final class ChatConversationRepository extends ServiceEntityRepository
     }
 
     /** @return list<array{id: string, label: string, snippet: string}> */
-    public function search(User $owner, string $query): array
+    public function search(User $owner, string $query, int $limit): array
     {
         if ('' === trim($query)) {
             return [];
@@ -81,7 +68,7 @@ final class ChatConversationRepository extends ServiceEntityRepository
                 FROM chat_search JOIN chat_metadata c ON c.id = chat_search.conversation_id
                 WHERE chat_search MATCH ? AND c.user_id = ?
                 ORDER BY rank, c.id DESC LIMIT ?
-                SQL, [$query, $owner->getId(), ChatSearch::RESULT_LIMIT], [ParameterType::STRING, ParameterType::INTEGER, ParameterType::INTEGER]);
+                SQL, [$query, $owner->getId(), $limit], [ParameterType::STRING, ParameterType::INTEGER, ParameterType::INTEGER]);
         } catch (DriverException $exception) {
             // Native FTS query errors only; missing tables/storage failures remain real application failures.
             $message = $exception->getPrevious()?->getMessage() ?? '';

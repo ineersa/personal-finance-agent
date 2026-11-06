@@ -10,11 +10,11 @@ use Doctrine\Migrations\AbstractMigration;
 /**
  * Auto-generated Migration: Please modify to your needs!
  */
-final class Version20261106002327 extends AbstractMigration
+final class Version20261106034515 extends AbstractMigration
 {
     public function getDescription(): string
     {
-        return 'Discard application chat history and use the native Symfony AI store with linked metadata';
+        return 'Replace application chat storage with native Symfony AI messages, linked metadata and FTS';
     }
 
     public function up(Schema $schema): void
@@ -24,10 +24,7 @@ final class Version20261106002327 extends AbstractMigration
         $this->addSql('CREATE TABLE chat_metadata (id VARCHAR(36) NOT NULL, label CLOB NOT NULL, favourite BOOLEAN NOT NULL, charts CLOB NOT NULL, user_id INTEGER NOT NULL, PRIMARY KEY (id), CONSTRAINT FK_7B36E324A76ED395 FOREIGN KEY (user_id) REFERENCES user (id) ON DELETE RESTRICT NOT DEFERRABLE INITIALLY IMMEDIATE)');
         $this->addSql('CREATE INDEX IDX_7B36E324A76ED395 ON chat_metadata (user_id)');
         $this->addSql('DROP TABLE chat_conversation');
-        // Owner-approved chat-only discard: no conversion, finance data or credential changes.
-        // FTS-specific SQL remains the explicitly approved SQLite exception.
-        $this->addSql('DROP TABLE chat_search');
-        $this->addSql('DROP TABLE chat_search_document');
+        // Owner-approved FTS-only SQL; the ordinary schema above is Doctrine-generated.
         $this->addSql('CREATE TABLE chat_search_document (id INTEGER PRIMARY KEY AUTOINCREMENT, conversation_id VARCHAR(36) NOT NULL UNIQUE)');
         $this->addSql('CREATE VIRTUAL TABLE chat_search USING fts5(conversation_id UNINDEXED, title, body, tokenize = unicode61)');
         $text = self::searchText('new.messages');

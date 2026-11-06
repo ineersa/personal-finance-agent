@@ -3,7 +3,7 @@
 - Status: Accepted
 - Date: 2026-11-05
 - Amends: ADR 0027's search exclusion only.
-- Amended by: [ADR 0029](0029-native-chat-store.md): index the supplied native message store, not a persisted readable transcript; remove the obsolete recording exporter.
+- Amended by: [ADR 0029](0029-native-chat-store.md): index the supplied native message store, not a persisted readable transcript; remove the obsolete recording exporter. Its single generated baseline-to-final migration supersedes the PR-only interim migrations described historically below.
 
 ## Context
 
@@ -49,4 +49,4 @@ Migration Version20261105214807 was generated against task-owned `var/browser/ch
 
 ## Native query and request boundaries (owner-directed rewrite)
 
-Bind the user's search expression directly to MATCH and let SQLite parse native FTS syntax. Remove the application word/AND grammar. Expected native FTS syntax errors become generic search validation feedback; storage/schema failures remain application failures. Parameterized FTS-specific SQL lives in the conversation repository. HTML composer/search payloads use Symfony Forms and Validator (including native CSRF for the composer), rather than hand-written request validation. Sidebar page links use Symfony route generation and preserve route parameters, selected conversation and both cursors. A chat-submit error render maps its POST route to canonical GET chat; never generate navigation from the current pathInfo.
+Bind the user's search expression directly to MATCH and let SQLite parse native FTS syntax. Remove the application word/AND grammar. Expected native FTS syntax errors become generic search validation feedback; storage/schema failures remain application failures. Parameterized FTS-specific SQL lives in the conversation repository. The composer uses a Symfony FormType/FormView with Validator and native CSRF; search uses a validated `MapQueryString` DTO, rather than inline form construction or hand-written request validation. Sidebar page links use Symfony route generation and preserve route parameters, selected conversation and both cursors. A chat-submit error render maps its POST route to canonical GET chat; never generate navigation from the current pathInfo.

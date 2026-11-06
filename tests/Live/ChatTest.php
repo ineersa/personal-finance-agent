@@ -30,7 +30,7 @@ final class ChatTest extends TestCase
                 $page->getByRole('button', ['name' => 'Log in', 'exact' => true])->click();
                 $page->waitForURL('**/home/**');
                 $page->goto($url.'/home/chat');
-                $href = $page->locator('.chat-favourites-group .chat-navigation-row a.ea-sidebar-item-link')->first()->getAttribute('href');
+                $href = $page->locator('.chat-navigation-row a.ea-sidebar-item-link')->first()->getAttribute('href');
                 self::assertNotNull($href);
                 $page->goto($url.$href);
                 $input = $page->getByLabel('Your message', ['exact' => true]);

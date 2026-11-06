@@ -10,20 +10,17 @@ use App\Chat\ChatUpdates;
 use App\Chat\Workspace;
 use App\ChatGpt\Connection;
 use App\Entity\User;
+use App\Form\ChatMessageType;
 use App\Repository\ChatConversationRepository;
 use App\Security\FinanceRecordVoter;
 use EasyCorp\Bundle\EasyAdminBundle\Attribute\AdminRoute;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
-use Symfony\Component\Form\Extension\Core\Type\FormType;
-use Symfony\Component\Form\Extension\Core\Type\SearchType;
-use Symfony\Component\Form\FormFactoryInterface;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpKernel\Attribute\MapQueryString;
 use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\Security\Http\Attribute\CurrentUser;
 use Symfony\Component\Security\Http\Attribute\IsGranted;
-use Symfony\Component\Validator\Constraints\Length;
 
 #[IsGranted(FinanceRecordVoter::ACCESS)]
 final class ChatController extends AbstractController
@@ -36,28 +33,22 @@ final class ChatController extends AbstractController
         return $this->render('home/index.html.twig', [
             'chatgpt_status' => $connection->status($user),
             'chat' => $updates->view($conversation),
+            'form' => $this->createForm(ChatMessageType::class, ['conversation' => $conversation?->id])->createView(),
         ]);
     }
 
     #[Route('/home/chat/search', name: ChatSearch::ROUTE, methods: [Request::METHOD_GET])]
-    public function search(Request $request, ChatConversationRepository $conversations, FormFactoryInterface $forms, #[CurrentUser] User $user): Response
+    public function search(ChatConversationRepository $conversations, #[CurrentUser] User $user, #[MapQueryString(validationFailedStatusCode: Response::HTTP_UNPROCESSABLE_ENTITY)] ChatSearch $search = new ChatSearch()): Response
     {
-        $form = $forms->createNamed('', FormType::class, null, ['method' => Request::METHOD_GET, 'csrf_protection' => false, 'allow_extra_fields' => true])
-            ->add(ChatSearch::QUERY_PARAMETER, SearchType::class, ['required' => false, 'constraints' => [new Length(max: ChatSearch::QUERY_LENGTH)]])
-            ->handleRequest($request);
-        $query = $form->get(ChatSearch::QUERY_PARAMETER)->getData() ?? '';
+        $limit = 20;
         $results = [];
         $error = null;
-        if ($form->isSubmitted() && $form->isValid()) {
-            try {
-                $results = $conversations->search($user, $query);
-            } catch (\DomainException $exception) {
-                $error = $exception->getMessage();
-            }
-        } elseif ($form->isSubmitted()) {
-            $error = (string) $form->getErrors(true);
+        try {
+            $results = $conversations->search($user, $search->q, $limit);
+        } catch (\DomainException $exception) {
+            $error = $exception->getMessage();
         }
-        $response = $this->render('chat/search_results.html.twig', ['query' => $query, 'results' => $results, 'error' => $error]);
+        $response = $this->render('chat/search_results.html.twig', ['query' => $search->q, 'results' => $results, 'error' => $error, 'limit' => $limit]);
         $response->headers->set('Cache-Control', 'no-store');
 
         return $response;
