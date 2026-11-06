@@ -16,6 +16,8 @@ use Symfony\AI\Agent\Execution\Update\Progress;
 use Symfony\AI\Agent\MessageStore\MessageStoreInterface;
 use Symfony\AI\Agent\Toolbox\Event\ToolCallSucceeded;
 use Symfony\AI\Platform\Result\Stream\Delta\DeltaInterface;
+use Symfony\AI\Platform\Result\Stream\Delta\ToolCallComplete;
+use Symfony\AI\Platform\Result\ToolCall;
 use Symfony\Component\DependencyInjection\Attribute\Autowire;
 use Symfony\Component\EventDispatcher\EventDispatcher;
 use Symfony\Component\Messenger\Attribute\AsMessageHandler;
@@ -71,6 +73,12 @@ final readonly class GenerateChatHandler
                 }
                 if (Progress::STAGE_DELTA === $update->getStage() && $update->getPayload() instanceof DeltaInterface) {
                     $stream->observe($update->getPayload());
+                }
+                if (Progress::STAGE_TOOL_CALL === $update->getStage() && $update->getPayload() instanceof ToolCall) {
+                    $stream->observe(new ToolCallComplete([$update->getPayload()]));
+                    $publish(true);
+
+                    return;
                 }
                 $publish();
             });

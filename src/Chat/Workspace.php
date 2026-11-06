@@ -75,9 +75,11 @@ final readonly class Workspace
         \assert(null !== $conversation);
         if ('' === $id) {
             $conversation->label = $question;
+            $this->conversations->save($conversation);
+        }
+        if (0 === $this->store->load($input->getId())->count()) {
             // Initial reference context stays native user content, not a second application transcript.
             $input = $input->with(Message::ofUser($this->context->forOwner($user)));
-            $this->conversations->save($conversation);
         }
         // Native message IDs survive Messenger redelivery; Agent owns continuation and conflicts.
         $input = $input->with(Message::ofUser($question));

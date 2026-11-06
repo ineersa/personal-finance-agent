@@ -10,7 +10,6 @@
     <div class="chat-turns">
         {% for turn in chat.turns %}
             {% set turnExecution = loop.last ? chat.execution : turn.execution|default(null) %}
-            {% set turnError = loop.last ? chat.error : turn.error|default(null) %}
             <article class="chat-turn" id="chat-turn-{{ loop.index }}">
                 <div class="chat-question"><span class="visually-hidden">You</span><p>{{ turn.question }}</p></div>
                 <div class="chat-reply">
@@ -50,9 +49,9 @@
                             {% endif %}
                     {% endfor %}
                     {% if turnExecution %}<p class="chat-progress" role="status">{{ turnExecution == execution.Pending.value ? 'Queued…' : (turnExecution == execution.Running.value ? 'Responding…' : (turnExecution == execution.Completed.value ? 'Reply complete' : turnExecution|replace({'_': ' '})|capitalize)) }}</p>{% endif %}
-                    {% if turnError %}<p class="chat-error" role="alert">{{ turnError }}</p>{% endif %}
                 </div>
             </article>
         {% endfor %}
     </div>
+    {% if chat.error %}<p class="chat-error" role="alert">{{ chat.error }}</p>{% endif %}
 </section>
