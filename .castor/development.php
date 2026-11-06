@@ -269,7 +269,7 @@ function developmentStack(string $mode, string $action): int
                 stackRun($mode, ['up', '-d', '--wait']);
                 $routes[$hostname] = stackProject($mode).':8080';
             } else {
-                stackRun($mode, ['stop']);
+                stackRun($mode, ['down']);
                 unset($routes[$hostname]);
             }
             writeProxyConfig($state, $routes);

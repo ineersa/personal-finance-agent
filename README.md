@@ -33,7 +33,7 @@ Inspect or stop only the current checkout:
 	vendor/bin/castor dev:stack:stop
 ```
 
-Stopping a checkout unregisters its route but preserves its containers, data, other checkouts, and the shared proxy. Stop each owned stack before removing its worktree. `vendor/bin/castor dev:proxy:stop` stops the proxy only when no routes remain registered. It removes no volumes. The locked route registry lives in `finance-development/` inside the repository's common Git directory, shared across its worktrees. See [ADR 0019](docs/adr/0019-worktree-development-routing.md) for boundaries and limitations.
+Stopping a checkout runs Compose `down` without `--volumes`: it removes that stack's containers and private networks and unregisters its route. Named volumes, bind-mounted data, other checkouts, the shared proxy, and its external network are preserved; no global prune runs. The same lifecycle applies to `browser:stack:stop`. Stop each owned stack before removing its worktree. `vendor/bin/castor dev:proxy:stop` stops the proxy only when no routes remain registered. It removes no volumes. The locked route registry lives in `finance-development/` inside the repository's common Git directory, shared across its worktrees. See [ADR 0019](docs/adr/0019-worktree-development-routing.md) for boundaries and limitations.
 
 ## Load synthetic development data
 
