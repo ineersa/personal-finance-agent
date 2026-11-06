@@ -124,6 +124,8 @@ vendor/bin/castor browser:live:test -- tests/Live/StatementImportTest.php
 vendor/bin/castor browser:stack:stop
 ```
 
+`browser:stack:stop` runs Compose `down` without `--volumes`, removing this stack's containers and private networks and unregistering its route. Named volumes and bind-mounted storage (including `var/browser-live`) remain intact, as do the shared proxy, its external network, and other stacks. It does not run a global prune or reset test data.
+
 ### Inline chart validation
 
 `tests/Live/ChartTest.php` is the single chart happy-path journey: actual finance SQL → discovered Unovis bar tool → known synthetic payroll value 2860 → private sandboxed interactive document → real hover tooltip → same document and tooltip after reload. It requires ordinary live mode (`CHAT_CASSETTE_REPLAY=0`), fresh isolated migrated/fixture-backed storage and the owner's ChatGPT connection. The chart container starts with the normal stack; it has no host port. Local chart files live at `var/browser-live/browser/charts` for this stack, `var/browser/charts` for intercepted tests, and `var/charts` for development. New chat opens an unstored draft without deleting existing history or files. Only explicit confirmed Delete removes that conversation and its private charts; do not delete chats or reset owner history merely to prepare tests.

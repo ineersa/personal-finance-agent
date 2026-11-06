@@ -17,7 +17,7 @@ Castor derives a readable checkout identifier plus a hash of its absolute path. 
 
 Castor registers exact hostname-to-container routes in the repository's common Git directory. A shared filesystem lock serializes registration and proxy reloads across worktrees. The proxy uses an external Docker network shared only by HTTP-facing application services and explicitly networked live-browser tooling containers. No custom DNS service or automatic Docker discovery is introduced.
 
-Normal stack stop unregisters only the current stack and leaves its data, the shared proxy, and other stacks intact. Explicit proxy stop refuses while any routes remain registered. Stop owned stacks before removing their worktrees. A private development secret is generated only if `.env.local` does not exist.
+Normal stack stop uses Compose `down` without `--volumes` to remove only the current stack's containers and private networks and unregister its route. Named volumes, bind-mounted data, the shared proxy and its external network, and other stacks remain intact. No global prune runs. The existing `dev:stack:stop` and `browser:stack:stop` command names are retained. Explicit proxy stop refuses while any routes remain registered. Stop owned stacks before removing their worktrees. A private development secret is generated only if `.env.local` does not exist.
 
 Host browsers use localhost hostname handling. Container browser checks use Chromium's native hostname resolver rules targeting the inspected proxy address; host resolution is not evidence of container DNS behavior. The saved direct-network routing scenario runs separately from the self-contained intercepted-browser suite.
 
