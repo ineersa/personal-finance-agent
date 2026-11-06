@@ -1,0 +1,6 @@
+{% set statuses = enum('Symfony\\AI\\Agent\\Execution\\ExecutionStatus') %}
+<details class="chat-tool" id="chat-tool-{{ conversation.id }}-{{ user.id }}-{{ tool.id }}" data-tool-call-id="{{ tool.id }}" data-tool-status="{{ result ? statuses.Completed.value : statuses.Running.value }}">
+    <summary><span>{{ tool.name }}</span> <span class="chat-tool-status">{{ result ? 'Completed' : 'Running' }}</span></summary>
+    <h4>Arguments</h4><pre class="chat-tool-arguments">{{ tool.arguments|json_encode(constant('JSON_PRETTY_PRINT') b-or constant('JSON_UNESCAPED_UNICODE')) }}</pre>
+    {% if result %}<h4>Result</h4><pre class="chat-tool-result">{{ result is chat_tool_result ? result.result|json_encode(constant('JSON_PRETTY_PRINT') b-or constant('JSON_UNESCAPED_UNICODE')) : result.asText }}</pre>{% endif %}
+</details>

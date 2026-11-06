@@ -1,0 +1,52 @@
+# ADR 0028: Native SQLite full-text chat search
+
+- Status: Accepted
+- Date: 2026-11-05
+- Amends: ADR 0027's search exclusion only.
+- Amended by: [ADR 0029](0029-native-chat-store.md): index the supplied native message store, not a persisted readable transcript; remove the obsolete recording exporter. Its single generated baseline-to-final migration supersedes the PR-only interim migrations described historically below.
+
+## Context
+
+The owner requested chat search and approved native SQLite FTS5 after the isolated application runtime reported SQLite 3.40.1 with ENABLE_FTS5. Installed Doctrine DBAL's SQLitePlatform generates ordinary tables, not FTS virtual tables. A replacement platform or schema generator would be disproportionate.
+
+## Decision
+
+Use a native FTS5 index in the central database over only existing readable first-question titles, questions and answers. Do not index native history, tool arguments/results, reasoning, signatures, chart references or credentials. Bind literal Unicode words joined with AND, not user-supplied FTS grammar. Join every match back to the authoritative owner-scoped chat table, covering saved and temporary chats. Provide a simple sidebar GET search, direct result links, up to twenty matches and bounded escaped plain-text snippets. Unicode61 tokenization supports ordinary Unicode words without adding a language-specific stemmer.
+
+SQLite triggers synchronize admission, persisted terminal answers and deletes (including pruning and native fixture deletion); running streaming projections do not reindex each token. Migration backfills retained readable projections. No async indexing job, index recovery service, external engine or dependency is introduced. Short existing write transactions include their native trigger work. Existing conversation history is not rewritten.
+
+The owner explicitly approved a **narrow migration exception**: generate the migration skeleton through Doctrine using Castor and verified isolated diagnostic storage, then hand-author only FTS-specific creation, backfill, synchronization and drop SQL. Review and migrate/schema-validate that isolated database before preview application. This does not change the repository's general generated-migration rule. Native per-connection schema_filter excludes the virtual index and its shadow tables from Doctrine diffs. Future conversation-table rebuild migrations must preserve/recreate the index triggers; Doctrine does not model them.
+
+The owner selected five English real-model synthetic demo recordings, favourites-first order, exported as shared canonical central Alice fixtures. The Ukrainian recording is excluded at the owner's request. Export only explicitly selected completed chart-free IDs from isolated browser storage, preserving native history and readable output, but not connection identity or credentials. Export does not modify original recorded rows or restore deleted rows. Provider signatures are preserved losslessly; continuation with different credentials is unverified and no conversion workaround is introduced. Review native metadata before committing fixture output.
+
+Historical recording provenance, not a current procedure: the now-removed `app:demo:export-chats` command exported exactly five reviewed IDs through the Castor browser-stack console to `var/demo-chat-export.yaml`. Native Alice interprets DSL tokens inside model strings; whole-array `var_export` identity expressions also failed because FunctionTreeTokenizer scans delimiters without respecting PHP quotes. Base64 JSON identity expressions preserved the original history/turn structures, including signatures and intermediate failed SQL, as verified through disposable native fixture loading. Metadata keys were limited to finish_reason/token_usage; no credential/header-bearing keys were found. ADR 0029 removes the exporter and duplicate turn payloads, retaining only the same five original native message payloads in schema/fixture-only native row definitions. No replacement exporter, loader or recording procedure is introduced.
+
+Sidebar forms and navigation retain EasyAdmin's native full-page lifecycle, not Turbo Drive opt-ins. Installed EasyAdmin initializes its action-confirmation listeners only at DOMContentLoaded; replacing the page through Drive bypasses that initialization. Delete triggers are type=button so unavailable JavaScript cannot accidentally submit deletion; native EasyAdmin submits the containing CSRF-protected form only after modal confirmation. Keep the existing composer Turbo opt-in and in-place transcript/sidebar-state streams; morph stable initialized buttons rather than replace the sidebar. Browser tests reuse the native form-submission bridge helper and ordinary navigation, not application behavior added to satisfy the harness.
+
+## Alternatives considered
+
+- LIKE scans would not provide the requested native full-text index.
+- An external search service adds deployment and synchronization infrastructure for a small local demo.
+- A custom Doctrine platform/schema generator is larger than the explicitly approved SQLite-specific migration exception.
+
+## Consequences
+
+FTS5 must be available in the deployed SQLite build. Search is literal word matching, not arbitrary query syntax, fuzzy matching, substring search, semantic search or a language-specific stemmer. Tokenization treats punctuation as separators. Search result snapshots update on search/navigation, not live per token. Database backups include the search index, which contains synthetic or owner-readable finance prose and must receive the same protection as conversations. No special-case test matrix is authorized by this ADR.
+
+## Owner-approved persistent-chat redesign (2026-11-05)
+
+This decision supersedes the temporary/Save/inline-search portions above: retain every chat automatically, never prune on creation, and replace Save with reversible Favourite/Remove favourite. Existing `saved` database values map to the domain favourite property; no data rewrite or migration is needed. New is a plain compact compose link to an unstored draft; the first admitted message creates the conversation. Existing empty rows remain untouched. Favourites and other Chats form nonduplicate lists with independent five-entry Show more disclosures and selected-extra visibility. Remove retention icons/tooltips and inline search. Search uses native EasyAdmin Modal/Bootstrap dismissal, a small Stimulus shown-event autofocus listener with disconnect cleanup, and an internal Turbo Frame GET for existing owner-scoped FTS results. Result links and sidebar navigation use native full-page navigation to retain EasyAdmin confirmation initialization. Only existing selected composers opt into Turbo streams; draft first-submit uses a native POST redirect. Confirmed inactive-only owner-scoped deletion and native recovery are unchanged. The five English recordings remain lossless: four favourites, one ordinary chat.
+
+## Review amendment: bounded navigation and stable FTS documents
+
+The owner explicitly approved a stored scalar label and a narrow existing-data label backfill. Generate the column migration through Doctrine/Castor; backfill only the label from the first readable question, never native messages or turns. Admission sets the label on the first submitted question; fixture/export labels remain ordinary scalar properties. Sidebar reads only IDs, labels, favourite and status fields through owner-scoped bounded keyset queries. Each group retrieves six rows (five displayed plus lookahead); native full-page Show more replaces that group page, while the other group's cursor is preserved. Show latest resets it. One separately read selected scalar row may be pinned outside its page, never an unbounded cumulative LIMIT or transcript scan. Existing five fixtures cover bookmarked older-page rendering and selected visibility; they do not manufacture a sixth fixture merely to expose Show more.
+
+Use the existing owner index. The verified SQLite plan searches that index then uses a temporary ordering B-tree; scalar filtering/sorting may still scale with that owner's records. Do not claim all navigation work is O(page size). Adding a composite index in the pinned DBAL generator forces a SQLite rebuild and normalizes RESTRICT to NO ACTION, so the unrelated index was omitted rather than hand-editing constraints. The final generated up is native ALTER ADD COLUMN and preserves the exact existing foreign key.
+
+The existing FTS SQL exception now includes an independent `chat_search_document` table with INTEGER PRIMARY KEY AUTOINCREMENT and UNIQUE conversation UUID. Rebuild only the derived search index, assigning its rowid from that stable mapping. Sync triggers resolve the UUID using the unique index and delete/update FTS by rowid. Never depend on chat_conversation's hidden rowid, which SQLite/Doctrine table rebuilds may reassign. UUID conversation/native Agent IDs remain unchanged. The existing schema filter excludes all `chat_search_` support tables and FTS shadow tables. EXPLAIN confirms the mapping covering unique index and FTS equality plan `INDEX 0:=`, not a UUID content-column scan. Ownership remains enforced by the authoritative conversation join.
+
+Migration Version20261105214807 was generated against task-owned `var/browser/chat-navigation-review/application.db`, reviewed before application, and extended only with the approved label backfill and FTS-specific SQL. No prior applied migration is edited. Up preserves all chat rows/native JSON and only rebuilds the derived FTS corpus; down uses generated column rollback SQL and restores the previous FTS trigger definition.
+
+## Native query and request boundaries (owner-directed rewrite)
+
+Bind the user's search expression directly to MATCH and let SQLite parse native FTS syntax. Remove the application word/AND grammar. Expected native FTS syntax errors become generic search validation feedback; storage/schema failures remain application failures. Parameterized FTS-specific SQL lives in the conversation repository. The composer uses a Symfony FormType/FormView with Validator and native CSRF; search uses a validated `MapQueryString` DTO, rather than inline form construction or hand-written request validation. Sidebar page links use Symfony route generation and preserve route parameters, selected conversation and both cursors. A chat-submit error render maps its POST route to canonical GET chat; never generate navigation from the current pathInfo.

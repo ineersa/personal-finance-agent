@@ -1,8 +1,9 @@
-<div id="{{ constant('App\\Chat\\Workspace::COMPOSER_DOM_ID') }}">
-    <label class="visually-hidden" for="finance-question">Your message</label>
-    <textarea id="finance-question" name="question" rows="1" placeholder="Ask a question or follow up…" required data-chat-view-target="input" data-action="input->chat-view#resizeInput keydown->chat-view#handleKey">{{ question|default('') }}</textarea>
+<div id="{{ chat.composer_id }}">
+    <p id="{{ chat.composer_id }}-error" role="status" data-chat-view-target="error"></p>
+    {{ form_label(form.question) }}
+    {{ form_widget(form.question) }}
     <div class="composer-toolbar">
         <span class="preview-note">Enter to send · Shift+Enter for a new line</span>
-        <button class="send-button" type="submit">Send message <span aria-hidden="true">↑</span></button>
+        {% include 'chat/_send.html.twig' %}
     </div>
 </div>

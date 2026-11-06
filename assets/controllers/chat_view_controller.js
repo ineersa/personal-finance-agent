@@ -4,7 +4,8 @@ const NEAR_BOTTOM = 96;
 const MAX_INPUT_HEIGHT = 160;
 
 export default class extends Controller {
-    static targets = ['scroll', 'jump', 'input'];
+    static targets = ['scroll', 'jump', 'input', 'error'];
+    inputRevision = 0;
     following = true;
     summaries = new Set();
 
@@ -21,7 +22,7 @@ export default class extends Controller {
                 details.open = this.summaries.has(details.id);
             });
             if (this.following) this.jumpToLatest();
-            else this.jumpTarget.hidden = false;
+            else if (this.hasJumpTarget) this.jumpTarget.hidden = false;
         });
         this.observer.observe(this.scrollTarget, { childList: true, subtree: true });
         this.jumpToLatest();
@@ -32,28 +33,46 @@ export default class extends Controller {
         this.observer?.disconnect();
     }
 
-    resizeInput() {
+    resizeInput(event) {
+        if (event?.type === 'input') ++this.inputRevision;
         if (!this.hasInputTarget) return;
         this.inputTarget.style.height = 'auto';
         this.inputTarget.style.height = `${Math.min(this.inputTarget.scrollHeight, MAX_INPUT_HEIGHT)}px`;
     }
 
+    submissionStarted(event) {
+        if (event.target.dataset.turbo !== 'true') return;
+        this.submittedRevision = this.inputRevision;
+        if (this.hasErrorTarget) this.errorTarget.textContent = '';
+    }
+
+    submissionFinished(event) {
+        if (event.target.dataset.turbo !== 'true' || !event.detail.success) return;
+        // A delayed HTTP acknowledgement cannot erase a later edited draft.
+        if (this.hasInputTarget && this.submittedRevision === this.inputRevision) {
+            this.inputTarget.value = '';
+            this.resizeInput();
+        }
+        this.dispatch('acknowledged', { target: event.target });
+    }
+
     handleKey(event) {
         if (event.key !== 'Enter' || event.shiftKey || event.isComposing || event.keyCode === 229) return;
         event.preventDefault();
-        if (this.inputTarget.value.trim()) this.inputTarget.form.requestSubmit();
+        const send = this.inputTarget.form.querySelector('[data-chat-send]');
+        if (this.inputTarget.value.trim() && send && !send.disabled) this.inputTarget.form.requestSubmit(send);
     }
 
     trackScroll() {
         const scroll = this.scrollTarget;
         this.following = scroll.scrollHeight - scroll.scrollTop - scroll.clientHeight < NEAR_BOTTOM;
-        this.jumpTarget.hidden = this.following;
+        if (this.hasJumpTarget) this.jumpTarget.hidden = this.following;
     }
 
     jumpToLatest() {
         this.scrollTarget.scrollTop = this.scrollTarget.scrollHeight;
         this.following = true;
-        this.jumpTarget.hidden = true;
+        if (this.hasJumpTarget) this.jumpTarget.hidden = true;
     }
 
     rememberSummary(event) {

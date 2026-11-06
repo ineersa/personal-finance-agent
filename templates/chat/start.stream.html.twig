@@ -1,0 +1,3 @@
+<turbo-stream action="remove" target="chat-welcome-{{ conversation.id }}"></turbo-stream>
+<turbo-stream action="update" target="chat-error-{{ conversation.id }}"><template></template></turbo-stream>
+<turbo-stream action="append" target="chat-turns-{{ conversation.id }}"><template>{% include 'chat/_turn.html.twig' with {exchange: [user], status: enum('Symfony\\AI\\Agent\\Execution\\ExecutionStatus').Running} %}</template></turbo-stream>

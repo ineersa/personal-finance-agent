@@ -4,16 +4,21 @@ declare(strict_types=1);
 
 namespace App\Controller;
 
+use App\Chat\ChatAction;
+use App\Chat\ChatSelection;
 use App\Chat\ChatUpdates;
 use App\Chat\Workspace;
 use App\ChatGpt\Connection;
 use App\ChatGpt\ConnectionStatus;
 use App\Entity\User;
+use App\Form\ChatMessageType;
 use App\Security\FinanceRecordVoter;
 use EasyCorp\Bundle\EasyAdminBundle\Attribute\AdminRoute;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\HttpKernel\Attribute\MapQueryString;
+use Symfony\Component\HttpKernel\Attribute\MapRequestPayload;
 use Symfony\Component\Messenger\Exception\TransportException;
 use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\Security\Http\Attribute\CurrentUser;
@@ -25,54 +30,82 @@ use Symfony\UX\Turbo\TurboBundle;
 final class ChatSubmitController extends AbstractController
 {
     #[AdminRoute('/chat/message', name: 'chat_submit', options: ['methods' => [Request::METHOD_POST]])]
-    #[IsCsrfTokenValid(Workspace::SUBMIT_CSRF)]
-    public function __invoke(Request $request, #[CurrentUser] User $user, Workspace $workspace, Connection $connection): Response
+    public function __invoke(Request $request, #[CurrentUser] User $user, Workspace $workspace, ChatUpdates $updates, Connection $connection): Response
     {
-        $question = trim($request->request->getString('question'));
+        $form = $this->createForm(ChatMessageType::class)->handleRequest($request);
+        $question = (string) $form->get('question')->getData();
+        $id = (string) $form->get('conversation')->getData();
+        $conversation = '' === $id ? null : $workspace->current($user, $id);
         $status = $connection->status($user);
-        if ('' === $question) {
-            $this->addFlash('warning', 'Write a message first.');
+        $stream = '' !== $id && TurboBundle::STREAM_FORMAT === $request->getPreferredFormat();
+        $error = 'Check the message form.';
+        if (!$form->isSubmitted() || !$form->isValid()) {
+            foreach ($form->getErrors(true) as $formError) {
+                $error = $formError->getMessage();
+                break;
+            }
         } elseif (ConnectionStatus::Connected !== $status) {
-            $this->addFlash('warning', 'Connect ChatGPT before sending a message.');
+            $error = 'Connect ChatGPT before sending a message.';
         } else {
             try {
-                $workspace->submit($user, $question);
-
-                if (TurboBundle::STREAM_FORMAT === $request->getPreferredFormat()) {
-                    $response = $this->render('chat/submitted.stream.html.twig', ['chat' => ChatUpdates::view($workspace->current($user))]);
-                    $response->headers->set('Content-Type', TurboBundle::STREAM_MEDIA_TYPE);
-
-                    return $response;
+                $conversation = $workspace->submit($user, $question, $id);
+                if ($stream) {
+                    // Acknowledgement only: worker/catch-up owns all chat state.
+                    return new Response(status: Response::HTTP_NO_CONTENT);
                 }
 
-                return $this->redirectToRoute(Workspace::CHAT_ROUTE, status: Response::HTTP_SEE_OTHER);
-            } catch (\DomainException $error) {
-                $this->addFlash('warning', $error->getMessage());
+                return $this->redirectToRoute(Workspace::CHAT_ROUTE, ['conversation' => $conversation->id], Response::HTTP_SEE_OTHER);
+            } catch (\DomainException $exception) {
+                $error = $exception->getMessage();
             } catch (TransportException) {
-                $this->addFlash('warning', 'The message could not be sent to the worker. Your draft is retained below.');
+                $error = 'The message could not be sent to the worker. Your draft is retained below.';
             }
         }
 
+        if ($stream) {
+            $response = $this->render('chat/error.stream.html.twig', ['chat' => $updates->view($conversation), 'error' => $error], new Response(status: Response::HTTP_UNPROCESSABLE_ENTITY));
+            $response->headers->set('Content-Type', TurboBundle::STREAM_MEDIA_TYPE);
+
+            return $response;
+        }
+        $this->addFlash('warning', $error);
+
         return $this->render('home/index.html.twig', [
             'chatgpt_status' => $status,
-            'chat' => ChatUpdates::view($workspace->current($user)),
-            'question' => $question,
+            'chat' => $updates->view($conversation),
+            'form' => $form->createView(),
         ], new Response(status: Response::HTTP_UNPROCESSABLE_ENTITY));
     }
 
-    #[Route('/home/chat/new', name: Workspace::NEW_ROUTE, methods: [Request::METHOD_POST])]
-    #[IsCsrfTokenValid(Workspace::NEW_CSRF)]
-    public function startNew(#[CurrentUser] User $user, Workspace $workspace): Response
+    #[Route('/home/chat/favourite', name: Workspace::FAVOURITE_ROUTE, methods: [Request::METHOD_POST])]
+    #[IsCsrfTokenValid(Workspace::FAVOURITE_CSRF)]
+    public function favourite(#[MapRequestPayload] ChatAction $action, #[CurrentUser] User $user, Workspace $workspace): Response
     {
-        $workspace->startNew($user);
+        $workspace->favourite($user, $action->conversation, $action->favourite);
 
-        return $this->redirectToRoute(Workspace::CHAT_ROUTE, status: Response::HTTP_SEE_OTHER);
+        return $this->redirectToRoute(Workspace::CHAT_ROUTE, ['conversation' => $action->conversation], Response::HTTP_SEE_OTHER);
+    }
+
+    #[Route('/home/chat/delete', name: Workspace::DELETE_ROUTE, methods: [Request::METHOD_POST])]
+    #[IsCsrfTokenValid(Workspace::DELETE_CSRF)]
+    public function delete(#[MapRequestPayload] ChatAction $action, #[CurrentUser] User $user, Workspace $workspace): Response
+    {
+        $selected = $action->selected;
+        if ('' !== $selected) {
+            $workspace->current($user, $selected);
+        }
+        $workspace->delete($user, $action->conversation);
+        if ($action->conversation === $selected) {
+            $selected = '';
+        }
+
+        return $this->redirectToRoute(Workspace::CHAT_ROUTE, '' === $selected ? [] : ['conversation' => $selected], Response::HTTP_SEE_OTHER);
     }
 
     #[Route('/home/chat/snapshot', name: Workspace::SNAPSHOT_ROUTE, methods: [Request::METHOD_GET])]
-    public function snapshot(#[CurrentUser] User $user, Workspace $workspace): Response
+    public function snapshot(#[CurrentUser] User $user, Workspace $workspace, ChatUpdates $updates, #[MapQueryString] ChatSelection $selection = new ChatSelection()): Response
     {
-        $response = $this->render('chat/update.stream.html.twig', ['chat' => ChatUpdates::view($workspace->current($user))]);
+        $response = $this->render('chat/update.stream.html.twig', ['chat' => $updates->view($workspace->current($user, $selection->conversation))]);
         $response->headers->set('Content-Type', TurboBundle::STREAM_MEDIA_TYPE);
         $response->headers->set('Cache-Control', 'no-store');
 

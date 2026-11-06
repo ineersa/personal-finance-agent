@@ -1,0 +1,26 @@
+{% set roles = enum('Symfony\\AI\\Platform\\Message\\Role') %}
+{% set statuses = enum('Symfony\\AI\\Agent\\Execution\\ExecutionStatus') %}
+{% set results = {} %}
+{% for message in exchange %}
+    {% if message.role == roles.ToolCall %}{% set results = results|merge({(message.toolCall.id): message}) %}{% endif %}
+{% endfor %}
+{% set last = exchange|last %}
+{% set completed = last and last.role == roles.Assistant and not last.hasToolCalls and last.asText %}
+<span class="chat-speaker">ChatGPT</span>
+<div id="chat-responses-{{ conversation.id }}-{{ user.id }}">
+    {% set anchor = user.id.toRfc4122 %}
+    {% for message in exchange %}
+        {% if message.role == roles.Assistant %}
+            <div class="chat-response" id="chat-response-{{ conversation.id }}-{{ user.id }}-{{ anchor }}">
+                <div id="chat-content-{{ conversation.id }}-{{ user.id }}-{{ anchor }}">{% include 'chat/_content.html.twig' with {content: message.content} %}</div>
+            </div>
+        {% elseif message.role == roles.ToolCall %}
+            {% set anchor = message.toolCall.id %}
+        {% endif %}
+    {% endfor %}
+    {% if last and last.role in [roles.User, roles.ToolCall] %}
+        <div class="chat-response" id="chat-response-{{ conversation.id }}-{{ user.id }}-{{ anchor }}"><div id="chat-content-{{ conversation.id }}-{{ user.id }}-{{ anchor }}"></div></div>
+    {% endif %}
+</div>
+{% include 'chat/_charts.html.twig' %}
+<p class="chat-progress" id="chat-status-{{ conversation.id }}-{{ user.id }}" role="status">{{ status|default(null) == statuses.Running ? 'Responding…' : (status|default(null) == statuses.Failed ? 'Failed' : (completed ? 'Reply complete' : '')) }}</p>

@@ -113,11 +113,15 @@ function browserStackStatus(): int
 }
 
 #[AsTask(namespace: 'browser', name: 'stack:restart-worker', description: 'Restart only this checkout\'s isolated browser worker to load changed code and templates.')]
-function browserStackRestartWorker(): int
+function browserStackRestartWorker(bool $force = false): int
 {
     $command = ['restart', 'worker'];
 
-    return report('browser:stack:restart-worker', [...stackCommand('browser'), ...$command], runtime: false, operation: static function () use ($command): int {
+    return report('browser:stack:restart-worker', [...stackCommand('browser'), ...$command], runtime: false, operation: static function () use ($command, $force): int {
+        if ($force) {
+            // Explicit abrupt shutdown, scoped to this checkout's isolated worker only.
+            stackRun('browser', ['kill', '--signal', 'SIGKILL', 'worker']);
+        }
         stackRun('browser', $command);
 
         return 0;
@@ -131,6 +135,18 @@ function browserStackConsole(#[AsArgsAfterOptionEnd] array $arguments = [], bool
     $command = ['exec', '-T', '--user', posix_getuid().':'.posix_getgid(), $worker ? 'worker' : 'php', 'php', 'bin/console', ...$arguments];
 
     return report('browser:stack:console', [...stackCommand('browser'), ...$command], runtime: false, operation: static function () use ($command): int {
+        stackRun('browser', $command);
+
+        return 0;
+    });
+}
+
+#[AsTask(namespace: 'browser', name: 'stack:restart-broker', description: 'Restart only this checkout\'s isolated broker to reload configuration; run only with no active work.')]
+function browserStackRestartBroker(): int
+{
+    $command = ['restart', 'broker'];
+
+    return report('browser:stack:restart-broker', [...stackCommand('browser'), ...$command], runtime: false, operation: static function () use ($command): int {
         stackRun('browser', $command);
 
         return 0;

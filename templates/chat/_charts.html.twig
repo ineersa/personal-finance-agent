@@ -1,0 +1,18 @@
+<div id="chat-charts-{{ conversation.id }}-{{ user.id }}">
+    {% for chart in conversation.charts %}
+        {% if chart.message == user.id.toRfc4122 %}
+            {% set chartId = 'chat-chart-' ~ conversation.id ~ '-' ~ chart.file|replace({'.': '-'}) %}
+            <figure class="chat-chart" id="{{ chartId }}">
+                {% if chart.file ends with '.html' %}
+                    <iframe id="{{ chartId }}-frame" src="{{ path(constant('App\\Chat\\ChartFiles::ROUTE'), {conversation: conversation.id, file: chart.file}) }}" title="Interactive financial chart" sandbox="allow-scripts" referrerpolicy="no-referrer" style="width: 100%; height: 520px; border: 0;"></iframe>
+                    <figcaption>Interactive chart saved privately with this conversation.</figcaption>
+                {% else %}
+                    <div data-controller="chart-image">
+                        <img src="{{ path(constant('App\\Chat\\ChartFiles::ROUTE'), {conversation: conversation.id, file: chart.file}) }}" alt="Financial chart" referrerpolicy="no-referrer" data-chart-image-target="image" data-action="load->chart-image#loaded error->chart-image#unavailable" style="max-width: 100%; height: auto;">
+                        <figcaption data-chart-image-target="status">Chart saved privately with this conversation.</figcaption>
+                    </div>
+                {% endif %}
+            </figure>
+        {% endif %}
+    {% endfor %}
+</div>

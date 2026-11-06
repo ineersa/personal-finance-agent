@@ -14,25 +14,24 @@ use Doctrine\ORM\EntityManagerInterface;
 use Hautelook\AliceBundle\LoaderInterface;
 use League\Flysystem\FilesystemOperator;
 use Symfony\Bundle\FrameworkBundle\Console\Application;
-use Symfony\Component\DependencyInjection\Attribute\Autowire;
 use Symfony\Component\DependencyInjection\Attribute\Target;
 use Symfony\Component\Filesystem\Filesystem;
 use Symfony\Component\HttpKernel\KernelInterface;
 
 final readonly class DemoReset
 {
-    public function __construct(private EntityManagerInterface $em, private TenantManagers $tenants, private KernelInterface $kernel, #[Target('statements.storage')] private FilesystemOperator $storage, #[Autowire('%env(bool:LOCAL_DEMO_RESET_ENABLED)%')] private bool $enabled, private Filesystem $filesystem, private ChartFiles $files, private ?LoaderInterface $loader = null)
+    public function __construct(private EntityManagerInterface $em, private TenantManagers $tenants, private KernelInterface $kernel, #[Target('statements.storage')] private FilesystemOperator $storage, private Filesystem $filesystem, private ChartFiles $files, private ?LoaderInterface $loader = null)
     {
     }
 
     public function isAllowed(User $user): bool
     {
-        return $this->enabled && \in_array($this->kernel->getEnvironment(), ['dev', 'test'], true) && 'demo@test.com' === $user->getUserIdentifier() && !\in_array('ROLE_ADMIN', $user->getRoles(), true) && null !== $this->loader;
+        return \in_array($this->kernel->getEnvironment(), ['dev', 'test'], true) && 'demo@test.com' === $user->getUserIdentifier() && !\in_array('ROLE_ADMIN', $user->getRoles(), true) && null !== $this->loader;
     }
 
     public function reset(): void
     {
-        if (!$this->enabled || !\in_array($this->kernel->getEnvironment(), ['dev', 'test'], true) || null === $this->loader) {
+        if (!\in_array($this->kernel->getEnvironment(), ['dev', 'test'], true) || null === $this->loader) {
             throw new \LogicException('Local demo reset is disabled.');
         }
         $previous = [];

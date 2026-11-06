@@ -4,54 +4,50 @@ declare(strict_types=1);
 
 namespace App\Entity;
 
+use App\Repository\ChatConversationRepository;
 use Doctrine\ORM\Mapping as ORM;
-use Symfony\Component\Uid\Uuid;
+use Symfony\Component\Uid\UuidV7;
 
-/**
- * @phpstan-import-type Entry from \App\Chat\ChatActivity
- * @phpstan-import-type Chart from \App\Chat\NativeAssistantOutput
- */
-#[ORM\Entity]
+/** Application metadata only. Symfony AI owns messages under the same native ID. */
+#[ORM\Entity(repositoryClass: ChatConversationRepository::class)]
+#[ORM\Table(name: 'chat_metadata')]
 class ChatConversation
 {
     #[ORM\Id]
     #[ORM\Column(length: 36)]
     public string $id;
 
-    #[ORM\Column(length: 100)]
-    public string $model;
+    #[ORM\Column(type: 'text')]
+    public string $label = 'New chat';
 
-    #[ORM\Column(length: 20)]
-    public string $reasoningEffort;
+    #[ORM\Column]
+    public bool $favourite = false;
 
-    /**
-     * Native MessageBag representation; never passed to a template.
-     *
-     * @var array<string, mixed>
-     */
+    /** @var list<array{message: string, file: string}> */
     #[ORM\Column(type: 'json')]
-    public array $history = [];
-
-    /** @var list<array{question: string, reasoning: string, commentary: string, answer: string, activity?: list<Entry>, charts?: list<Chart>}> */
-    #[ORM\Column(type: 'json')]
-    public array $turns = [];
+    public array $charts = [];
 
     public function __construct(
         #[ORM\ManyToOne]
         #[ORM\JoinColumn(nullable: false, onDelete: 'RESTRICT')]
         private readonly User $user,
-        #[ORM\Column(length: 36, unique: true)]
-        public readonly string $accountIdentity,
-        string $model,
-        string $reasoningEffort,
+        string $conversationId,
     ) {
-        $this->id = Uuid::v7()->toRfc4122();
-        $this->model = $model;
-        $this->reasoningEffort = $reasoningEffort;
+        $this->id = $conversationId;
     }
 
     public function getUser(): User
     {
         return $this->user;
+    }
+
+    public function getLabel(): string
+    {
+        return $this->label;
+    }
+
+    public function getCreatedAt(): \DateTimeImmutable
+    {
+        return UuidV7::fromString($this->id)->getDateTime();
     }
 }

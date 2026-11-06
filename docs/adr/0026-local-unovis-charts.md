@@ -3,6 +3,7 @@
 - Status: Accepted
 - Date: 2026-11-05
 - Supersedes: [ADR 0014](0014-inline-chat-and-antv-charts.md)
+- Amended by: [ADR 0029](0029-native-chat-store.md), moving private-chart membership from duplicate turn JSON into linked application metadata. Existing chat rows are discarded, not converted; storage bytes are not purged by migration.
 
 ## Context
 

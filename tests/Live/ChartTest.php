@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace App\Tests\Live;
 
-use App\Chat\ChatActivity;
 use PHPUnit\Framework\TestCase;
 use Playwright\PlaywrightFactory;
+use Symfony\AI\Agent\Execution\ExecutionStatus;
 
 final class ChartTest extends TestCase
 {
@@ -38,7 +38,7 @@ final class ChartTest extends TestCase
                 $turn->getByText($question, ['exact' => true])->waitFor();
                 $turn->locator('.chat-answer[data-chat-saved]')->waitFor(['timeout' => 120000]);
                 $tool = $turn->locator('.chat-tool')->filter(['hasText' => 'unovis_generate_bar_chart'])->first();
-                self::assertSame(ChatActivity::COMPLETED, $tool->getAttribute('data-tool-status'));
+                self::assertSame(ExecutionStatus::Completed->value, $tool->getAttribute('data-tool-status'));
                 $tool->locator('summary')->click();
                 $arguments = json_decode($tool->locator('.chat-tool-arguments')->textContent(), true, flags: \JSON_THROW_ON_ERROR);
                 self::assertSame('Synthetic payroll', $arguments['data'][0]['category']);

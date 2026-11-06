@@ -4,6 +4,7 @@ doctrine:
         connections:
             default:
                 url: '%env(resolve:DATABASE_URL)%'
+                schema_filter: '~^(?!chat_search(?:_|$))~'
             finance:
                 url: '%env(resolve:FINANCE_DATABASE_URL)%'
         types:

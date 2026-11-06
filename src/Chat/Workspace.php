@@ -7,11 +7,13 @@ namespace App\Chat;
 use App\Entity\ChatConversation;
 use App\Entity\User;
 use App\Message\GenerateChat;
+use App\Repository\ChatConversationRepository;
 use Doctrine\ORM\EntityManagerInterface;
+use Psr\Log\LoggerInterface;
+use Symfony\AI\Agent\MessageStore\MessageStoreInterface;
 use Symfony\AI\Platform\Message\Message;
 use Symfony\AI\Platform\Message\MessageBag;
-use Symfony\AI\Platform\Serializer\MessageBagNormalizer;
-use Symfony\Component\DependencyInjection\Attribute\Autowire;
+use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use Symfony\Component\Messenger\MessageBusInterface;
 use Symfony\Component\Uid\UuidV7;
 
@@ -19,52 +21,69 @@ final readonly class Workspace
 {
     public const string CHAT_ROUTE = 'admin_chat';
     public const string SUBMIT_ROUTE = 'admin_chat_submit';
-    public const string NEW_ROUTE = 'app_chat_new';
+    public const string FAVOURITE_ROUTE = 'app_chat_favourite';
+    public const string DELETE_ROUTE = 'app_chat_delete';
     public const string SNAPSHOT_ROUTE = 'app_chat_snapshot';
     public const string SUBMIT_CSRF = 'chat-submit';
-    public const string NEW_CSRF = 'chat-new';
+    public const string FAVOURITE_CSRF = 'chat-favourite';
+    public const string DELETE_CSRF = 'chat-delete';
     public const string DOM_ID = 'chat-workspace';
     public const string COMPOSER_DOM_ID = 'chat-composer-fields';
+    public const string SEND_DOM_ID = 'chat-send';
+    public const string NAVIGATION_DOM_ID = 'chat-navigation-row';
+    public const string DELETE_DOM_ID = 'chat-delete';
+    public const string LINK_DOM_ID = 'chat-link';
+    public const string EMPTY_ID = 'empty';
     public const string COMMENTARY_PHASE = 'commentary';
 
-    public function __construct(private EntityManagerInterface $em, private MessageBagNormalizer $normalizer, private MessageBusInterface $bus, private InitialContext $context, private ChartFiles $files, #[Autowire('%env(CHAT_MODEL)%')] private string $model, #[Autowire('%env(CHAT_REASONING_EFFORT)%')] private string $effort)
+    public function __construct(private ChatConversationRepository $conversations, private EntityManagerInterface $entityManager, private MessageStoreInterface $store, private MessageBusInterface $bus, private ChartFiles $files, private LoggerInterface $logger)
     {
     }
 
-    public function current(User $user): ?ChatConversation
+    public function current(User $user, string $id = ''): ?ChatConversation
     {
-        $identity = $user->getChatGptIdentity();
-        if (null === $identity) {
-            return null;
-        }
-
-        return $this->em->getRepository(ChatConversation::class)->findOneBy(['user' => $user, 'accountIdentity' => $identity]);
+        return '' === $id ? null : ($this->conversations->owned($user, $id) ?? throw new NotFoundHttpException('Conversation unavailable.'));
     }
 
-    public function startNew(User $user): void
+    public function delete(User $user, string $id): void
     {
-        $conversation = $this->current($user);
-        if (null !== $conversation) {
-            $this->em->remove($conversation);
-            $this->em->flush();
-            $this->files->removeConversation($conversation->id);
+        $conversation = $this->current($user, $id) ?? throw new NotFoundHttpException();
+        $this->store->delete(UuidV7::fromString($id));
+        $this->entityManager->remove($conversation);
+        $this->entityManager->flush();
+        try {
+            $this->files->removeConversation($id);
+        } catch (\Throwable) {
+            $this->logger->warning('Conversation chart cleanup unavailable.', ['conversation_id' => $id]);
         }
     }
 
-    public function submit(User $user, string $question): void
+    public function favourite(User $user, string $id, bool $favourite): ChatConversation
     {
-        $identity = $user->getChatGptIdentity();
-        if (null === $identity) {
+        $conversation = $this->current($user, $id) ?? throw new NotFoundHttpException();
+        $conversation->favourite = $favourite;
+        $this->entityManager->flush();
+
+        return $conversation;
+    }
+
+    public function submit(User $user, string $question, string $id = ''): ChatConversation
+    {
+        if (null === $user->getChatGptIdentity()) {
             throw new \DomainException('Connect ChatGPT before sending a message.');
         }
-        $conversation = $this->current($user) ?? new ChatConversation($user, $identity, $this->model, $this->effort);
-        $messages = [] === $conversation->history
-            ? MessageBag::forId(UuidV7::fromString($conversation->id))->with(Message::ofUser($this->context->forOwner($user)))
-            : $this->normalizer->denormalize($conversation->history, MessageBag::class);
-        $conversation->history = $this->normalizer->normalize($messages->with(Message::ofUser($question)));
-        $conversation->turns[] = ['question' => $question, 'reasoning' => '', 'commentary' => '', 'answer' => ''];
-        $this->em->persist($conversation);
-        $this->em->flush();
-        $this->bus->dispatch(new GenerateChat($conversation->id));
+        $input = '' === $id ? new MessageBag() : MessageBag::forId(UuidV7::fromString($id));
+        $conversation = '' === $id ? new ChatConversation($user, $input->getId()->toRfc4122()) : $this->current($user, $id);
+        \assert(null !== $conversation);
+        if ('' === $id) {
+            $conversation->label = $question;
+            $this->entityManager->persist($conversation);
+            $this->entityManager->flush();
+        }
+        // Native message IDs survive Messenger redelivery; Agent owns continuation and conflicts.
+        $input = $input->with(Message::ofUser($question));
+        $this->bus->dispatch(new GenerateChat($conversation->id, $user->getId() ?? throw new \LogicException('Owner unavailable.'), $input));
+
+        return $conversation;
     }
 }

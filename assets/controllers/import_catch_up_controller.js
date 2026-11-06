@@ -7,10 +7,13 @@ export default class extends Controller {
     version = 0;
 
     connect() {
-        this.target = this.element.querySelector(this.targetSelectorValue).id;
+        this.streamTargets = new Set([...this.element.querySelectorAll(this.targetSelectorValue)].map(target => target.id));
         this.beforeStream = event => {
             const stream = event.detail.newStream;
-            if (stream.getAttribute('target') !== this.target) return;
+            // Targeted chat updates live below the snapshot root; they invalidate stale catch-up too.
+            const matchesTarget = this.streamTargets.has(stream.getAttribute('target')) ||
+                stream.targetElements.some(target => [...this.element.querySelectorAll(this.targetSelectorValue)].some(root => root.contains(target)));
+            if (!matchesTarget) return;
             if (stream.hasAttribute('data-import-snapshot')) {
                 // Turbo renders asynchronously; recheck at render time, not just after fetch.
                 const render = event.detail.render;
@@ -37,8 +40,9 @@ export default class extends Controller {
         this.request?.abort();
     }
 
-    async catchUp() {
-        if (!this.source.hasAttribute('connected')) return;
+    async catchUp(event) {
+        // Submission acknowledgements also fetch state when live delivery is unavailable.
+        if (!event && !this.source?.hasAttribute('connected')) return;
         this.request?.abort();
         const version = ++this.version;
         const request = this.request = new AbortController();

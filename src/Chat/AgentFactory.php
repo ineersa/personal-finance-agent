@@ -5,8 +5,10 @@ declare(strict_types=1);
 namespace App\Chat;
 
 use App\ChatGpt\OAuthFactory;
+use App\Entity\ChatConversation;
 use App\Entity\User;
 use App\Finance\Sql\TenantSqlTool;
+use App\Repository\ChatConversationRepository;
 use Mcp\Client;
 use Mcp\Client\Transport\HttpTransport;
 use Nyholm\Psr7\Factory\Psr17Factory;
@@ -14,6 +16,7 @@ use Symfony\AI\Agent\Agent;
 use Symfony\AI\Agent\Bridge\Mcp\ClientToolset;
 use Symfony\AI\Agent\Bridge\Mcp\McpToolbox;
 use Symfony\AI\Agent\InputProcessor\SystemPromptInputProcessor;
+use Symfony\AI\Agent\MessageStore\MessageStoreInterface;
 use Symfony\AI\Agent\Toolbox\ChainToolbox;
 use Symfony\AI\Agent\Toolbox\FaultTolerantToolbox;
 use Symfony\AI\Agent\Toolbox\Toolbox;
@@ -40,12 +43,14 @@ final readonly class AgentFactory
         private TenantSqlTool $tool,
         private StringTemplateRenderer $templates,
         private ChartFiles $files,
+        private ChatConversationRepository $conversations,
+        private MessageStoreInterface $store,
         #[Autowire(service: 'app.chatgpt.http_client')] private HttpClientInterface $http,
         #[Autowire('%kernel.project_dir%')] private string $projectDir,
     ) {
     }
 
-    public function create(User $owner, string $identity, string $model, NativeAssistantOutput $output, EventDispatcherInterface $events, string $conversationId): Agent
+    public function create(User $owner, string $identity, string $model, EventDispatcherInterface $events, ChatConversation $conversation, string $message): Agent
     {
         if ('' === $model) {
             throw new \LogicException('Configure a chat model.');
@@ -74,12 +79,12 @@ final readonly class AgentFactory
 
         return new Agent(new Platform([$provider]), $model,
             inputProcessors: [new SystemPromptInputProcessor($prompt)],
-            outputProcessors: [$output],
             // Keep native NullLogger: debug tool logging would expose SQL arguments.
             toolbox: new FaultTolerantToolbox(new ChainToolbox([
                 new Toolbox([$this->tool->forOwner($owner)], eventDispatcher: $events),
-                new McpToolbox(new ChartToolset($chartTools, $this->files, $conversationId, $output), eventDispatcher: $events),
+                new McpToolbox(new ChartToolset($chartTools, $this->files, $conversation, $message, $this->conversations), eventDispatcher: $events),
             ])),
+            messageStore: $this->store,
         );
     }
 }

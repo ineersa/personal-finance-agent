@@ -22,4 +22,4 @@ framework:
             App\Message\ProcessStatementMessage: statement_import
 
 sqlite_queue:
-    redeliver_timeout: 300
+    redeliver_timeout: 90

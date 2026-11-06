@@ -148,7 +148,7 @@ PDF/XLSX conversion will run locally through official MarkItDown MCP in Docker; 
 
 Charts use a Docker-hosted Unovis MCP service with local HTML generation and private conversation-scoped retention. Sandboxed iframes allow the packaged chart runtime, not model-generated JavaScript, and deny same-origin privileges and external network access. Existing PNG/JPG charts remain readable. [ADR 0026](docs/adr/0026-local-unovis-charts.md) records the isolation boundary and pinned fork. Build without restarting services with `vendor/bin/castor charts:build` (or `--browser` for the isolated stack).
 
-Chat history will use the existing application SQLite database: five temporary chats per user plus saved chats, with a Save chat button. Only inactive temporary chats can be pruned; queued/running work is protected. See [ADR 0015](docs/adr/0015-sqlite-conversation-history.md).
+Chat history uses the application SQLite database with automatic retention, favourites, unstored New chat drafts and owner-scoped modal full-text search. See ADRs 0027 and 0028.
 
 ## Project documents
 

@@ -13,6 +13,12 @@
     {# The native layout shares this captured fragment between both responsive headers. #}
     {% set settings_dropdown = '' %}
     {{ parent() }}
+    {% if app.user and not is_granted('ROLE_ADMIN') %}
+        {{ include('chat/search_modal.html.twig') }}
+    {% endif %}
+    {% if app.user and not is_granted('ROLE_ADMIN') and (ea.crud is null or ea.crud.currentAction == constant('EasyCorp\\Bundle\\EasyAdminBundle\\Config\\Action::NEW')) %}
+        {{ include('@EasyAdmin/crud/includes/_action_confirmation_modal.html.twig', with_context: false) }}
+    {% endif %}
     {% if import_updates_enabled and app.user and not is_granted('ROLE_ADMIN') %}
         <div id="import-live-subscription">
             {% set topics = [import_topic.forUser(app.user)] %}
@@ -23,6 +29,12 @@
 {% endblock %}
 
 {% block header_logo %}{{ include('chrome/brand.html.twig') }}{% endblock %}
+{% block main_menu_wrapper %}
+    {% if app.user and not is_granted('ROLE_ADMIN') %}
+        <twig:ChatNavigation :owner="app.user" selected="{{ chat.conversation_id|default(app.request.query.get('conversation', '')) }}" />
+    {% endif %}
+    {{ parent() }}
+{% endblock %}
 {% block responsive_header_logo %}{{ include('chrome/brand.html.twig') }}{% endblock %}
 {% block content_footer %}{{ include('chrome/footer.html.twig') }}{% endblock %}
 {% block content_top_header %}

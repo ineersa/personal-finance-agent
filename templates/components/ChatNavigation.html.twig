@@ -1,0 +1,25 @@
+<nav {{ attributes.defaults({class: 'chat-navigation', 'aria-label': 'Chats'}) }}>
+    <div class="chat-navigation-heading">
+        <h2>Chats</h2>
+        <button type="button" class="chat-search-trigger" aria-label="Search chats" data-bs-toggle="modal" data-bs-target="#{{ constant('App\\Chat\\ChatSearch::MODAL_ID') }}"><twig:ea:Icon name="internal:search" /></button>
+    </div>
+    <a class="chat-navigation-new" href="{{ path(constant('App\\Chat\\Workspace::CHAT_ROUTE')) }}"><twig:ea:Icon name="internal:edit" />New chat</a>
+    {% for group in groups %}
+        <section aria-labelledby="{{ group.id }}-heading" class="chat-navigation-group chat-{{ group.id }}-group">
+            <h2 id="{{ group.id }}-heading">{{ group.title }}</h2>
+            <ul class="ea-sidebar-group-items">
+                {% for retained in group.rows %}
+                    {{ include('chat/_navigation_row.html.twig', {retained: retained, selected: selected}) }}
+                {% else %}
+                    <li class="chat-navigation-empty">No chats yet</li>
+                {% endfor %}
+            </ul>
+            {% if group.next %}
+                <a class="chat-navigation-more" href="{{ group.next_url }}">Show more</a>
+            {% endif %}
+            {% if group.before %}
+                <a class="chat-navigation-more" href="{{ group.latest_url }}">Show latest</a>
+            {% endif %}
+        </section>
+    {% endfor %}
+</nav>

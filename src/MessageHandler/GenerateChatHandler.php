@@ -6,96 +6,109 @@ namespace App\MessageHandler;
 
 use App\Chat\AgentFactory;
 use App\Chat\ChatUpdates;
-use App\Chat\NativeAssistantOutput;
-use App\Entity\ChatConversation;
+use App\Chat\InitialContext;
 use App\Message\GenerateChat;
-use Doctrine\ORM\EntityManagerInterface;
+use App\Repository\ChatConversationRepository;
+use App\Repository\UserRepository;
+use Symfony\AI\Agent\Exception\ConflictException;
+use Symfony\AI\Agent\Execution\ExecutionStatus;
 use Symfony\AI\Agent\Execution\Update\Progress;
-use Symfony\AI\Agent\Toolbox\Event\ToolCallFailed;
+use Symfony\AI\Agent\MessageStore\MessageStoreInterface;
 use Symfony\AI\Agent\Toolbox\Event\ToolCallSucceeded;
-use Symfony\AI\Agent\Toolbox\Exception\ToolExecutionExceptionInterface;
-use Symfony\AI\Platform\Message\MessageBag;
+use Symfony\AI\Platform\Message\Message;
+use Symfony\AI\Platform\Result\Stream\AssistantMessageStreamListener;
 use Symfony\AI\Platform\Result\Stream\Delta\DeltaInterface;
 use Symfony\AI\Platform\Result\ToolCall;
-use Symfony\AI\Platform\Serializer\MessageBagNormalizer;
+use Symfony\Component\DependencyInjection\Attribute\Autowire;
 use Symfony\Component\EventDispatcher\EventDispatcher;
 use Symfony\Component\Messenger\Attribute\AsMessageHandler;
+use Symfony\Component\Uid\UuidV7;
 
 #[AsMessageHandler(fromTransport: GenerateChat::TRANSPORT)]
 final readonly class GenerateChatHandler
 {
     private const float UPDATE_INTERVAL = 0.05;
 
-    public function __construct(private EntityManagerInterface $em, private AgentFactory $agents, private MessageBagNormalizer $normalizer, private ChatUpdates $updates)
+    public function __construct(private UserRepository $users, private ChatConversationRepository $conversations, private MessageStoreInterface $store, private InitialContext $context, private AgentFactory $agents, private ChatUpdates $updates, #[Autowire('%env(CHAT_MODEL)%')] private string $model, #[Autowire('%env(CHAT_REASONING_EFFORT)%')] private string $effort)
     {
     }
 
     public function __invoke(GenerateChat $message): void
     {
-        $conversation = $this->em->find(ChatConversation::class, $message->conversationId);
-        if (null === $conversation) {
+        $owner = $this->users->find($message->ownerId);
+        $conversation = null === $owner ? null : $this->conversations->owned($owner, $message->conversationId);
+        if (null === $conversation || null === $owner) {
             return;
         }
-        $owner = $conversation->getUser();
-        if ($owner->getChatGptIdentity() !== $conversation->accountIdentity || null === $registration = $owner->getChatGptRegistrationId()) {
+        $id = UuidV7::fromString($conversation->id);
+        $input = $this->store->load($id);
+        $question = $message->input->getMessages()[array_key_last($message->input->getMessages())];
+        $registration = $owner->getChatGptRegistrationId();
+        if (null === $registration) {
+            $this->updates->publish($conversation, 'chat/finish.stream.html.twig', ['user' => $question, 'messages' => $input, 'status' => ExecutionStatus::Failed, 'error' => 'Connect ChatGPT before sending a message.']);
+
             return;
         }
-        $execution = null;
-        $output = new NativeAssistantOutput();
-        $turnIndex = \count($conversation->turns) - 1;
+        // Only the current model response is accumulated; native history is never reconstructed.
+        $listener = new AssistantMessageStreamListener();
+        $anchor = $question->getId()->toRfc4122();
         $lastUpdate = 0.0;
-        $project = function (bool $force = false) use (&$execution, $conversation, $output, $turnIndex, &$lastUpdate): void {
-            $conversation->turns[$turnIndex] = ['question' => $conversation->turns[$turnIndex]['question'], ...$output->transcript(), 'activity' => $output->activity->entries()];
+        $publishContent = function (bool $force = false) use ($conversation, $question, $listener, &$anchor, &$lastUpdate): void {
             if ($force || microtime(true) - $lastUpdate >= self::UPDATE_INTERVAL) {
-                $this->updates->publish($conversation, $execution);
+                $this->updates->publish($conversation, 'chat/content.stream.html.twig', ['user' => $question, 'anchor' => $anchor, 'response' => $listener->getAssistantMessage()]);
                 $lastUpdate = microtime(true);
             }
         };
-        $error = null;
+        $events = new EventDispatcher();
+        $events->addListener(ToolCallSucceeded::class, function (ToolCallSucceeded $event) use ($conversation, $question): void {
+            $result = $event->getResult();
+            $this->updates->publish($conversation, 'chat/tool.stream.html.twig', ['user' => $question, 'tool' => $result->getToolCall(), 'result' => $result]);
+        });
         try {
-            // Scoped native tool events project results privately; no global listener or payload logging.
-            $events = new EventDispatcher();
-            $events->addListener(ToolCallFailed::class, static function (ToolCallFailed $event) use ($output, $project): void {
-                $error = $event->getException();
-                $detail = $error instanceof ToolExecutionExceptionInterface ? $error->getToolCallResult() : 'Tool execution failed.';
-                $output->activity->toolFailed($event->getDefinition()->getName(), $detail);
-                $project(true);
-            });
-            $events->addListener(ToolCallSucceeded::class, function (ToolCallSucceeded $event) use ($output, $project, $conversation, $turnIndex): void {
-                $output->activity->completed($event->getResult());
-                // Authorize a completed local document before Mercure tells the browser to load it.
-                $conversation->turns[$turnIndex] = ['question' => $conversation->turns[$turnIndex]['question'], ...$output->transcript(), 'activity' => $output->activity->entries()];
-                $this->em->flush();
-                $project(true);
-            });
-            $execution = $this->agents->create($owner, $registration, $conversation->model, $output, $events, $conversation->id)->call(
-                // Refresh application instructions, not the user's history or initial data context.
-                $this->normalizer->denormalize($conversation->history, MessageBag::class)->withoutSystemMessage(),
-                ['stream' => true, 'prompt_cache_key' => $conversation->id, 'reasoning' => ['effort' => $conversation->reasoningEffort, 'summary' => 'auto']],
+            // Decide when processing, after earlier queued submissions have saved their native history.
+            $request = 0 === $input->count()
+                ? $input->with(Message::ofUser($this->context->forOwner($owner)))->merge($message->input)
+                : $message->input;
+            $execution = $this->agents->create($owner, $registration, $this->model, $events, $conversation, $question->getId()->toRfc4122())->call($request,
+                ['stream' => true, 'prompt_cache_key' => $conversation->id, 'reasoning' => ['effort' => $this->effort, 'summary' => 'auto']],
             );
-            $execution->onProgress(static function (Progress $update) use ($output, $project): void {
+            $started = false;
+            $nextAnchor = $anchor;
+            $execution->onProgress(function (Progress $update) use ($conversation, $question, $listener, $publishContent, &$anchor, &$nextAnchor, &$started): void {
                 if (Progress::STAGE_MODEL_REQUEST === $update->getStage()) {
-                    $output->beginRound();
+                    if (!$started) {
+                        // The native input checkpoint now exists for acknowledgement snapshots.
+                        $this->updates->publish($conversation, 'chat/start.stream.html.twig', ['user' => $question]);
+                        $started = true;
+                    }
+                    $listener->reset();
+                    $anchor = $nextAnchor;
+                    $this->updates->publish($conversation, 'chat/round.stream.html.twig', ['user' => $question, 'anchor' => $anchor]);
                 }
                 if (Progress::STAGE_DELTA === $update->getStage() && $update->getPayload() instanceof DeltaInterface) {
-                    $output->observe($update->getPayload());
+                    $listener->accumulate($update->getPayload());
+                    $publishContent();
                 }
-                $toolStarted = Progress::STAGE_TOOL_CALL === $update->getStage() && $update->getPayload() instanceof ToolCall;
-                if ($toolStarted && $update->getPayload() instanceof ToolCall) {
-                    $output->activity->started($update->getPayload());
+                if (Progress::STAGE_TOOL_CALL === $update->getStage() && $update->getPayload() instanceof ToolCall) {
+                    // Flush this response before its first tool card; later cards append without erasing earlier ones.
+                    if ($nextAnchor === $anchor) {
+                        $publishContent(true);
+                    }
+                    $tool = $update->getPayload();
+                    $nextAnchor = $tool->getId();
+                    $this->updates->publish($conversation, 'chat/tool.stream.html.twig', ['user' => $question, 'anchor' => $anchor, 'tool' => $tool, 'result' => null]);
                 }
-                $project($toolStarted);
             });
-            // Agent drives its own model/tool loop; callbacks only project its progress.
-            $conversation->history = $this->normalizer->normalize($execution->getMessages());
-            $project();
+            // This drives the one execution and returns its canonical native messages.
+            $messages = $execution->getMessages();
+        } catch (ConflictException $error) {
+            $this->updates->publish($conversation, 'chat/finish.stream.html.twig', ['user' => $question, 'messages' => $this->store->load($id), 'status' => ExecutionStatus::Failed, 'error' => 'This conversation changed during the response.']);
+            throw $error;
         } catch (\Throwable) {
-            // Provider exceptions can contain private input or credentials.
-            $output->activity->failed();
-            $conversation->turns[$turnIndex] = ['question' => $conversation->turns[$turnIndex]['question'], ...$output->transcript(), 'activity' => $output->activity->entries()];
-            $error = 'The response could not be completed. Please try again.';
+            // Native Messenger retry/failure policy owns delivery; never log provider payloads.
+            $this->updates->publish($conversation, 'chat/finish.stream.html.twig', ['user' => $question, 'messages' => $this->store->load($id), 'status' => ExecutionStatus::Failed, 'error' => 'The response could not be completed.']);
+            throw new \RuntimeException('The chat response could not be completed.');
         }
-        $this->em->flush();
-        $this->updates->publish($conversation, $execution, $error);
+        $this->updates->publish($conversation, 'chat/finish.stream.html.twig', ['user' => $question, 'messages' => $messages, 'status' => $execution->getStatus(), 'error' => null]);
     }
 }

@@ -20,7 +20,7 @@ ADRs record significant technical decisions, their context, and their consequenc
 | [0012](0012-configurable-ai-providers.md) | Accepted | Configure local llama.cpp, z.ai, and DeepSeek integrations with chat provider, model, and reasoning selection. |
 | [0013](0013-symfony-ai-agent-runtime.md) | Accepted | Use Symfony AI's agent loop with bounded cross-user fiber concurrency in one Messenger consumer and a simple context handoff for late implementation. |
 | [0014](0014-inline-chat-and-antv-charts.md) | Superseded by 0026 | Display chart images inline in chat using a Docker-hosted AntV MCP server and its documented free hosted renderer; remove the separate artifact workspace. |
-| [0015](0015-sqlite-conversation-history.md) | Accepted | Store conversations in the shared application SQLite database, with five temporary chats per user plus saved chats, protecting queued/running work. |
+| [0015](0015-sqlite-conversation-history.md) | Superseded by 0029 | Original temporary/saved retention and queued/running protection. |
 | [0016](0016-local-markitdown-conversion.md) | Accepted | Convert PDF/XLSX locally with official MarkItDown MCP in Docker; parse CSV in PHP, leaving OCR backend selection unresolved. |
 | [0017](0017-exact-money-and-ecb-reporting.md) | Accepted | Preserve exact decimal money and present one configurable reporting currency using ECB reference rates. |
 | [0018](0018-finance-review-sql-and-jev.md) | Accepted | Approve editable drafts before analysis; use bounded owner-scoped SQL, Jev decision tasks, and isolated target-model history conversion. |
@@ -32,6 +32,9 @@ ADRs record significant technical decisions, their context, and their consequenc
 | [0024](0024-basic-chatgpt-worker-chat.md) | Accepted | Start multi-turn ChatGPT chat through Agent, Messenger and private Turbo streams, with native signed history and an editable prompt. |
 | [0025](0025-in-process-tenant-sql.md) | Accepted | Run read-only tenant SQL in-process with result limits and approximate SQLite monetary results. |
 | [0026](0026-local-unovis-charts.md) | Accepted | Generate local interactive Unovis HTML, retain privately and serve through restricted sandboxed iframes. |
+| [0027](0027-owned-chat-history-controls.md) | Superseded by 0029 | Original custom history adapter, duplicate readable projection and generation recovery metadata. |
+| [0028](0028-native-chat-search.md) | Accepted | Search owned readable chat text with native SQLite FTS5 and an explicitly approved SQLite-specific migration exception. |
+| [0029](0029-native-chat-store.md) | Accepted | Direct native Doctrine message store, linked finance metadata, native concurrency/delivery and no custom recovery or parallel transcript. |
 
 ## Recording decisions
 

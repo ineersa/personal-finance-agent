@@ -1,0 +1,29 @@
+<twig:ea:Sidebar:Item label="{{ retained.label|e }}" href="{{ path(constant('App\\Chat\\Workspace::CHAT_ROUTE'), {conversation: retained.id}) }}" :active="retained.id == selected" id="{{ constant('App\\Chat\\Workspace::NAVIGATION_DOM_ID') }}-{{ retained.id }}" :htmlAttributes="{id: constant('App\\Chat\\Workspace::LINK_DOM_ID') ~ '-' ~ retained.id}" class="chat-navigation-row" data-conversation-id="{{ retained.id }}">
+    <twig:block name="submenu">
+        <twig:ea:ActionMenu class="chat-row-actions">
+            <twig:ea:ActionMenu:Button withoutDropdownToggleMarker aria-label="Chat actions" aria-describedby="{{ constant('App\\Chat\\Workspace::LINK_DOM_ID') }}-{{ retained.id }}" class="chat-row-menu">
+                <twig:ea:Icon name="internal:dots-horizontal" />
+            </twig:ea:ActionMenu:Button>
+            <twig:ea:ActionMenu:Overlay>
+                <twig:ea:ActionMenu:ActionList>
+                    <twig:ea:ActionMenu:ActionList:Content>
+                        <form action="{{ path(constant('App\\Chat\\Workspace::FAVOURITE_ROUTE')) }}" method="post">
+                            <input type="hidden" name="_token" value="{{ csrf_token(constant('App\\Chat\\Workspace::FAVOURITE_CSRF')) }}" data-controller="csrf-protection">
+                            <input type="hidden" name="conversation" value="{{ retained.id }}">
+                            <input type="hidden" name="favourite" value="{{ retained.favourite ? '0' : '1' }}">
+                            <button type="submit" class="dropdown-item">{{ retained.favourite ? 'Remove favourite' : 'Favourite' }}</button>
+                        </form>
+                    </twig:ea:ActionMenu:ActionList:Content>
+                    <twig:ea:ActionMenu:ActionList:Content>
+                        <form action="{{ path(constant('App\\Chat\\Workspace::DELETE_ROUTE')) }}" method="post">
+                            <input type="hidden" name="_token" value="{{ csrf_token(constant('App\\Chat\\Workspace::DELETE_CSRF')) }}" data-controller="csrf-protection">
+                            <input type="hidden" name="conversation" value="{{ retained.id }}">
+                            <input type="hidden" name="selected" value="{{ selected }}">
+                            {% include 'chat/_delete_button.html.twig' %}
+                        </form>
+                    </twig:ea:ActionMenu:ActionList:Content>
+                </twig:ea:ActionMenu:ActionList>
+            </twig:ea:ActionMenu:Overlay>
+        </twig:ea:ActionMenu>
+    </twig:block>
+</twig:ea:Sidebar:Item>
