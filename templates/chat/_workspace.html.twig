@@ -16,35 +16,27 @@
                 <div class="chat-reply">
                     <span class="chat-speaker">ChatGPT</span>
                     {% set turnIndex = loop.index %}
-                    {% if turn.activity is defined %}
                         {% if turn.activity is not empty %}
                             <ol class="chat-activity" aria-label="Agent work log">
                                 {% for entry in turn.activity %}
                                     <li class="chat-activity-entry">
-                                        {% if entry.kind == constant('App\\Chat\\ChatActivity::TOOL') %}
+                                        {% if entry.kind == constant('App\\Chat\\ChatView::TOOL') %}
                                             <details class="chat-tool" id="chat-tool-{{ chat.conversation_id }}-{{ turnIndex }}-{{ loop.index }}" data-tool-call-id="{{ entry.call_id }}" data-tool-status="{{ entry.status }}">
                                                 <summary><span>{{ entry.name }}</span> <span class="chat-tool-status">{{ entry.status|capitalize }}</span></summary>
                                                 <h4>Arguments</h4><pre class="chat-tool-arguments">{{ entry.arguments }}</pre>
                                                 {% if entry.result is not null %}<h4>Result</h4><pre class="chat-tool-result">{{ entry.result }}</pre>{% endif %}
                                             </details>
-                                        {% elseif entry.kind == constant('App\\Chat\\ChatActivity::REASONING') %}
+                                        {% elseif entry.kind == constant('App\\Chat\\ChatView::REASONING') %}
                                             <div class="chat-reasoning chat-markdown" aria-label="Reasoning summary">{{ entry.text|markdown_to_html|sanitize_html('app.chat') }}</div>
-                                        {% elseif entry.kind == constant('App\\Chat\\ChatActivity::COMMENTARY') %}
+                                        {% elseif entry.kind == constant('App\\Chat\\ChatView::COMMENTARY') %}
                                             <div class="chat-commentary chat-markdown">{{ entry.text|markdown_to_html|sanitize_html('app.chat') }}</div>
                                         {% endif %}
                                     </li>
                                 {% endfor %}
                             </ol>
                         {% endif %}
-                    {% else %}
-                        {% if turn.reasoning %}
-                            <div class="chat-reasoning chat-markdown" aria-label="Reasoning summary">{{ turn.reasoning|markdown_to_html|sanitize_html('app.chat') }}</div>
-                        {% endif %}
-                        {% if turn.commentary %}<div class="chat-commentary chat-markdown">{{ turn.commentary|markdown_to_html|sanitize_html('app.chat') }}</div>{% endif %}
-                    {% endif %}
                     {% if turn.answer %}<div class="chat-answer chat-markdown" {% if not turnExecution or turnExecution == execution.Completed.value %}data-chat-saved{% endif %}>{{ turn.answer|markdown_to_html|sanitize_html('app.chat') }}</div>{% endif %}
-                    {% for chart in turn.charts|default([]) %}
-                        {% if chart.file %}
+                    {% for chart in turn.charts %}
                             {% if chart.file ends with '.html' %}
                                 <figure class="chat-chart" id="chat-chart-{{ chat.conversation_id }}-{{ chart.file|replace({'.': '-'}) }}">
                                     <iframe src="{{ path(constant('App\\Chat\\ChartFiles::ROUTE'), {conversation: chat.conversation_id, file: chart.file}) }}" title="Interactive financial chart" sandbox="allow-scripts" referrerpolicy="no-referrer" style="width: 100%; height: 520px; border: 0;"></iframe>
@@ -56,9 +48,6 @@
                                     <figcaption data-chart-image-target="status">Chart saved privately with this conversation.</figcaption>
                                 </figure>
                             {% endif %}
-                        {% elseif chart.error %}
-                            <p class="chat-chart-error" role="status">{{ chart.error }}</p>
-                        {% endif %}
                     {% endfor %}
                     {% if turnExecution %}<p class="chat-progress" role="status">{{ turnExecution == execution.Pending.value ? 'Queued…' : (turnExecution == execution.Running.value ? 'Responding…' : (turnExecution == execution.Completed.value ? 'Reply complete' : turnExecution|replace({'_': ' '})|capitalize)) }}</p>{% endif %}
                     {% if turnError %}<p class="chat-error" role="alert">{{ turnError }}</p>{% endif %}

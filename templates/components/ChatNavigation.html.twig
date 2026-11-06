@@ -15,10 +15,10 @@
                 {% endfor %}
             </ul>
             {% if group.next %}
-                <a class="chat-navigation-more" href="{{ app.request.pathInfo }}?{{ app.request.query.all|merge({(group.parameter): group.next})|url_encode }}">Show more</a>
+                <a class="chat-navigation-more" href="{{ group.next_url }}">Show more</a>
             {% endif %}
             {% if group.before %}
-                <a class="chat-navigation-more" href="{{ app.request.pathInfo }}?{{ app.request.query.all|merge({(group.parameter): ''})|url_encode }}">Show latest</a>
+                <a class="chat-navigation-more" href="{{ group.latest_url }}">Show latest</a>
             {% endif %}
         </section>
     {% endfor %}

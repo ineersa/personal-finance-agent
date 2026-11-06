@@ -4,92 +4,41 @@ declare(strict_types=1);
 
 namespace App\Entity;
 
+use App\Repository\ChatConversationRepository;
 use Doctrine\ORM\Mapping as ORM;
-use Symfony\AI\Agent\Execution\ExecutionStatus;
-use Symfony\Component\Uid\Uuid;
 use Symfony\Component\Uid\UuidV7;
 
-/**
- * @phpstan-import-type Entry from \App\Chat\ChatActivity
- * @phpstan-import-type Chart from \App\Chat\NativeAssistantOutput
- */
-#[ORM\Entity]
+/** Application metadata only. Symfony AI owns messages under the same native ID. */
+#[ORM\Entity(repositoryClass: ChatConversationRepository::class)]
+#[ORM\Table(name: 'chat_metadata')]
 class ChatConversation
 {
     #[ORM\Id]
     #[ORM\Column(length: 36)]
     public string $id;
 
-    #[ORM\Column(length: 100)]
-    public string $model;
-
-    #[ORM\Column(length: 20)]
-    public string $reasoningEffort;
-
-    #[ORM\Column(type: 'text', options: ['default' => 'New chat'])]
+    #[ORM\Column(type: 'text')]
     public string $label = 'New chat';
 
-    // Retain the historical physical column without rewriting existing conversations.
-    #[ORM\Column(name: 'saved', options: ['default' => false])]
+    #[ORM\Column]
     public bool $favourite = false;
 
-    #[ORM\Column(length: 36, nullable: true)]
-    public ?string $generationId = null;
-
-    #[ORM\Column(length: 36, nullable: true)]
-    public ?string $attemptId = null;
-
-    #[ORM\Column(length: 20, enumType: ExecutionStatus::class, options: ['default' => ExecutionStatus::Completed->value])]
-    public ExecutionStatus $generationStatus = ExecutionStatus::Completed;
-
-    #[ORM\Column(type: 'text', nullable: true)]
-    public ?string $error = null;
-
-    /**
-     * Native MessageBag representation; never passed to a template.
-     *
-     * @var array<string, mixed>
-     */
+    /** @var list<array{message: string, file: string}> */
     #[ORM\Column(type: 'json')]
-    public array $history = [];
-
-    /** @var list<array{question: string, reasoning: string, commentary: string, answer: string, activity?: list<Entry>, charts?: list<Chart>, execution?: string, error?: ?string}> */
-    #[ORM\Column(type: 'json')]
-    public array $turns = [];
+    public array $charts = [];
 
     public function __construct(
         #[ORM\ManyToOne]
         #[ORM\JoinColumn(nullable: false, onDelete: 'RESTRICT')]
         private readonly User $user,
-        #[ORM\Column(length: 36, nullable: true)]
-        public ?string $accountIdentity,
-        string $model,
-        string $reasoningEffort,
+        string $conversationId,
     ) {
-        $this->id = Uuid::v7()->toRfc4122();
-        $this->model = $model;
-        $this->reasoningEffort = $reasoningEffort;
+        $this->id = $conversationId;
     }
 
     public function getUser(): User
     {
         return $this->user;
-    }
-
-    public function isActive(): bool
-    {
-        return !$this->generationStatus->isFinished();
-    }
-
-    public function markGeneration(ExecutionStatus $status, ?string $error = null): void
-    {
-        $this->generationStatus = $status;
-        $this->error = $error;
-        if ([] !== $this->turns) {
-            $index = \count($this->turns) - 1;
-            $this->turns[$index]['execution'] = $status->value;
-            $this->turns[$index]['error'] = $error;
-        }
     }
 
     public function getLabel(): string

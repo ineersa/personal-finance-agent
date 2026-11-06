@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace App\Tests\Live;
 
-use App\Chat\ChatActivity;
 use App\Finance\Sql\TenantSqlTool;
 use PHPUnit\Framework\TestCase;
 use Playwright\PlaywrightFactory;
+use Symfony\AI\Agent\Execution\ExecutionStatus;
 
 final class ChatTest extends TestCase
 {
@@ -85,7 +85,7 @@ final class ChatTest extends TestCase
                 $page->locator('.chat-turn')->last()->locator('.chat-answer[data-chat-saved]')->waitFor(['timeout' => 120000]);
                 self::assertStringContainsString('PAYROLL LANTERN LABS', $page->locator('.chat-answer')->last()->textContent());
                 $tool = $page->locator('.chat-turn')->nth($initialTurns)->locator('.chat-tool')->filter(['hasText' => TenantSqlTool::QUERY_NAME])->first();
-                self::assertSame(ChatActivity::COMPLETED, $tool->getAttribute('data-tool-status'));
+                self::assertSame(ExecutionStatus::Completed->value, $tool->getAttribute('data-tool-status'));
                 self::assertNull($tool->getAttribute('open'));
                 $callId = $tool->getAttribute('data-tool-call-id');
                 self::assertNotEmpty($callId);

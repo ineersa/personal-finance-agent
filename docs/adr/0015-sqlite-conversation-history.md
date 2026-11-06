@@ -1,6 +1,6 @@
 # ADR 0015: Store chat history in SQLite with five temporary chats per user
 
-- Status: Accepted
+- Status: Superseded by [ADR 0029](0029-native-chat-store.md).
 - Date: 2026-10-29
 - Amended by: [ADR 0027](0027-owned-chat-history-controls.md), selecting no-victim refusal, owner history across reconnects and short durable generation metadata under the current SPEC. Superseded quota/remote-chart references below are historical context.
 

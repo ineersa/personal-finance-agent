@@ -39,8 +39,15 @@ services:
             - '../src/Doctrine/SqliteImmediateTransactionConnection.php'
             - '../src/Doctrine/SqliteImmediateTransactionDriver.php'
 
-    Symfony\AI\Platform\Serializer\MessageBagNormalizer: ~
     Symfony\AI\Platform\Message\TemplateRenderer\StringTemplateRenderer: ~
+
+    Symfony\AI\Agent\Bridge\Doctrine\DoctrineDbalMessageStore:
+        autowire: false
+        arguments:
+            $tableName: !php/const App\Entity\ChatMessages::TABLE
+            $dbalConnection: '@doctrine.dbal.default_connection'
+
+    Symfony\AI\Agent\MessageStore\MessageStoreInterface: '@Symfony\AI\Agent\Bridge\Doctrine\DoctrineDbalMessageStore'
 
     # Native and untraced: OAuth credentials must not enter the HTTP profiler.
     app.chatgpt.http_client:

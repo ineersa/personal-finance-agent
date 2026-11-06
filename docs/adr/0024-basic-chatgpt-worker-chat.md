@@ -3,6 +3,7 @@
 - Status: Accepted
 - Date: 2026-11-03
 - Amends: ADRs 0012, 0013 and 0015 for the first chat slice only.
+- Amended by: [ADR 0029](0029-native-chat-store.md), replacing application-owned history/projections and signed-output rewriting with the supplied native store and collector. Current owner approval accepts native limitations; earlier implementation detail below is historical.
 - Amended by: [ADR 0027](0027-owned-chat-history-controls.md) for retained owner history, explicit selection, same-chat busy refusal and short durable generation transitions. The original first-slice limitations below remain historical context.
 
 ## Context

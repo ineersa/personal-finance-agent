@@ -1,6 +1,6 @@
 # ADR 0027: Owned chat history, retention and short generation writes
 
-- Status: Accepted
+- Status: Superseded by [ADR 0029](0029-native-chat-store.md). Historical rationale below, not the current runtime design.
 - Date: 2026-11-05
 - Amends: ADRs 0015 and 0024 for the combined history/controls slice.
 

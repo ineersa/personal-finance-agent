@@ -1,6 +1,7 @@
 <turbo-frame id="{{ constant('App\\Chat\\ChatSearch::FRAME_ID') }}">
     <section class="chat-search-results" aria-label="Search results" aria-live="polite">
-        {% if query %}
+        {% if error|default(null) %}<p role="alert">{{ error }}</p>
+        {% elseif query %}
             <ul>
                 {% for result in results %}
                     <li><a data-turbo="false" href="{{ path(constant('App\\Chat\\Workspace::CHAT_ROUTE'), {conversation: result.id}) }}"><strong>{{ result.label }}</strong><span>{{ result.snippet }}</span></a></li>

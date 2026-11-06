@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\Chat;
 
+use App\Entity\ChatConversation;
+use App\Repository\ChatConversationRepository;
 use Mcp\Schema\Content\TextContent;
 use Mcp\Schema\Result\CallToolResult;
 use Symfony\AI\Agent\Bridge\Mcp\ToolsetInterface;
@@ -20,7 +22,7 @@ final readonly class ChartToolset implements ToolsetInterface
     public const string PROMPT_LINE = 'Unovis chart tools are discovered from the local MCP service and save interactive HTML inline in this conversation.';
     public const string GUIDELINES = 'Use the discovered chart tools when a visualization materially helps answer the user question, using authorized SQL results. Calculate values in {finance_name}; do not invent or mentally calculate chart data. Rendering is local. The application manages outputType and outputPath for private inline HTML presentation. The info tool returns server information as text, not a chart. Follow each tool schema for chart options. If a tool returns an error, use its feedback to correct the call and try again when appropriate. Charts appear inline automatically; do not emit HTML, scripts, image Markdown or chart links.';
 
-    public function __construct(private ToolsetInterface $connection, private ChartFiles $files, private string $conversation, private NativeAssistantOutput $output)
+    public function __construct(private ToolsetInterface $connection, private ChartFiles $files, private ChatConversation $conversation, private string $message, private ChatConversationRepository $conversations)
     {
     }
 
@@ -61,11 +63,11 @@ final readonly class ChartToolset implements ToolsetInterface
                 return CallToolResult::error([] !== $messages ? $messages : [new TextContent('The chart service returned an error without text details.')]);
             }
             try {
-                $filename = $this->files->retain($this->conversation, $path);
+                $filename = $this->files->retain($this->conversation->id, $path);
+                $this->conversations->attachChart($this->conversation, $this->message, $filename);
             } catch (\Throwable) {
                 return CallToolResult::error([new TextContent('The chart output could not be retained privately. No document was attached.')]);
             }
-            $this->output->charts[] = ['file' => $filename, 'error' => null];
 
             return CallToolResult::success([new TextContent('Interactive chart saved privately and displayed inline.')]);
         } finally {

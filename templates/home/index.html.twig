@@ -4,7 +4,7 @@
 {% block content_header_wrapper %}{% endblock %}
 {% block main %}
     {% set statuses = enum('App\\ChatGpt\\ConnectionStatus') %}
-    <div class="finance-chat" data-controller="chat-view import-catch-up" data-import-catch-up-url-value="{{ path(constant('App\\Chat\\Workspace::SNAPSHOT_ROUTE'), {conversation: chat.conversation_id}) }}" data-import-catch-up-target-selector-value="[data-chat-execution], [data-chat-send]"{% if chat.conversation_id %} data-import-catch-up-external-target-selector-value="#{{ constant('App\\Chat\\Workspace::NAVIGATION_DOM_ID') }}-{{ chat.conversation_id }}, #{{ constant('App\\Chat\\Workspace::LINK_DOM_ID') }}-{{ chat.conversation_id }}, #{{ constant('App\\Chat\\Workspace::DELETE_DOM_ID') }}-{{ chat.conversation_id }}"{% endif %}>
+    <div class="finance-chat" data-controller="chat-view import-catch-up" data-import-catch-up-url-value="{{ path(constant('App\\Chat\\Workspace::SNAPSHOT_ROUTE'), {conversation: chat.conversation_id}) }}" data-import-catch-up-target-selector-value="[data-chat-execution], [data-chat-send]">
         <header class="chat-header">
             <h1>Chat</h1>
             {% if chatgpt_status == statuses.Connected %}
@@ -36,7 +36,7 @@
         {% if chatgpt_status == statuses.Connected %}
             <div class="chat-compose-area">
                 <button class="chat-jump" type="button" data-chat-view-target="jump" data-action="chat-view#jumpToLatest" hidden>Jump to latest ↓</button>
-                <form action="{{ path(constant('App\\Chat\\Workspace::SUBMIT_ROUTE')) }}" method="post" class="chat-composer" data-action="turbo:submit-start->chat-view#submissionStarted turbo:submit-end->chat-view#submissionFinished chat-view:acknowledged->import-catch-up#catchUp" data-turbo="{{ chat.conversation_id ? 'true' : 'false' }}">
+                <form action="{{ path(constant('App\\Chat\\Workspace::SUBMIT_ROUTE'), app.request.query.all) }}" method="post" class="chat-composer" data-action="turbo:submit-start->chat-view#submissionStarted turbo:submit-end->chat-view#submissionFinished chat-view:acknowledged->import-catch-up#catchUp" data-turbo="{{ chat.conversation_id ? 'true' : 'false' }}">
                     <input type="hidden" name="_token" value="{{ csrf_token(constant('App\\Chat\\Workspace::SUBMIT_CSRF')) }}" data-controller="csrf-protection">
                     <input type="hidden" name="conversation" value="{{ chat.conversation_id }}">
                     {% include 'chat/_composer.html.twig' %}
