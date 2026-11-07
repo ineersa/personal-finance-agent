@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace App\Tests\Live;
 
 use App\Chat\ChatModel;
-use App\Chat\ReasoningEffort;
 use App\Finance\Sql\TenantSqlTool;
 use PHPUnit\Framework\TestCase;
 use Playwright\PlaywrightFactory;
@@ -79,7 +78,7 @@ final class ChatTest extends TestCase
                 $page->goto($url.'/home/chat');
                 self::assertTrue($page->getByRole('button', ['name' => 'Send message', 'exact' => true])->isVisible(), 'The owner must connect ChatGPT in this isolated stack before the live test.');
                 self::assertSame(ChatModel::Gpt6Luna->value, $page->getByLabel('Model', ['exact' => true])->inputValue());
-                self::assertSame(ReasoningEffort::Low->value, $page->getByLabel('Reasoning level', ['exact' => true])->inputValue());
+                self::assertSame('Low', $page->getByRole('slider', ['name' => 'Reasoning level', 'exact' => true])->getAttribute('aria-valuetext'));
                 $initialTurns = $page->locator('.chat-turn')->count();
                 $code = 'cobalt-lantern';
                 $question = 'Use finance_query to find the description of the approved CAD credit dated 2024-11-01 with amount 2860.00 in my records. Quote that description in your answer, then remember the code word '.$code.'.';
@@ -99,7 +98,8 @@ final class ChatTest extends TestCase
 
                 $followUp = 'What code word did I just ask you to remember? Reply with that code only.';
                 $page->getByLabel('Model', ['exact' => true])->selectOption(ChatModel::Gpt6Sol->value);
-                $page->getByLabel('Reasoning level', ['exact' => true])->selectOption(ReasoningEffort::High->value);
+                $page->getByRole('slider', ['name' => 'Reasoning level', 'exact' => true])->press('ArrowRight');
+                $page->getByRole('slider', ['name' => 'Reasoning level', 'exact' => true])->press('ArrowRight');
                 $page->getByLabel('Your message', ['exact' => true])->fill($followUp);
                 $page->getByRole('button', ['name' => 'Send message', 'exact' => true])->click();
                 $page->locator('.chat-turn')->nth($initialTurns + 1)->getByText($followUp, ['exact' => true])->waitFor();

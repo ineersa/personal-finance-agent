@@ -55,11 +55,12 @@ final class ChatModelTest extends FinanceBrowserTest
         $this->loginUser($user);
         $page = $this->visit('/home/chat');
         $model = $page->getByLabel('Model', ['exact' => true]);
-        $effort = $page->getByLabel('Reasoning level', ['exact' => true]);
+        $effort = $page->getByRole('slider', ['name' => 'Reasoning level', 'exact' => true]);
         self::assertSame(ChatModel::Gpt6Luna->value, $model->inputValue());
-        self::assertSame(ReasoningEffort::Low->value, $effort->inputValue());
+        self::assertSame('Low', $effort->getAttribute('aria-valuetext'));
         $model->selectOption(ChatModel::Gpt6Sol->value);
-        $effort->selectOption(ReasoningEffort::High->value);
+        $effort->press('ArrowRight');
+        $effort->press('ArrowRight');
         $page->getByLabel('Your message', ['exact' => true])->fill('Summarize my monthly spending.');
         $this->submit(static fn () => $page->getByRole('button', ['name' => 'Send message', 'exact' => true])->click());
         self::assertCount(1, $transport->getSent());
@@ -69,8 +70,8 @@ final class ChatModelTest extends FinanceBrowserTest
         self::assertSame(ReasoningEffort::High, $first->effort);
 
         $model->selectOption(ChatModel::Gpt53CodexSpark->value);
-        $effort->selectOption(ReasoningEffort::ExtraHigh->value);
-        self::assertSame(2, $effort->locator('option:enabled')->count());
+        $effort->press('ArrowRight');
+        self::assertSame('1', $effort->getAttribute('max'));
         $page->getByLabel('Your message', ['exact' => true])->fill('And compare it with the previous month.');
         $this->submit(static fn () => $page->getByRole('button', ['name' => 'Send message', 'exact' => true])->click());
         self::assertCount(2, $transport->getSent());

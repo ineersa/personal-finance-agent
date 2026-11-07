@@ -1,8 +1,24 @@
 <div id="{{ chat.composer_id }}" data-controller="chat-model">
     <p id="{{ chat.composer_id }}-error" role="status" data-chat-view-target="error"></p>
     <div class="composer-toolbar chat-model-selection">
-        <div>{{ form_label(form.model) }} {{ form_widget(form.model) }}</div>
-        <div>{{ form_label(form.effort) }} {{ form_widget(form.effort) }}</div>
+        <div class="chat-model-control">
+            {{ form_label(form.model) }}
+            <div class="chat-model-dropdown">{{ form_widget(form.model) }}</div>
+        </div>
+        <div class="chat-reasoning-control">
+            <div data-chat-model-target="fallback">
+                {{ form_label(form.effort) }}
+                {{ form_widget(form.effort) }}
+            </div>
+            <div data-chat-model-target="enhanced" hidden>
+                <div class="chat-reasoning-caption">
+                    <label for="{{ form.effort.vars.id }}-range">{{ form.effort.vars.label }}</label>
+                    <output for="{{ form.effort.vars.id }}-range" data-chat-model-target="current"></output>
+                </div>
+                <input id="{{ form.effort.vars.id }}-range" class="chat-reasoning-slider" type="range" min="0" max="0" step="1" value="0" aria-describedby="{{ form.effort.vars.id }}-steps" data-chat-model-target="slider" data-action="input->chat-model#slide">
+                <div id="{{ form.effort.vars.id }}-steps" class="chat-reasoning-steps" data-chat-model-target="steps"></div>
+            </div>
+        </div>
     </div>
     {{ form_label(form.question) }}
     {{ form_widget(form.question) }}
