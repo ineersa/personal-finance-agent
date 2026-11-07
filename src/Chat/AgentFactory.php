@@ -78,7 +78,7 @@ final readonly class AgentFactory
         $chartTools = new ClientToolset(ChartToolset::NAME, $chartClient, new HttpTransport(ChartToolset::ENDPOINT, httpClient: $chartHttp, requestFactory: $factory, streamFactory: $factory, maxSseBufferBytes: 262144));
 
         return new Agent(new Platform([$provider]), $model,
-            inputProcessors: [new SystemPromptInputProcessor($prompt)],
+            inputProcessors: [new ModelHistoryInputProcessor(), new SystemPromptInputProcessor($prompt)],
             // Keep native NullLogger: debug tool logging would expose SQL arguments.
             toolbox: new FaultTolerantToolbox(new ChainToolbox([
                 new Toolbox([$this->tool->forOwner($owner)], eventDispatcher: $events),

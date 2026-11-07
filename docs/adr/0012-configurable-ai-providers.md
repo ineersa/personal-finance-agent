@@ -2,7 +2,7 @@
 
 - Status: Accepted
 - Date: 2026-10-29
-- ChatGPT scheduling superseded by [ADR 0022](0022-local-chatgpt-connection.md); the three-provider and selector decisions remain accepted.
+- ChatGPT scheduling superseded by [ADR 0022](0022-local-chatgpt-connection.md); multi-provider chat scope superseded by [ADR 0030](0030-chatgpt-model-selection.md). Independent extraction decisions remain accepted.
 
 ## Context
 

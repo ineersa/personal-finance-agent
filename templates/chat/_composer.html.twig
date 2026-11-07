@@ -1,5 +1,9 @@
-<div id="{{ chat.composer_id }}">
+<div id="{{ chat.composer_id }}" data-controller="chat-model">
     <p id="{{ chat.composer_id }}-error" role="status" data-chat-view-target="error"></p>
+    <div class="composer-toolbar chat-model-selection">
+        <div>{{ form_label(form.model) }} {{ form_widget(form.model) }}</div>
+        <div>{{ form_label(form.effort) }} {{ form_widget(form.effort) }}</div>
+    </div>
     {{ form_label(form.question) }}
     {{ form_widget(form.question) }}
     <div class="composer-toolbar">

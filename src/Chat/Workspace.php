@@ -67,8 +67,9 @@ final readonly class Workspace
         return $conversation;
     }
 
-    public function submit(User $user, string $question, string $id = ''): ChatConversation
+    public function submit(User $user, string $question, ChatModel $model, ReasoningEffort $effort, string $id = ''): ChatConversation
     {
+        $model->validateEffort($effort);
         if (null === $user->getChatGptIdentity()) {
             throw new \DomainException('Connect ChatGPT before sending a message.');
         }
@@ -82,7 +83,7 @@ final readonly class Workspace
         }
         // Native message IDs survive Messenger redelivery; Agent owns continuation and conflicts.
         $input = $input->with(Message::ofUser($question));
-        $this->bus->dispatch(new GenerateChat($conversation->id, $user->getId() ?? throw new \LogicException('Owner unavailable.'), $input));
+        $this->bus->dispatch(new GenerateChat($conversation->id, $user->getId() ?? throw new \LogicException('Owner unavailable.'), $input, $model, $effort));
 
         return $conversation;
     }

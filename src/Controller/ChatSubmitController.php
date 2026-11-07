@@ -5,8 +5,10 @@ declare(strict_types=1);
 namespace App\Controller;
 
 use App\Chat\ChatAction;
+use App\Chat\ChatModel;
 use App\Chat\ChatSelection;
 use App\Chat\ChatUpdates;
+use App\Chat\ReasoningEffort;
 use App\Chat\Workspace;
 use App\ChatGpt\Connection;
 use App\ChatGpt\ConnectionStatus;
@@ -48,7 +50,10 @@ final class ChatSubmitController extends AbstractController
             $error = 'Connect ChatGPT before sending a message.';
         } else {
             try {
-                $conversation = $workspace->submit($user, $question, $id);
+                $model = $form->get('model')->getData();
+                $effort = $form->get('effort')->getData();
+                \assert($model instanceof ChatModel && $effort instanceof ReasoningEffort);
+                $conversation = $workspace->submit($user, $question, $model, $effort, $id);
                 if ($stream) {
                     // Acknowledgement only: worker/catch-up owns all chat state.
                     return new Response(status: Response::HTTP_NO_CONTENT);

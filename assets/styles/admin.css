@@ -176,6 +176,7 @@ body.ea .chat-navigation-row .ea-sidebar-item-label { min-width: 0; overflow: hi
 .finance-chat .chat-composer:focus-within { border-color: #657b70; }
 .finance-chat .chat-composer textarea { color: #ededee; resize: none; min-height: 28px; max-height: 160px; line-height: 1.6; outline: none; }
 .finance-chat .composer-toolbar { margin-top: 10px; }
+.finance-chat .chat-model-selection { flex-wrap: wrap; justify-content: flex-start; margin: 0 0 10px; }
 .finance-chat .chat-composer .send-button { width: auto; height: auto; flex-shrink: 0; padding: 7px 12px; color: #111112; background: #b9edd1; font-size: 12px; font-weight: 600; }
 .finance-chat .chat-composer .send-button:disabled { opacity: .45; }
 .finance-chat .chat-composer .preview-note { margin: 0; font-size: 11px; }
