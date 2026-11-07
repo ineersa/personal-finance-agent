@@ -11,9 +11,9 @@ The owner selected ChatGPT only, requested model and supported reasoning-level c
 
 ## Decision
 
-Use native Symfony `EnumType` fields and backed enums for the ChatGPT models and wire-level reasoning efforts. Keep the closed composer small: just the question and bottom toolbar, with a literal **Model** chevron trigger beside Send. Native closed-by-default `details` opens a compact, dark/mint panel absolutely positioned above the composer, without an expanded top row or layout shift. Inside, stack the accessible native model dropdown and reasoning control vertically. Declarative Stimulus actions dismiss on outside click or Escape, returning focus to the trigger on Escape; Stimulus owns listener cleanup. Small declarative Stimulus behaviour progressively enhances the reasoning select into a native stepped range with a visible current label, supported-step labels and `aria-valuetext`. Its integer positions index only the selected model's supported efforts (Spark has just low/xhigh), synchronizing the original enum field for submission. Retain the current effort when supported, otherwise select the model's first supported effort. The enum select remains the no-JavaScript fallback; native range keyboard handling needs no custom event listeners or widget dependency. Symfony Form validates enum membership and the model/effort combination server-side; admission also validates the combination. No credentials are form fields or queue payloads.
+Use native Symfony `EnumType` fields and backed enums for the ChatGPT models and wire-level reasoning efforts. Keep the closed composer small: just the question and bottom toolbar, with a literal **Model** chevron trigger beside Send. Native closed-by-default `details` opens a compact, dark/mint panel absolutely positioned above the composer, without an expanded top row or layout shift. Inside, stack the accessible native model dropdown and reasoning control vertically. Declarative Stimulus actions dismiss on outside click or Escape, returning focus to the trigger on Escape; Stimulus owns listener cleanup. Small declarative Stimulus behaviour progressively enhances the reasoning select into a native stepped range with a visible current label, supported-step labels and `aria-valuetext`. Its integer positions index only the selected model's supported efforts (GPT-6.1 Sol and GPT-6 Astra omit `none`), synchronizing the original enum field for submission. Retain the current effort when supported, otherwise select the model's first supported effort. The enum select remains the no-JavaScript fallback; native range keyboard handling needs no custom event listeners or widget dependency. Symfony Form validates enum membership and the model/effort combination server-side; admission also validates the combination. No credentials are form fields or queue payloads.
 
-Curate only the ChatGPT model/effort metadata from the read-only Hatfield `config/ai-catalog.yaml` (the `chatgpt` provider). Deduplicate its `minimal` alias of `low`; unsupported/null mappings are not choices. There is no universal cross-provider reasoning scale:
+Offer only GPT-6 and higher, as selected by the owner. Curate their ChatGPT model/effort metadata from the read-only Hatfield `config/ai-catalog.yaml` (the `chatgpt` provider). Deduplicate its `minimal` alias of `low`; unsupported/null mappings are not choices. There is no universal cross-provider reasoning scale:
 
 | Model | Supported wire efforts |
 | --- | --- |
@@ -21,10 +21,6 @@ Curate only the ChatGPT model/effort metadata from the read-only Hatfield `confi
 | `gpt-6-astra` | `low`, `medium`, `high`, `xhigh`, `max` |
 | `gpt-6-sol` | `none`, `low`, `medium`, `high`, `xhigh`, `max` |
 | `gpt-6-luna` | `none`, `low`, `medium`, `high`, `xhigh`, `max` |
-| `gpt-5.6-luna` | `low`, `medium`, `high`, `xhigh`, `max` |
-| `gpt-5.6-sol` | `low`, `medium`, `high`, `xhigh`, `max` |
-| `gpt-5.6-terra` | `low`, `medium`, `high`, `xhigh`, `max` |
-| `gpt-5.3-codex-spark` | `low`, `xhigh` |
 
 The existing `CHAT_MODEL` / `CHAT_REASONING_EFFORT` configure initial form defaults, still `gpt-6-luna` / `low`. Defaults must be a supported catalog combination; invalid configuration fails rather than silently choosing another model. Navigation builds a fresh composer from these defaults; this is not a persistent preference. Within a selected chat, acknowledgement-only submissions leave the composer selection intact.
 
@@ -54,7 +50,7 @@ No store decorator, custom serializer, request shaper, mutable shared current-mo
 
 ## Consequences and validation limits
 
-Hatfield curates 272k context for the first seven models and 128k for Spark. The installed native models/Agent do not provide a proactive tokenizer/context admission guard. The provider enforces its actual limit; a switch to a smaller model can fail visibly through the existing generation error path. Do not silently trim history or imply unlimited context. No proactive smaller-context compatibility claim or automatic compaction is made; the later task 23 remains separate.
+Hatfield curates 272k context for all four selected GPT-6+ models. The installed native models/Agent do not provide a proactive tokenizer/context admission guard. The provider enforces its actual limit; a switch to a smaller model can fail visibly through the existing generation error path. Do not silently trim history or imply unlimited context. No proactive smaller-context compatibility claim or automatic compaction is made; the later task 23 remains separate.
 
 The intercepted Playwright happy path uses the existing synthetic auth and native serialized in-memory Messenger transport to demonstrate supported options and immutable per-turn capture. It does not execute inference, consume a cassette, or establish provider acceptance of every model/effort or cross-model signed-history continuation. Real cross-process verification needs an isolated stack, worker/broker/Mercure and the owner's ChatGPT login there. Do not copy credentials from another checkout. Existing recordings must not be relabelled as multi-model proof.
 

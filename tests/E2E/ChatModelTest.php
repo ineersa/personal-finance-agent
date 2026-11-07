@@ -58,6 +58,7 @@ final class ChatModelTest extends FinanceBrowserTest
         $menu->click();
         $model = $page->getByLabel('Model', ['exact' => true]);
         $effort = $page->getByRole('slider', ['name' => 'Reasoning level', 'exact' => true]);
+        self::assertSame(4, $model->locator('option')->count());
         self::assertSame(ChatModel::Gpt6Luna->value, $model->inputValue());
         self::assertSame('Low', $effort->getAttribute('aria-valuetext'));
         $model->selectOption(ChatModel::Gpt6Sol->value);
@@ -73,9 +74,10 @@ final class ChatModelTest extends FinanceBrowserTest
         self::assertSame(ReasoningEffort::High, $first->effort);
 
         $menu->click();
-        $model->selectOption(ChatModel::Gpt53CodexSpark->value);
-        $effort->press('ArrowRight');
-        self::assertSame('1', $effort->getAttribute('max'));
+        $model->selectOption(ChatModel::Gpt61Sol->value);
+        $effort->press('End');
+        $effort->press('ArrowLeft');
+        self::assertSame('4', $effort->getAttribute('max'));
         $menu->click();
         $page->getByLabel('Your message', ['exact' => true])->fill('And compare it with the previous month.');
         $this->submit(static fn () => $page->getByRole('button', ['name' => 'Send message', 'exact' => true])->click());
@@ -83,7 +85,7 @@ final class ChatModelTest extends FinanceBrowserTest
         $second = $transport->getSent()[1]->getMessage();
         self::assertInstanceOf(GenerateChat::class, $second);
         self::assertSame($first->conversationId, $second->conversationId);
-        self::assertSame(ChatModel::Gpt53CodexSpark, $second->model);
+        self::assertSame(ChatModel::Gpt61Sol, $second->model);
         self::assertSame(ReasoningEffort::ExtraHigh, $second->effort);
         // A later composer change does not retarget the already serialized first turn.
         $first = $transport->getSent()[0]->getMessage();

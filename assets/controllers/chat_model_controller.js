@@ -35,9 +35,10 @@ export default class extends Controller {
         const options = this.supportedOptions();
         this.sliderTarget.max = options.length - 1;
         this.sliderTarget.value = options.findIndex(option => option.value === this.effortTarget.value);
-        this.stepsTarget.replaceChildren(...options.map(option => {
+        this.stepsTarget.replaceChildren(...options.map((option, index) => {
             const step = document.createElement('span');
             step.textContent = this.label(option);
+            step.style.left = `${index / (options.length - 1) * 100}%`;
             return step;
         }));
         this.slide();

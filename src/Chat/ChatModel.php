@@ -11,10 +11,6 @@ enum ChatModel: string
     case Gpt6Astra = 'gpt-6-astra';
     case Gpt6Sol = 'gpt-6-sol';
     case Gpt6Luna = 'gpt-6-luna';
-    case Gpt56Luna = 'gpt-5.6-luna';
-    case Gpt56Sol = 'gpt-5.6-sol';
-    case Gpt56Terra = 'gpt-5.6-terra';
-    case Gpt53CodexSpark = 'gpt-5.3-codex-spark';
 
     public function label(): string
     {
@@ -23,10 +19,6 @@ enum ChatModel: string
             self::Gpt6Astra => 'GPT-6 Astra',
             self::Gpt6Sol => 'GPT-6 Sol',
             self::Gpt6Luna => 'GPT-6 Luna',
-            self::Gpt56Luna => 'GPT-5.6 Luna',
-            self::Gpt56Sol => 'GPT-5.6 Sol',
-            self::Gpt56Terra => 'GPT-5.6 Terra',
-            self::Gpt53CodexSpark => 'GPT-5.3 Codex Spark',
         };
     }
 
@@ -35,8 +27,7 @@ enum ChatModel: string
     {
         return match ($this) {
             self::Gpt6Sol, self::Gpt6Luna => ReasoningEffort::cases(),
-            self::Gpt53CodexSpark => [ReasoningEffort::Low, ReasoningEffort::ExtraHigh],
-            default => [ReasoningEffort::Low, ReasoningEffort::Medium, ReasoningEffort::High, ReasoningEffort::ExtraHigh, ReasoningEffort::Max],
+            self::Gpt61Sol, self::Gpt6Astra => [ReasoningEffort::Low, ReasoningEffort::Medium, ReasoningEffort::High, ReasoningEffort::ExtraHigh, ReasoningEffort::Max],
         };
     }
 
