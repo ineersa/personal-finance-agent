@@ -163,10 +163,24 @@ final class ChatModelTest extends FinanceBrowserTest
     public function testFocusPreservesActiveLiveCardAndCatchesUpWhenDisconnected(): void
     {
         $this->mockHub();
-        $twig = self::getContainer()->get(Environment::class);
+        $container = self::getContainer();
+        $container->set('messenger.transport.chat', new InMemoryTransport(new PhpSerializer()));
+        $owner = $this->connectedUser();
+        $history = new MessageBag();
+        $conversation = new ChatConversation($owner, $history->getId()->toRfc4122());
+        $manager = $container->get(EntityManagerInterface::class);
+        $manager->persist($conversation);
+        $manager->flush();
+        $this->loginUser($owner);
+        $twig = $container->get(Environment::class);
         $twig->resetGlobals();
         $twig->addGlobal('import_updates_enabled', true);
-        $page = $this->connectedChat();
+        $question = Message::ofUser('Synthetic running question.');
+        $context = ['conversation' => $conversation, 'user' => $question];
+        $start = $twig->render('chat/start.stream.html.twig', $context);
+        $tool = new ToolCall('synthetic-live-tool', 'synthetic_tool');
+        $toolUpdate = $twig->render('chat/tool.stream.html.twig', [...$context, 'anchor' => $question->getId()->toRfc4122(), 'tool' => $tool, 'result' => null]);
+        $page = $this->visit('/home/chat?conversation='.$conversation->id);
         $page->locator('#import-live-subscription turbo-mercure-stream-source')->waitFor(['state' => 'attached']);
         $setup = $page->evaluate(<<<'JS'
             () => {
@@ -197,19 +211,42 @@ final class ChatModelTest extends FinanceBrowserTest
             () => {
                 const root = document.querySelector('[data-chat-execution]');
                 window.chatOriginalRoot = root;
-                root.insertAdjacentHTML('beforeend', '<p data-chat-response-active></p><details id="synthetic-live-tool" class="chat-tool"><summary>Synthetic running tool</summary></details>');
                 return window.chatSnapshotRequests;
             }
             JS);
+        // Agent's initial checkpoint has the question, but not the later live response/tool round.
+        $container->get(MessageStoreInterface::class)->save($history->with($question));
+        // Actual start Twig/Turbo emits Running before the late HTTP acknowledgement.
+        $page->evaluate('html => window.Turbo.renderStreamMessage(html)', $start);
+        $page->locator('[data-chat-response-active]')->waitFor();
+        self::assertSame('true', $page->locator('form.chat-composer')->getAttribute('data-turbo'));
+        $acknowledgements = $page->evaluate(<<<'JS'
+            () => {
+                const form = document.querySelector('form.chat-composer');
+                let acknowledged = 0;
+                form.addEventListener('chat-view:acknowledged', () => ++acknowledged, {once: true});
+                form.dispatchEvent(new CustomEvent('turbo:submit-end', {bubbles: true, detail: {success: true}}));
+                return acknowledged;
+            }
+            JS);
+        self::assertSame(1, $acknowledgements);
+        self::assertSame($baseline, $page->evaluate('() => window.chatSnapshotRequests'));
+        self::assertSame(1, $page->locator('[data-chat-response-active]')->count());
+
+        // A later real tool stream must still be protected by the original Running marker.
+        $page->evaluate('html => window.Turbo.renderStreamMessage(html)', $toolUpdate);
+        $card = $page->locator('[data-tool-call-id="synthetic-live-tool"]');
+        $card->waitFor();
         // Exercise the declarative action in a real browser, not OS/tab-focus behavior.
         $page->evaluate('() => window.dispatchEvent(new FocusEvent("focus"))');
         self::assertSame($baseline, $page->evaluate('() => window.chatSnapshotRequests'));
-        self::assertTrue($page->locator('#synthetic-live-tool')->isVisible());
+        self::assertTrue($card->isVisible());
         self::assertTrue($page->evaluate('() => window.chatOriginalRoot === document.querySelector("[data-chat-execution]")'));
 
         $page->evaluate('() => { document.querySelector("#import-live-subscription turbo-mercure-stream-source").removeAttribute("connected"); window.dispatchEvent(new FocusEvent("focus")); }');
-        $page->locator('#synthetic-live-tool')->waitFor(['state' => 'detached']);
+        $card->waitFor(['state' => 'detached']);
         self::assertSame($baseline + 1, $page->evaluate('() => window.chatSnapshotRequests'));
+        self::assertSame(0, $page->locator('[data-chat-response-active]')->count());
         self::assertTrue($page->locator('.chat-live-notice')->isVisible());
     }
 

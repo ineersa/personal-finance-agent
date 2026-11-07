@@ -52,8 +52,8 @@ export default class extends Controller {
         if (this.hasDisconnectedTarget) this.disconnectedTarget.hidden = !this.source || this.source.hasAttribute('connected');
     }
 
-    catchUpOnFocus(event) {
-        // A live tool round can be newer than the last canonical checkpoint.
+    catchUpOnChatEvent(event) {
+        // Live progress can precede a canonical checkpoint, including at submission acknowledgement.
         if (this.source?.hasAttribute('connected') && this.element.querySelector('[data-chat-execution] [data-chat-response-active]')) return;
         return this.catchUp(event);
     }
