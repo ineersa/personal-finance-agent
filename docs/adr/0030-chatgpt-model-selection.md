@@ -41,6 +41,12 @@ Use one stateless native input processor to preserve a historical assistant unch
 
 No store decorator, custom serializer, request shaper, mutable shared current-model state, compactor or orchestration layer is added.
 
+### Live connection feedback
+
+The owner approved chat-only presentation safeguards for a disconnected live view: a compact accessible notice with a normal full-page reload link retaining the selected conversation, and a saved-history snapshot when the window regains focus, even while Mercure is disconnected. Reuse the existing catch-up controller, endpoint and deferred-render version guard. The notice follows the native source's `connected` attribute, not browser online status or inference status; hide it only when the native source is connected (or no live source is configured). A listener on the installed native EventSource also handles an initial error before a `connected` attribute existed. Remove that listener on controller disconnect; declarative Stimulus owns the chat-only window-focus action.
+
+Native EventSource still owns transport and reconnects. This does not renew authorization, retry failed publication, resend inference, persist execution status or guarantee delivery of completion. A successful focus snapshot refreshes saved history but does not claim that live transport recovered. No polling, timer, retry framework, new saved special-case scenario or backend change is added. The owner separately authorized one isolated browser disconnect/reconnect diagnostic; source inspection is not its verification result.
+
 ## Alternatives considered
 
 - Retain llama.cpp/z.ai/DeepSeek chat selection: superseded by the owner's ChatGPT-only scope; extraction is unaffected.
