@@ -1,0 +1,108 @@
+<?php
+
+declare(strict_types=1);
+
+namespace App\Tests\E2E;
+
+use App\Chat\ChatModel;
+use App\Chat\ReasoningEffort;
+use App\Entity\User;
+use App\Message\GenerateChat;
+use App\Tests\Support\FinanceBrowserTest;
+use App\Tests\Support\SubmitsBrowserForms;
+use Doctrine\ORM\EntityManagerInterface;
+use Hautelook\AliceBundle\PhpUnit\FixtureStore;
+use Symfony\Component\Messenger\Transport\InMemory\InMemoryTransport;
+use Symfony\Component\Messenger\Transport\Serialization\PhpSerializer;
+
+final class ChatModelTest extends FinanceBrowserTest
+{
+    use SubmitsBrowserForms;
+
+    private array $environment;
+
+    protected function setUp(): void
+    {
+        $this->environment = [$_ENV, $_SERVER];
+        // Existing replay auth only; no inference or cassette response is requested by this journey.
+        $_ENV['CHAT_CASSETTE_REPLAY'] = $_SERVER['CHAT_CASSETTE_REPLAY'] = '1';
+        $_ENV['CHATGPT_FINANCE_URL'] = $_SERVER['CHATGPT_FINANCE_URL'] = 'http://selector.browser.finance.localhost';
+        try {
+            parent::setUp();
+        } catch (\Throwable $error) {
+            [$_ENV, $_SERVER] = $this->environment;
+            throw $error;
+        }
+    }
+
+    protected function tearDown(): void
+    {
+        try {
+            parent::tearDown();
+        } finally {
+            [$_ENV, $_SERVER] = $this->environment;
+        }
+    }
+
+    public function testChatCapturesEachModelAndReasoningSelection(): void
+    {
+        $transport = new InMemoryTransport(new PhpSerializer());
+        self::getContainer()->set('messenger.transport.chat', $transport);
+        $user = FixtureStore::getFixtures()['demo'];
+        self::assertInstanceOf(User::class, $user);
+        $user->initializeChatGptIdentity();
+        self::getContainer()->get(EntityManagerInterface::class)->flush();
+        $this->loginUser($user);
+        $page = $this->visit('/home/chat');
+        $menu = $page->locator('.chat-model-menu summary');
+        $menu->click();
+        $model = $page->getByLabel('Model', ['exact' => true]);
+        $effort = $page->getByRole('slider', ['name' => 'Reasoning level', 'exact' => true]);
+        self::assertSame(4, $model->locator('option')->count());
+        self::assertSame(ChatModel::Gpt6Luna->value, $model->inputValue());
+        self::assertSame('Low', $effort->getAttribute('aria-valuetext'));
+        $model->selectOption(ChatModel::Gpt6Sol->value);
+        $effort->press('ArrowRight');
+        $effort->press('ArrowRight');
+        $menu->click();
+        $page->getByLabel('Your message', ['exact' => true])->fill('Summarize my monthly spending.');
+        $this->submit(static fn () => $page->getByRole('button', ['name' => 'Send message', 'exact' => true])->click());
+        self::assertCount(1, $transport->getSent());
+        $first = $transport->getSent()[0]->getMessage();
+        self::assertInstanceOf(GenerateChat::class, $first);
+        self::assertSame(ChatModel::Gpt6Sol, $first->model);
+        self::assertSame(ReasoningEffort::High, $first->effort);
+
+        $menu->click();
+        self::assertSame(ChatModel::Gpt6Sol->value, $model->inputValue());
+        self::assertSame('High', $effort->getAttribute('aria-valuetext'));
+        $menu->click();
+        $page->reload();
+        $menu->click();
+        self::assertSame(ChatModel::Gpt6Sol->value, $model->inputValue());
+        self::assertSame('High', $effort->getAttribute('aria-valuetext'));
+        $model->selectOption(ChatModel::Gpt61Sol->value);
+        $effort->press('End');
+        $effort->press('ArrowLeft');
+        self::assertSame('4', $effort->getAttribute('max'));
+        $menu->click();
+        $page->getByLabel('Your message', ['exact' => true])->fill('And compare it with the previous month.');
+        $this->submit(static fn () => $page->getByRole('button', ['name' => 'Send message', 'exact' => true])->click());
+        self::assertCount(2, $transport->getSent());
+        $second = $transport->getSent()[1]->getMessage();
+        self::assertInstanceOf(GenerateChat::class, $second);
+        self::assertSame($first->conversationId, $second->conversationId);
+        self::assertSame(ChatModel::Gpt61Sol, $second->model);
+        self::assertSame(ReasoningEffort::ExtraHigh, $second->effort);
+        // A later composer change does not retarget the already serialized first turn.
+        $first = $transport->getSent()[0]->getMessage();
+        self::assertInstanceOf(GenerateChat::class, $first);
+        self::assertSame(ChatModel::Gpt6Sol, $first->model);
+        self::assertSame(ReasoningEffort::High, $first->effort);
+        $page->reload();
+        $menu->click();
+        self::assertSame(ChatModel::Gpt61Sol->value, $model->inputValue());
+        self::assertSame('Extra High', $effort->getAttribute('aria-valuetext'));
+        $menu->click();
+    }
+}

@@ -2,6 +2,7 @@
 
 - Status: Accepted
 - Date: 2026-11-06
+- Amended by: [ADR 0030](0030-chatgpt-model-selection.md) for captured queued model/effort and a request-only native input processor; direct storage is unchanged.
 - Supersedes: [ADR 0027](0027-owned-chat-history-controls.md).
 - Amends: [ADR 0015](0015-sqlite-conversation-history.md), [ADR 0024](0024-basic-chatgpt-worker-chat.md), [ADR 0026](0026-local-unovis-charts.md) and [ADR 0028](0028-native-chat-search.md).
 

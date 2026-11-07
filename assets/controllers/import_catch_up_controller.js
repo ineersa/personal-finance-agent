@@ -3,6 +3,7 @@ import { renderStreamMessage } from '@hotwired/turbo';
 
 // UX Turbo marks its native Mercure element connected on every EventSource open.
 export default class extends Controller {
+    static targets = ['disconnected'];
     static values = { url: String, targetSelector: { type: String, default: '[data-import-state]' } };
     version = 0;
 
@@ -30,6 +31,12 @@ export default class extends Controller {
         if (!this.source) return;
         this.observer = new MutationObserver(() => this.catchUp());
         this.observer.observe(this.source, { attributes: true, attributeFilter: ['connected'] });
+        if (this.hasDisconnectedTarget) {
+            // An initial error may occur before there is a connected attribute to remove.
+            this.eventSource = this.source.es;
+            this.sourceError = () => this.updateConnection();
+            this.eventSource?.addEventListener('error', this.sourceError);
+        }
         this.catchUp();
     }
 
@@ -37,11 +44,17 @@ export default class extends Controller {
         document.removeEventListener('turbo:before-stream-render', this.beforeStream);
         ++this.version;
         this.observer?.disconnect();
+        this.eventSource?.removeEventListener('error', this.sourceError);
         this.request?.abort();
     }
 
+    updateConnection() {
+        if (this.hasDisconnectedTarget) this.disconnectedTarget.hidden = !this.source || this.source.hasAttribute('connected');
+    }
+
     async catchUp(event) {
-        // Submission acknowledgements also fetch state when live delivery is unavailable.
+        this.updateConnection();
+        // Chat focus and submission acknowledgements can read saved state even while disconnected.
         if (!event && !this.source?.hasAttribute('connected')) return;
         this.request?.abort();
         const version = ++this.version;
