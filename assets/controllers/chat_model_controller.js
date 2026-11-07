@@ -1,7 +1,7 @@
 import { Controller } from '@hotwired/stimulus';
 
 export default class extends Controller {
-    static targets = ['model', 'effort', 'fallback', 'slider', 'enhanced', 'current', 'steps'];
+    static targets = ['model', 'effort', 'fallback', 'slider', 'enhanced', 'current', 'steps', 'menu'];
 
     connect() {
         this.update();
@@ -12,6 +12,18 @@ export default class extends Controller {
     disconnect() {
         this.fallbackTarget.hidden = false;
         this.enhancedTarget.hidden = true;
+        this.menuTarget.open = false;
+    }
+
+    close(event) {
+        if (!this.menuTarget.open) return;
+        this.menuTarget.open = false;
+        this.menuTarget.querySelector('summary').focus();
+        event.stopPropagation();
+    }
+
+    dismiss(event) {
+        if (!this.menuTarget.contains(event.target)) this.menuTarget.open = false;
     }
 
     update() {

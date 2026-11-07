@@ -77,8 +77,11 @@ final class ChatTest extends TestCase
                 $page->waitForURL('**/home/**');
                 $page->goto($url.'/home/chat');
                 self::assertTrue($page->getByRole('button', ['name' => 'Send message', 'exact' => true])->isVisible(), 'The owner must connect ChatGPT in this isolated stack before the live test.');
+                $menu = $page->getByRole('button', ['name' => 'Model', 'exact' => true]);
+                $menu->click();
                 self::assertSame(ChatModel::Gpt6Luna->value, $page->getByLabel('Model', ['exact' => true])->inputValue());
                 self::assertSame('Low', $page->getByRole('slider', ['name' => 'Reasoning level', 'exact' => true])->getAttribute('aria-valuetext'));
+                $menu->click();
                 $initialTurns = $page->locator('.chat-turn')->count();
                 $code = 'cobalt-lantern';
                 $question = 'Use finance_query to find the description of the approved CAD credit dated 2024-11-01 with amount 2860.00 in my records. Quote that description in your answer, then remember the code word '.$code.'.';
@@ -97,9 +100,11 @@ final class ChatTest extends TestCase
                 self::assertStringContainsString('PAYROLL LANTERN LABS', $tool->locator('.chat-tool-result')->textContent());
 
                 $followUp = 'What code word did I just ask you to remember? Reply with that code only.';
+                $menu->click();
                 $page->getByLabel('Model', ['exact' => true])->selectOption(ChatModel::Gpt6Sol->value);
                 $page->getByRole('slider', ['name' => 'Reasoning level', 'exact' => true])->press('ArrowRight');
                 $page->getByRole('slider', ['name' => 'Reasoning level', 'exact' => true])->press('ArrowRight');
+                $menu->click();
                 $page->getByLabel('Your message', ['exact' => true])->fill($followUp);
                 $page->getByRole('button', ['name' => 'Send message', 'exact' => true])->click();
                 $page->locator('.chat-turn')->nth($initialTurns + 1)->getByText($followUp, ['exact' => true])->waitFor();
