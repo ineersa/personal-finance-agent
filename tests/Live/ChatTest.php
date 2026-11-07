@@ -112,6 +112,10 @@ final class ChatTest extends TestCase
                 self::assertStringContainsString($code, $page->locator('.chat-answer')->last()->textContent());
                 self::assertNotNull($tool->getAttribute('open'));
                 $page->reload();
+                $menu->click();
+                self::assertSame(ChatModel::Gpt6Sol->value, $page->getByLabel('Model', ['exact' => true])->inputValue());
+                self::assertSame('High', $page->getByRole('slider', ['name' => 'Reasoning level', 'exact' => true])->getAttribute('aria-valuetext'));
+                $menu->click();
                 self::assertStringContainsString($code, $page->locator('.chat-answer')->last()->textContent());
                 self::assertSame($callId, $tool->getAttribute('data-tool-call-id'));
                 $tool->locator('summary')->click();

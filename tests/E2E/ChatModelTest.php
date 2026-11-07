@@ -74,6 +74,13 @@ final class ChatModelTest extends FinanceBrowserTest
         self::assertSame(ReasoningEffort::High, $first->effort);
 
         $menu->click();
+        self::assertSame(ChatModel::Gpt6Sol->value, $model->inputValue());
+        self::assertSame('High', $effort->getAttribute('aria-valuetext'));
+        $menu->click();
+        $page->reload();
+        $menu->click();
+        self::assertSame(ChatModel::Gpt6Sol->value, $model->inputValue());
+        self::assertSame('High', $effort->getAttribute('aria-valuetext'));
         $model->selectOption(ChatModel::Gpt61Sol->value);
         $effort->press('End');
         $effort->press('ArrowLeft');
@@ -92,5 +99,10 @@ final class ChatModelTest extends FinanceBrowserTest
         self::assertInstanceOf(GenerateChat::class, $first);
         self::assertSame(ChatModel::Gpt6Sol, $first->model);
         self::assertSame(ReasoningEffort::High, $first->effort);
+        $page->reload();
+        $menu->click();
+        self::assertSame(ChatModel::Gpt61Sol->value, $model->inputValue());
+        self::assertSame('Extra High', $effort->getAttribute('aria-valuetext'));
+        $menu->click();
     }
 }

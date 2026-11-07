@@ -16,6 +16,7 @@ use Symfony\Component\Form\FormBuilderInterface;
 use Symfony\Component\Form\FormError;
 use Symfony\Component\Form\FormEvent;
 use Symfony\Component\Form\FormEvents;
+use Symfony\Component\OptionsResolver\Options;
 use Symfony\Component\OptionsResolver\OptionsResolver;
 use Symfony\Component\Validator\Constraints\NotBlank;
 use Symfony\Component\Validator\Constraints\Uuid;
@@ -28,13 +29,9 @@ final class ChatMessageType extends AbstractType
 
     public function buildForm(FormBuilderInterface $builder, array $options): void
     {
-        $model = ChatModel::from($this->model);
-        $effort = ReasoningEffort::from($this->effort);
-        $model->validateEffort($effort);
         $builder
             ->add('model', EnumType::class, [
                 'class' => ChatModel::class,
-                'data' => $model,
                 'choice_label' => static fn (ChatModel $choice): string => $choice->label(),
                 'choice_attr' => static fn (ChatModel $choice): array => ['data-efforts' => json_encode(array_column($choice->efforts(), 'value'), \JSON_THROW_ON_ERROR)],
                 'attr' => ['data-chat-model-target' => 'model', 'data-action' => 'change->chat-model#update'],
@@ -42,7 +39,6 @@ final class ChatMessageType extends AbstractType
             ->add('effort', EnumType::class, [
                 'class' => ReasoningEffort::class,
                 'label' => 'Reasoning level',
-                'data' => $effort,
                 'attr' => ['data-chat-model-target' => 'effort'],
             ])
             ->add('question', TextareaType::class, [
@@ -68,7 +64,17 @@ final class ChatMessageType extends AbstractType
 
     public function configureOptions(OptionsResolver $resolver): void
     {
-        $resolver->setDefaults(['csrf_token_id' => Workspace::SUBMIT_CSRF, 'allow_extra_fields' => true]);
+        $model = ChatModel::from($this->model);
+        $effort = ReasoningEffort::from($this->effort);
+        $model->validateEffort($effort);
+        $resolver->setDefaults(['data' => [], 'csrf_token_id' => Workspace::SUBMIT_CSRF, 'allow_extra_fields' => true]);
+        $resolver->setNormalizer('data', static function (Options $options, ?array $data) use ($model, $effort): array {
+            $data ??= [];
+            $data['model'] ??= $model;
+            $data['effort'] ??= $effort;
+
+            return $data;
+        });
     }
 
     public function getBlockPrefix(): string

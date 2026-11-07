@@ -79,8 +79,10 @@ final readonly class Workspace
         if ('' === $id) {
             $conversation->label = $question;
             $this->entityManager->persist($conversation);
-            $this->entityManager->flush();
         }
+        $conversation->model = $model;
+        $conversation->effort = $effort;
+        $this->entityManager->flush();
         // Native message IDs survive Messenger redelivery; Agent owns continuation and conflicts.
         $input = $input->with(Message::ofUser($question));
         $this->bus->dispatch(new GenerateChat($conversation->id, $user->getId() ?? throw new \LogicException('Owner unavailable.'), $input, $model, $effort));
