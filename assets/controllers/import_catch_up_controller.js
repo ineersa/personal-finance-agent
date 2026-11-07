@@ -52,9 +52,15 @@ export default class extends Controller {
         if (this.hasDisconnectedTarget) this.disconnectedTarget.hidden = !this.source || this.source.hasAttribute('connected');
     }
 
+    catchUpOnFocus(event) {
+        // A live tool round can be newer than the last canonical checkpoint.
+        if (this.source?.hasAttribute('connected') && this.element.querySelector('[data-chat-execution] [data-chat-response-active]')) return;
+        return this.catchUp(event);
+    }
+
     async catchUp(event) {
         this.updateConnection();
-        // Chat focus and submission acknowledgements can read saved state even while disconnected.
+        // Disconnected chat focus and submission acknowledgements can still read saved state.
         if (!event && !this.source?.hasAttribute('connected')) return;
         this.request?.abort();
         const version = ++this.version;

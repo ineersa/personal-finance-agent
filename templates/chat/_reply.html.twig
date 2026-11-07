@@ -23,4 +23,4 @@
     {% endif %}
 </div>
 {% include 'chat/_charts.html.twig' %}
-<p class="chat-progress" id="chat-status-{{ conversation.id }}-{{ user.id }}" role="status">{{ status|default(null) == statuses.Running ? 'Responding…' : (status|default(null) == statuses.Failed ? 'Failed' : (completed ? 'Reply complete' : '')) }}</p>
+<p class="chat-progress" id="chat-status-{{ conversation.id }}-{{ user.id }}" role="status" {% if status|default(null) == statuses.Running %}data-chat-response-active{% endif %}>{{ status|default(null) == statuses.Running ? 'Responding…' : (status|default(null) == statuses.Failed ? 'Failed' : (completed ? 'Reply complete' : '')) }}</p>

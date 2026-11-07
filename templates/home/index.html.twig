@@ -4,7 +4,7 @@
 {% block content_header_wrapper %}{% endblock %}
 {% block main %}
     {% set statuses = enum('App\\ChatGpt\\ConnectionStatus') %}
-    <div class="finance-chat" data-controller="chat-view import-catch-up" data-action="focus@window->import-catch-up#catchUp" data-import-catch-up-url-value="{{ path(constant('App\\Chat\\Workspace::SNAPSHOT_ROUTE'), {conversation: chat.conversation_id}) }}" data-import-catch-up-target-selector-value="[data-chat-execution], [data-chat-send]">
+    <div class="finance-chat" data-controller="chat-view import-catch-up" data-action="focus@window->import-catch-up#catchUpOnFocus" data-import-catch-up-url-value="{{ path(constant('App\\Chat\\Workspace::SNAPSHOT_ROUTE'), {conversation: chat.conversation_id}) }}" data-import-catch-up-target-selector-value="[data-chat-execution], [data-chat-send]">
         <header class="chat-header">
             <h1>Chat</h1>
             {% if chatgpt_status == statuses.Connected %}

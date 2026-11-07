@@ -19,6 +19,7 @@ use Symfony\Component\Form\FormEvents;
 use Symfony\Component\OptionsResolver\Options;
 use Symfony\Component\OptionsResolver\OptionsResolver;
 use Symfony\Component\Validator\Constraints\NotBlank;
+use Symfony\Component\Validator\Constraints\NotNull;
 use Symfony\Component\Validator\Constraints\Uuid;
 
 final class ChatMessageType extends AbstractType
@@ -32,12 +33,14 @@ final class ChatMessageType extends AbstractType
         $builder
             ->add('model', EnumType::class, [
                 'class' => ChatModel::class,
+                'constraints' => [new NotNull()],
                 'choice_label' => static fn (ChatModel $choice): string => $choice->label(),
                 'choice_attr' => static fn (ChatModel $choice): array => ['data-efforts' => json_encode(array_column($choice->efforts(), 'value'), \JSON_THROW_ON_ERROR)],
                 'attr' => ['data-chat-model-target' => 'model', 'data-action' => 'change->chat-model#update'],
             ])
             ->add('effort', EnumType::class, [
                 'class' => ReasoningEffort::class,
+                'constraints' => [new NotNull()],
                 'label' => 'Reasoning level',
                 'attr' => ['data-chat-model-target' => 'effort'],
             ])
