@@ -77,7 +77,7 @@ final class ChatTest extends TestCase
                 $page->waitForURL('**/home/**');
                 $page->goto($url.'/home/chat');
                 self::assertTrue($page->getByRole('button', ['name' => 'Send message', 'exact' => true])->isVisible(), 'The owner must connect ChatGPT in this isolated stack before the live test.');
-                $menu = $page->getByRole('button', ['name' => 'Model', 'exact' => true]);
+                $menu = $page->locator('.chat-model-menu summary');
                 $menu->click();
                 self::assertSame(ChatModel::Gpt6Luna->value, $page->getByLabel('Model', ['exact' => true])->inputValue());
                 self::assertSame('Low', $page->getByRole('slider', ['name' => 'Reasoning level', 'exact' => true])->getAttribute('aria-valuetext'));

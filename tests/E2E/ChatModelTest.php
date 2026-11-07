@@ -54,7 +54,7 @@ final class ChatModelTest extends FinanceBrowserTest
         self::getContainer()->get(EntityManagerInterface::class)->flush();
         $this->loginUser($user);
         $page = $this->visit('/home/chat');
-        $menu = $page->getByRole('button', ['name' => 'Model', 'exact' => true]);
+        $menu = $page->locator('.chat-model-menu summary');
         $menu->click();
         $model = $page->getByLabel('Model', ['exact' => true]);
         $effort = $page->getByRole('slider', ['name' => 'Reasoning level', 'exact' => true]);
