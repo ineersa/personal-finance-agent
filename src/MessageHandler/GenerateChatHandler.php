@@ -19,7 +19,6 @@ use Symfony\AI\Platform\Message\Message;
 use Symfony\AI\Platform\Result\Stream\AssistantMessageStreamListener;
 use Symfony\AI\Platform\Result\Stream\Delta\DeltaInterface;
 use Symfony\AI\Platform\Result\ToolCall;
-use Symfony\Component\DependencyInjection\Attribute\Autowire;
 use Symfony\Component\EventDispatcher\EventDispatcher;
 use Symfony\Component\Messenger\Attribute\AsMessageHandler;
 use Symfony\Component\Uid\UuidV7;
@@ -29,7 +28,7 @@ final readonly class GenerateChatHandler
 {
     private const float UPDATE_INTERVAL = 0.05;
 
-    public function __construct(private UserRepository $users, private ChatConversationRepository $conversations, private MessageStoreInterface $store, private InitialContext $context, private AgentFactory $agents, private ChatUpdates $updates, #[Autowire('%env(CHAT_MODEL)%')] private string $model, #[Autowire('%env(CHAT_REASONING_EFFORT)%')] private string $effort)
+    public function __construct(private UserRepository $users, private ChatConversationRepository $conversations, private MessageStoreInterface $store, private InitialContext $context, private AgentFactory $agents, private ChatUpdates $updates)
     {
     }
 
@@ -69,8 +68,8 @@ final readonly class GenerateChatHandler
             $request = 0 === $input->count()
                 ? $input->with(Message::ofUser($this->context->forOwner($owner)))->merge($message->input)
                 : $message->input;
-            $execution = $this->agents->create($owner, $registration, $this->model, $events, $conversation, $question->getId()->toRfc4122())->call($request,
-                ['stream' => true, 'prompt_cache_key' => $conversation->id, 'reasoning' => ['effort' => $this->effort, 'summary' => 'auto']],
+            $execution = $this->agents->create($owner, $registration, $message->model->value, $events, $conversation, $question->getId()->toRfc4122())->call($request,
+                ['stream' => true, 'prompt_cache_key' => $conversation->id, 'reasoning' => ['effort' => $message->effort->value, 'summary' => 'auto']],
             );
             $started = false;
             $nextAnchor = $anchor;

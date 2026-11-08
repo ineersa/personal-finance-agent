@@ -2,6 +2,7 @@
 
 - Status: Accepted; CSV interpretation, independent finance dimensions and resource-policy references amended by [ADR 0021](0021-fixtures-first-jev-import.md); tenant storage, categories and draft visibility amended by [ADR 0023](0023-per-user-finance-databases.md).
 - Date: 2026-10-29
+- Chat history adaptation narrowed to the installed native ChatGPT boundary by [ADR 0030](0030-chatgpt-model-selection.md); extraction remains independent.
 
 ## Context
 

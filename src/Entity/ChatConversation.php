@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\Entity;
 
+use App\Chat\ChatModel;
+use App\Chat\ReasoningEffort;
 use App\Repository\ChatConversationRepository;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Uid\UuidV7;
@@ -22,6 +24,12 @@ class ChatConversation
 
     #[ORM\Column]
     public bool $favourite = false;
+
+    #[ORM\Column(nullable: true, enumType: ChatModel::class)]
+    public ?ChatModel $model = null;
+
+    #[ORM\Column(nullable: true, enumType: ReasoningEffort::class)]
+    public ?ReasoningEffort $effort = null;
 
     /** @var list<array{message: string, file: string}> */
     #[ORM\Column(type: 'json')]

@@ -4,13 +4,19 @@
 {% block content_header_wrapper %}{% endblock %}
 {% block main %}
     {% set statuses = enum('App\\ChatGpt\\ConnectionStatus') %}
-    <div class="finance-chat" data-controller="chat-view import-catch-up" data-import-catch-up-url-value="{{ path(constant('App\\Chat\\Workspace::SNAPSHOT_ROUTE'), {conversation: chat.conversation_id}) }}" data-import-catch-up-target-selector-value="[data-chat-execution], [data-chat-send]">
+    <div class="finance-chat" data-controller="chat-view import-catch-up" data-action="focus@window->import-catch-up#catchUpOnChatEvent" data-import-catch-up-url-value="{{ path(constant('App\\Chat\\Workspace::SNAPSHOT_ROUTE'), {conversation: chat.conversation_id}) }}" data-import-catch-up-target-selector-value="[data-chat-execution], [data-chat-send]">
         <header class="chat-header">
             <h1>Chat</h1>
             {% if chatgpt_status == statuses.Connected %}
                 <p class="chatgpt-status">ChatGPT connected <span aria-hidden="true">·</span> <a href="{{ path(constant('App\\ChatGpt\\Connection::SETTINGS_ROUTE'), {_fragment: constant('App\\ChatGpt\\Connection::SETTINGS_FRAGMENT')}) }}">Manage</a></p>
             {% endif %}
         </header>
+        {% if chatgpt_status == statuses.Connected %}
+            <p class="chat-live-notice" data-import-catch-up-target="disconnected" role="status" hidden>
+                Live updates disconnected. Saved replies may be newer.
+                <a href="{{ path(constant('App\\Chat\\Workspace::CHAT_ROUTE'), {conversation: chat.conversation_id}) }}" data-turbo="false">Reload conversation</a>
+            </p>
+        {% endif %}
         {% if chatgpt_status != statuses.Connected %}
             <section class="chat-empty" aria-labelledby="welcome-heading">
                 <span class="intro-mark" aria-hidden="true">pf</span>
@@ -36,7 +42,7 @@
         {% if chatgpt_status == statuses.Connected %}
             <div class="chat-compose-area">
                 <button class="chat-jump" type="button" data-chat-view-target="jump" data-action="chat-view#jumpToLatest" hidden>Jump to latest ↓</button>
-                {{ form_start(form, {action: path(constant('App\\Chat\\Workspace::SUBMIT_ROUTE'), app.request.query.all), attr: {class: 'chat-composer', 'data-action': 'turbo:submit-start->chat-view#submissionStarted turbo:submit-end->chat-view#submissionFinished chat-view:acknowledged->import-catch-up#catchUp', 'data-turbo': chat.conversation_id ? 'true' : 'false'}}) }}
+                {{ form_start(form, {action: path(constant('App\\Chat\\Workspace::SUBMIT_ROUTE'), app.request.query.all), attr: {class: 'chat-composer', 'data-action': 'turbo:submit-start->chat-view#submissionStarted turbo:submit-end->chat-view#submissionFinished chat-view:acknowledged->import-catch-up#catchUpOnChatEvent', 'data-turbo': chat.conversation_id ? 'true' : 'false'}}) }}
                     {{ form_widget(form.conversation) }}
                     {{ form_widget(form._token, {attr: {'data-controller': 'csrf-protection'}}) }}
                     {% include 'chat/_composer.html.twig' %}

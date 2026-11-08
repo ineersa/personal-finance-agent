@@ -29,7 +29,6 @@ use Symfony\AI\Platform\Message\Template;
 use Symfony\AI\Platform\Message\TemplateRenderer\StringTemplateRenderer;
 use Symfony\AI\Platform\Platform;
 use Symfony\Component\DependencyInjection\Attribute\Autowire;
-use Symfony\Component\HttpClient\HttpClient;
 use Symfony\Component\HttpClient\Psr18Client;
 use Symfony\Contracts\EventDispatcher\EventDispatcherInterface;
 use Symfony\Contracts\HttpClient\HttpClientInterface;
@@ -46,6 +45,7 @@ final readonly class AgentFactory
         private ChatConversationRepository $conversations,
         private MessageStoreInterface $store,
         #[Autowire(service: 'app.chatgpt.http_client')] private HttpClientInterface $http,
+        #[Autowire(service: 'app.charts.http_client')] private HttpClientInterface $chartHttp,
         #[Autowire('%kernel.project_dir%')] private string $projectDir,
     ) {
     }
@@ -73,12 +73,12 @@ final readonly class AgentFactory
 
         // Native clients with NullLogger; RPC arguments must not enter logs or the HTTP profiler.
         $factory = new Psr17Factory();
-        $chartHttp = new Psr18Client(HttpClient::create(['timeout' => 15, 'max_duration' => 45, 'max_redirects' => 0]), $factory, $factory);
+        $chartHttp = new Psr18Client($this->chartHttp, $factory, $factory);
         $chartClient = Client::builder()->setClientInfo('finance-charts', '1.0')->setInitTimeout(10)->setRequestTimeout(45)->setMaxRetries(0)->build();
         $chartTools = new ClientToolset(ChartToolset::NAME, $chartClient, new HttpTransport(ChartToolset::ENDPOINT, httpClient: $chartHttp, requestFactory: $factory, streamFactory: $factory, maxSseBufferBytes: 262144));
 
         return new Agent(new Platform([$provider]), $model,
-            inputProcessors: [new SystemPromptInputProcessor($prompt)],
+            inputProcessors: [new ModelHistoryInputProcessor(), new SystemPromptInputProcessor($prompt)],
             // Keep native NullLogger: debug tool logging would expose SQL arguments.
             toolbox: new FaultTolerantToolbox(new ChainToolbox([
                 new Toolbox([$this->tool->forOwner($owner)], eventDispatcher: $events),

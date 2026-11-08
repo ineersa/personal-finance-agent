@@ -33,7 +33,7 @@ final class ChatController extends AbstractController
         return $this->render('home/index.html.twig', [
             'chatgpt_status' => $connection->status($user),
             'chat' => $updates->view($conversation),
-            'form' => $this->createForm(ChatMessageType::class, ['conversation' => $conversation?->id])->createView(),
+            'form' => $this->createForm(ChatMessageType::class, ['conversation' => $conversation?->id, 'model' => $conversation?->model, 'effort' => $conversation?->effort])->createView(),
         ]);
     }
 

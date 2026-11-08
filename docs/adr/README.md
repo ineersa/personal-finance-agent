@@ -17,7 +17,7 @@ ADRs record significant technical decisions, their context, and their consequenc
 | [0009](0009-castor-and-static-checks.md) | Accepted | Use Castor with concise reports, PHPStan strict rules, and mandatory Symfony LSP checks. |
 | [0010](0010-playwright-only-testing.md) | Accepted | Test application behavior only through Playwright, using visible browsers and agent-operated verification. |
 | [0011](0011-layered-rate-limiting.md) | Superseded by 0021 | Original per-user limits, upload quotas and shared AI budgets; implementation deferred. |
-| [0012](0012-configurable-ai-providers.md) | Accepted | Configure local llama.cpp, z.ai, and DeepSeek integrations with chat provider, model, and reasoning selection. |
+| [0012](0012-configurable-ai-providers.md) | Chat scope superseded by 0030 | Original multi-provider chat selection; independent extraction configuration remains. |
 | [0013](0013-symfony-ai-agent-runtime.md) | Accepted | Use Symfony AI's agent loop with bounded cross-user fiber concurrency in one Messenger consumer and a simple context handoff for late implementation. |
 | [0014](0014-inline-chat-and-antv-charts.md) | Superseded by 0026 | Display chart images inline in chat using a Docker-hosted AntV MCP server and its documented free hosted renderer; remove the separate artifact workspace. |
 | [0015](0015-sqlite-conversation-history.md) | Superseded by 0029 | Original temporary/saved retention and queued/running protection. |
@@ -35,6 +35,7 @@ ADRs record significant technical decisions, their context, and their consequenc
 | [0027](0027-owned-chat-history-controls.md) | Superseded by 0029 | Original custom history adapter, duplicate readable projection and generation recovery metadata. |
 | [0028](0028-native-chat-search.md) | Accepted | Search owned readable chat text with native SQLite FTS5 and an explicitly approved SQLite-specific migration exception. |
 | [0029](0029-native-chat-store.md) | Accepted | Direct native Doctrine message store, linked finance metadata, native concurrency/delivery and no custom recovery or parallel transcript. |
+| [0030](0030-chatgpt-model-selection.md) | Accepted | ChatGPT-only per-turn model/reasoning selection and request-only native history compatibility. |
 
 ## Recording decisions
 

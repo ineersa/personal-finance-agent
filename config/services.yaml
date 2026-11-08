@@ -57,6 +57,14 @@ services:
         arguments:
             $defaultOptions: { timeout: 15, max_duration: 30 }
 
+    # Native and untraced, like the ChatGPT client: MCP arguments stay out of the profiler.
+    app.charts.http_client:
+        class: Symfony\Contracts\HttpClient\HttpClientInterface
+        factory: ['Symfony\Component\HttpClient\HttpClient', 'create']
+        autoconfigure: false
+        arguments:
+            $defaultOptions: { timeout: 15, max_duration: 45, max_redirects: 0 }
+
     Symfony\AI\Platform\Bridge\OpenAIChatGPT\Auth\OAuthConfig:
         arguments:
             $appName: 'Personal finance assistant'
