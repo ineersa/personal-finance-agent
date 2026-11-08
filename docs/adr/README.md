@@ -18,7 +18,7 @@ ADRs record significant technical decisions, their context, and their consequenc
 | [0010](0010-playwright-only-testing.md) | Accepted | Test application behavior only through Playwright, using visible browsers and agent-operated verification. |
 | [0011](0011-layered-rate-limiting.md) | Superseded by 0021 | Original per-user limits, upload quotas and shared AI budgets; implementation deferred. |
 | [0012](0012-configurable-ai-providers.md) | Chat scope superseded by 0030 | Original multi-provider chat selection; independent extraction configuration remains. |
-| [0013](0013-symfony-ai-agent-runtime.md) | Accepted | Use Symfony AI's agent loop with bounded cross-user fiber concurrency in one Messenger consumer and a simple context handoff for late implementation. |
+| [0013](0013-symfony-ai-agent-runtime.md) | Accepted; amended 2026-11-08 | Use Symfony AI's agent loop with native Messenger concurrency of four isolated worker contexts and a simple context handoff for late implementation; quotas, budgets and per-user admission remain deferred by 0021. |
 | [0014](0014-inline-chat-and-antv-charts.md) | Superseded by 0026 | Display chart images inline in chat using a Docker-hosted AntV MCP server and its documented free hosted renderer; remove the separate artifact workspace. |
 | [0015](0015-sqlite-conversation-history.md) | Superseded by 0029 | Original temporary/saved retention and queued/running protection. |
 | [0016](0016-local-markitdown-conversion.md) | Accepted | Convert PDF/XLSX locally with official MarkItDown MCP in Docker; parse CSV in PHP, leaving OCR backend selection unresolved. |
