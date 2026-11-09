@@ -1,158 +1,139 @@
-# Personal finance assistant
+<p align="center"><img src="docs/images/pf-logo.svg" width="80" alt="pf — Personal finance"></p>
 
-A planned personal finance demo for the Symfony AI hackathon, using Symfony, Symfony AI, and EasyAdmin.
+# Personal finance
 
-## Current status
+**A little more clarity.** A locally installable personal-finance assistant built for the Symfony AI hackathon with Symfony, Symfony AI and EasyAdmin. Review bank-statement transactions, explore your finances in conversation, and get interactive charts without sending chart rendering to a hosted service.
 
-The application provides form login, tenant-local finance management, CSV import and draft review, private statement downloads, reporting preferences and a local ChatGPT connection. Administrators manage users, not tenant finances. Identity stays central; each ordinary user has an authoritative finance SQLite database with independently seeded categories and ECB-maintained rates. The signed-in chat remains a preview; generation is not implemented. See [ADR 0023](docs/adr/0023-per-user-finance-databases.md).
+[![Watch the demo on YouTube](https://img.youtube.com/vi/FLsiqc9wyTI/hqdefault.jpg)](https://www.youtube.com/watch?v=FLsiqc9wyTI)
 
-The lockfile pins Symfony `8.2.x-dev`, Symfony AI `1.0.0-BETA1`, and EasyAdmin `5.8.0`. Symfony 8.2 has no released tag at this bootstrap revision; using its locked development branch is an explicit project decision. The Dockerfile pins FrankenPHP `1.13.2` with PHP `8.5.12` by image digest.
+## Try the demo
 
-## Run development
+### Prerequisites
 
-Use Linux amd64, Docker Engine, Docker Compose 2.24.4 or newer, Git, and host PHP 8.5 CLI with PCNTL/POSIX. Follow the [initial dependency bootstrap](TESTING.md#prepare-the-tooling-runtime) if `vendor/bin/castor` is missing. No host Composer, Node.js, API keys, or reference checkouts are needed.
+- Linux amd64 with Bash, Docker Engine and Docker Compose **2.24.4 or newer**; a browser on the same computer.
+- Internet access for image/dependency builds, Jev, ChatGPT and ECB reference rates.
+- A **Jev API key** from [TypeSafe](https://typesafe.ai/), and your own ChatGPT account with permission to use the selected models. Jev and ChatGPT are separate connections; an OpenAI API key is not used for chat.
+- Free loopback ports **8080** (application) and **1455** (ChatGPT callback). The installer does not stop another service to free a port.
 
-```sh
-	vendor/bin/castor tooling:prepare
-	vendor/bin/castor dev:stack:up
+After cloning this repository:
+
+```bash
+./setup-demo.sh
 ```
 
-Open the URL printed by `dev:stack:up`. The public landing shows **Make sense of your money.**, a **Log in** link, and the ordinary demo credentials in dev/test. It does not show the signed-in workspace. Each checkout gets a hostname such as `http://personal-finance-agent-<path-hash>.finance.localhost`. Do not set `HTTP_PORT` or `COMPOSE_PROJECT_NAME` for development.
+The installer builds locked application dependencies and compiled assets inside Docker—no host PHP, Composer or Node.js is needed. On first installation it asks for your Jev key with hidden input, creates private `.env.prod.local` settings, applies central/tenant migrations and loads the existing canonical synthetic Alice fixtures. It starts FrankenPHP, the sqlite-queue broker, the Messenger worker/scheduler, Mercure and local Unovis charts in production mode (`APP_DEBUG=0`). Initial image builds can take several minutes.
 
-A shared Caddy proxy publishes only `127.0.0.1:80`; application containers publish no host ports. Port 80 must be free. If another service owns it, startup fails; do not stop that service without authorization. Modern browsers resolve `*.localhost` to loopback. The saved [live-routing check](TESTING.md#isolated-live-stack) explicitly configures Chromium resolution inside tooling containers instead of relying on container DNS.
+Open **<http://127.0.0.1:8080/>**, then log in:
 
-Castor supplies checkout-scoped Compose names, image tags, host UID/GID, and network aliases. It builds the `frankenphp_dev` target and bind-mounts the checkout. Direct development `docker compose` commands deliberately require Castor's identity variables; use the tasks below instead. Production commands still select files explicitly and retain their port configuration.
+| Account | Password | Purpose |
+|---|---|---|
+| `demo@test.com` | `demo` | Finance workspace and synthetic financial history |
+| `admin@test.com` | `admin` | User administration, not access to tenant finances |
 
-`dev:stack:up` creates a private `.env.local` with a random secret if absent, without overwriting an existing file. Keep it private; do not put a real secret in the public `.env`. Application runtime files stay under this checkout's ignored `var/`.
+These are public demo credentials. **Keep this installation local; do not expose it to the internet or put personal bank statements into it.** Public signup and password recovery are not implemented. The development-only destructive Settings reset is not enabled in this production-mode demo.
 
-Inspect or stop only the current checkout:
+### Suggested walkthrough
 
-```sh
-	vendor/bin/castor dev:stack:status
-	vendor/bin/castor app:console -- about
-	vendor/bin/castor dev:stack:stop
+1. Log in as `demo@test.com`. Browse **Sources**, **Statements** and **Transactions** to inspect the synthetic history and download a synthetic CSV.
+2. In **Settings**, choose your reporting currency/format and **Connect ChatGPT**. Complete the provider sign-in, then follow the completion page back to Settings. The callback is loopback-only, so browser and Docker must run on the same computer. Account/model availability and provider charges depend on your provider account.
+3. Open **Chat**, choose a model/reasoning option, and ask: “Show my spending by category for the latest month in the data as a bar chart.” Ask a follow-up, hover the local chart, then reload or reopen the retained conversation.
+4. To try import, upload one CSV from [`resources/demo-statements/`](resources/demo-statements/). Consent to sending its samples/details to Jev. Watch processing, review/edit the draft rows, then approve them. Uploading seeded statements adds new records; use synthetic data only.
+
+## What works—and what is unfinished
+
+- Form login; ordinary-user finance CRUD; administrator-only user management; private statement downloads; reporting preferences and ECB-backed rates.
+- CSV processing through Jev, editable drafts and explicit approval, with live updates from the real worker.
+- Per-user ChatGPT connection; multi-turn chat using Symfony AI's native agent/tool loop; read-only tenant SQL; private streaming; locally generated interactive Unovis charts.
+- Automatically retained native conversation history, favourites, new-chat drafts and owner-scoped full-text search. There is no temporary/save mode or one-active-generation subsystem; Messenger uses native concurrency of four.
+- **PDF/XLSX extraction is unfinished.** Local MarkItDown conversion is planned, not installed by this script. Scanned-PDF/OCR support is unresolved. Use CSV for the current demo.
+- Financial amounts are stored as decimal strings; application conversion uses BCMath and transaction-date rates. **SQLite SQL arithmetic/aggregates and model answers are approximate**, not authoritative accounting or financial advice. SQL can read drafts; draft exclusion is prompt guidance, not a separate access boundary.
+- The upload limit is **10 MiB**. Broader AI quotas, budgets, hard SQL execution deadlines and advanced recovery are not implemented. This local demo is not a security audit or a hardened public deployment.
+
+CSV interpretation is provider-assisted rather than a promise to accept every bank format; the headerless debit/credit and signed-amount files under `resources/demo-statements/` are the supported walkthrough inputs. Reporting currency choices are EUR plus the [listed ECB reference currencies](src/Enum/ReportingCurrency.php), including USD and GBP. Changing the reporting preference does not rewrite original amounts/currencies. Conversion uses stored transaction-date reference rates; absent rates need an ECB refresh, and locale-aware formatting owns display rounding.
+
+## Configuration and lifecycle
+
+`.env.prod.local` is a private, ignored runtime file excluded from Docker builds. The installer never sources it as shell code or prints its values. It generates `APP_SECRET` and `MERCURE_JWT_SECRET`, and writes:
+
+```dotenv
+JEV_API_KEY='your-key'
+JEV_BASE_URL=https://api.typesafe.ai
+JEV_MODEL=jev-1.14.0
 ```
 
-Stopping a checkout runs Compose `down` without `--volumes`: it removes that stack's containers and private networks and unregisters its route. Named volumes, bind-mounted data, other checkouts, the shared proxy, and its external network are preserved; no global prune runs. The same lifecycle applies to `browser:stack:stop`. Stop each owned stack before removing its worktree. `vendor/bin/castor dev:proxy:stop` stops the proxy only when no routes remain registered. It removes no volumes. The locked route registry lives in `finance-development/` inside the repository's common Git directory, shared across its worktrees. See [ADR 0019](docs/adr/0019-worktree-development-routing.md) for boundaries and limitations.
+Edit the file to change Jev configuration; keep mode `0600`. Do not commit it or paste its contents into diagnostics. For unattended setup, the installer also accepts `JEV_API_KEY` from its process environment. On rerun it preserves the existing file and secrets, migrates existing schemas and **does not load fixtures again**.
 
-## Load synthetic development data
+The default Compose project is `personal-finance-demo`. Always select production files explicitly; plain `docker compose up` loads the development override and is not the demo command.
 
-Start the development stack first so it creates a private application secret. Apply migrations, then append the Alice fixtures to this checkout's development database:
-
-```sh
-	vendor/bin/castor app:console -- doctrine:migrations:migrate --no-interaction
-	vendor/bin/castor dev:fixtures:load
+```bash
+# Status
+ docker compose --project-name personal-finance-demo --env-file .env.prod.local -f compose.yaml -f compose.prod.yaml ps
+# Stop: keep every volume
+ docker compose --project-name personal-finance-demo --env-file .env.prod.local -f compose.yaml -f compose.prod.yaml down
+# Restart the existing installation
+ docker compose --project-name personal-finance-demo --env-file .env.prod.local -f compose.yaml -f compose.prod.yaml up -d --wait php broker worker mercure charts
+# Rebuild after source/dependency updates, migrate and restart without reseeding
+ ./setup-demo.sh
 ```
 
-Load once into a database without the fixture identities. This task always uses native Hautelook Alice append mode. It does not purge existing records or overwrite existing accounts; repeated loads fail on unique email/stored-filename constraints. Do not remove owner data to make a repeated load succeed.
+**Never use `down --volumes`, remove volumes, or delete a database to make setup succeed.** A single `.demo-ready` completion file identifies successful initial provisioning. Nonempty storage without it (including an interrupted first fixture load or an older preview database) is refused, not purged, adopted or repaired. Inspect that installation; to try a genuinely fresh demo, choose a different project and free ports instead. Setup is not a backup/restore or recovery tool. Stop an active demo before applying code updates with schema changes.
 
-The tenant cutover is a clean development rebuild, not a data upgrade. The generated central migration removes old shared finance tables. Main must verify exact disposable dev/test database paths and active stack ownership before resetting them; do not delete uploads, OAuth credentials, unrelated volumes or another checkout's storage. Fresh fixture loading creates tenant schemas automatically. For later finance migrations, run `vendor/bin/castor app:console -- app:tenant:migrate`. Generate finance migrations through isolated Castor console storage with `doctrine:migrations:diff --em=finance --configuration=config/migrations/finance.yaml`; never generate them against an active tenant file.
+For a separate installation, override these values **consistently on setup and later lifecycle commands**. Keep its private env file distinct too:
 
-Development and tests share canonical account definitions in `fixtures/central/*.yaml` and tenant definitions in `fixtures/*.yaml`, without a supplementary dataset. Fixtures provide **admin@test.com / admin** and **demo@test.com / demo** with native Symfony password hashing. Native Alice loading provisions the demo tenant, independently seeds categories/history/rates, and creates the same synthetic private CSV bytes for downloads. These public demo credentials and invented records are not production provisioning or personal data.
-
-Statement bytes stay outside `public/`. Production stores them in `/app/var/data/statements` in the existing project-owned `app_data` volume; development uses checkout-local `var/statements`. Persist only data, not `/app/var/cache`, so rebuilt images use their new compiled routes and services. Do not remove statement files or the data volume during cache clearing. Future workers must share the same storage and metadata volume. See [private statement storage](docs/adr/0020-private-statement-storage.md) for access, lifecycle and isolated test locations.
-
-Open `/login` on the printed development URL. Login always uses the role's entry page, not a saved protected-page target: ordinary users reach Chat at `/home/chat`, while administrators reach Users at `/home/user`. Ordinary users manage finances at `/home/source`, `/home/statement`, `/home/transaction` and `/home/category`, with reporting preferences at `/home/settings`. Administrators manage only Users at `/home/user`. Manual currency-rate CRUD is removed. The former `/admin` and `/settings` URLs are not aliases. Both workspaces offer CSRF-protected POST logout. Public signup and password recovery are not implemented.
-
-Chat and Settings are native EasyAdmin custom pages, sharing the same layout, navigation, account menu, and form theme as the CRUD screens. Public landing and login use the separate public shell. All screens use the dark theme without an appearance selector, regardless of saved browser preferences or operating-system settings. EasyAdmin retains its native search, actions, forms, and account dropdown. Its documented `Dashboard::setTheme()` configures the neutral palette, radius, and density; targeted block overrides and unlayered CSS adapt the layout without a replacement frontend.
-
-Login uses Symfony's default throttling: five failed attempts per minute per username and client IP, with its broader IP limit. Forwarded client-IP headers are not trusted by default. Configure a verified deployment proxy explicitly before enabling those headers; the local proxy otherwise shares one observed client identity.
-
-The reporting-currency choices are EUR and the ECB reference-feed currencies verified on 2026-10-30. Selecting a preference does not rewrite or convert original amounts. Referenced users, sources, and categories cannot be deleted while financial foreign keys still reference them. There is no implicit cascade or demo reset.
-
-## Run the production image
-
-Select production files explicitly so Compose does not load the development override. The `frankenphp_prod` image contains the application, locked production dependencies, and compiled AssetMapper/EasyAdmin assets. It does not mount source or host `vendor/`. It runs as UID/GID 1000 with `APP_ENV=prod` and debug disabled. Production uses `restart: unless-stopped`; development does not restart automatically.
-
-This production-image preview leaves `IMPORT_UPDATES_ENABLED=0`. The optional Mercure hub belongs to the `live-updates` Compose profile and is not started by the commands below, so an empty Mercure key cannot break preview startup. Development Castor stacks enable the hub and generate their own private key. Enabling production live updates separately requires an external HTTPS hub/public route, `IMPORT_UPDATES_ENABLED=1`, matching publisher/subscriber signing keys and issuer, and a configured secure subscriber cookie; the preview commands do not provide that deployment.
-
-Use a separate project and free port to run alongside development. These commands build the production image, generate a private runtime environment file if absent, and start the production configuration:
-
-```sh
-export COMPOSE_PROJECT_NAME=personal-finance-agent-prod HTTP_PORT=8081
-docker compose -f compose.yaml build
-if [ ! -f .env.prod.local ]; then
-	(umask 077; docker compose -f compose.yaml run --rm --no-deps -T php php -r 'echo "APP_SECRET=", bin2hex(random_bytes(32)), PHP_EOL;' > .env.prod.local)
-fi
-docker compose -f compose.yaml -f compose.prod.yaml up -d --wait
+```bash
+export COMPOSE_PROJECT_NAME=personal-finance-demo-second
+export HTTP_PORT=8082 CHATGPT_CALLBACK_PORT=1456
+export DEMO_ENV_FILE=.env.prod.second.local
+./setup-demo.sh
+# Use the exact status/stop/restart commands printed by the installer.
 ```
 
-Open <http://127.0.0.1:8081/>. Check that the same design-preview page renders with compiled assets, including its dark layout and **Make sense of your money.** heading. After source or lockfile changes, rebuild with `docker compose -f compose.yaml -f compose.prod.yaml up -d --build --wait`.
+There are no published broker, MCP, database, upload-storage or Mercure ports. Only the application and callback listeners bind to host loopback; the application proxies authorized Mercure subscriptions.
 
-`.env.prod.local` is required runtime input, not an image build input. Do not commit it, print its contents, or use a real secret in the public `.env`. Private environment files, Composer credentials, development tooling directories, host dependencies, and generated host assets are excluded from the build context.
+### Storage and privacy
 
-The project-scoped `app_data` volume provides writable persistent `/app/var/data`; production's SQLite URL and private statement storage point there. `STATEMENT_STORAGE_DIR` defaults to `var/statements` in development and `var/data/statements` in production, relative to the project directory. Keep any production override inside the private data mount. Tests fix their root independently of this variable. Cache and asset metadata stay outside that volume so it does not hide image-built files. The application includes Doctrine migrations for users and financial records; image startup does not apply them or create accounts. Alice fixtures are available only in development and test environments. This is a local production-image proof, not the later HTTPS/server-deployment setup.
+Compose-project-scoped named volumes preserve:
 
-Use the same project/port variables for production diagnostics and shutdown:
+| Volume | Container path | Contents |
+|---|---|---|
+| `app_data` | `/app/var/data` | Central identity/conversation DB, `tenants/*.db`, private statement bytes and setup completion file |
+| `app_private` | `/app/var/private` | Plaintext, mode-protected ChatGPT credentials/attempts and shared native filesystem locks |
+| `app_charts` | `/app/var/charts` | Privately retained conversation charts |
+| `broker_data` | `/app/var/queue` | Separate broker SQLite database and Unix socket |
+| `chart_output` | `/chart-output` | Local chart staging shared only with PHP/worker/one-off setup and Unovis |
 
-```sh
-docker compose -f compose.yaml -f compose.prod.yaml ps
-docker compose -f compose.yaml -f compose.prod.yaml logs --tail 50 php
-docker compose -f compose.yaml -f compose.prod.yaml exec php php bin/console about
-docker compose -f compose.yaml -f compose.prod.yaml down
+Mercure also retains its project-owned data/config volumes. App cache and compiled assets are **not** hidden behind a persistent `var/` mount. Runtime PHP/broker/worker run as UID/GID 1000 with no source/vendor bind mounts; development dependencies exist only in the one-off setup image, not the running production image.
+
+“Local” does not mean offline: selected statement samples/details go to Jev; chat context, tool results and financial information needed for answers go to ChatGPT. Charts render locally, but their input may already be in the chat provider context. Financial data, OAuth records and model exchanges must not be added to logs, commits or bug reports. Local filesystem permissions are not encryption and do not protect against another process with the same OS identity.
+
+### Troubleshooting
+
+- **Port already allocated:** select free `HTTP_PORT`/`CHATGPT_CALLBACK_PORT` values as above; do not stop unrelated stacks.
+- **Setup fails:** read the concise failing command output. Preserve the private env file and volumes. Interrupted initial provisioning is deliberately not automatically reseeded.
+- **Chat unavailable:** log in as the ordinary demo user, connect ChatGPT in Settings, and select an available model. Jev's key does not authorize chat. A remote browser cannot complete this loopback flow.
+- **Import/chat not progressing:** inspect service status and bounded worker/broker/PHP logs using the same project/file arguments as above, replacing `ps` with `logs --tail 50 worker broker php`. Logs can contain sensitive exception details; inspect locally, do not publish raw output. Do not use `docker compose config` to share configuration—it can disclose secrets.
+- **Image build fails:** internet access and the pinned development/beta dependencies are required. The application locks Symfony `8.2.x-dev`, Symfony AI `1.0.0-BETA1` and EasyAdmin `5.8.0`; FrankenPHP/PHP are pinned in `Dockerfile`. This is deliberate, not a claim that Symfony 8.2 is released.
+
+## Development and verification
+
+Development/QA still use **host `vendor/bin/castor`**, not the demo installer. Follow [TESTING.md](TESTING.md#prepare-the-tooling-runtime) for the initial dependency bootstrap and host PHP prerequisites, then:
+
+```bash
+vendor/bin/castor tooling:prepare
+vendor/bin/castor dev:stack:up
+vendor/bin/castor app:console -- doctrine:migrations:migrate --no-interaction
+vendor/bin/castor dev:fixtures:load
 ```
 
-Keep the data volume; do not use `down -v`. Before returning to the default development project, unset `COMPOSE_PROJECT_NAME` and `HTTP_PORT`, or restore that development stack's values.
+Load development fixtures once into empty fixture identities: this native Alice task is append-only, never a reset. Development uses checkout-scoped `*.finance.localhost` URLs printed by Castor and a shared loopback proxy; do not set manual development ports/project names. Stop only your checkout with `vendor/bin/castor dev:stack:stop`; never stop unrelated stacks or remove their volumes. Stop the shared proxy only through `dev:proxy:stop` when no routes remain.
 
-For an isolated startup check, run `vendor/bin/castor prod:smoke`. It builds the same production configuration, verifies only PHP is enabled, allocates a loopback port automatically, and waits for the application health check. It uses a checkout-owned project and private generated runtime environment, then stops that project without removing its data volume. It does not migrate, seed or reset a database, and never reads `.env.prod.local` contents into its report.
+For changes, run `vendor/bin/castor cs:fix`, relevant `vendor/bin/castor test -- …` happy-path scenarios and `vendor/bin/castor qa:static`. The workflow's `castor check` is the combined full gate. Tests use isolated storage and real headless Playwright browsers; special-case coverage needs owner permission. `vendor/bin/castor prod:smoke` checks only the compiled PHP/charts images, not migrations, fixture initialization, provider access, workers or live updates. A passing image smoke is not proof that the full demo works.
 
-## Development checks and diagnostics
+## Further reading
 
-Follow [Testing](TESTING.md#prepare-the-tooling-runtime) for the one-time dependency bootstrap. After that, use host Castor for preparation, QA, and Mate. Castor selects the authoritative Docker runtime; do not choose between host and container PHP or prefix commands with another runner. The production target does not contain Node.js, Symfony CLI, or development Composer packages.
-
-```sh
-	vendor/bin/castor tooling:prepare
-	vendor/bin/castor cs:fix
-	vendor/bin/castor qa:static
-	vendor/bin/castor test
-```
-
-Castor prints one JSON summary per invoked task and stores diagnostics under ignored `var/qa/`. `qa:static` runs Composer validation, a read-only formatting check, strict PHPStan level 6, and complete runtime-aware Symfony Language Tools analysis. CS Fixer uses the selected sqlite-queue rules except for the approved `call_type: self` assertion policy, and retains risky Symfony rules and strict types. PHPStan follows that reference's production/tooling scope, not its tests. Browser tests receive style checks and real-browser execution, not a claimed PHPStan pass. The task workflow runs `castor check` during the CODE-REVIEW transition as the sole combined static/browser gate. It runs both groups even if either fails. Read its stdout report for child summaries; do not invoke it prematurely during task-start.
-
-Pass native PHPUnit selectors after `--`, for example `vendor/bin/castor test -- tests/E2E/HomepageTest.php`; `check` always runs the full suite. Keep one happy-path scenario per view/action and obtain owner permission for special-case testing. Use `app:composer -- COMMAND OPTIONS` for application Composer and `app:console -- COMMAND OPTIONS` for Symfony console commands. Bare `castor composer` manages Castor itself, not the application. See [Testing](TESTING.md#running-tests) for commands and scope.
-
-Use bounded Mate tasks after warming the relevant cache or recording local requests:
-
-```sh
-	vendor/bin/castor mate:discover
-	vendor/bin/castor mate:tools
-	vendor/bin/castor mate:inspect symfony-services
-	vendor/bin/castor dev:cache:warmup
-	vendor/bin/castor mate:call symfony-services --json='{"query":"HomeController","context":"dev","limit":1}'
-	vendor/bin/castor mate:call symfony-profiler-list --json='{"context":"test","limit":1}'
-	vendor/bin/castor mate:call monolog-search --json='{"environment":"dev","level":"ERROR","limit":5}'
-```
-
-`mate:call` exposes all 11 installed selected official tools through their upstream JSON parameter schemas. Service results are limited to 10 per context, profile listings to 5, log searches/tail to 20, and dotenv listings to 200. `mate:collector TOKEN COLLECTOR` reads one targeted official profiler collector. Dev and test artifacts are separate named contexts; the saved profiler scenario enables collection for its own request without changing the collection policy. See [Mate instructions](mate/AGENT_INSTRUCTIONS.md) for filters and prerequisites. Missing artifacts fail rather than masquerading as empty results. Do not dump full profiler records into agent context. Mate-generated skills are disabled. `mate:discover` refreshes official extensions while preserving the curated Castor instructions and not retaining a newly generated editor-specific instruction file.
-
-The `test` task applies central migrations to isolated storage and runs the saved browser scenarios headlessly. Native Alice loading provisions fixture tenant schemas. The owner-approved project trait composes `RefreshDatabaseTrait` and extends rollback to tenant connections, including those opened during a scenario; DAMA rollback stays disabled for these fixture cases. Canonical fixtures and the existing Playwright runner are retained. Development/live fixture loading stays append-only. Use `test --headed` only for owner-requested visible runs. See [Testing](TESTING.md) for storage, transaction ownership and real-stack limits.
-
-Monolog uses the web template's configuration unchanged: development writes to `var/log/dev.log`; test logs are buffered until an error; production uses an error-triggered buffer with JSON output on stderr. There is no custom logging lifecycle subscriber, correlation generator, sanitizer, or log rotation. Standard logging does not remove personal data: callers must keep financial content, model exchanges, credentials, and sensitive exception details out of logs. See [ADR 0007](docs/adr/0007-structured-monolog-logging.md).
-
-## Planned workflow
-
-1. Log in and upload bank statements.
-2. Review extracted transactions, correct them, and manage sources.
-3. Ask questions in chat.
-4. Read answers, tables, and inline interactive charts in the same conversation. There is no separate artifact workspace.
-
-Example questions:
-
-- "Show me how much I spent on subscriptions last month."
-- "Show me my income growth over the past year."
-- "Show me my internet bills over the past year."
-
-The development fixtures already provide known demo identities and synthetic financial records for manual CRUD checks without personal statements. The completed demo will add the remaining workflows below. AI work and uploads will have configurable rate limits, quotas, and shared AI-budget controls.
-
-PDF/XLSX conversion will run locally through official MarkItDown MCP in Docker; CSV will be parsed in PHP. Scanned-PDF/OCR support remains unresolved.
-
-Charts use a Docker-hosted Unovis MCP service with local HTML generation and private conversation-scoped retention. Sandboxed iframes allow the packaged chart runtime, not model-generated JavaScript, and deny same-origin privileges and external network access. Existing PNG/JPG charts remain readable. [ADR 0026](docs/adr/0026-local-unovis-charts.md) records the isolation boundary and pinned fork. Build without restarting services with `vendor/bin/castor charts:build` (or `--browser` for the isolated stack).
-
-Chat history uses the application SQLite database with automatic retention, favourites, unstored New chat drafts and owner-scoped modal full-text search. See ADRs 0027 and 0028.
-
-## Project documents
-
-- [Specification](SPEC.md): product scope, workflows, and open decisions.
-- [Architecture decisions](docs/adr/README.md): accepted technical direction, not implementation claims.
-- [Testing](TESTING.md): Playwright-only browser testing and agent verification.
-- [Development rules](AGENTS.md): task workflow, worktrees, safety, and tooling requirements.
+- [ARCHITECTURE.md](ARCHITECTURE.md): runtime diagrams, import/chat flows and trust boundaries.
+- [SPEC.md](SPEC.md): product requirements and deferred work, not an implementation checklist.
+- [Accepted ADRs](docs/adr/README.md): technical choices and their limitations.
+- [TESTING.md](TESTING.md): browser scenarios, isolation and validation policy.
+- [AGENTS.md](AGENTS.md): contributor workflow, safety and tooling rules.
+- [Mate diagnostics](mate/AGENT_INSTRUCTIONS.md): bounded, privacy-aware development inspection.

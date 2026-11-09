@@ -7,7 +7,7 @@ namespace AppTasks;
 use Castor\Attribute\AsTask;
 use Symfony\Component\Process\Process;
 
-#[AsTask(namespace: 'prod', name: 'smoke', description: 'Build and start a checkout-owned production preview without optional live updates.')]
+#[AsTask(namespace: 'prod', name: 'smoke', description: 'Smoke-check the compiled production PHP/charts images on checkout-owned storage; does not initialize the full demo.')]
 function productionSmoke(): void
 {
     exit(report('prod:smoke', [], runtime: false, operation: static function (): int {
@@ -27,22 +27,19 @@ function productionSmoke(): void
             fclose($handle);
         }
         $override = $directory.'/compose.yaml';
-        file_put_contents($override, "services:\n  php:\n    env_file: !override\n      - path: ".$secret."\n        required: true\n");
-        $command = ['docker', 'compose', '--project-name', 'pfa-'.checkoutId().'-prod-smoke', '-f', 'compose.yaml', '-f', 'compose.prod.yaml', '-f', $override];
+        file_put_contents($override, "services:\n  php:\n    environment:\n      IMPORT_UPDATES_ENABLED: '0'\n");
+        $command = ['docker', 'compose', '--env-file', $secret, '--project-name', 'pfa-'.checkoutId().'-prod-smoke', '-f', 'compose.yaml', '-f', 'compose.prod.yaml', '-f', $override];
         /** @param list<string> $arguments */
-        $run = static function (array $arguments) use ($command, $root): string {
-            $process = new Process([...$command, ...$arguments], $root, ['HTTP_PORT' => '0', 'COMPOSE_PROFILES' => ''], timeout: 600);
+        $run = static function (array $arguments) use ($command, $root, $secret): string {
+            $process = new Process([...$command, ...$arguments], $root, ['HTTP_PORT' => '0', 'CHATGPT_CALLBACK_PORT' => '0', 'DEMO_ENV_FILE' => $secret, 'COMPOSE_PROFILES' => ''], timeout: 600);
             runTaskProcess($process);
 
             return $process->getOutput();
         };
-        if ('php' !== trim($run(['config', '--services']))) {
-            throw new \RuntimeException('Production preview must not start the optional hub.');
-        }
         try {
-            $run(['up', '-d', '--build', '--wait']);
+            $run(['up', '-d', '--build', '--no-deps', '--wait', 'php', 'charts']);
             $run(['exec', '-T', 'php', 'php', 'bin/console', 'about']);
-            echo "Production preview healthy; optional hub excluded.\n";
+            echo "Production PHP/charts image smoke healthy. Full demo initialization, workers and live updates are not exercised here.\n";
         } finally {
             // Exact checkout-owned project only. Preserve its application volume.
             $run(['down']);

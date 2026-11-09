@@ -1,16 +1,102 @@
+# Local production-mode demo. Always select both Compose files explicitly.
+x-demo-environment: &demo-environment
+  APP_ENV: prod
+  APP_DEBUG: "0"
+  DATABASE_URL: "sqlite:///%kernel.project_dir%/var/data/app.db"
+  STATEMENT_STORAGE_DIR: '%kernel.project_dir%/var/data/statements'
+  LOCK_DSN: 'flock:///app/var/private/locks'
+  IMPORT_UPDATES_ENABLED: "1"
+  MERCURE_URL: 'http://mercure/.well-known/mercure'
+  MERCURE_PUBLIC_URL: 'http://127.0.0.1:${HTTP_PORT:-8080}/.well-known/mercure'
+  MERCURE_COOKIE_NAME: mercure_access_token
+  CHATGPT_CALLBACK_PORT: '${CHATGPT_CALLBACK_PORT:-1455}'
+  CHATGPT_FINANCE_URL: 'http://127.0.0.1:${HTTP_PORT:-8080}'
+
+x-demo-runtime: &demo-runtime
+  image: "${COMPOSE_PROJECT_NAME:-personal-finance-agent}-php:prod"
+  restart: unless-stopped
+  init: true
+  env_file:
+    - path: ${DEMO_ENV_FILE:-.env.prod.local}
+      required: true
+  environment: *demo-environment
+  volumes:
+    - app_data:/app/var/data
+    - app_private:/app/var/private
+    - app_charts:/app/var/charts
+    - broker_data:/app/var/queue
+    - chart_output:/chart-output
+
 services:
   php:
+    <<: *demo-runtime
+    ports:
+      - '127.0.0.1:${CHATGPT_CALLBACK_PORT:-1455}:8081'
+    depends_on:
+      broker:
+        condition: service_healthy
+      mercure:
+        condition: service_started
+      charts:
+        condition: service_started
+
+  broker:
+    image: "${COMPOSE_PROJECT_NAME:-personal-finance-agent}-php:prod"
     restart: unless-stopped
+    init: true
     env_file:
-      - path: .env.prod.local
+      - path: ${DEMO_ENV_FILE:-.env.prod.local}
         required: true
-    environment:
-      APP_ENV: prod
-      APP_DEBUG: "0"
-      IMPORT_UPDATES_ENABLED: "0"
-      DATABASE_URL: "sqlite:///%kernel.project_dir%/var/data/app.db"
+    environment: *demo-environment
     volumes:
-      - app_data:/app/var/data
+      - broker_data:/app/var/queue
+    command: ['php', 'bin/console', 'sqlite-queue:broker', '--database=/app/var/queue/broker.db', '--endpoint=/app/var/queue/broker.sock']
+    healthcheck:
+      test: ['CMD', 'php', '-r', 'exit(file_exists("/app/var/queue/broker.sock") ? 0 : 1);']
+      interval: 2s
+      timeout: 2s
+      retries: 30
+
+  worker:
+    <<: *demo-runtime
+    command: ['php', 'bin/console', 'messenger:consume', 'scheduler_default', 'statement_import', 'chat', '--concurrency=4', '--keepalive=5', '--memory-limit=256M', '--time-limit=3600', '--no-interaction']
+    depends_on:
+      broker:
+        condition: service_healthy
+      mercure:
+        condition: service_started
+      charts:
+        condition: service_started
+
+  mercure:
+    profiles: !reset []
+    environment:
+      MERCURE_EXTRA_DIRECTIVES: |
+        cookie_name mercure_access_token
+      GLOBAL_OPTIONS: |
+        servers {
+          trusted_proxies static private_ranges
+        }
+
+  charts:
+    restart: unless-stopped
+
+  # Explicitly invoked only during first setup; no source/vendor bind mounts.
+  demo-setup:
+    <<: *demo-runtime
+    image: "${COMPOSE_PROJECT_NAME:-personal-finance-agent}-setup:local"
+    build:
+      context: .
+      target: frankenphp_demo_setup
+    profiles: [setup]
+    restart: 'no'
+    environment:
+      <<: *demo-environment
+      APP_ENV: dev
+      APP_DEBUG: "0"
 
 volumes:
   app_data:
+  app_private:
+  app_charts:
+  broker_data:
