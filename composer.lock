@@ -2888,12 +2888,12 @@
             "source": {
                 "type": "git",
                 "url": "https://github.com/ineersa/sqlite-queue.git",
-                "reference": "a19d6e7684772be355f8db961cb2200e21ed5cd9"
+                "reference": "16bdfcdd8fcb1e469b2cd0db9f996b831feac175"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/ineersa/sqlite-queue/zipball/a19d6e7684772be355f8db961cb2200e21ed5cd9",
-                "reference": "a19d6e7684772be355f8db961cb2200e21ed5cd9",
+                "url": "https://api.github.com/repos/ineersa/sqlite-queue/zipball/16bdfcdd8fcb1e469b2cd0db9f996b831feac175",
+                "reference": "16bdfcdd8fcb1e469b2cd0db9f996b831feac175",
                 "shasum": ""
             },
             "require": {
@@ -2924,8 +2924,9 @@
                 "symfony/dependency-injection": "^8.0",
                 "symfony/doctrine-messenger": "^8.0",
                 "symfony/event-dispatcher": "^8.0",
-                "symfony/framework-bundle": "^8.0",
+                "symfony/framework-bundle": "^8.2@beta",
                 "symfony/process": "^8.0",
+                "symfony/runtime": "^8.2@beta",
                 "symfony/yaml": "^8.0"
             },
             "suggest": {
@@ -2963,7 +2964,7 @@
                 "source": "https://github.com/ineersa/sqlite-queue/tree/main",
                 "issues": "https://github.com/ineersa/sqlite-queue/issues"
             },
-            "time": "2026-10-17T17:17:57+00:00"
+            "time": "2026-11-09T00:55:04+00:00"
         },
         {
             "name": "ineersa/symfony-ai-openai-chatgpt-platform",
