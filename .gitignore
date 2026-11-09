@@ -13,9 +13,7 @@
 /.idea/
 /var/
 /bench/results/
-
-# Per-suite test cache dirs (generated during castor test)
-/.hatfield/cache-*/
+/.hatfield/
 
 # Generated artifacts
 callgraph.json
@@ -35,13 +33,6 @@ callgraph.html
 /.deptrac.cache
 
 /.aiassistant/
-# Hatfield extensions path-repo install artifacts (generated)
-/.hatfield/extensions/vendor/
-/.hatfield/extensions/composer.lock
-
-# Versioned skills installed from extension packages
-/.hatfield/skills/task-workflow/
-/.hatfield/skills/jbcontext-semantic-search/
 
 ###> symfony/framework-bundle ###
 /config/secrets/*/*.decrypt.private.php
