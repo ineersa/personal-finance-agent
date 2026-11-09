@@ -2,12 +2,10 @@ import { Controller } from '@hotwired/stimulus';
 
 const NEAR_BOTTOM = 96;
 const MAX_INPUT_HEIGHT = 160;
-const ACKNOWLEDGEMENT_HOLD_MS = 10000;
 
 export default class extends Controller {
     static targets = ['scroll', 'jump', 'input', 'error', 'submission'];
     inputRevision = 0;
-    progressRevision = 0;
     following = true;
     summaries = new Set();
 
@@ -18,14 +16,11 @@ export default class extends Controller {
         };
         window.addEventListener('resize', this.resize);
         this.resize();
+        this.submittedTurnIds = new Set();
         if (this.hasSubmissionTarget && !this.submissionTarget.hidden) this.waitForProgress();
         if (!this.hasScrollTarget) return;
-        this.observer = new MutationObserver(records => {
-            if (records.some(record => record.target.closest('[data-chat-execution]'))) {
-                ++this.progressRevision;
-                if (this.waitingForProgress) this.clearSubmission();
-            }
-            if (this.element.querySelector('[data-chat-response-active]')) this.clearSubmission();
+        this.observer = new MutationObserver(() => {
+            if (this.waitingForProgress && this.hasSubmittedTurn()) this.clearSubmission();
             this.scrollTarget.querySelectorAll('details[id]').forEach(details => {
                 details.open = this.summaries.has(details.id);
             });
@@ -52,10 +47,9 @@ export default class extends Controller {
     submissionStarted(event) {
         if (event.type === 'submit' && event.target.dataset.turbo === 'true') return;
         this.submittedRevision = this.inputRevision;
-        this.submittedProgressRevision = this.progressRevision;
+        this.submittedTurnIds = new Set([...this.element.querySelectorAll('.chat-turn[id]')].map(turn => turn.id));
         this.waitingForProgress = false;
         if (this.hasErrorTarget) this.errorTarget.textContent = '';
-        clearTimeout(this.acknowledgementTimer);
         if (this.hasSubmissionTarget) {
             this.submissionTarget.hidden = false;
             this.submissionTarget.textContent = 'Sending message…';
@@ -79,19 +73,24 @@ export default class extends Controller {
 
     waitForProgress() {
         if (!this.hasSubmissionTarget) return;
-        if (this.element.querySelector('[data-chat-response-active]') || this.progressRevision !== this.submittedProgressRevision && this.submittedProgressRevision !== undefined) {
+        if (this.hasSubmittedTurn()) {
             this.clearSubmission();
             return;
         }
         this.submissionTarget.hidden = false;
         this.waitingForProgress = true;
         this.submissionTarget.textContent = 'Message sent. Waiting for a response…';
-        clearTimeout(this.acknowledgementTimer);
-        this.acknowledgementTimer = setTimeout(() => this.clearSubmission(), ACKNOWLEDGEMENT_HOLD_MS);
+    }
+
+    hasSubmittedTurn() {
+        // A native input checkpoint supplies a real user turn, even before any
+        // answer tokens. Empty snapshots and updates to older replies do not.
+        return [...this.element.querySelectorAll('.chat-turn[id]')].some(turn =>
+            !this.submittedTurnIds.has(turn.id) && turn.querySelector('.chat-question p')?.textContent.trim()
+        );
     }
 
     clearSubmission() {
-        clearTimeout(this.acknowledgementTimer);
         this.waitingForProgress = false;
         if (this.hasSubmissionTarget) this.submissionTarget.hidden = true;
     }
