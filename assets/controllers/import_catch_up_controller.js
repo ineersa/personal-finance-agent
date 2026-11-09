@@ -48,10 +48,11 @@ export default class extends Controller {
             this.updateConnection();
         };
         this.nativeSubmit = event => {
-            // Turbo prevents its own submissions. A remaining native submit
-            // navigates this document, before Firefox closes SSE/pagehide fires.
+            // Only an explicitly native form announces navigation this early.
+            // Turbo may prevent its submissions after this event's microtasks.
+            if (event.target.dataset.turbo !== 'false' || event.target.target) return;
             queueMicrotask(() => {
-                if (!event.defaultPrevented && !event.target.target) this.pageHide();
+                if (!event.defaultPrevented) this.pageHide();
             });
         };
         this.beforeVisit = event => {
