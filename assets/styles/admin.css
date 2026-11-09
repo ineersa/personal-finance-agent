@@ -171,8 +171,8 @@ body.ea .chat-navigation-row .ea-sidebar-item-label { min-width: 0; overflow: hi
 .chat-commentary { margin: .75rem 0; color: #a2a2aa; font-size: .9rem; }
 .chat-reasoning { margin: .75rem 0; color: #a2a2aa; font-size: .85rem; }
 .chat-progress { margin: 10px 0 0; color: #a2a2aa; font-size: 12px; }
-.chat-progress[data-chat-response-active] { display: flex; align-items: center; gap: .6rem; width: fit-content; margin: .65rem 0 1rem; padding: .55rem .8rem; border: 1px solid #50675a; border-radius: .6rem; background: #202b25; color: #d5eddf; font-size: .9rem; }
-.chat-progress[data-chat-response-active]::before { content: ''; width: .85rem; height: .85rem; border: 2px solid #50675a; border-top-color: currentColor; border-radius: 50%; animation: chat-tool-spin 1s linear infinite; }
+.chat-progress[data-chat-response-active] { display: flex; align-items: center; gap: .6rem; margin: .65rem 0 1rem; }
+.chat-progress[data-chat-response-active]::before { content: ''; width: .85rem; height: .85rem; border: 2px solid #444449; border-top-color: currentColor; border-radius: 50%; animation: chat-tool-spin 1s linear infinite; }
 .chat-submission { margin: 0 0 .65rem; color: #d5eddf; font-size: .9rem; }
 @media (prefers-reduced-motion: reduce) { .chat-progress[data-chat-response-active]::before { animation: none; } }
 .chat-error { color: #ed9494; }
