@@ -60,6 +60,8 @@ services:
   worker:
     <<: *demo-runtime
     command: ['php', 'bin/console', 'messenger:consume', 'scheduler_default', 'statement_import', 'chat', '--concurrency=4', '--keepalive=5', '--memory-limit=256M', '--time-limit=3600', '--no-interaction']
+    healthcheck:
+      disable: true
     depends_on:
       broker:
         condition: service_healthy
