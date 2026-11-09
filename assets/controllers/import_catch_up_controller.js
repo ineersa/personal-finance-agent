@@ -9,6 +9,7 @@ export default class extends Controller {
 
     connect() {
         this.tearingDown = false;
+        this.recoveryAttempted = false;
         this.streamTargets = new Set([...this.element.querySelectorAll(this.targetSelectorValue)].map(target => target.id));
         this.beforeStream = event => {
             const stream = event.detail.newStream;
@@ -33,7 +34,10 @@ export default class extends Controller {
             if (event.currentTarget === this.source?.es) this.updateConnection();
         };
         this.sourceRecovery = event => {
-            if (event.currentTarget === this.source?.es) this.hideDisconnection();
+            if (event.currentTarget !== this.source?.es || !this.source?.isConnected || this.tearingDown) return;
+            // A delivered update proves recovery; an open/closed loop does not.
+            if (event.type === 'message') this.recoveryAttempted = false;
+            this.hideDisconnection();
         };
         this.pageHide = () => {
             this.tearingDown = true;
@@ -43,8 +47,24 @@ export default class extends Controller {
             this.tearingDown = false;
             this.updateConnection();
         };
+        this.nativeSubmit = event => {
+            // Turbo prevents its own submissions. A remaining native submit
+            // navigates this document, before Firefox closes SSE/pagehide fires.
+            queueMicrotask(() => {
+                if (!event.defaultPrevented && !event.target.target) this.pageHide();
+            });
+        };
+        this.beforeVisit = event => {
+            queueMicrotask(() => {
+                if (!event.defaultPrevented) this.pageHide();
+            });
+        };
         window.addEventListener('pagehide', this.pageHide);
         window.addEventListener('pageshow', this.pageShow);
+        window.addEventListener('beforeunload', this.pageHide);
+        document.addEventListener('submit', this.nativeSubmit);
+        document.addEventListener('turbo:before-visit', this.beforeVisit);
+        document.addEventListener('turbo:before-render', this.pageHide);
         this.catchUp();
     }
 
@@ -59,6 +79,10 @@ export default class extends Controller {
         this.eventSource = null;
         window.removeEventListener('pagehide', this.pageHide);
         window.removeEventListener('pageshow', this.pageShow);
+        window.removeEventListener('beforeunload', this.pageHide);
+        document.removeEventListener('submit', this.nativeSubmit);
+        document.removeEventListener('turbo:before-visit', this.beforeVisit);
+        document.removeEventListener('turbo:before-render', this.pageHide);
         this.request?.abort();
     }
 
@@ -89,9 +113,23 @@ export default class extends Controller {
         this.syncSource();
         if (!this.hasDisconnectedTarget) return;
         // UX Turbo clears es when intentionally detaching/replacing its source.
-        // Only the current attached source's terminal state warrants a reload.
-        this.disconnectedTarget.hidden = this.tearingDown || !this.element.isConnected || !this.source?.isConnected ||
-            !this.eventSource || this.eventSource !== this.source.es || this.eventSource.readyState !== EventSource.CLOSED;
+        // Never compete with the current source's native CONNECTING retries.
+        const stopped = !this.tearingDown && this.element.isConnected && this.source?.isConnected &&
+            this.eventSource && this.eventSource === this.source.es && this.eventSource.readyState === EventSource.CLOSED;
+        this.hideDisconnection();
+        if (!stopped) return;
+        if (!this.recoveryAttempted) {
+            this.recoveryAttempted = true;
+            // Standard custom-element removal/insertion lets UX Turbo close and
+            // unregister the old source before it owns the replacement stream.
+            const replacement = this.source.cloneNode(true);
+            replacement.removeAttribute('connected');
+            this.unbindSource();
+            this.source.replaceWith(replacement);
+            this.syncSource();
+            return;
+        }
+        this.disconnectedTarget.hidden = false;
     }
 
     hideDisconnection() {
@@ -126,7 +164,7 @@ export default class extends Controller {
             template.content.querySelectorAll('turbo-stream').forEach(stream => stream.dataset.importSnapshot = String(version));
             renderStreamMessage(template.innerHTML);
         } catch (error) {
-            // Native EventSource owns reconnects. No polling or page reload fallback.
+            // Native EventSource owns retries; catch-up does not poll or reload.
             if (error.name !== 'AbortError') console.warn('Live status catch-up unavailable.');
         }
     }
