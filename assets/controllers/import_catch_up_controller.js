@@ -1,6 +1,8 @@
 import { Controller } from '@hotwired/stimulus';
 import { renderStreamMessage } from '@hotwired/turbo';
 
+const DISCONNECTION_GRACE_MS = 10000;
+
 // UX Turbo marks its native Mercure element connected on every EventSource open.
 export default class extends Controller {
     static targets = ['disconnected'];
@@ -8,6 +10,7 @@ export default class extends Controller {
     version = 0;
 
     connect() {
+        this.tearingDown = false;
         this.streamTargets = new Set([...this.element.querySelectorAll(this.targetSelectorValue)].map(target => target.id));
         this.beforeStream = event => {
             const stream = event.detail.newStream;
@@ -36,20 +39,41 @@ export default class extends Controller {
             this.eventSource = this.source.es;
             this.sourceError = () => this.updateConnection();
             this.eventSource?.addEventListener('error', this.sourceError);
+            this.sourceOpen = () => this.hideDisconnection();
+            this.eventSource?.addEventListener('open', this.sourceOpen);
         }
         this.catchUp();
     }
 
     disconnect() {
+        this.tearingDown = true;
+        this.hideDisconnection();
         document.removeEventListener('turbo:before-stream-render', this.beforeStream);
         ++this.version;
         this.observer?.disconnect();
         this.eventSource?.removeEventListener('error', this.sourceError);
+        this.eventSource?.removeEventListener('open', this.sourceOpen);
         this.request?.abort();
     }
 
     updateConnection() {
-        if (this.hasDisconnectedTarget) this.disconnectedTarget.hidden = !this.source || this.source.hasAttribute('connected');
+        if (this.tearingDown || !this.source || this.source.hasAttribute('connected')) {
+            this.hideDisconnection();
+            return;
+        }
+        if (!this.hasDisconnectedTarget || this.disconnectionTimer) return;
+        this.disconnectionTimer = setTimeout(() => {
+            this.disconnectionTimer = null;
+            if (!this.tearingDown && this.element.isConnected && this.source?.isConnected && !this.source.hasAttribute('connected')) {
+                this.disconnectedTarget.hidden = false;
+            }
+        }, DISCONNECTION_GRACE_MS);
+    }
+
+    hideDisconnection() {
+        clearTimeout(this.disconnectionTimer);
+        this.disconnectionTimer = null;
+        if (this.hasDisconnectedTarget) this.disconnectedTarget.hidden = true;
     }
 
     catchUpOnChatEvent(event) {

@@ -2,10 +2,12 @@ import { Controller } from '@hotwired/stimulus';
 
 const NEAR_BOTTOM = 96;
 const MAX_INPUT_HEIGHT = 160;
+const ACKNOWLEDGEMENT_HOLD_MS = 10000;
 
 export default class extends Controller {
-    static targets = ['scroll', 'jump', 'input', 'error'];
+    static targets = ['scroll', 'jump', 'input', 'error', 'submission'];
     inputRevision = 0;
+    progressRevision = 0;
     following = true;
     summaries = new Set();
 
@@ -16,8 +18,14 @@ export default class extends Controller {
         };
         window.addEventListener('resize', this.resize);
         this.resize();
+        if (this.hasSubmissionTarget && !this.submissionTarget.hidden) this.waitForProgress();
         if (!this.hasScrollTarget) return;
-        this.observer = new MutationObserver(() => {
+        this.observer = new MutationObserver(records => {
+            if (records.some(record => record.target.closest('[data-chat-execution]'))) {
+                ++this.progressRevision;
+                if (this.waitingForProgress) this.clearSubmission();
+            }
+            if (this.element.querySelector('[data-chat-response-active]')) this.clearSubmission();
             this.scrollTarget.querySelectorAll('details[id]').forEach(details => {
                 details.open = this.summaries.has(details.id);
             });
@@ -31,6 +39,7 @@ export default class extends Controller {
     disconnect() {
         window.removeEventListener('resize', this.resize);
         this.observer?.disconnect();
+        this.clearSubmission();
     }
 
     resizeInput(event) {
@@ -41,19 +50,50 @@ export default class extends Controller {
     }
 
     submissionStarted(event) {
-        if (event.target.dataset.turbo !== 'true') return;
+        if (event.type === 'submit' && event.target.dataset.turbo === 'true') return;
         this.submittedRevision = this.inputRevision;
+        this.submittedProgressRevision = this.progressRevision;
+        this.waitingForProgress = false;
         if (this.hasErrorTarget) this.errorTarget.textContent = '';
+        clearTimeout(this.acknowledgementTimer);
+        if (this.hasSubmissionTarget) {
+            this.submissionTarget.hidden = false;
+            this.submissionTarget.textContent = 'Sending message…';
+        }
     }
 
     submissionFinished(event) {
-        if (event.target.dataset.turbo !== 'true' || !event.detail.success) return;
+        if (event.target.dataset.turbo !== 'true') return;
+        if (!event.detail.success) {
+            this.clearSubmission();
+            return;
+        }
+        this.waitForProgress();
         // A delayed HTTP acknowledgement cannot erase a later edited draft.
         if (this.hasInputTarget && this.submittedRevision === this.inputRevision) {
             this.inputTarget.value = '';
             this.resizeInput();
         }
         this.dispatch('acknowledged', { target: event.target });
+    }
+
+    waitForProgress() {
+        if (!this.hasSubmissionTarget) return;
+        if (this.element.querySelector('[data-chat-response-active]') || this.progressRevision !== this.submittedProgressRevision && this.submittedProgressRevision !== undefined) {
+            this.clearSubmission();
+            return;
+        }
+        this.submissionTarget.hidden = false;
+        this.waitingForProgress = true;
+        this.submissionTarget.textContent = 'Message sent. Waiting for a response…';
+        clearTimeout(this.acknowledgementTimer);
+        this.acknowledgementTimer = setTimeout(() => this.clearSubmission(), ACKNOWLEDGEMENT_HOLD_MS);
+    }
+
+    clearSubmission() {
+        clearTimeout(this.acknowledgementTimer);
+        this.waitingForProgress = false;
+        if (this.hasSubmissionTarget) this.submissionTarget.hidden = true;
     }
 
     handleKey(event) {
