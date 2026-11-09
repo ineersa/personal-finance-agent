@@ -1,6 +1,14 @@
 {% set statuses = enum('Symfony\\AI\\Agent\\Execution\\ExecutionStatus') %}
-<details class="chat-tool" id="chat-tool-{{ conversation.id }}-{{ user.id }}-{{ tool.id }}" data-tool-call-id="{{ tool.id }}" data-tool-status="{{ result ? statuses.Completed.value : statuses.Running.value }}">
-    <summary><span>{{ tool.name }}</span> <span class="chat-tool-status">{{ result ? 'Completed' : 'Running' }}</span></summary>
+{% set finished = result is not null %}
+{% set failed = chat_tool_error(tool, result) %}
+<details class="chat-tool{{ failed ? ' chat-tool-error' : '' }}" id="chat-tool-{{ conversation.id }}-{{ user.id }}-{{ tool.id }}" data-tool-call-id="{{ tool.id }}" data-tool-status="{{ finished ? statuses.Completed.value : statuses.Running.value }}">
+    <summary>
+        <span class="chat-tool-indicator{{ not finished ? ' chat-tool-spinner' : '' }}" aria-hidden="true">{{ finished ? (failed ? '!' : '·') : '' }}</span>
+        <span class="chat-tool-label">{{ failed ? 'Finance query returned an error' : chat_tool_label(tool, finished) }}</span>
+        <span class="chat-tool-status">{{ finished ? (failed ? 'Error' : 'Finished') : 'Running' }}</span>
+        <span class="chat-tool-chevron" aria-hidden="true">›</span>
+    </summary>
+    <h4>Tool</h4><code>{{ tool.name }}</code>
     <h4>Arguments</h4><pre class="chat-tool-arguments">{{ tool.arguments|json_encode(constant('JSON_PRETTY_PRINT') b-or constant('JSON_UNESCAPED_UNICODE')) }}</pre>
-    {% if result %}<h4>Result</h4><pre class="chat-tool-result">{{ result is chat_tool_result ? result.result|json_encode(constant('JSON_PRETTY_PRINT') b-or constant('JSON_UNESCAPED_UNICODE')) : result.asText }}</pre>{% endif %}
+    {% if finished %}<h4>{{ failed ? 'Error' : 'Result' }}</h4><pre class="chat-tool-result">{{ result is chat_tool_result ? result.result|json_encode(constant('JSON_PRETTY_PRINT') b-or constant('JSON_UNESCAPED_UNICODE')) : result.asText }}</pre>{% endif %}
 </details>
