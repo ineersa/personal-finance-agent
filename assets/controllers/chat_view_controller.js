@@ -4,7 +4,7 @@ const NEAR_BOTTOM = 96;
 const MAX_INPUT_HEIGHT = 160;
 
 export default class extends Controller {
-    static targets = ['scroll', 'jump', 'input', 'error'];
+    static targets = ['scroll', 'jump', 'input', 'error', 'submission'];
     inputRevision = 0;
     following = true;
     summaries = new Set();
@@ -16,8 +16,11 @@ export default class extends Controller {
         };
         window.addEventListener('resize', this.resize);
         this.resize();
+        this.submittedTurnIds = new Set();
+        if (this.hasSubmissionTarget && !this.submissionTarget.hidden) this.waitForProgress();
         if (!this.hasScrollTarget) return;
         this.observer = new MutationObserver(() => {
+            if (this.waitingForProgress && this.hasSubmittedTurn()) this.clearSubmission();
             this.scrollTarget.querySelectorAll('details[id]').forEach(details => {
                 details.open = this.summaries.has(details.id);
             });
@@ -31,6 +34,7 @@ export default class extends Controller {
     disconnect() {
         window.removeEventListener('resize', this.resize);
         this.observer?.disconnect();
+        this.clearSubmission();
     }
 
     resizeInput(event) {
@@ -41,19 +45,54 @@ export default class extends Controller {
     }
 
     submissionStarted(event) {
-        if (event.target.dataset.turbo !== 'true') return;
+        if (event.type === 'submit' && event.target.dataset.turbo === 'true') return;
         this.submittedRevision = this.inputRevision;
+        this.submittedTurnIds = new Set([...this.element.querySelectorAll('.chat-turn[id]')].map(turn => turn.id));
+        this.waitingForProgress = false;
         if (this.hasErrorTarget) this.errorTarget.textContent = '';
+        if (this.hasSubmissionTarget) {
+            this.submissionTarget.hidden = false;
+            this.submissionTarget.textContent = 'Sending message…';
+        }
     }
 
     submissionFinished(event) {
-        if (event.target.dataset.turbo !== 'true' || !event.detail.success) return;
+        if (event.target.dataset.turbo !== 'true') return;
+        if (!event.detail.success) {
+            this.clearSubmission();
+            return;
+        }
+        this.waitForProgress();
         // A delayed HTTP acknowledgement cannot erase a later edited draft.
         if (this.hasInputTarget && this.submittedRevision === this.inputRevision) {
             this.inputTarget.value = '';
             this.resizeInput();
         }
         this.dispatch('acknowledged', { target: event.target });
+    }
+
+    waitForProgress() {
+        if (!this.hasSubmissionTarget) return;
+        if (this.hasSubmittedTurn()) {
+            this.clearSubmission();
+            return;
+        }
+        this.submissionTarget.hidden = false;
+        this.waitingForProgress = true;
+        this.submissionTarget.textContent = 'Message sent. Waiting for a response…';
+    }
+
+    hasSubmittedTurn() {
+        // A native input checkpoint supplies a real user turn, even before any
+        // answer tokens. Empty snapshots and updates to older replies do not.
+        return [...this.element.querySelectorAll('.chat-turn[id]')].some(turn =>
+            !this.submittedTurnIds.has(turn.id) && turn.querySelector('.chat-question p')?.textContent.trim()
+        );
+    }
+
+    clearSubmission() {
+        this.waitingForProgress = false;
+        if (this.hasSubmissionTarget) this.submissionTarget.hidden = true;
     }
 
     handleKey(event) {
