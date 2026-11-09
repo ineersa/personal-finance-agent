@@ -72,6 +72,7 @@ services:
     environment:
       MERCURE_EXTRA_DIRECTIVES: |
         cookie_name mercure_access_token
+        heartbeat 2s
       GLOBAL_OPTIONS: |
         servers {
           trusted_proxies static private_ranges
