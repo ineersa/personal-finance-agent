@@ -52,9 +52,12 @@ COPY composer.json composer.lock symfony.lock ./
 RUN composer install --no-dev --prefer-dist --no-autoloader --no-scripts --no-interaction --no-progress
 
 COPY . ./
+# Warmup instantiates Flysystem. Remove only its empty image-time statement root
+# so a new app_data volume starts empty; rmdir fails if anything was written.
 RUN composer dump-autoload --classmap-authoritative --no-dev \
     && composer run-script --no-dev post-install-cmd \
     && php bin/console asset-map:compile --env=prod --no-debug \
+    && rmdir var/data/statements \
     && mkdir -p var/data var/private var/charts var/queue /chart-output \
     && chmod 0700 var/data var/private var/charts var/queue /chart-output \
     && chown -R 1000:1000 var /chart-output
