@@ -202,7 +202,10 @@ body.ea .chat-navigation-row .ea-sidebar-item-label { min-width: 0; overflow: hi
 .chat-reasoning-slider::-moz-range-track { height: 4px; border-radius: 4px; background: #444449; }
 .chat-reasoning-slider::-webkit-slider-thumb { appearance: none; box-sizing: border-box; width: var(--chat-slider-thumb-size); height: var(--chat-slider-thumb-size); margin-top: calc((4px - var(--chat-slider-thumb-size)) / 2); border: 2px solid #19191b; border-radius: 50%; background: #b9edd1; box-shadow: 0 0 0 1px #b9edd1; }
 .chat-reasoning-slider::-moz-range-thumb { box-sizing: border-box; width: var(--chat-slider-thumb-size); height: var(--chat-slider-thumb-size); border: 2px solid #19191b; border-radius: 50%; background: #b9edd1; box-shadow: 0 0 0 1px #b9edd1; }
-.finance-chat .chat-model-panel :is(select, input):focus-visible { outline: 2px solid #b9edd1; outline-offset: 3px; box-shadow: none; }
+.finance-chat .chat-model-panel select:focus-visible { outline: 2px solid #b9edd1; outline-offset: 3px; box-shadow: none; }
+.finance-chat .chat-reasoning-slider:focus-visible { outline: none; box-shadow: none; }
+.chat-reasoning-slider:focus-visible::-webkit-slider-thumb { box-shadow: 0 0 0 3px #b9edd1; }
+.chat-reasoning-slider:focus-visible::-moz-range-thumb { box-shadow: 0 0 0 3px #b9edd1; }
 .chat-reasoning-steps { position: relative; height: 19px; margin: 0 calc(var(--chat-slider-thumb-size) / 2); color: #878790; font-size: 9px; line-height: 16px; }
 .chat-reasoning-steps span { position: absolute; transform: translateX(-50%); white-space: nowrap; text-align: center; }
 .chat-reasoning-steps span::before { content: ''; display: block; width: 1px; height: 3px; margin: 0 auto; background: #657b70; }
