@@ -1,8 +1,6 @@
 import { Controller } from '@hotwired/stimulus';
 import { renderStreamMessage } from '@hotwired/turbo';
 
-const DISCONNECTION_GRACE_MS = 10000;
-
 // UX Turbo marks its native Mercure element connected on every EventSource open.
 export default class extends Controller {
     static targets = ['disconnected'];
@@ -30,18 +28,23 @@ export default class extends Controller {
             }
         };
         document.addEventListener('turbo:before-stream-render', this.beforeStream);
-        this.source = document.querySelector('#import-live-subscription turbo-mercure-stream-source');
-        if (!this.source) return;
         this.observer = new MutationObserver(() => this.catchUp());
-        this.observer.observe(this.source, { attributes: true, attributeFilter: ['connected'] });
-        if (this.hasDisconnectedTarget) {
-            // An initial error may occur before there is a connected attribute to remove.
-            this.eventSource = this.source.es;
-            this.sourceError = () => this.updateConnection();
-            this.eventSource?.addEventListener('error', this.sourceError);
-            this.sourceOpen = () => this.hideDisconnection();
-            this.eventSource?.addEventListener('open', this.sourceOpen);
-        }
+        this.sourceError = event => {
+            if (event.currentTarget === this.source?.es) this.updateConnection();
+        };
+        this.sourceRecovery = event => {
+            if (event.currentTarget === this.source?.es) this.hideDisconnection();
+        };
+        this.pageHide = () => {
+            this.tearingDown = true;
+            this.hideDisconnection();
+        };
+        this.pageShow = () => {
+            this.tearingDown = false;
+            this.updateConnection();
+        };
+        window.addEventListener('pagehide', this.pageHide);
+        window.addEventListener('pageshow', this.pageShow);
         this.catchUp();
     }
 
@@ -51,32 +54,52 @@ export default class extends Controller {
         document.removeEventListener('turbo:before-stream-render', this.beforeStream);
         ++this.version;
         this.observer?.disconnect();
-        this.eventSource?.removeEventListener('error', this.sourceError);
-        this.eventSource?.removeEventListener('open', this.sourceOpen);
+        this.unbindSource();
+        this.source = null;
+        this.eventSource = null;
+        window.removeEventListener('pagehide', this.pageHide);
+        window.removeEventListener('pageshow', this.pageShow);
         this.request?.abort();
     }
 
-    updateConnection() {
-        if (this.tearingDown || !this.source || this.source.hasAttribute('connected')) {
-            this.hideDisconnection();
-            return;
+    unbindSource() {
+        this.eventSource?.removeEventListener('error', this.sourceError);
+        this.eventSource?.removeEventListener('open', this.sourceRecovery);
+        this.eventSource?.removeEventListener('message', this.sourceRecovery);
+    }
+
+    syncSource() {
+        const source = document.querySelector('#import-live-subscription turbo-mercure-stream-source');
+        if (source !== this.source) {
+            this.observer?.disconnect();
+            this.source = source;
+            if (source) this.observer?.observe(source, { attributes: true, attributeFilter: ['connected', 'src', 'private'] });
         }
-        if (!this.hasDisconnectedTarget || this.disconnectionTimer) return;
-        this.disconnectionTimer = setTimeout(() => {
-            this.disconnectionTimer = null;
-            if (!this.tearingDown && this.element.isConnected && this.source?.isConnected && !this.source.hasAttribute('connected')) {
-                this.disconnectedTarget.hidden = false;
-            }
-        }, DISCONNECTION_GRACE_MS);
+        const eventSource = source?.es;
+        if (eventSource === this.eventSource) return;
+        this.unbindSource();
+        this.eventSource = eventSource;
+        this.eventSource?.addEventListener('error', this.sourceError);
+        this.eventSource?.addEventListener('open', this.sourceRecovery);
+        this.eventSource?.addEventListener('message', this.sourceRecovery);
+        this.hideDisconnection();
+    }
+
+    updateConnection() {
+        this.syncSource();
+        if (!this.hasDisconnectedTarget) return;
+        // UX Turbo clears es when intentionally detaching/replacing its source.
+        // Only the current attached source's terminal state warrants a reload.
+        this.disconnectedTarget.hidden = this.tearingDown || !this.element.isConnected || !this.source?.isConnected ||
+            !this.eventSource || this.eventSource !== this.source.es || this.eventSource.readyState !== EventSource.CLOSED;
     }
 
     hideDisconnection() {
-        clearTimeout(this.disconnectionTimer);
-        this.disconnectionTimer = null;
         if (this.hasDisconnectedTarget) this.disconnectedTarget.hidden = true;
     }
 
     catchUpOnChatEvent(event) {
+        this.updateConnection();
         // Live progress can precede a canonical checkpoint, including at submission acknowledgement.
         if (this.source?.hasAttribute('connected') && this.element.querySelector('[data-chat-execution] [data-chat-response-active]')) return;
         return this.catchUp(event);

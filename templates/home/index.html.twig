@@ -15,7 +15,8 @@
         </header>
         {% if chatgpt_status == statuses.Connected %}
             <p class="chat-live-notice" data-import-catch-up-target="disconnected" role="status" hidden>
-                Live updates are unavailable. Reconnecting automatically; saved replies may be newer.
+                Live updates have stopped. Reload to reconnect and check saved replies.
+                <a href="{{ path(constant('App\\Chat\\Workspace::CHAT_ROUTE'), {conversation: chat.conversation_id}) }}" data-turbo="false">Reload conversation</a>
             </p>
         {% endif %}
         {% if chatgpt_status != statuses.Connected %}
