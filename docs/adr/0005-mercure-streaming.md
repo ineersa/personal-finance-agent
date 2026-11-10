@@ -47,3 +47,11 @@ Adapt the useful patterns rather than importing re-search's full orchestrator, p
 ## Subsequent decision
 
 [ADR 0014](0014-inline-chat-and-antv-charts.md) replaces separate artifacts with inline chat text, tables, and chart images. Private Mercure delivery and durable message/generation requirements remain. [ADR 0015](0015-sqlite-conversation-history.md) selects shared application SQLite persistence and five temporary chats per user plus saved chats, with queued/running work protected. Exact image persistence remains open.
+
+## Local Firefox heartbeat amendment, 2026-11-09
+
+Use Mercure's native `heartbeat 2s` directive in the development Compose override, shared by the local development and isolated browser stacks. Firefox can verify traffic for five seconds after a network-change notification, including accepted virtual-interface address changes with an unchanged network ID. A healthy idle connection with longer heartbeat intervals can miss that window; Firefox then aborts it with a status that its EventSource implementation treats as terminal.
+
+The owner-captured Firefox 146.0.1 comparison confirmed that a 15-second heartbeat still failed, while the two-second setting delivered bytes inside verification windows and survived 29 observed pruning checks over approximately 33 minutes after an initial document-loader cancellation. Ordinary hub stream rotation and reconnection continued. This is a targeted local mitigation, not a fix to Firefox's error classification or a runtime result on other Firefox versions. More frequent SSE comments add modest idle traffic without application message events. Retain private authentication and existing native subscription/recovery behavior; do not add retry loops or change proxy deadlines for this mitigation.
+
+The directive is documented in the [Mercure hub configuration](https://mercure.rocks/docs/hub/config).

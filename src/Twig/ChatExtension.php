@@ -4,12 +4,16 @@ declare(strict_types=1);
 
 namespace App\Twig;
 
+use App\Chat\ChartToolset;
+use App\Chat\ExplicitToolErrors;
+use App\Finance\Sql\TenantSqlTool;
 use Symfony\AI\Agent\Toolbox\ToolResult;
 use Symfony\AI\Platform\Message\Content\Commentary;
 use Symfony\AI\Platform\Message\Content\Text;
 use Symfony\AI\Platform\Message\Content\Thinking;
 use Symfony\AI\Platform\Message\MessageBag;
 use Symfony\AI\Platform\Message\MessageInterface;
+use Symfony\AI\Platform\Message\ToolCallMessage;
 use Symfony\AI\Platform\Message\UserMessage;
 use Symfony\AI\Platform\Result\ToolCall;
 use Twig\Extension\AbstractExtension;
@@ -18,9 +22,45 @@ use Twig\TwigTest;
 
 final class ChatExtension extends AbstractExtension
 {
+    private const string CHART_PREFIX = ChartToolset::NAME.'_';
+
     public function getFunctions(): array
     {
-        return [new TwigFunction('chat_exchanges', $this->exchanges(...))];
+        return [
+            new TwigFunction('chat_exchanges', $this->exchanges(...)),
+            new TwigFunction('chat_tool_label', $this->toolLabel(...)),
+            new TwigFunction('chat_tool_error', $this->toolError(...)),
+        ];
+    }
+
+    public function toolLabel(ToolCall $tool, bool $finished): string
+    {
+        if (TenantSqlTool::QUERY_NAME === $tool->getName()) {
+            return $finished ? 'Finance query finished' : 'Getting finance data';
+        }
+        if (self::CHART_PREFIX.ChartToolset::INFO_TOOL === $tool->getName()) {
+            return $finished ? 'Chart discovery finished' : 'Discovering chart tools';
+        }
+        if (str_starts_with($tool->getName(), self::CHART_PREFIX)) {
+            return $finished ? 'Chart request finished' : 'Building chart';
+        }
+
+        return $finished ? 'Tool request finished' : 'Running tool';
+    }
+
+    public function toolError(ToolCall $tool, ToolResult|ToolCallMessage|null $result): bool
+    {
+        // Both finance feedback and execution failures carry an explicit error field.
+        // Native history preserves this payload as JSON, not an execution status.
+        if (null === $result) {
+            return false;
+        }
+        $payload = $result instanceof ToolResult ? $result->getResult() : $result->asText();
+        if (\is_string($payload)) {
+            $payload = json_decode($payload, true);
+        }
+
+        return \is_array($payload) && \array_key_exists(ExplicitToolErrors::ERROR_FIELD, $payload);
     }
 
     public function getTests(): array

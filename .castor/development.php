@@ -327,21 +327,25 @@ function browserLiveTest(#[AsArgsAfterOptionEnd] array $arguments = [], bool $he
     return report('browser:live:test', ['env', 'PLAYWRIGHT_HEADLESS='.($headed ? 'false' : 'true'), 'FINANCE_IMPORT_URL='.stackUrl('browser'), 'FINANCE_PROXY_IP='.proxyAddress(), 'php', 'vendor/bin/phpunit', ...$arguments, '--fail-on-empty-test-suite', '--log-junit', 'var/qa/browser-live-test/junit.xml'], headed: $headed, networked: true);
 }
 
-#[AsTask(namespace: 'dev', name: 'proxy:stop', description: 'Stop the shared proxy only when no checkout has registered routes.')]
-function developmentProxyStop(): int
+#[AsTask(namespace: 'dev', name: 'proxy:stop', description: 'Stop the shared proxy; --for-upgrade permits registered routes and removes only its owned container.')]
+function developmentProxyStop(bool $forUpgrade = false): int
 {
-    return report('dev:proxy:stop', ['docker', 'stop', proxyName()], runtime: false, operation: static function (): int {
+    return report('dev:proxy:stop', ['docker', 'stop', proxyName()], runtime: false, operation: static function () use ($forUpgrade): int {
         $state = proxyState();
         $lock = fopen($state.'/lock', 'cb');
         if (false === $lock || !flock($lock, \LOCK_EX)) {
             throw new \RuntimeException('Cannot lock the shared development proxy.');
         }
         try {
-            if (is_file($state.'/routes.json') && [] !== json_decode((string) file_get_contents($state.'/routes.json'), true, flags: \JSON_THROW_ON_ERROR)) {
+            if (!$forUpgrade && is_file($state.'/routes.json') && [] !== json_decode((string) file_get_contents($state.'/routes.json'), true, flags: \JSON_THROW_ON_ERROR)) {
                 throw new \RuntimeException('Stop registered checkout stacks before stopping the shared proxy.');
             }
             if (assertProxyOwner('container', proxyName())) {
                 developmentProcess(['docker', 'stop', proxyName()]);
+                if ($forUpgrade) {
+                    developmentProcess(['docker', 'rm', proxyName()]);
+                    echo "Shared proxy removed for upgrade; registered routes and application stacks are preserved. Run dev:stack:up from the prepared checkout to restore all preview URLs.\n";
+                }
             }
         } finally {
             flock($lock, \LOCK_UN);

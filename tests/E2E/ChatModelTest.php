@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Tests\E2E;
 
+use App\Chat\ChartToolset;
 use App\Chat\ChatModel;
 use App\Chat\ReasoningEffort;
 use App\Entity\ChatConversation;
@@ -14,6 +15,7 @@ use App\Tests\Support\SubmitsBrowserForms;
 use Doctrine\ORM\EntityManagerInterface;
 use Hautelook\AliceBundle\PhpUnit\FixtureStore;
 use Mcp\Schema\Notification\InitializedNotification;
+use Mcp\Schema\Request\CallToolRequest;
 use Mcp\Schema\Request\InitializeRequest;
 use Mcp\Schema\Request\ListToolsRequest;
 use Playwright\Page\PageInterface;
@@ -32,6 +34,7 @@ use Symfony\Component\Mercure\Jwt\DefaultClaimsTokenFactory;
 use Symfony\Component\Mercure\Jwt\LcobucciFactory;
 use Symfony\Component\Mercure\Jwt\StaticTokenProvider;
 use Symfony\Component\Mercure\MockHub;
+use Symfony\Component\Mercure\Update;
 use Symfony\Component\Messenger\MessageBusInterface;
 use Symfony\Component\Messenger\Transport\InMemory\InMemoryTransport;
 use Symfony\Component\Messenger\Transport\Serialization\PhpSerializer;
@@ -49,6 +52,8 @@ final class ChatModelTest extends FinanceBrowserTest
     private const string OUTPUT_TEXT = 'output_text';
     private const string OUTPUT_TEXT_DELTA = 'response.output_text.delta';
     private const string RESPONSE_COMPLETED = 'response.completed';
+    private const string OUTPUT_ITEM_DONE = 'response.output_item.done';
+    private const string FAILED_CHART_TOOL = 'generate_bar_chart';
     private const string SUBSCRIBER_COOKIE = 'synthetic_mercure';
 
     private array $environment;
@@ -180,13 +185,23 @@ final class ChatModelTest extends FinanceBrowserTest
         $start = $twig->render('chat/start.stream.html.twig', $context);
         $tool = new ToolCall('synthetic-live-tool', 'synthetic_tool');
         $toolUpdate = $twig->render('chat/tool.stream.html.twig', [...$context, 'anchor' => $question->getId()->toRfc4122(), 'tool' => $tool, 'result' => null]);
+        // Control this scenario's source before navigation; no real SSE errors may race setup.
+        $this->getPage()->addInitScript(<<<'JS'
+            const NativeEventSource = window.EventSource;
+            window.EventSource = class extends EventTarget {
+                static CONNECTING = NativeEventSource.CONNECTING;
+                static OPEN = NativeEventSource.OPEN;
+                static CLOSED = NativeEventSource.CLOSED;
+                readyState = NativeEventSource.CONNECTING;
+                close() { this.readyState = NativeEventSource.CLOSED; }
+            };
+            JS);
         $page = $this->visit('/home/chat?conversation='.$conversation->id);
         $page->locator('#import-live-subscription turbo-mercure-stream-source')->waitFor(['state' => 'attached']);
         $setup = $page->evaluate(<<<'JS'
             () => {
                 const source = document.querySelector('#import-live-subscription turbo-mercure-stream-source');
                 if (!source) return {error: 'Native source absent', title: document.title};
-                source.es?.close();
                 window.chatSnapshotRequests = 0;
                 window.chatSnapshotRenders = 0;
                 const fetch = window.fetch.bind(window);
@@ -200,8 +215,9 @@ final class ChatModelTest extends FinanceBrowserTest
                     const render = event.detail.render;
                     event.detail.render = async element => { await render(element); ++window.chatSnapshotRenders; };
                 });
-                // Synthetic native-element state, not evidence of a real Mercure connection.
-                source.setAttribute('connected', '');
+                // Let the real UX element update its attribute from a consistent simulated source.
+                source.es.readyState = EventSource.OPEN;
+                source.es.dispatchEvent(new Event('open'));
                 return {instrumented: true};
             }
             JS);
@@ -243,11 +259,19 @@ final class ChatModelTest extends FinanceBrowserTest
         self::assertTrue($card->isVisible());
         self::assertTrue($page->evaluate('() => window.chatOriginalRoot === document.querySelector("[data-chat-execution]")'));
 
-        $page->evaluate('() => { document.querySelector("#import-live-subscription turbo-mercure-stream-source").removeAttribute("connected"); window.dispatchEvent(new FocusEvent("focus")); }');
+        $page->evaluate(<<<'JS'
+            () => {
+                const source = document.querySelector('#import-live-subscription turbo-mercure-stream-source');
+                source.es.readyState = EventSource.CONNECTING;
+                source.es.dispatchEvent(new Event('error'));
+                window.dispatchEvent(new FocusEvent('focus'));
+            }
+            JS);
         $card->waitFor(['state' => 'detached']);
         self::assertSame($baseline + 1, $page->evaluate('() => window.chatSnapshotRequests'));
         self::assertSame(0, $page->locator('[data-chat-response-active]')->count());
-        self::assertTrue($page->locator('.chat-live-notice')->isVisible());
+        // Native retrying is quiet and must not consume the terminal replacement attempt.
+        self::assertFalse($page->locator('.chat-live-notice')->isVisible());
     }
 
     public function testBrowserSubmissionNormalizesForeignToolIdsWithoutRewritingHistory(): void
@@ -324,6 +348,137 @@ final class ChatModelTest extends FinanceBrowserTest
         self::assertTrue($page->getByText('Synthetic continuation complete.', ['exact' => true])->isVisible());
     }
 
+    public function testFailedChartToolShowsErrorInStreamAndAfterReload(): void
+    {
+        $container = self::getContainer();
+        $updates = [];
+        $this->mockHub(static function (Update $update) use (&$updates): string {
+            $updates[] = $update->getData();
+
+            return 'synthetic-event';
+        });
+        $error = 'Synthetic chart input was rejected.';
+        $container->set('app.charts.http_client', new MockHttpClient(static function (string $method, string $url, array $options) use ($error): MockResponse {
+            $request = json_decode($options['body'], true, flags: \JSON_THROW_ON_ERROR);
+            $result = match ($request['method']) {
+                \Mcp\Schema\Request\DiscoverRequest::getMethod() => ['supportedVersions' => [\Mcp\Schema\Enum\ProtocolVersion::V2026_07_28->value], 'capabilities' => ['tools' => new \stdClass()]],
+                ListToolsRequest::getMethod() => ['tools' => [['name' => self::FAILED_CHART_TOOL, 'description' => 'Draw a synthetic chart.', 'inputSchema' => ['type' => 'object', 'properties' => ['title' => ['type' => 'string']], 'required' => ['title']]]]],
+                CallToolRequest::getMethod() => \Mcp\Schema\Result\CallToolResult::error([new \Mcp\Schema\Content\TextContent($error)]),
+                default => throw new \LogicException('Unexpected synthetic MCP request.'),
+            };
+
+            return new MockResponse(json_encode(new \Mcp\Schema\JsonRpc\Response($request['id'], $result), \JSON_THROW_ON_ERROR), ['response_headers' => ['content-type: application/json']]);
+        }));
+        $round = 0;
+        $container->set('app.chat.recording_http_client', new MockHttpClient(static function () use (&$round): MockResponse {
+            ++$round;
+            if (1 === $round) {
+                $output = ['type' => self::FUNCTION_CALL, 'id' => 'synthetic-chart-item', 'call_id' => 'synthetic-chart-call', 'name' => ChartToolset::NAME.'_'.self::FAILED_CHART_TOOL, 'arguments' => json_encode(['title' => 'Synthetic spending'], \JSON_THROW_ON_ERROR)];
+                $delta = ['type' => self::OUTPUT_ITEM_DONE, 'output_index' => 0, 'item' => $output];
+            } else {
+                $output = ['type' => self::MESSAGE, 'id' => 'synthetic-answer', 'role' => \Symfony\AI\Platform\Message\Role::Assistant->value, 'content' => [['type' => self::OUTPUT_TEXT, 'text' => 'The chart could not be generated.']]];
+                $delta = ['type' => self::OUTPUT_TEXT_DELTA, 'item_id' => 'synthetic-answer', 'output_index' => 0, 'content_index' => 0, 'delta' => 'The chart could not be generated.'];
+            }
+            $completed = ['type' => self::RESPONSE_COMPLETED, 'response' => ['id' => 'synthetic-response-'.$round, 'model' => ChatModel::Gpt6Luna->value, 'output' => [$output], 'usage' => ['input_tokens' => 1, 'output_tokens' => 1, 'total_tokens' => 2]]];
+
+            return new MockResponse('data: '.json_encode($delta, \JSON_THROW_ON_ERROR)."\n\ndata: ".json_encode($completed, \JSON_THROW_ON_ERROR)."\n\n", ['response_headers' => ['content-type: text/event-stream']]);
+        }));
+        $container->set('messenger.transport.chat', new SyncTransport($container->get(MessageBusInterface::class)));
+        $owner = $this->connectedUser();
+        $history = new MessageBag();
+        $conversation = new ChatConversation($owner, $history->getId()->toRfc4122());
+        $manager = $container->get(EntityManagerInterface::class);
+        $manager->persist($conversation);
+        $manager->flush();
+        $this->loginUser($owner);
+        $page = $this->visit('/home/chat?conversation='.$conversation->id);
+        $page->getByLabel('Your message', ['exact' => true])->fill('Draw a synthetic spending chart.');
+        $this->submit(static fn () => $page->getByRole('button', ['name' => 'Send message', 'exact' => true])->click());
+        self::assertSame(2, $round);
+        self::assertTrue(str_contains(implode('', $updates), 'Tool call failed'), 'The handler must publish the explicit tool failure.');
+
+        // SyncTransport has already completed. Replay only actual handler publications up to
+        // the failed card through native Turbo: this proves streamed HTML, not network timing.
+        $page->locator('.chat-turns')->evaluate('element => element.replaceChildren()');
+        foreach ($updates as $update) {
+            $page->evaluate('async html => { window.Turbo.renderStreamMessage(html); await new Promise(requestAnimationFrame); }', $update);
+            if (str_contains($update, 'Tool call failed')) {
+                break;
+            }
+        }
+        $card = $page->locator('.chat-tool-error');
+        $card->waitFor();
+        self::assertTrue($page->locator('[data-chat-response-active]')->isVisible());
+        self::assertSame(\Symfony\AI\Agent\Execution\ExecutionStatus::Failed->value, $card->getAttribute('data-tool-status'));
+        self::assertSame('Tool call failed', $card->locator('.chat-tool-label')->textContent());
+        $card->locator('summary')->click();
+        self::assertTrue($card->locator('.chat-tool-result')->isVisible());
+        self::assertStringContainsString($error, $card->locator('.chat-tool-result')->textContent());
+        self::assertStringContainsString('Synthetic spending', $card->locator('.chat-tool-arguments')->textContent());
+        self::assertSame(ChartToolset::NAME.'_'.self::FAILED_CHART_TOOL, $card->locator('code')->textContent());
+
+        $page->reload();
+        $card = $page->locator('.chat-tool-error');
+        $card->waitFor();
+        self::assertSame('Tool call failed', $card->locator('.chat-tool-label')->textContent());
+        $card->locator('summary')->click();
+        self::assertTrue($card->locator('.chat-tool-result')->isVisible());
+        self::assertStringContainsString($error, $card->locator('.chat-tool-result')->textContent());
+        self::assertTrue($page->getByText('The chart could not be generated.', ['exact' => true])->isVisible());
+    }
+
+    public function testRetainedChartRemainsVisibleAfterResponseFailure(): void
+    {
+        $container = self::getContainer();
+        $this->mockHub();
+        $owner = $this->connectedUser();
+        $question = Message::ofUser('Show my synthetic chart.');
+        $call = new ToolCall('retained-chart-call', ChartToolset::NAME.'_'.self::FAILED_CHART_TOOL);
+        // Native tool-round checkpoint: the chart exists, but no final assistant prose does.
+        $history = new MessageBag(Message::ofUser('Synthetic finance context.'), $question, new AssistantMessage($call), Message::ofToolCall($call, new Text('Interactive chart saved privately and displayed inline.')));
+        $conversation = new ChatConversation($owner, $history->getId()->toRfc4122());
+        $filename = \Symfony\Component\Uid\Uuid::v4()->toRfc4122().'.html';
+        $conversation->charts[] = ['message' => $question->getId()->toRfc4122(), 'file' => $filename];
+        $manager = $container->get(EntityManagerInterface::class);
+        $manager->persist($conversation);
+        $manager->flush();
+        $container->get(MessageStoreInterface::class)->save($history);
+        $storage = $container->get('charts.storage');
+        $storage->write($conversation->id.'/'.$filename, '<!doctype html><html><body><h1>Retained synthetic chart</h1></body></html>');
+        try {
+            $this->loginUser($owner);
+            $page = $this->visit('/home/chat?conversation='.$conversation->id);
+            $twig = $container->get(Environment::class);
+            $context = ['conversation' => $conversation, 'user' => $question, 'messages' => $history, 'error' => null];
+            // Exercise the actual terminal renderer, not hosted inference or network delivery.
+            $running = $twig->render('chat/finish.stream.html.twig', [...$context, 'status' => \Symfony\AI\Agent\Execution\ExecutionStatus::Running]);
+            $page->evaluate('html => window.Turbo.renderStreamMessage(html)', $running);
+            $page->locator('[data-chat-response-active]')->waitFor();
+            self::assertSame(0, $page->locator('.chat-chart')->count());
+
+            $failed = $twig->render('chat/finish.stream.html.twig', [...$context, 'status' => \Symfony\AI\Agent\Execution\ExecutionStatus::Failed, 'error' => 'The response could not be completed.']);
+            $page->evaluate('html => window.Turbo.renderStreamMessage(html)', $failed);
+            $chart = $page->locator('.chat-chart iframe');
+            $chart->waitFor();
+            self::assertTrue($page->getByText('The response could not be completed.', ['exact' => true])->isVisible());
+            self::assertSame(0, $page->locator('[data-chat-response-active]')->count());
+            $heading = $page->frameLocator('.chat-chart iframe')->getByRole('heading', ['name' => 'Retained synthetic chart']);
+            $heading->waitFor();
+            self::assertTrue($heading->isVisible());
+            $source = $chart->getAttribute('src');
+
+            $page->reload();
+            $chart = $page->locator('.chat-chart iframe');
+            $chart->waitFor();
+            self::assertSame($source, $chart->getAttribute('src'));
+            $heading = $page->frameLocator('.chat-chart iframe')->getByRole('heading', ['name' => 'Retained synthetic chart']);
+            $heading->waitFor();
+            self::assertTrue($heading->isVisible());
+        } finally {
+            $container->get(\App\Chat\ChartFiles::class)->removeConversation($conversation->id);
+        }
+    }
+
     private function connectedChat(): PageInterface
     {
         self::getContainer()->set('messenger.transport.chat', new InMemoryTransport(new PhpSerializer()));
@@ -345,10 +500,10 @@ final class ChatModelTest extends FinanceBrowserTest
         return $user;
     }
 
-    private function mockHub(): void
+    private function mockHub(?\Closure $publisher = null): void
     {
         $container = self::getContainer();
         $factory = new DefaultClaimsTokenFactory(new LcobucciFactory(bin2hex(random_bytes(32))), ['iss' => $this->getBaseUrl(), 'aud' => $this->getBaseUrl().'/.well-known/mercure', 'sub' => 'synthetic', 'client_id' => 'synthetic']);
-        $container->set(HubInterface::class, new MockHub($this->getBaseUrl().'/.well-known/mercure', new StaticTokenProvider('synthetic-token'), static fn (): string => 'synthetic-event', $factory, cookieName: self::SUBSCRIBER_COOKIE));
+        $container->set(HubInterface::class, new MockHub($this->getBaseUrl().'/.well-known/mercure', new StaticTokenProvider('synthetic-token'), $publisher ?? static fn (): string => 'synthetic-event', $factory, cookieName: self::SUBSCRIBER_COOKIE));
     }
 }

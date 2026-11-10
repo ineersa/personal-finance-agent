@@ -35,6 +35,18 @@ Inspect or stop only the current checkout:
 
 Stopping a checkout runs Compose `down` without `--volumes`: it removes that stack's containers and private networks and unregisters its route. Named volumes, bind-mounted data, other checkouts, the shared proxy, and its external network are preserved; no global prune runs. The same lifecycle applies to `browser:stack:stop`. Stop each owned stack before removing its worktree. `vendor/bin/castor dev:proxy:stop` stops the proxy only when no routes remain registered. It removes no volumes. The locked route registry lives in `finance-development/` inside the repository's common Git directory, shared across its worktrees. See [ADR 0019](docs/adr/0019-worktree-development-routing.md) for boundaries and limitations.
 
+### Upgrade the shared development proxy
+
+Only with explicit authorization for a brief outage of **all preview URLs**, run these from the checkout containing the upgraded Dockerfile:
+
+```sh
+vendor/bin/castor dev:stack:up                 # Build/start this checkout's new development image first.
+vendor/bin/castor dev:proxy:stop --for-upgrade # Stop/remove only the ownership-verified shared proxy container.
+vendor/bin/castor dev:stack:up                 # Recreate the proxy from this checkout's image and retained routes.
+```
+
+The second startup reuses the prepared build cache. Other checkout stacks keep running; the shared network, route registry, databases, credentials, uploads and volumes are preserved. Normal `dev:proxy:stop` still refuses registered routes and only stops its container. There is no automatic rollback; if recreation fails, correct the reported error and rerun the final command from the prepared checkout.
+
 ## Load synthetic development data
 
 Start the development stack first so it creates a private application secret. Apply migrations, then append the Alice fixtures to this checkout's development database:

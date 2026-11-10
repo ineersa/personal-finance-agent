@@ -1,5 +1,5 @@
 # syntax=docker/dockerfile:1
-FROM dunglas/frankenphp:1.13.2-php8.5-bookworm@sha256:308b7dbf7e263a7200f17c1957c0ed1dfdcd01fd914e1b7e99eef7f92b06d4ae AS frankenphp_base
+FROM dunglas/frankenphp:1.13.5-php8.5-bookworm@sha256:8104eb9c834d905e5678a183d053ef1a0c650c5f4874f366dfec7eb025e92e06 AS frankenphp_base
 
 WORKDIR /app
 
