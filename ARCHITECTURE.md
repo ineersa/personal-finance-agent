@@ -59,7 +59,7 @@ sequenceDiagram
     participant Jev as TypeSafe / Jev
     participant Hub as Private Mercure
     User->>Web: Upload CSV + explicit provider consent
-    Web->>Web: Authenticate owner; enforce 10 MiB limit
+    Web->>Web: Authenticate owner and enforce 10 MiB limit
     Web->>Disk: Store private bytes
     Web->>Finance: Persist statement metadata
     Web->>Broker: Dispatch statement-processing message
@@ -104,7 +104,7 @@ sequenceDiagram
             Worker->>SQL: SQL bound to conversation owner's DB
             SQL-->>Worker: Bounded rows / diagnostic result
         else Chart
-            Worker->>Chart: Data/options; application selects output path
+            Worker->>Chart: Data/options with application-selected output path
             Chart-->>Worker: Retained private chart reference
         end
         Worker->>GPT: Tool result
