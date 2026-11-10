@@ -80,10 +80,10 @@ final readonly class AgentFactory
         return new Agent(new Platform([$provider]), $model,
             inputProcessors: [new ModelHistoryInputProcessor(), new SystemPromptInputProcessor($prompt)],
             // Keep native NullLogger: debug tool logging would expose SQL arguments.
-            toolbox: new FaultTolerantToolbox(new ExplicitToolErrors(new ChainToolbox([
+            toolbox: new FaultTolerantToolbox(new ChainToolbox([
                 new Toolbox([$this->tool->forOwner($owner)], eventDispatcher: $events),
                 new McpToolbox(new ChartToolset($chartTools, $this->files, $conversation, $message, $this->conversations), eventDispatcher: $events),
-            ]))),
+            ])),
             eventDispatcher: $events,
             messageStore: $this->store,
         );

@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace App\Twig;
 
 use App\Chat\ChartToolset;
-use App\Chat\ExplicitToolErrors;
 use App\Finance\Sql\TenantSqlTool;
 use Symfony\AI\Agent\Toolbox\ToolResult;
 use Symfony\AI\Platform\Message\Content\Commentary;
@@ -50,9 +49,13 @@ final class ChatExtension extends AbstractExtension
 
     public function toolError(ToolCall $tool, ToolResult|ToolCallMessage|null $result): bool
     {
-        // Both finance feedback and execution failures carry an explicit error field.
-        // Native history preserves this payload as JSON, not an execution status.
         if (null === $result) {
+            return false;
+        }
+        if ($result->isError()) {
+            return true;
+        }
+        if (TenantSqlTool::QUERY_NAME !== $tool->getName()) {
             return false;
         }
         $payload = $result instanceof ToolResult ? $result->getResult() : $result->asText();
@@ -60,7 +63,7 @@ final class ChatExtension extends AbstractExtension
             $payload = json_decode($payload, true);
         }
 
-        return \is_array($payload) && \array_key_exists(ExplicitToolErrors::ERROR_FIELD, $payload);
+        return \is_array($payload) && \array_key_exists(TenantSqlTool::ERROR_FIELD, $payload);
     }
 
     public function getTests(): array

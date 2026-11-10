@@ -12,6 +12,7 @@ use Symfony\AI\Platform\Tool\ToolEffectHints;
 final class TenantSqlTool
 {
     public const string QUERY_NAME = 'finance_query';
+    public const string ERROR_FIELD = 'error';
     public const string DESCRIPTION = 'Execute a read-only SQLite query against the current owner finance database.';
     public const string PROMPT_LINE = self::QUERY_NAME.'(sql: string) — read-only SQLite query';
     public const string GUIDELINES = <<<'TEXT'
@@ -41,7 +42,7 @@ TEXT;
         } catch (\Exception $error) {
             // ReadOnlyQuery handles private storage-open failures at their boundary.
             // Preserve SQLite diagnostics and named bounds so the model can correct its query.
-            return ['error' => $error->getMessage()];
+            return [self::ERROR_FIELD => $error->getMessage()];
         }
     }
 

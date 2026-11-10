@@ -50,6 +50,27 @@ vendor/bin/castor qa:static
 
 `tooling:prepare` builds the development tooling image, installs locked dependencies and Chromium. Its disposable containers run as the host UID/GID. Private browser/tooling files live under ignored `var/tooling/`. Do not invoke another PHP runner around Castor.
 
+## Local Symfony AI failure-status integration
+
+Task 32 targets Symfony AI revision `05578c539e5c44adde67f0850d3e3aa6c0b5db1f`
+for native `ToolResult::isError()` and `ToolCallMessage::isError()` persistence.
+From that upstream checkout, its existing `./link --copy /path/to/isolated-finance-checkout`
+copies **all installed matching AI packages**, not just Agent and Platform (10 packages
+in this checkout). This is provisional local validation: Composer configuration and
+the lock remain unchanged, and no vendor contents are committed. It is not a deployable
+locked dependency update; the integration source requires these unreleased APIs.
+
+Reuse the existing failed-chart-tool stream/reload regression and model/history happy
+paths; record actual test outcomes separately. Execution failures use native status,
+while only `finance_query` retains its documented structured `error` feedback contract.
+Old unflagged messages remain readable as non-errors; no history backfill is performed.
+
+To restore dependencies, run the upstream utility's
+`./link --rollback /path/to/isolated-finance-checkout`, then run
+`vendor/bin/castor composer:install` in that finance checkout to reinstall locked packages.
+Rollback does not make the new integration source compatible with the older locked API;
+use the matching pre-integration source when returning to those dependencies.
+
 ## Running tests
 
 `vendor/bin/castor test` runs the nine intercepted-browser scenarios headlessly. Native PHPUnit arguments go after `--`:

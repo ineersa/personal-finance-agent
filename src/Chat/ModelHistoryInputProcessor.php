@@ -29,7 +29,7 @@ final class ModelHistoryInputProcessor implements InputProcessorInterface
             if (!$message instanceof AssistantMessage) {
                 if ($message instanceof ToolCallMessage && isset($toolCallIds[$message->getToolCall()->getId()])) {
                     $call = $message->getToolCall();
-                    $copy = (new ToolCallMessage($this->copyToolCall($call, $toolCallIds[$call->getId()]), ...$message->getContent()))->withId($message->getId());
+                    $copy = (new ToolCallMessage($this->copyToolCall($call, $toolCallIds[$call->getId()]), ...$message->getContent()))->withIsError($message->isError())->withId($message->getId());
                     $copy->getMetadata()->set($message->getMetadata()->all());
                     $messages[] = $copy;
                     continue;
