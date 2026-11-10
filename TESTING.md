@@ -50,6 +50,18 @@ vendor/bin/castor qa:static
 
 `tooling:prepare` builds the development tooling image, installs locked dependencies and Chromium. Its disposable containers run as the host UID/GID. Private browser/tooling files live under ignored `var/tooling/`. Do not invoke another PHP runner around Castor.
 
+### Upgrade the shared development proxy
+
+Only with explicit authorization for a brief outage of **all preview URLs**, run these from the checkout containing the upgraded Dockerfile:
+
+```sh
+vendor/bin/castor dev:stack:up                 # Build/start this checkout's new development image first.
+vendor/bin/castor dev:proxy:stop --for-upgrade # Stop/remove only the ownership-verified shared proxy container.
+vendor/bin/castor dev:stack:up                 # Recreate the proxy from this checkout's image and retained routes.
+```
+
+The second startup reuses the prepared build cache. Other checkout stacks keep running; the shared network, route registry, databases, credentials, uploads and volumes are preserved. Normal `dev:proxy:stop` still refuses registered routes and only stops its container. There is no automatic rollback; if recreation fails, correct the reported error and rerun the final command from the prepared checkout.
+
 ## Running tests
 
 `vendor/bin/castor test` runs the nine intercepted-browser scenarios headlessly. Native PHPUnit arguments go after `--`:

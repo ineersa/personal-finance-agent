@@ -36,6 +36,7 @@ ADRs record significant technical decisions, their context, and their consequenc
 | [0028](0028-native-chat-search.md) | Accepted | Search owned readable chat text with native SQLite FTS5 and an explicitly approved SQLite-specific migration exception. |
 | [0029](0029-native-chat-store.md) | Accepted | Direct native Doctrine message store, linked finance metadata, native concurrency/delivery and no custom recovery or parallel transcript. |
 | [0030](0030-chatgpt-model-selection.md) | Accepted | ChatGPT-only per-turn model/reasoning selection and request-only native history compatibility. |
+| [0031](0031-local-demo-packaging.md) | Accepted | Complete local production-mode demo with a narrow Bash installer, canonical one-off Alice provisioning and persistent private storage. |
 
 ## Recording decisions
 
