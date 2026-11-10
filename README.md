@@ -4,7 +4,7 @@
 
 Upload CSV bank statements, review your transactions, and ask questions about your finances—with answers and interactive charts in one chat.
 
-Built for the Symfony AI hackathon with Symfony, Symfony AI and EasyAdmin.
+Built for the Symfony AI hackathon. Powered by [Symfony](https://symfony.com/), [Symfony AI](https://symfony.com/ai), [EasyAdmin](https://github.com/EasyCorp/EasyAdminBundle) and our [ChatGPT provider for Symfony AI](https://github.com/ineersa/symfony-ai-openai-chatgpt-platform).
 
 <p align="center">
   <a href="https://youtu.be/nbKGmY-PTqE">
@@ -34,6 +34,10 @@ Jev is the default Decision API. To use another compatible provider, change `JEV
 Run `./setup-demo.sh` again to restart or update the demo; your data and settings are kept. The script also prints the shutdown command.
 
 **Use sample data only and keep the demo local.** Statement content is sent to your Decision API provider; chat context is sent to ChatGPT.
+
+## Built with Hatfield
+
+All development was done with [Hatfield](https://github.com/ineersa/agent-core), our coding agent powered by [Symfony AI](https://symfony.com/ai).
 
 ## Learn more
 
