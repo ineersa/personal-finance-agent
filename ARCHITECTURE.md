@@ -2,7 +2,7 @@
 
 Personal finance is a local Symfony application, not a separate chat frontend plus financial API. EasyAdmin owns the authenticated workspace; Twig, AssetMapper, Stimulus and Turbo provide the UI. Symfony AI owns the agent/tool loop and native message storage. SQLite stores identities and conversations centrally, with a separate authoritative finance database for each ordinary user.
 
-This document describes the current implementation. Accepted [ADRs](docs/adr/README.md) explain decisions; [SPEC.md](SPEC.md) also includes future requirements. [README.md](README.md) covers installation and limitations.
+This document describes the current implementation. Accepted [ADRs](docs/adr/README.md) explain decisions; [SPEC.md](SPEC.md) also includes future requirements. [README.md](README.md) covers installation.
 
 ## Runtime overview
 
