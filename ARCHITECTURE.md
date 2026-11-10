@@ -44,7 +44,7 @@ flowchart LR
 
 Only the application listener and callback-only listener publish loopback host ports. SSE reaches Mercure through Caddy's application route; the broker, MCP service and hub have no published host ports. No public financial/database API or raw file directory is exposed. The Unovis service sees only chart staging—not tenant databases, uploads or OAuth records.
 
-Production PHP, broker and worker use the same compiled `--no-dev` image as UID/GID 1000. The one-off `frankenphp_demo_setup` image includes development dependencies solely to invoke the existing dev-mode canonical Alice loader. It is not a production service. `setup-demo.sh` applies Doctrine migrations, appends canonical fixtures only to fresh storage and records successful completion. A normal rerun migrates without reseeding; ambiguous/incomplete nonempty storage is refused. It never purges or removes volumes. See [ADR 0031](docs/adr/0031-local-demo-packaging.md).
+Production PHP, broker and worker use the same compiled `--no-dev` image as UID/GID 1000. The one-off `frankenphp_demo_setup` image includes development dependencies solely to invoke the existing dev-mode canonical Alice loader. It is not a production service. `make` delegates to an internal Bash helper to apply Doctrine migrations, append canonical fixtures only to fresh storage and record successful completion. A normal rerun migrates without reseeding; ambiguous/incomplete nonempty storage is refused. `make start`, `make stop` and `make restart` manage an existing demo without provisioning; none purges or removes volumes. Development and QA remain in Castor. See [ADR 0031](docs/adr/0031-local-demo-packaging.md).
 
 ## Statement workflow
 

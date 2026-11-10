@@ -15,14 +15,14 @@ Built for the Symfony AI hackathon. Powered by [Symfony](https://symfony.com/), 
 ## Run the demo
 
 You'll need:
-- Docker with Compose **2.24.4+** and Bash.
+- Docker with Compose **2.24.4+**, Make and Bash.
 - A **Decision API key**, such as [Jev](https://typesafe.ai/), for statement processing.
 - A **ChatGPT account** for chat.
 
 ```bash
 git clone https://github.com/ineersa/personal-finance-agent.git
 cd personal-finance-agent
-./setup-demo.sh
+make
 ```
 
 Enter your Decision API key when prompted. The first setup takes a few minutes and includes sample financial data.
@@ -31,7 +31,7 @@ Open **http://127.0.0.1:8080/** and log in with **demo@test.com / demo**. Connec
 
 Jev is the default Decision API. To use another compatible provider, change `JEV_BASE_URL`, `JEV_MODEL` and `JEV_API_KEY` in the private `.env.prod.local` file.
 
-Run `./setup-demo.sh` again to restart or update the demo; your data and settings are kept. The script also prints the shutdown command.
+Use `make stop`, `make start` or `make restart`; your data is kept. `make help` lists commands. Run `make` again to rebuild and update the demo without reloading sample data.
 
 **Use sample data only and keep the demo local.** Statement content is sent to your Decision API provider; chat context is sent to ChatGPT.
 

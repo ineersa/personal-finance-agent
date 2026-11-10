@@ -1,8 +1,29 @@
 #!/usr/bin/env bash
-# Local-demo installer only. Development and QA continue to use vendor/bin/castor.
+# Internal Makefile helper for the local demo. Development and QA use Castor.
 set -euo pipefail
-cd -- "$(dirname -- "${BASH_SOURCE[0]}")"
+cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.."
 umask 077
+
+heading='' accent='' reset=''
+if [[ -t 1 && "${TERM:-dumb}" != dumb && -z "${NO_COLOR+x}" ]]; then
+    heading=$'\033[1;32m' accent=$'\033[36m' reset=$'\033[0m'
+fi
+
+print_help() {
+    printf '%sPersonal finance demo%s\n\n' "$heading" "$reset"
+    printf '  %s%-14s%s %s\n' "$accent" 'make' "$reset" 'Set up and start the demo; keep existing data.'
+    printf '  %s%-14s%s %s\n' "$accent" 'make start' "$reset" 'Start an existing demo.'
+    printf '  %s%-14s%s %s\n' "$accent" 'make stop' "$reset" 'Stop the demo without deleting data.'
+    printf '  %s%-14s%s %s\n' "$accent" 'make restart' "$reset" 'Restart existing demo services.'
+    printf '  %s%-14s%s %s\n' "$accent" 'make help' "$reset" 'Show this help.'
+}
+
+action="${1:-help}"
+case "$action" in
+    help) print_help; exit 0 ;;
+    setup|start|stop|restart) ;;
+    *) printf 'Use make help for available commands.\n' >&2; exit 1 ;;
+esac
 
 command -v docker >/dev/null || { printf 'Docker is required.\n' >&2; exit 1; }
 docker compose version >/dev/null
@@ -13,6 +34,7 @@ export HTTP_PORT="${HTTP_PORT:-8080}"
 export CHATGPT_CALLBACK_PORT="${CHATGPT_CALLBACK_PORT:-1455}"
 readonly DEMO_READY=/app/var/data/.demo-ready
 readonly FRESH_STORAGE_EXIT=10
+readonly -a services=(php broker worker mercure charts)
 for port in "$HTTP_PORT" "$CHATGPT_CALLBACK_PORT"; do
     [[ "$port" =~ ^[0-9]+$ ]] && ((10#$port > 0 && 10#$port < 65536)) || {
         printf 'Use a numeric loopback port between 1 and 65535.\n' >&2; exit 1;
@@ -21,9 +43,56 @@ done
 [[ ! -L "$DEMO_ENV_FILE" ]] || { printf 'Refusing a symlinked environment file.\n' >&2; exit 1; }
 compose=(docker compose --project-name "$COMPOSE_PROJECT_NAME" --env-file /dev/null -f compose.yaml -f compose.prod.yaml)
 
+print_ready() {
+    printf '\n%s%s%s\n' "$heading" "${1:-Demo ready}" "$reset"
+    printf 'Open: %shttp://127.0.0.1:%s/%s\n' "$accent" "$HTTP_PORT" "$reset"
+    printf 'Sign in: demo@test.com / demo\n'
+    printf 'Chat: connect your ChatGPT account in Settings.\n'
+    printf 'Statements: get a Jev API key at https://console.typesafe.ai/keys\n'
+    printf 'Decision API: JEV_API_KEY, JEV_BASE_URL and JEV_MODEL in %s; apply changes with make start.\n' "$DEMO_ENV_FILE"
+}
+
+storage_status() {
+    "${compose[@]}" run --rm --no-deps -T php php -r '
+if (is_file($argv[1])) { exit(0); }
+if ([] === array_values(array_diff(scandir(dirname($argv[1])), [".", ".."]))) { exit((int) $argv[2]); }
+fwrite(STDERR, "Existing unrecognized or incomplete application storage: refusing to seed. No data was removed. Inspect it or choose a different COMPOSE_PROJECT_NAME.\n");
+exit(1);
+' "$DEMO_READY" "$FRESH_STORAGE_EXIT"
+}
+
+if [[ "$action" != setup ]]; then
+    [[ -f "$DEMO_ENV_FILE" && -s "$DEMO_ENV_FILE" ]] || {
+        printf 'Run make first to set up the demo.\n' >&2; exit 1;
+    }
+    compose=(docker compose --project-name "$COMPOSE_PROJECT_NAME" --env-file "$DEMO_ENV_FILE" -f compose.yaml -f compose.prod.yaml)
+    case "$action" in
+        start)
+            if storage_status; then
+                "${compose[@]}" up -d --wait --no-build "${services[@]}"
+                print_ready
+            else
+                printf 'Run make to finish setting up the demo.\n' >&2; exit 1;
+            fi
+            ;;
+        stop)
+            "${compose[@]}" stop "${services[@]}"
+            printf '\n%sDemo stopped%s. Your data is kept. Start again with make start.\n' "$heading" "$reset"
+            ;;
+        restart)
+            "${compose[@]}" restart "${services[@]}"
+            print_ready 'Demo restarted'
+            ;;
+    esac
+    exit 0
+fi
+
 # Dependencies and assets are built inside Docker, without host PHP/Composer/Node.
 DEMO_ENV_FILE=/dev/null "${compose[@]}" build php charts demo-setup
 if [[ ! -e "$DEMO_ENV_FILE" ]]; then
+    printf '\n%sSet up statement processing%s\n' "$heading" "$reset"
+    printf 'Get a Jev API key at https://console.typesafe.ai/keys\n'
+    printf 'Defaults: JEV_BASE_URL=https://api.typesafe.ai, JEV_MODEL=jev-1.14.0\n'
     key="${JEV_API_KEY:-}"
     if [[ -z "$key" ]]; then
         read -r -s -p 'Jev API key: ' key
@@ -62,12 +131,7 @@ foreach (["APP_SECRET", "MERCURE_JWT_SECRET", "JEV_API_KEY"] as $name) {
 # A single completion file distinguishes a successful canonical initialization from
 # unrelated or interrupted storage. Never guess that an existing DB is disposable.
 fresh=false
-if "${compose[@]}" run --rm --no-deps -T php php -r '
-if (is_file($argv[1])) { exit(0); }
-if ([] === array_values(array_diff(scandir(dirname($argv[1])), [".", ".."]))) { exit((int) $argv[2]); }
-fwrite(STDERR, "Existing unrecognized or incomplete application storage: refusing to seed. No data was removed. Inspect it or choose a different COMPOSE_PROJECT_NAME.\n");
-exit(1);
-' "$DEMO_READY" "$FRESH_STORAGE_EXIT"; then
+if storage_status; then
     printf 'Existing demo installation: fixtures will not be loaded again.\n'
 else
     status=$?
@@ -82,15 +146,5 @@ fi
 if "$fresh"; then
     "${compose[@]}" run --rm --no-deps -T php php -r 'exit(false === file_put_contents($argv[1], "Canonical demo fixtures initialized.\n") ? 1 : 0);' "$DEMO_READY"
 fi
-"${compose[@]}" up -d --wait php broker worker mercure charts
-printf '\nDemo: http://127.0.0.1:%s/\nLogin: demo@test.com / demo (administrator: admin@test.com / admin).\n' "$HTTP_PORT"
-printf 'Connect your own ChatGPT account in Settings before chatting. Jev is separate.\n'
-printf 'Private settings: %s. Keep this file and all project volumes.\n' "$DEMO_ENV_FILE"
-print_compose() {
-    printf 'HTTP_PORT=%q CHATGPT_CALLBACK_PORT=%q DEMO_ENV_FILE=%q ' "$HTTP_PORT" "$CHATGPT_CALLBACK_PORT" "$DEMO_ENV_FILE"
-    printf '%q ' "${compose[@]}"
-}
-printf 'Status: '; print_compose; printf 'ps\n'
-printf 'Stop: '; print_compose; printf 'down\n'
-printf 'Restart: '; print_compose; printf 'up -d --wait php broker worker mercure charts\n'
-printf 'Never use down --volumes. Run ./setup-demo.sh again with the same environment to rebuild/migrate without reseeding.\n'
+"${compose[@]}" up -d --wait "${services[@]}"
+print_ready
