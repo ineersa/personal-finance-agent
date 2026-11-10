@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace AppTasks;
 
 use Castor\Attribute\AsTask;
+use Symfony\AI\Platform\Bridge\OpenAIChatGPT\Auth\OAuthConfig;
 use Symfony\Component\Process\Process;
 
 #[AsTask(namespace: 'prod', name: 'smoke', description: 'Smoke-check the compiled production PHP/charts images on checkout-owned storage; does not initialize the full demo.')]
@@ -27,7 +28,8 @@ function productionSmoke(): void
             fclose($handle);
         }
         $override = $directory.'/compose.yaml';
-        file_put_contents($override, "services:\n  php:\n    environment:\n      IMPORT_UPDATES_ENABLED: '0'\n");
+        // Host port zero requests an ephemeral binding, not a valid OAuth redirect port.
+        file_put_contents($override, "services:\n  php:\n    environment:\n      IMPORT_UPDATES_ENABLED: '0'\n      CHATGPT_CALLBACK_PORT: '".OAuthConfig::DEFAULT_PORT."'\n");
         $command = ['docker', 'compose', '--env-file', $secret, '--project-name', 'pfa-'.checkoutId().'-prod-smoke', '-f', 'compose.yaml', '-f', 'compose.prod.yaml', '-f', $override];
         /** @param list<string> $arguments */
         $run = static function (array $arguments) use ($command, $root, $secret): string {
