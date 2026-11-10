@@ -66,8 +66,14 @@ sequenceDiagram
     Worker->>Broker: Consume message
     Worker->>Finance: Resolve persisted owner / statement
     Worker->>Disk: Read CSV
-    Worker->>Jev: Typed interpretation / classification questions
-    Jev-->>Worker: Typed decisions
+    Worker->>Jev: Sample rows + CSV layout questions
+    Jev-->>Worker: Column and number-format choices + evidence probabilities
+    Worker->>Worker: Validate layout and parse original CSV values
+    loop Batches of up to 8 transactions
+        Worker->>Jev: Category, meaning and recurrence questions
+        Jev-->>Worker: Choices + evidence probabilities for each dimension
+        Worker->>Worker: Accept supported labels or retain unknown / uncategorized
+    end
     Worker->>Finance: Short writes: drafts + processing status
     Worker->>Hub: Owner-scoped private Turbo update
     Hub-->>User: Progress and review UI via app proxy
@@ -77,7 +83,60 @@ sequenceDiagram
 
 Parsing/provider work is outside database write transactions. Categories and transactions belong to the tenant database, not to a role-wide shared financial store. Drafts remain editable before approval. Statement downloads require ordinary-user access and tenant ownership; stored filenames are not public URLs.
 
-Jev handles CSV interpretation, meaning and recurrence decisions. It is independent of ChatGPT sign-in. PDF/XLSX conversion through local MarkItDown is an accepted future direction, **not a running service or implemented extraction path in this release**. OCR remains unresolved. The packaged walkthrough uses CSV and the existing synthetic fixture definitions.
+### Decision-model workflow
+
+There are two separate decision-model stages, both through Symfony AI's Decision platform bridge. Jev selects from supplied options and answers evidence questions, rather than generating transaction values. PHP validates those judgments and retains the original financial facts.
+
+```mermaid
+flowchart TD
+    CSV["PHP reads CSV records"]
+    Sample["Up to 8 complete sample rows\n+ source currency and instrument kind"]
+    Layout["Decision model: CSV layout\nChoose date, description, debit, credit and optional currency columns\nIdentify header and number format + evidence probabilities"]
+    Check{"PHP: layout evidence sufficient\nand mapping consistent?"}
+    Parse["PHP parses all original rows\nDates, exact decimal amounts, currency and debit/credit direction"]
+    Batch["Batches of up to 8 transactions\n+ source context and category catalog"]
+    Classify["Decision model: three independent judgments\nCategory, financial meaning and recurrence\nChoice + evidence probability for each"]
+    Support{"PHP: evidence probability\nat least 0.7 for this dimension?"}
+    Accept["Use the selected valid label"]
+    Unknown["Leave category unset\nor meaning / recurrence unknown"]
+    Drafts["Save all rows as editable drafts\nProcessing completed, not approved"]
+    Failed["Processing failed\nNo draft results accepted"]
+    CSV --> Sample --> Layout --> Check
+    Check -->|Yes| Parse
+    Check -->|No| Failed
+    Parse -->|Valid rows| Batch
+    Parse -->|Invalid rows| Failed
+    Batch --> Classify --> Support
+    Support -->|Yes| Accept
+    Support -->|No| Unknown
+    Accept --> Drafts
+    Unknown --> Drafts
+    Layout -.->|Provider error| Failed
+    Classify -.->|Provider error or invalid answer| Failed
+```
+
+Layout requires supported, distinct date/description/debit/credit columns and an unambiguous number convention. Header and optional-currency uncertainty also stops processing. Classification uncertainty does **not** reject an otherwise valid row: each label is accepted independently when its evidence supports it. Meaning distinguishes expenses, income, refunds, own-account transfers and credit-card payments; recurrence distinguishes bills, subscriptions, other recurring activity and non-recurring activity. These judgments do not match transfer pairs or infer exchange rates. See [ADR 0021](docs/adr/0021-fixtures-first-jev-import.md).
+
+### Statement processing and review lifecycle
+
+```mermaid
+flowchart TD
+    Upload["Upload CSV + provider consent"] --> Queued["Queued\nPrivate bytes and metadata saved"]
+    Queued -->|Worker claims job| Running["Running\nParse and interpret statement"]
+    Queued -->|Queue or worker failure| Failed["Failed\nVisible processing error"]
+    Running -->|Parsing or interpretation fails| Failed
+    Failed -->|Manual retry with no transaction rows| Queued
+    Running -->|Manual retry before any rows exist| Queued
+    Running -->|All results saved| Completed["Completed\nTransactions are still drafts"]
+    Completed --> Review["Review drafts\nEdit, save or delete unwanted rows"]
+    Review -->|Approve remaining drafts| Validate{"All remaining rows valid?"}
+    Validate -->|No, show field errors| Review
+    Validate -->|Yes, approve together| Approved["Approved transactions\nSame rows, no longer drafts"]
+```
+
+Processing status and transaction approval are separate: approval leaves the statement **Completed** and clears the remaining rows' draft flags. Unknown classifications may remain after approval. Retry reuses the stored file and is available only for failed/running statements with no transaction rows. Private Mercure/Turbo updates bring completed results or errors into the review page.
+
+Decision-model processing is independent of ChatGPT sign-in. PDF/XLSX conversion through local MarkItDown is an accepted future direction, **not a running service or implemented extraction path in this release**. OCR remains unresolved. The packaged walkthrough uses CSV and the existing synthetic fixture definitions.
 
 ## Chat, tools and retained history
 
