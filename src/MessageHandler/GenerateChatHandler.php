@@ -14,7 +14,7 @@ use Symfony\AI\Agent\Exception\ConflictException;
 use Symfony\AI\Agent\Execution\ExecutionStatus;
 use Symfony\AI\Agent\Execution\Update\Progress;
 use Symfony\AI\Agent\MessageStore\MessageStoreInterface;
-use Symfony\AI\Agent\Toolbox\Event\ToolCallSucceeded;
+use Symfony\AI\Agent\Toolbox\Event\ToolCallsExecuted;
 use Symfony\AI\Platform\Message\Message;
 use Symfony\AI\Platform\Result\Stream\AssistantMessageStreamListener;
 use Symfony\AI\Platform\Result\Stream\Delta\DeltaInterface;
@@ -59,9 +59,10 @@ final readonly class GenerateChatHandler
             }
         };
         $events = new EventDispatcher();
-        $events->addListener(ToolCallSucceeded::class, function (ToolCallSucceeded $event) use ($conversation, $question): void {
-            $result = $event->getResult();
-            $this->updates->publish($conversation, 'chat/tool.stream.html.twig', ['user' => $question, 'tool' => $result->getToolCall(), 'result' => $result]);
+        $events->addListener(ToolCallsExecuted::class, function (ToolCallsExecuted $event) use ($conversation, $question): void {
+            foreach ($event->getToolResults() as $result) {
+                $this->updates->publish($conversation, 'chat/tool.stream.html.twig', ['user' => $question, 'tool' => $result->getToolCall(), 'result' => $result]);
+            }
         });
         try {
             // Decide when processing, after earlier queued submissions have saved their native history.

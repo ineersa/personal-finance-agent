@@ -1,10 +1,10 @@
 {% set statuses = enum('Symfony\\AI\\Agent\\Execution\\ExecutionStatus') %}
 {% set finished = result is not null %}
 {% set failed = chat_tool_error(tool, result) %}
-<details class="chat-tool{{ failed ? ' chat-tool-error' : '' }}" id="chat-tool-{{ conversation.id }}-{{ user.id }}-{{ tool.id }}" data-tool-call-id="{{ tool.id }}" data-tool-status="{{ finished ? statuses.Completed.value : statuses.Running.value }}">
+<details class="chat-tool{{ failed ? ' chat-tool-error' : '' }}" id="chat-tool-{{ conversation.id }}-{{ user.id }}-{{ tool.id }}" data-tool-call-id="{{ tool.id }}" data-tool-status="{{ failed ? statuses.Failed.value : (finished ? statuses.Completed.value : statuses.Running.value) }}">
     <summary>
         <span class="chat-tool-indicator{{ not finished ? ' chat-tool-spinner' : '' }}" aria-hidden="true">{{ finished ? (failed ? '!' : '·') : '' }}</span>
-        <span class="chat-tool-label">{{ failed ? 'Finance query returned an error' : chat_tool_label(tool, finished) }}</span>
+        <span class="chat-tool-label">{{ failed ? 'Tool call failed' : chat_tool_label(tool, finished) }}</span>
         <span class="chat-tool-status">{{ finished ? (failed ? 'Error' : 'Finished') : 'Running' }}</span>
         <span class="chat-tool-chevron" aria-hidden="true">›</span>
     </summary>
