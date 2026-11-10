@@ -52,7 +52,7 @@ vendor/bin/castor qa:static
 
 ## Local Symfony AI failure-status integration
 
-Task 32 targets Symfony AI revision `8d2c0d2425dffeca5854aab4e2c84ea8cd1180af`
+Task 32 targets Symfony AI revision `7c51a411caaad173248df0acaf5756f0d3d1c2b0`
 for native `ToolResult::isError()` and `ToolCallMessage::isError()` persistence.
 From that upstream checkout, its existing `./link --copy /path/to/isolated-finance-checkout`
 copies **all installed matching AI packages**, not just Agent and Platform (10 packages
