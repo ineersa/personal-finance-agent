@@ -25,7 +25,7 @@ cd personal-finance-agent
 make
 ```
 
-Enter your Decision API key when prompted. The first setup takes a few minutes and includes sample financial data.
+On first setup, enter your Decision API key or confirm reuse of one from your environment. Setup takes a few minutes and includes sample financial data; existing settings are kept.
 
 Open **http://127.0.0.1:8080/** and log in with **demo@test.com / demo**. Connect ChatGPT in **Settings** to start chatting.
 

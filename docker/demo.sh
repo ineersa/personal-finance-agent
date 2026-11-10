@@ -93,7 +93,13 @@ if [[ ! -e "$DEMO_ENV_FILE" ]]; then
     printf '\n%sSet up statement processing%s\n' "$heading" "$reset"
     printf 'Get a Jev API key at https://console.typesafe.ai/keys\n'
     printf 'Defaults: JEV_BASE_URL=https://api.typesafe.ai, JEV_MODEL=jev-1.14.0\n'
-    key="${JEV_API_KEY:-}"
+    key=''
+    if [[ -n "${JEV_API_KEY:-}" ]]; then
+        read -r -p 'JEV_API_KEY is set in your environment. Reuse it? [y/N] ' reuse
+        case "$reuse" in
+            [yY]|[yY][eE][sS]) key="$JEV_API_KEY" ;;
+        esac
+    fi
     if [[ -z "$key" ]]; then
         read -r -s -p 'Jev API key: ' key
         printf '\n'
