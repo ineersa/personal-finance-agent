@@ -50,6 +50,18 @@ vendor/bin/castor qa:static
 
 `tooling:prepare` builds the development tooling image, installs locked dependencies and Chromium. Its disposable containers run as the host UID/GID. Private browser/tooling files live under ignored `var/tooling/`. Do not invoke another PHP runner around Castor.
 
+### Upgrade the shared development proxy
+
+Only with explicit authorization for a brief outage of **all preview URLs**, run these from the checkout containing the upgraded Dockerfile:
+
+```sh
+vendor/bin/castor dev:stack:up                 # Build/start this checkout's new development image first.
+vendor/bin/castor dev:proxy:stop --for-upgrade # Stop/remove only the ownership-verified shared proxy container.
+vendor/bin/castor dev:stack:up                 # Recreate the proxy from this checkout's image and retained routes.
+```
+
+The second startup reuses the prepared build cache. Other checkout stacks keep running; the shared network, route registry, databases, credentials, uploads and volumes are preserved. Normal `dev:proxy:stop` still refuses registered routes and only stops its container. There is no automatic rollback; if recreation fails, correct the reported error and rerun the final command from the prepared checkout.
+
 ## Running tests
 
 `vendor/bin/castor test` runs the nine intercepted-browser scenarios headlessly. Native PHPUnit arguments go after `--`:
@@ -116,6 +128,8 @@ Chat displays an accessible **Live updates disconnected** notice while its confi
 Request-only foreign/unknown-model history conversion removes the ChatGPT bridge's native tool-item suffix from composite call IDs and copies only explicitly matching results in that converted round. Exact-model calls/results, unmatched/plain IDs and canonical history remain unchanged. Both model/effort enum fields use native `NotNull` validation alongside the existing supported-combination check and normal form-error response. These are source-level contracts, not claims that special-case browser checks passed; new negative/fault scenarios require owner approval.
 
 The owner separately approved four saved regression methods in `ChatModelTest`: missing model (one browser POST), missing effort (one browser POST), connected-active focus/card preservation with disconnected-focus catch-up (one scoped lifecycle journey), and tool-identity conversion through browser submission (one execution). They reuse canonical Alice users and synthetic replay auth; the wire case uses native SyncTransport, MockHub and MockHttpClient for ChatGPT plus empty MCP discovery. It seeds only runtime synthetic native chat messages, then observes the actual Agent/platform request and verifies stored rounds/IDs/signatures remain intact. The chart client is an injected native untraced service with unchanged production timeout/redirect options, allowing this no-network override without another runner. The existing focus case renders actual start/tool Twig streams through native Turbo in a real browser: start → successful submit-end/acknowledged action → later tool update → focus must retain the Running marker/card without a snapshot; disconnected focus then reads the real intercepted snapshot and clears that stale view. Only the source connection marker and DOM events are synthetic; it proves declarative action behavior, not native OS/tab-focus transitions, actual Mercure connectivity or worker timing. No real provider calls or cassettes are involved, and adding these methods is not evidence they pass.
+
+The owner also approved one failed-chart-tool browser regression in `ChatModelTest`: submit one synthetic chart request through the actual handler and native Agent/MCP pipeline, with MockHttpClient returning an explicit MCP error. Native MockHub captures the handler's publications; the browser renders those unmodified fragments through Turbo up to the failed card, then reloads the canonical saved history. Both views must show **Tool call failed** and expandable error details. This uses existing synthetic auth, fixtures and SyncTransport, not a live provider or network worker/broker test. Rendering captured fragments proves the streamed markup, not real-time delivery or timing.
 
 The owner approved one isolated browser-only disconnect/reconnect diagnostic, with no model call, resend, restart or data changes: observe the native source and notice, disconnect/reconnect the owned browser context once, inspect native reconnection and snapshot requests, return focus to inspect saved-state refresh, then inspect the normal reload link and selected-conversation URL. Report transport state and UI outcomes separately; a fresh HTTP 200 is not proof that the earlier tab received completion. Do not add a saved special-case scenario or extend fault testing beyond that authorization. Main owns this diagnostic and the existing saved happy-path/static checks; these instructions do not claim those checks passed.
 

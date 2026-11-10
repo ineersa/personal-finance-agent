@@ -25,6 +25,7 @@ final readonly class Workspace
     public const string DELETE_ROUTE = 'app_chat_delete';
     public const string SNAPSHOT_ROUTE = 'app_chat_snapshot';
     public const string SUBMIT_CSRF = 'chat-submit';
+    public const string SUBMITTED_FLASH = 'chat-message-sent';
     public const string FAVOURITE_CSRF = 'chat-favourite';
     public const string DELETE_CSRF = 'chat-delete';
     public const string DOM_ID = 'chat-workspace';

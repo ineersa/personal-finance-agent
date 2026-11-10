@@ -10,7 +10,8 @@ http://:8080 {
 	root * /app/public
 	@privateCallback path /auth/callback
 	respond @privateCallback 404
-	encode zstd br gzip
+	@compressible not path /.well-known/mercure*
+	encode @compressible zstd br gzip
 	reverse_proxy /.well-known/mercure* mercure:80
 	php_server
 }

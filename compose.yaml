@@ -39,7 +39,7 @@ services:
 
 ###> symfony/mercure-bundle ###
   mercure:
-    image: dunglas/mercure:v1.1.2
+    image: dunglas/mercure:v1.1.6
     profiles: [live-updates]
     restart: unless-stopped
     environment:

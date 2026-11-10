@@ -59,6 +59,8 @@ final class ChatSubmitController extends AbstractController
                     return new Response(status: Response::HTTP_NO_CONTENT);
                 }
 
+                $this->addFlash(Workspace::SUBMITTED_FLASH, $conversation->id);
+
                 return $this->redirectToRoute(Workspace::CHAT_ROUTE, ['conversation' => $conversation->id], Response::HTTP_SEE_OTHER);
             } catch (\DomainException $exception) {
                 $error = $exception->getMessage();
