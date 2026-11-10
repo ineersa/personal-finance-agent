@@ -23,6 +23,6 @@
         <div class="chat-response" id="chat-response-{{ conversation.id }}-{{ user.id }}-{{ anchor }}"><div id="chat-content-{{ conversation.id }}-{{ user.id }}-{{ anchor }}"></div></div>
     {% endif %}
 </div>
-{% if completed and status|default(null) != statuses.Running %}
+{% if status|default(null) != statuses.Running %}
     {% include 'chat/_charts.html.twig' %}
 {% endif %}

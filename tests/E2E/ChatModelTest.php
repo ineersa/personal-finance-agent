@@ -185,13 +185,23 @@ final class ChatModelTest extends FinanceBrowserTest
         $start = $twig->render('chat/start.stream.html.twig', $context);
         $tool = new ToolCall('synthetic-live-tool', 'synthetic_tool');
         $toolUpdate = $twig->render('chat/tool.stream.html.twig', [...$context, 'anchor' => $question->getId()->toRfc4122(), 'tool' => $tool, 'result' => null]);
+        // Control this scenario's source before navigation; no real SSE errors may race setup.
+        $this->getPage()->addInitScript(<<<'JS'
+            const NativeEventSource = window.EventSource;
+            window.EventSource = class extends EventTarget {
+                static CONNECTING = NativeEventSource.CONNECTING;
+                static OPEN = NativeEventSource.OPEN;
+                static CLOSED = NativeEventSource.CLOSED;
+                readyState = NativeEventSource.CONNECTING;
+                close() { this.readyState = NativeEventSource.CLOSED; }
+            };
+            JS);
         $page = $this->visit('/home/chat?conversation='.$conversation->id);
         $page->locator('#import-live-subscription turbo-mercure-stream-source')->waitFor(['state' => 'attached']);
         $setup = $page->evaluate(<<<'JS'
             () => {
                 const source = document.querySelector('#import-live-subscription turbo-mercure-stream-source');
                 if (!source) return {error: 'Native source absent', title: document.title};
-                source.es?.close();
                 window.chatSnapshotRequests = 0;
                 window.chatSnapshotRenders = 0;
                 const fetch = window.fetch.bind(window);
@@ -205,8 +215,9 @@ final class ChatModelTest extends FinanceBrowserTest
                     const render = event.detail.render;
                     event.detail.render = async element => { await render(element); ++window.chatSnapshotRenders; };
                 });
-                // Synthetic native-element state, not evidence of a real Mercure connection.
-                source.setAttribute('connected', '');
+                // Let the real UX element update its attribute from a consistent simulated source.
+                source.es.readyState = EventSource.OPEN;
+                source.es.dispatchEvent(new Event('open'));
                 return {instrumented: true};
             }
             JS);
@@ -248,11 +259,19 @@ final class ChatModelTest extends FinanceBrowserTest
         self::assertTrue($card->isVisible());
         self::assertTrue($page->evaluate('() => window.chatOriginalRoot === document.querySelector("[data-chat-execution]")'));
 
-        $page->evaluate('() => { document.querySelector("#import-live-subscription turbo-mercure-stream-source").removeAttribute("connected"); window.dispatchEvent(new FocusEvent("focus")); }');
+        $page->evaluate(<<<'JS'
+            () => {
+                const source = document.querySelector('#import-live-subscription turbo-mercure-stream-source');
+                source.es.readyState = EventSource.CONNECTING;
+                source.es.dispatchEvent(new Event('error'));
+                window.dispatchEvent(new FocusEvent('focus'));
+            }
+            JS);
         $card->waitFor(['state' => 'detached']);
         self::assertSame($baseline + 1, $page->evaluate('() => window.chatSnapshotRequests'));
         self::assertSame(0, $page->locator('[data-chat-response-active]')->count());
-        self::assertTrue($page->locator('.chat-live-notice')->isVisible());
+        // Native retrying is quiet and must not consume the terminal replacement attempt.
+        self::assertFalse($page->locator('.chat-live-notice')->isVisible());
     }
 
     public function testBrowserSubmissionNormalizesForeignToolIdsWithoutRewritingHistory(): void
@@ -406,6 +425,58 @@ final class ChatModelTest extends FinanceBrowserTest
         self::assertTrue($card->locator('.chat-tool-result')->isVisible());
         self::assertStringContainsString($error, $card->locator('.chat-tool-result')->textContent());
         self::assertTrue($page->getByText('The chart could not be generated.', ['exact' => true])->isVisible());
+    }
+
+    public function testRetainedChartRemainsVisibleAfterResponseFailure(): void
+    {
+        $container = self::getContainer();
+        $this->mockHub();
+        $owner = $this->connectedUser();
+        $question = Message::ofUser('Show my synthetic chart.');
+        $call = new ToolCall('retained-chart-call', ChartToolset::NAME.'_'.self::FAILED_CHART_TOOL);
+        // Native tool-round checkpoint: the chart exists, but no final assistant prose does.
+        $history = new MessageBag(Message::ofUser('Synthetic finance context.'), $question, new AssistantMessage($call), Message::ofToolCall($call, new Text('Interactive chart saved privately and displayed inline.')));
+        $conversation = new ChatConversation($owner, $history->getId()->toRfc4122());
+        $filename = \Symfony\Component\Uid\Uuid::v4()->toRfc4122().'.html';
+        $conversation->charts[] = ['message' => $question->getId()->toRfc4122(), 'file' => $filename];
+        $manager = $container->get(EntityManagerInterface::class);
+        $manager->persist($conversation);
+        $manager->flush();
+        $container->get(MessageStoreInterface::class)->save($history);
+        $storage = $container->get('charts.storage');
+        $storage->write($conversation->id.'/'.$filename, '<!doctype html><html><body><h1>Retained synthetic chart</h1></body></html>');
+        try {
+            $this->loginUser($owner);
+            $page = $this->visit('/home/chat?conversation='.$conversation->id);
+            $twig = $container->get(Environment::class);
+            $context = ['conversation' => $conversation, 'user' => $question, 'messages' => $history, 'error' => null];
+            // Exercise the actual terminal renderer, not hosted inference or network delivery.
+            $running = $twig->render('chat/finish.stream.html.twig', [...$context, 'status' => \Symfony\AI\Agent\Execution\ExecutionStatus::Running]);
+            $page->evaluate('html => window.Turbo.renderStreamMessage(html)', $running);
+            $page->locator('[data-chat-response-active]')->waitFor();
+            self::assertSame(0, $page->locator('.chat-chart')->count());
+
+            $failed = $twig->render('chat/finish.stream.html.twig', [...$context, 'status' => \Symfony\AI\Agent\Execution\ExecutionStatus::Failed, 'error' => 'The response could not be completed.']);
+            $page->evaluate('html => window.Turbo.renderStreamMessage(html)', $failed);
+            $chart = $page->locator('.chat-chart iframe');
+            $chart->waitFor();
+            self::assertTrue($page->getByText('The response could not be completed.', ['exact' => true])->isVisible());
+            self::assertSame(0, $page->locator('[data-chat-response-active]')->count());
+            $heading = $page->frameLocator('.chat-chart iframe')->getByRole('heading', ['name' => 'Retained synthetic chart']);
+            $heading->waitFor();
+            self::assertTrue($heading->isVisible());
+            $source = $chart->getAttribute('src');
+
+            $page->reload();
+            $chart = $page->locator('.chat-chart iframe');
+            $chart->waitFor();
+            self::assertSame($source, $chart->getAttribute('src'));
+            $heading = $page->frameLocator('.chat-chart iframe')->getByRole('heading', ['name' => 'Retained synthetic chart']);
+            $heading->waitFor();
+            self::assertTrue($heading->isVisible());
+        } finally {
+            $container->get(\App\Chat\ChartFiles::class)->removeConversation($conversation->id);
+        }
     }
 
     private function connectedChat(): PageInterface
