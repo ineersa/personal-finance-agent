@@ -82,6 +82,11 @@ body.ea .content-body { flex: 1; }
 body.ea .content-footer { padding: 48px 0 0; }
 body.ea .resizer-handler { display: none; }
 
+@media (min-width: 992px) {
+    /* Symfony's open debug toolbar adds a 36px normal-flow clearer after the layout. */
+    body.ea:has(.sf-toolbar:not(.sf-toolbar-closed) .sf-toolbar-clearer) :is(.wrapper, .ea-sidebar, .main-content) { min-block-size: calc(100vh - 36px); }
+}
+
 @media (max-width: 991.98px) {
     body.ea .wrapper { display: flex; flex-direction: column; min-height: 100vh; }
     body.ea .responsive-header { padding: 20px; background: #0c0c0d; box-shadow: none; }
