@@ -2,7 +2,7 @@
 
 # Personal finance
 
-Upload CSV bank statements, review your transactions, and ask questions about your finances—with answers and interactive charts in one chat.
+Upload bank statements, review your transactions, and ask questions about your finances—with answers and interactive charts in one chat.
 
 Built for the Symfony AI hackathon. Powered by [Symfony](https://symfony.com/), [Symfony AI](https://symfony.com/ai), [EasyAdmin](https://github.com/EasyCorp/EasyAdminBundle) and our [ChatGPT provider for Symfony AI](https://github.com/ineersa/symfony-ai-openai-chatgpt-platform).
 
