@@ -48,38 +48,7 @@ Production PHP, broker and worker use the same compiled `--no-dev` image as UID/
 
 ## Import and review
 
-```mermaid
-sequenceDiagram
-    actor User
-    participant Web as Symfony workspace
-    participant Disk as Private statement storage
-    participant Finance as Owner finance SQLite
-    participant Broker as sqlite-queue
-    participant Worker as Messenger import handler
-    participant Jev as TypeSafe / Jev
-    participant Hub as Private Mercure
-    User->>Web: Upload CSV + explicit provider consent
-    Web->>Web: Authenticate owner and enforce 10 MiB limit
-    Web->>Disk: Store private bytes
-    Web->>Finance: Persist statement metadata
-    Web->>Broker: Dispatch statement-processing message
-    Worker->>Broker: Consume message
-    Worker->>Finance: Resolve persisted owner / statement
-    Worker->>Disk: Read CSV
-    Worker->>Jev: Sample rows + CSV layout questions
-    Jev-->>Worker: Column and number-format choices + evidence probabilities
-    Worker->>Worker: Validate layout and parse original CSV values
-    loop Batches of up to 8 transactions
-        Worker->>Jev: Category, meaning and recurrence questions
-        Jev-->>Worker: Choices + evidence probabilities for each dimension
-        Worker->>Worker: Accept supported labels or retain unknown / uncategorized
-    end
-    Worker->>Finance: Short writes: drafts + processing status
-    Worker->>Hub: Owner-scoped private Turbo update
-    Hub-->>User: Progress and review UI via app proxy
-    User->>Web: Edit draft rows, save, then approve
-    Web->>Finance: Validate and approve reviewed rows
-```
+The authenticated user selects an account/card and uploads a CSV of at most 10 MiB with explicit provider consent. Symfony stores the bytes privately, saves metadata in the owner's finance database and queues a Messenger import job.
 
 Parsing/provider work is outside database write transactions. Categories and transactions belong to the tenant database, not to a role-wide shared financial store. Drafts remain editable before approval. Statement downloads require ordinary-user access and tenant ownership; stored filenames are not public URLs.
 
