@@ -15,6 +15,8 @@
 - A **Jev API key** from [TypeSafe](https://typesafe.ai/), and your own ChatGPT account with permission to use the selected models. Jev and ChatGPT are separate connections; an OpenAI API key is not used for chat.
 - Free loopback ports **8080** (application) and **1455** (ChatGPT callback). The installer does not stop another service to free a port.
 
+Fresh installation, schema/fixture initialization and an existing-install rerun were verified on Linux amd64 with Docker Engine **29.9.3**, Compose **5.7.0** and the image's PHP **8.5.12**. Older supported Compose versions have not been separately exercised.
+
 After cloning this repository:
 
 ```bash
@@ -49,7 +51,7 @@ These are public demo credentials. **Keep this installation local; do not expose
 - Financial amounts are stored as decimal strings; application conversion uses BCMath and transaction-date rates. **SQLite SQL arithmetic/aggregates and model answers are approximate**, not authoritative accounting or financial advice. SQL can read drafts; draft exclusion is prompt guidance, not a separate access boundary.
 - The upload limit is **10 MiB**. Broader AI quotas, budgets, hard SQL execution deadlines and advanced recovery are not implemented. This local demo is not a security audit or a hardened public deployment.
 
-CSV interpretation is provider-assisted rather than a promise to accept every bank format; the headerless debit/credit and signed-amount files under `resources/demo-statements/` are the supported walkthrough inputs. Reporting currency choices are EUR plus the [listed ECB reference currencies](src/Enum/ReportingCurrency.php), including USD and GBP. Changing the reporting preference does not rewrite original amounts/currencies. Conversion uses stored transaction-date reference rates; absent rates need an ECB refresh, and locale-aware formatting owns display rounding.
+CSV interpretation is provider-assisted rather than a promise to accept every bank format; the headerless debit/credit and signed-amount files under `resources/demo-statements/` are the supported walkthrough inputs. Reporting currency choices are EUR plus the [listed ECB reference currencies](src/Enum/ReportingCurrency.php), including USD and GBP. Changing the reporting preference does not rewrite original amounts/currencies. Conversion uses transaction-date ECB reference rates, carrying the previous publication forward across missing calendar dates; dates before a currency's first available rate remain unavailable. Values carried beyond the latest publication are provisional. These are reporting estimates, not a bank's actual FX rate or fees; locale-aware formatting controls display rounding.
 
 ## Configuration and lifecycle
 
