@@ -46,64 +46,44 @@ Only the application listener and callback-only listener publish loopback host p
 
 Production PHP, broker and worker use the same compiled `--no-dev` image as UID/GID 1000. The one-off `frankenphp_demo_setup` image includes development dependencies solely to invoke the existing dev-mode canonical Alice loader. It is not a production service. `setup-demo.sh` applies Doctrine migrations, appends canonical fixtures only to fresh storage and records successful completion. A normal rerun migrates without reseeding; ambiguous/incomplete nonempty storage is refused. It never purges or removes volumes. See [ADR 0031](docs/adr/0031-local-demo-packaging.md).
 
-## Import and review
+## Statement workflow
 
 The authenticated user selects an account/card and uploads a CSV of at most 10 MiB with explicit provider consent. Symfony stores the bytes privately, saves metadata in the owner's finance database and queues a Messenger import job.
 
-Parsing/provider work is outside database write transactions. Categories and transactions belong to the tenant database, not to a role-wide shared financial store. Drafts remain editable before approval. Statement downloads require ordinary-user access and tenant ownership; stored filenames are not public URLs.
-
-### Decision-model workflow
-
-There are two separate decision-model stages, both through Symfony AI's Decision platform bridge. Jev selects from supplied options and answers evidence questions, rather than generating transaction values. PHP validates those judgments and retains the original financial facts.
-
 ```mermaid
 flowchart TD
-    CSV["PHP reads CSV records"]
-    Sample["Up to 8 complete sample rows\n+ source currency and instrument kind"]
+    Upload["Upload CSV + provider consent"]
+    Queued["Queued\nPrivate bytes and metadata saved"]
+    Running["Running: worker reads CSV\nUp to 8 sample rows + source context"]
     Layout["Decision model: CSV layout\nChoose date, description, debit, credit and optional currency columns\nIdentify header and number format + evidence probabilities"]
     Check{"PHP: layout evidence sufficient\nand mapping consistent?"}
     Parse["PHP parses all original rows\nDates, exact decimal amounts, currency and debit/credit direction"]
-    Batch["Batches of up to 8 transactions\n+ source context and category catalog"]
-    Classify["Decision model: three independent judgments\nCategory, financial meaning and recurrence\nChoice + evidence probability for each"]
-    Support{"PHP: evidence probability\nat least 0.7 for this dimension?"}
-    Accept["Use the selected valid label"]
-    Unknown["Leave category unset\nor meaning / recurrence unknown"]
-    Drafts["Save all rows as editable drafts\nProcessing completed, not approved"]
-    Failed["Processing failed\nNo draft results accepted"]
-    CSV --> Sample --> Layout --> Check
+    Classify["Decision model: category, meaning and recurrence\nBatches of up to 8 transactions + category catalog\nChoice + evidence probability for each dimension"]
+    Labels["PHP accepts each supported label independently\nOtherwise category unset or meaning / recurrence unknown"]
+    Completed["Completed\nAll rows saved as editable drafts"]
+    Review["Review drafts\nEdit, save or delete unwanted rows"]
+    Validate{"Approve: all remaining rows valid?"}
+    Approved["Approved transactions\nSame rows, no longer drafts"]
+    Failed["Failed\nVisible error, no draft results accepted"]
+    Upload --> Queued --> Running --> Layout --> Check
     Check -->|Yes| Parse
     Check -->|No| Failed
-    Parse -->|Valid rows| Batch
+    Parse -->|Valid rows| Classify
     Parse -->|Invalid rows| Failed
-    Batch --> Classify --> Support
-    Support -->|Yes| Accept
-    Support -->|No| Unknown
-    Accept --> Drafts
-    Unknown --> Drafts
+    Classify --> Labels --> Completed --> Review --> Validate
+    Validate -->|No, show field errors| Review
+    Validate -->|Yes, approve together| Approved
+    Queued -->|Queue or worker failure| Failed
     Layout -.->|Provider error| Failed
     Classify -.->|Provider error or invalid answer| Failed
-```
-
-Layout requires supported, distinct date/description/debit/credit columns and an unambiguous number convention. Header and optional-currency uncertainty also stops processing. Classification uncertainty does **not** reject an otherwise valid row: each label is accepted independently when its evidence supports it. Meaning distinguishes expenses, income, refunds, own-account transfers and credit-card payments; recurrence distinguishes bills, subscriptions, other recurring activity and non-recurring activity. These judgments do not match transfer pairs or infer exchange rates. See [ADR 0021](docs/adr/0021-fixtures-first-jev-import.md).
-
-### Statement processing and review lifecycle
-
-```mermaid
-flowchart TD
-    Upload["Upload CSV + provider consent"] --> Queued["Queued\nPrivate bytes and metadata saved"]
-    Queued -->|Worker claims job| Running["Running\nParse and interpret statement"]
-    Queued -->|Queue or worker failure| Failed["Failed\nVisible processing error"]
-    Running -->|Parsing or interpretation fails| Failed
     Failed -->|Manual retry with no transaction rows| Queued
-    Running -->|Manual retry before any rows exist| Queued
-    Running -->|All results saved| Completed["Completed\nTransactions are still drafts"]
-    Completed --> Review["Review drafts\nEdit, save or delete unwanted rows"]
-    Review -->|Approve remaining drafts| Validate{"All remaining rows valid?"}
-    Validate -->|No, show field errors| Review
-    Validate -->|Yes, approve together| Approved["Approved transactions\nSame rows, no longer drafts"]
 ```
 
-Processing status and transaction approval are separate: approval leaves the statement **Completed** and clears the remaining rows' draft flags. Unknown classifications may remain after approval. Retry reuses the stored file and is available only for failed/running statements with no transaction rows. Private Mercure/Turbo updates bring completed results or errors into the review page.
+Both decision stages use Symfony AI's Decision platform bridge. Jev chooses from supplied options and answers evidence questions; PHP validates those judgments and preserves the original financial facts. Missing or ambiguous layout evidence stops processing. Classification labels are accepted independently at evidence probability **at least 0.7**; uncertainty leaves the label unset/unknown rather than rejecting the row. Jev does not match transfer pairs or infer exchange rates. See [ADR 0021](docs/adr/0021-fixtures-first-jev-import.md).
+
+**Completed means ready for review, not approved.** Approval validates all remaining drafts before clearing their draft flags together; the statement stays Completed, and unknown classifications may remain. Manual retry reuses the stored file and is available only for failed/running statements with no transaction rows.
+
+Parsing/provider work is outside database write transactions. Finance records and statement downloads are owner-scoped; stored filenames are not public URLs. Private Mercure/Turbo updates bring completed results or errors into the review page.
 
 Decision-model processing is independent of ChatGPT sign-in. PDF/XLSX conversion through local MarkItDown is an accepted future direction, **not a running service or implemented extraction path in this release**. OCR remains unresolved. The packaged walkthrough uses CSV and the existing synthetic fixture definitions.
 
