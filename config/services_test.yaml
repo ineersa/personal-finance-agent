@@ -20,19 +20,6 @@ services:
             $live: "@=env('bool:PROVIDER_CASSETTE_RECORD') ? service('app.jev.http_client') : null"
         tags: [{ name: kernel.reset, method: reset }]
 
-    app.providers.ecb:
-        class: App\Tests\Support\ProviderCassetteHttpClient
-        arguments:
-            $captureDirectory: '%kernel.project_dir%/var/private/provider-cassettes/ecb'
-            $replayDirectory: '%kernel.project_dir%/tests/Fixtures/providers/ecb'
-            $record: '%env(bool:PROVIDER_CASSETTE_RECORD)%'
-            $live: "@=env('bool:PROVIDER_CASSETTE_RECORD') ? service('app.providers.ecb_live') : null"
-        tags: [{ name: kernel.reset, method: reset }]
-
-    app.providers.ecb_live:
-        class: Symfony\Contracts\HttpClient\HttpClientInterface
-        factory: ['Symfony\Component\HttpClient\HttpClient', 'create']
-
     # Deliberately absent and never recorded: even unexpected OAuth refresh fails offline.
     app.providers.oauth_replay:
         class: Symfony\AI\Platform\Test\Replay\CassetteHttpClient
@@ -70,9 +57,3 @@ services:
             $httpClient: '@app.providers.jev'
             $modelCatalog: '@app.jev.model_catalog'
             $baseUrl: '%env(JEV_BASE_URL)%'
-
-    App\Finance\EcbRateRefresher:
-        autowire: true
-        autoconfigure: true
-        arguments:
-            $client: '@app.providers.ecb'

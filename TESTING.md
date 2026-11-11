@@ -66,7 +66,7 @@ Validation results and owner walkthrough acceptance belong on the task board.
 | `testChatCapturesEachModelAndReasoningSelection` | Three-turn `Live/ChatTest`: Luna/Low → Luna/High → Sol/High, real job admission/worker, remembered context and saved model/effort after reload. Also checks four choices and GPT-6.1's Extra High slider/range before restoring Luna/Low. The owner-selected three turns replace the old queued-envelope assertions; there is no GPT-6.1 inference claim. |
 | `testMissingModelReturnsFormError` | Real CSRF-protected composer browser POST with only model name removed; HTTP 422 and visible composer. |
 | `testMissingEffortReturnsFormError` | Same previously approved scope for absent effort; actual HTTP 422. |
-| `testFocusPreservesActiveLiveCardAndCatchesUpWhenDisconnected` | Observes genuinely streamed active DOM, dispatches the existing declarative UI focus action and counts fetches without substituting responses. Reconnects the actual native custom element, checks its genuine CONNECTING state, quiet notice and snapshot request, then canonical snapshot and real follow-up SSE delivery. No fake EventSource, injected Turbo messages or artificial provider pacing. This is not an OS-focus or Firefox-abort reproduction. |
+| `testFocusPreservesActiveLiveCardAndCatchesUpWhenDisconnected` | Observes genuinely streamed active DOM, dispatches the existing declarative UI focus action and counts fetches without substituting responses. Reconnects the actual native custom element, checks its genuine CONNECTING state, quiet notice and snapshot request, then native reconnect OPEN and canonical snapshot catch-up. The observer is armed on the connected page before the existing follow-up, after the first answer completes; actual follow-up SSE is required before replacement, but remaining same-response tokens after replacement are not asserted. No fake EventSource, injected Turbo messages or artificial provider pacing. This is not an OS-focus or Firefox-abort reproduction. |
 | `testBrowserSubmissionNormalizesForeignToolIdsWithoutRewritingHistory` | Native full-request matching checks Luna history retains the native item `id` on same-model requests and Sol/High cassette `b701934f1011…` strips it while retaining matching plain `call_id` in call/output. Chat reload retains the original composite tool ID and displayed history. Browser-visible history and real wire requests replace direct serialization assertions; byte-identical hidden metadata is not asserted. |
 | `testFailedChartToolShowsErrorInStreamAndAfterReload` | Bounded canonical Visa query and one missing-field MCP chart request, genuinely recorded against the model and real MCP server. Incoming failed-tool Turbo markup is observed before rendering; disclosure/error arguments/result survive reload. The successful chart's separate SQL error is not mislabeled as MCP-error coverage. |
 | `testRetainedChartRemainsVisibleAfterResponseFailure` | Withholds genuine final model cassette `8f95dea91f3d…` after the real successful chart tool result, restores in `finally`, waits for actual Failed status and checks the retained interactive chart before/after reload. No synthetic result/file/history or fake terminal event. Failure status itself is transient, not asserted after reload. Do not run concurrently with another replay suite. |
@@ -244,13 +244,13 @@ Current recordings live under `tests/Fixtures/providers/`; the obsolete finance-
 ### Provider cassette recording and offline replay (task 33)
 
 `PROVIDER_CASSETTE_RECORD` is the sole mode flag in the isolated browser stack,
-forwarded to both PHP and worker. Its default is `0`: strict offline replay.
-`1` explicitly enables real ChatGPT inference, Jev and ECB HTTP recording. OAuth
+forwarded to both PHP and worker. Both Castor test entry points read and validate this single variable from the running PHP and worker containers, reject missing, invalid or inconsistent modes, and pass the confirmed mode to tooling PHPUnit. The replay-only failure scenario rejects any mode other than confirmed replay before withholding bytes or submitting. Its default is `0`: strict offline replay.
+`1` explicitly enables real ChatGPT inference and Jev HTTP recording. OAuth
 uses the ordinary live client **only** in recording mode, and is never recorded.
 In replay it receives a native `CassetteHttpClient(record: false)` with no real
 client and a deliberately absent `tests/Fixtures/providers/oauth-unavailable.json`.
 Never create that file: unexpected authorization, discovery or refresh must fail.
-Local chart/MCP, scheduler consumption, broker, worker and Mercure remain real.
+Local chart/MCP, broker, worker and Mercure remain real. The browser worker consumes only `statement_import` and `chat`, not `scheduler_default`. Browser finances use canonical seeded currency rates; scheduled ECB currency refresh is not covered by these journeys. Development and production worker commands are unchanged.
 Jev receives a clearly synthetic key in replay; recording uses the configured key.
 
 `ProviderCassetteHttpClient` selects a SHA-256 filename from method, URL, query and
@@ -265,13 +265,13 @@ only explicit options to avoid overriding the real client's defaults. Clones cop
 existing native clients (and their cursor objects); the configured provider
 services themselves are reset after each job.
 
-Private captures are `var/browser-live/private/provider-cassettes/{chat,jev,ecb}`
+Private captures are `var/browser-live/private/provider-cassettes/{chat,jev}`
 on the host (`var/private/provider-cassettes/` in the container). Recording refuses
 an existing capture for a newly selected key, rather than overwriting it. Capture
 directories/files are created with modes 0700/0600. Reviewed replay locations are
-`tests/Fixtures/providers/{chat,jev,ecb}`. Missing, exhausted or mismatched cassettes
+`tests/Fixtures/providers/{chat,jev}`. Missing, exhausted or mismatched cassettes
 fail without network fallback. Reviewed genuine recordings cover chat, successful
-and explicitly failed MCP charts, import and ECB requests.
+and explicitly failed MCP charts and import requests.
 
 Only two nonsemantic replacements are permitted: the UUID-shaped conversation
 `prompt_cache_key`, and the complete `Current date (UTC): YYYY-MM-DD.` header prefix
@@ -317,8 +317,7 @@ Failure cleanup closes browsers but conservatively retains newly created records
 the runner reports the captured conversation/processing URL for inspection, without
 racing possibly active workers or retrying providers. Default routing selects all native-network journeys. Main coordinates execution
 and private review/promotion; there is no automatic
-promotion, regeneration, fallback or per-scenario runner. ECB scheduled requests
-also require genuine reviewed recordings; an uncovered scheduler request fails.
+promotion, regeneration, fallback or per-scenario runner. Scheduled currency refresh is excluded from this browser stack; no ECB provider recording is required.
 
 #### Synthetic replay grant preparation
 

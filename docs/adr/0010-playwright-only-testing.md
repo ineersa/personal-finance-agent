@@ -56,6 +56,10 @@ storage is prepared through Doctrine and native append-only canonical Alice load
 not per-test rollback or a replacement fixture framework. Each journey cleans up only
 its own UI-created data. Never purge an owner's preview.
 
+The browser-test worker consumes only statement imports and chat, not the hourly
+scheduler. Financial journeys use canonical seeded currency rates; scheduled ECB
+refresh is not covered. Development and production scheduling remain unchanged.
+
 External provider interactions are genuinely recorded from canonical synthetic data
 and replayed through Symfony AI's native HTTP cassette facilities. Native replay's
 internal MockResponse transports recorded bytes; it does not authorize fabricated

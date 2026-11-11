@@ -192,7 +192,12 @@ function browserTest(bool $headed = false, #[AsArgsAfterOptionEnd] array $argume
         }
         stackRun('browser', ['up', '-d', '--wait', 'worker']);
 
-        return report('test:browser', ['env', 'PLAYWRIGHT_HEADLESS='.($headed ? 'false' : 'true'), 'FINANCE_IMPORT_URL='.stackUrl('browser'), 'FINANCE_PROXY_IP='.proxyAddress(), 'php', 'vendor/bin/phpunit', ...$arguments, '--fail-on-empty-test-suite', '--log-junit', 'var/qa/test/junit.xml'], headed: $headed, networked: true);
+        $mode = browserProviderMode();
+        if (PROVIDER_REPLAY_MODE !== $mode) {
+            throw new \RuntimeException('Routine tests require a confirmed replay stack.');
+        }
+
+        return report('test:browser', ['env', 'PROVIDER_CASSETTE_RECORD='.$mode, 'PLAYWRIGHT_HEADLESS='.($headed ? 'false' : 'true'), 'FINANCE_IMPORT_URL='.stackUrl('browser'), 'FINANCE_PROXY_IP='.proxyAddress(), 'php', 'vendor/bin/phpunit', ...$arguments, '--fail-on-empty-test-suite', '--log-junit', 'var/qa/test/junit.xml'], headed: $headed, networked: true);
     });
 }
 

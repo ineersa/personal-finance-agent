@@ -318,6 +318,28 @@ function developmentStackStop(): int
     return developmentStack('dev', 'stop');
 }
 
+const PROVIDER_REPLAY_MODE = '0';
+const PROVIDER_RECORD_MODE = '1';
+
+function browserProviderMode(): string
+{
+    $modes = [];
+    foreach (['php', 'worker'] as $service) {
+        $process = new Process([...stackCommand('browser'), 'exec', '-T', $service, 'printenv', 'PROVIDER_CASSETTE_RECORD'], \dirname(__DIR__), stackEnvironment('browser'), timeout: 30);
+        runTaskProcess($process);
+        $mode = trim($process->getOutput());
+        if (!\in_array($mode, [PROVIDER_REPLAY_MODE, PROVIDER_RECORD_MODE], true)) {
+            throw new \RuntimeException('The running browser '.$service.' has no valid provider cassette mode.');
+        }
+        $modes[] = $mode;
+    }
+    if ($modes[0] !== $modes[1]) {
+        throw new \RuntimeException('The running browser PHP and worker provider cassette modes differ.');
+    }
+
+    return $modes[0];
+}
+
 /** @param list<string> $arguments */
 #[AsTask(namespace: 'browser', name: 'live:test', description: 'Run browser tests against the isolated live stack; pass native PHPUnit arguments after --.')]
 function browserLiveTest(#[AsArgsAfterOptionEnd] array $arguments = [], bool $headed = false): int
@@ -326,7 +348,7 @@ function browserLiveTest(#[AsArgsAfterOptionEnd] array $arguments = [], bool $he
         throw new \InvalidArgumentException('Pass the PHPUnit test selection after --.');
     }
 
-    return report('browser:live:test', ['env', 'PLAYWRIGHT_HEADLESS='.($headed ? 'false' : 'true'), 'FINANCE_IMPORT_URL='.stackUrl('browser'), 'FINANCE_PROXY_IP='.proxyAddress(), 'php', 'vendor/bin/phpunit', ...$arguments, '--fail-on-empty-test-suite', '--log-junit', 'var/qa/browser-live-test/junit.xml'], headed: $headed, networked: true);
+    return report('browser:live:test', ['env', 'PROVIDER_CASSETTE_RECORD='.browserProviderMode(), 'PLAYWRIGHT_HEADLESS='.($headed ? 'false' : 'true'), 'FINANCE_IMPORT_URL='.stackUrl('browser'), 'FINANCE_PROXY_IP='.proxyAddress(), 'php', 'vendor/bin/phpunit', ...$arguments, '--fail-on-empty-test-suite', '--log-junit', 'var/qa/browser-live-test/junit.xml'], headed: $headed, networked: true);
 }
 
 #[AsTask(namespace: 'browser', name: 'replay:prepare', description: 'Seed only the canonical demo synthetic grant in the isolated browser replay AuthFileStore.')]
