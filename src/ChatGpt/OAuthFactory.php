@@ -29,15 +29,11 @@ final readonly class OAuthFactory
         #[Autowire('%kernel.project_dir%/var/private/chatgpt-auth')] private string $directory,
         #[Autowire('%app.chatgpt.installation_id%')] private string $installationId,
         #[Autowire('%app.chatgpt.client_id%')] private string $clientId,
-        private ?AuthStorageInterface $storageOverride = null,
     ) {
     }
 
     public function storage(string $identity): AuthStorageInterface
     {
-        if (null !== $this->storageOverride) {
-            return $this->storageOverride;
-        }
         // Separate from the previous encrypted store; existing credentials are never migrated.
         $this->filesystem->mkdir($this->directory, 0700);
 
@@ -47,16 +43,14 @@ final readonly class OAuthFactory
     public function create(string $identity): OAuthService
     {
         $storage = $this->storage($identity);
-        if (null === $this->storageOverride) {
-            $storage->update(function (?AuthRecord $record): AuthRecord {
-                if (null !== $record && $record->clientId !== $this->clientId) {
-                    throw new AuthException('The saved ChatGPT client differs from application configuration. No credentials were changed; resolve the registration configuration before connecting.');
-                }
+        $storage->update(function (?AuthRecord $record): AuthRecord {
+            if (null !== $record && $record->clientId !== $this->clientId) {
+                throw new AuthException('The saved ChatGPT client differs from application configuration. No credentials were changed; resolve the registration configuration before connecting.');
+            }
 
-                // Registration only: native OAuth still generates each attempt's state, nonce and PKCE.
-                return $record ?? AuthRecord::registration($this->clientId, bin2hex(random_bytes(32)));
-            });
-        }
+            // Registration only: native OAuth still generates each attempt's state, nonce and PKCE.
+            return $record ?? AuthRecord::registration($this->clientId, bin2hex(random_bytes(32)));
+        });
 
         return new OAuthService($storage, $this->http, $this->verifier, $this->config, $this->clock);
     }

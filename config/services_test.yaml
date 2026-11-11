@@ -1,46 +1,59 @@
 parameters:
-    env(CHAT_CASSETTE_RECORD): '0'
-    env(CHAT_CASSETTE_REPLAY): '0'
+    env(PROVIDER_CASSETTE_RECORD): '0'
 
 services:
-    app.chat.recording_http_client:
-        class: Symfony\Contracts\HttpClient\HttpClientInterface
-        factory: ['App\Tests\Support\ChatRecordingHttpClient', 'create']
-        autoconfigure: false
+    app.providers.chat:
+        class: App\Tests\Support\ProviderCassetteHttpClient
         arguments:
-            $live: "@=env('bool:CHAT_CASSETTE_REPLAY') ? null : service('app.chatgpt.http_client')"
-            $filesystem: '@filesystem'
-            $path: '%kernel.project_dir%/var/private/chat-cassettes/synthetic-chat.json'
-            $record: '%env(bool:CHAT_CASSETTE_RECORD)%'
-            $replay: '%env(bool:CHAT_CASSETTE_REPLAY)%'
-            $replayPath: '%kernel.project_dir%/tests/Fixtures/chat/synthetic-chat.json'
+            $captureDirectory: '%kernel.project_dir%/var/private/provider-cassettes/chat'
+            $replayDirectory: '%kernel.project_dir%/tests/Fixtures/providers/chat'
+            $record: '%env(bool:PROVIDER_CASSETTE_RECORD)%'
+            $live: "@=env('bool:PROVIDER_CASSETTE_RECORD') ? service('app.chatgpt.http_client') : null"
+        tags: [{ name: kernel.reset, method: reset }]
 
-    app.chat.synthetic_auth:
-        class: App\Tests\Support\ReplayChatAuthStorage
+    app.providers.jev:
+        class: App\Tests\Support\ProviderCassetteHttpClient
+        arguments:
+            $captureDirectory: '%kernel.project_dir%/var/private/provider-cassettes/jev'
+            $replayDirectory: '%kernel.project_dir%/tests/Fixtures/providers/jev'
+            $record: '%env(bool:PROVIDER_CASSETTE_RECORD)%'
+            $live: "@=env('bool:PROVIDER_CASSETTE_RECORD') ? service('app.jev.http_client') : null"
+        tags: [{ name: kernel.reset, method: reset }]
 
-    app.chat.no_network:
-        class: Symfony\Component\HttpClient\MockHttpClient
-        factory: ['App\Tests\Support\ReplayChatAuthStorage', 'noNetwork']
+    # Deliberately absent and never recorded: even unexpected OAuth refresh fails offline.
+    app.providers.oauth_replay:
+        class: Symfony\AI\Platform\Test\Replay\CassetteHttpClient
+        arguments:
+            $cassette: '@app.providers.oauth_absent_cassette'
+            $record: false
+
+    app.providers.oauth_absent_cassette:
+        class: Symfony\AI\Platform\Test\Replay\HttpCassette
+        arguments:
+            $path: '%kernel.project_dir%/tests/Fixtures/providers/oauth-unavailable.json'
 
     App\ChatGpt\OAuthFactory:
         autowire: true
         autoconfigure: true
         arguments:
-            $storageOverride: "@=env('bool:CHAT_CASSETTE_REPLAY') ? service('app.chat.synthetic_auth') : null"
-            $http: "@=env('bool:CHAT_CASSETTE_REPLAY') ? service('app.chat.no_network') : service('app.chatgpt.http_client')"
+            $directory: "@=parameter('kernel.project_dir') ~ (env('bool:PROVIDER_CASSETTE_RECORD') ? '/var/private/chatgpt-auth' : '/var/private/chatgpt-replay-auth')"
+            $http: "@=env('bool:PROVIDER_CASSETTE_RECORD') ? service('app.chatgpt.http_client') : service('app.providers.oauth_replay')"
 
     Symfony\AI\Platform\Bridge\OpenAIChatGPT\Auth\IdTokenVerifier:
         arguments:
-            $httpClient: "@=env('bool:CHAT_CASSETTE_REPLAY') ? service('app.chat.no_network') : service('app.chatgpt.http_client')"
+            $httpClient: "@=env('bool:PROVIDER_CASSETTE_RECORD') ? service('app.chatgpt.http_client') : service('app.providers.oauth_replay')"
 
     App\Chat\AgentFactory:
         autowire: true
         autoconfigure: true
         arguments:
-            $http: '@app.chat.recording_http_client'
+            $http: '@app.providers.chat'
 
-    App\Finance\TenantManagers:
-        class: App\Tests\Support\TestTenantManagers
-        autowire: true
-        autoconfigure: true
-        public: true
+    app.jev.platform:
+        class: Symfony\AI\Platform\Platform
+        factory: ['Symfony\AI\Platform\Bridge\TypeSafe\Factory', 'createPlatform']
+        arguments:
+            $apiKey: "@=env('bool:PROVIDER_CASSETTE_RECORD') ? env('JEV_API_KEY') : 'synthetic-replay-only'"
+            $httpClient: '@app.providers.jev'
+            $modelCatalog: '@app.jev.model_catalog'
+            $baseUrl: '%env(JEV_BASE_URL)%'

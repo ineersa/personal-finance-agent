@@ -1,0 +1,213 @@
+{
+    "interactions": [
+        {
+            "request": {
+                "method": "POST",
+                "url": "https://api.typesafe.ai/v1/systemone",
+                "signature": "af4d66cf7b80f875e1f0f0974e6f3a82",
+                "signature_v2": "3ffe32ecdba4a1bfbfc2bbf3fe69a7c2",
+                "headers": {
+                    "authorization": [
+                        "[redacted]"
+                    ]
+                },
+                "body": {
+                    "model": "jev-1.14.0",
+                    "state": {
+                        "source_currency": "CAD",
+                        "instrument": "bank_account",
+                        "rows": [
+                            {
+                                "column_0": "2026-10-01",
+                                "column_1": "PAYROLL LANTERN LABS",
+                                "column_2": "",
+                                "column_3": "3115.00"
+                            },
+                            {
+                                "column_0": "2026-10-02",
+                                "column_1": "RENT WILLOW COURT monthly",
+                                "column_2": "1480.00",
+                                "column_3": ""
+                            },
+                            {
+                                "column_0": "2026-10-05",
+                                "column_1": "CEDARLINE INTERNET monthly service",
+                                "column_2": "72.95",
+                                "column_3": ""
+                            },
+                            {
+                                "column_0": "2026-10-12",
+                                "column_1": "PAYMENT TO OWN DEMO CREDIT CARD",
+                                "column_2": "1130.94",
+                                "column_3": ""
+                            },
+                            {
+                                "column_0": "2026-10-15",
+                                "column_1": "PAYROLL LANTERN LABS",
+                                "column_2": "",
+                                "column_3": "3115.00"
+                            },
+                            {
+                                "column_0": "2026-10-21",
+                                "column_1": "LOAN PAYMENT monthly",
+                                "column_2": "185.00",
+                                "column_3": ""
+                            },
+                            {
+                                "column_0": "2026-10-24",
+                                "column_1": "TRANSFER TO OWN INVESTMENT ACCOUNT monthly contribution",
+                                "column_2": "275.00",
+                                "column_3": ""
+                            },
+                            {
+                                "column_0": "2026-10-28",
+                                "column_1": "INTEREST PAID",
+                                "column_2": "",
+                                "column_3": "0.58"
+                            }
+                        ]
+                    },
+                    "questions": {
+                        "date": {
+                            "type": "choice",
+                            "instructions": "Which column contains The date on which this statement records a transaction, not a statement period boundary.",
+                            "criteria": {
+                                "column_0": "The values under column_0 across complete sample rows.",
+                                "column_1": "The values under column_1 across complete sample rows.",
+                                "column_2": "The values under column_2 across complete sample rows.",
+                                "column_3": "The values under column_3 across complete sample rows."
+                            }
+                        },
+                        "date_present": {
+                            "type": "noul",
+                            "instructions": "Do the CSV sample rows contain a column for The date on which this statement records a transaction, not a statement period boundary.",
+                            "criteria": {
+                                "true": "A CSV column has this meaning.",
+                                "false": "No CSV column has this meaning or the evidence does not establish it."
+                            }
+                        },
+                        "description": {
+                            "type": "choice",
+                            "instructions": "Which column contains Merchant, payee or transaction narrative, not an account/card identifier.",
+                            "criteria": {
+                                "column_0": "The values under column_0 across complete sample rows.",
+                                "column_1": "The values under column_1 across complete sample rows.",
+                                "column_2": "The values under column_2 across complete sample rows.",
+                                "column_3": "The values under column_3 across complete sample rows."
+                            }
+                        },
+                        "description_present": {
+                            "type": "noul",
+                            "instructions": "Do the CSV sample rows contain a column for Merchant, payee or transaction narrative, not an account/card identifier.",
+                            "criteria": {
+                                "true": "A CSV column has this meaning.",
+                                "false": "No CSV column has this meaning or the evidence does not establish it."
+                            }
+                        },
+                        "debit": {
+                            "type": "choice",
+                            "instructions": "Which column contains Debit amounts: purchases, fees and outgoing transfers from a bank account, or charges increasing credit-card debt.",
+                            "criteria": {
+                                "column_0": "The values under column_0 across complete sample rows.",
+                                "column_1": "The values under column_1 across complete sample rows.",
+                                "column_2": "The values under column_2 across complete sample rows.",
+                                "column_3": "The values under column_3 across complete sample rows."
+                            }
+                        },
+                        "debit_present": {
+                            "type": "noul",
+                            "instructions": "Do the CSV sample rows contain a column for Debit amounts: purchases, fees and outgoing transfers from a bank account, or charges increasing credit-card debt.",
+                            "criteria": {
+                                "true": "A CSV column has this meaning.",
+                                "false": "No CSV column has this meaning or the evidence does not establish it."
+                            }
+                        },
+                        "credit": {
+                            "type": "choice",
+                            "instructions": "Which column contains Credit amounts: incoming bank-account money including transfers from the owner’s other accounts, payroll and refunds, or payments/refunds reducing credit-card debt. A credit need not be income.",
+                            "criteria": {
+                                "column_0": "The values under column_0 across complete sample rows.",
+                                "column_1": "The values under column_1 across complete sample rows.",
+                                "column_2": "The values under column_2 across complete sample rows.",
+                                "column_3": "The values under column_3 across complete sample rows."
+                            }
+                        },
+                        "credit_present": {
+                            "type": "noul",
+                            "instructions": "Do the CSV sample rows contain a column for Credit amounts: incoming bank-account money including transfers from the owner’s other accounts, payroll and refunds, or payments/refunds reducing credit-card debt. A credit need not be income.",
+                            "criteria": {
+                                "true": "A CSV column has this meaning.",
+                                "false": "No CSV column has this meaning or the evidence does not establish it."
+                            }
+                        },
+                        "header": {
+                            "type": "noul",
+                            "instructions": "Is the first sample row a header describing columns rather than an actual transaction?",
+                            "criteria": {
+                                "true": "The first row contains field labels.",
+                                "false": "The first row is a transaction with date and values."
+                            }
+                        },
+                        "currency_present": {
+                            "type": "noul",
+                            "instructions": "Is there a dedicated CSV currency column containing currency codes or names?",
+                            "criteria": {
+                                "true": "A separate column explicitly specifies each transaction currency.",
+                                "false": "Currency is absent from CSV columns; account context or mention in a transaction description does not count."
+                            }
+                        },
+                        "currency": {
+                            "type": "choice",
+                            "instructions": "Which column explicitly specifies transaction currency?",
+                            "criteria": {
+                                "column_0": "The values under column_0 across complete sample rows.",
+                                "column_1": "The values under column_1 across complete sample rows.",
+                                "column_2": "The values under column_2 across complete sample rows.",
+                                "column_3": "The values under column_3 across complete sample rows."
+                            }
+                        },
+                        "number_format": {
+                            "type": "choice",
+                            "instructions": "Which number format matches the monetary amounts in the CSV sample rows?",
+                            "criteria": {
+                                "en_US": "Decimal point, comma grouping: 1,234.56 or 1234.56; 12.34.",
+                                "de_DE": "Decimal comma, point grouping: 1.234,56 or 1234,56; 12,34.",
+                                "fr_FR": "Decimal comma, space grouping (including non-breaking spaces): 1 234,56 or 1234,56; 12,34."
+                            }
+                        },
+                        "number_format_resolved": {
+                            "type": "noul",
+                            "instructions": "Do the monetary amounts establish a supported number convention without ambiguity about their magnitude?",
+                            "criteria": {
+                                "true": "The amounts establish decimal/grouping usage: 1,234.56, 1.234,56, or 1 234,56 (including non-breaking spaces); unseparated integers also work. Absent grouping does not need to be inferred.",
+                                "false": "Separators leave the monetary magnitude ambiguous (for example only 1,234), or the amounts mix incompatible or unsupported conventions."
+                            }
+                        }
+                    }
+                }
+            },
+            "response": {
+                "status": 200,
+                "headers": {
+                    "content-type": [
+                        "application/json"
+                    ],
+                    "x-typesafe-request-id": [
+                        "req_01a1c6d0704574b99c3ff81d96ac1233"
+                    ],
+                    "server": [
+                        "cloudflare"
+                    ],
+                    "set-cookie": [
+                        "[redacted]"
+                    ],
+                    "content-encoding": [
+                        "gzip"
+                    ]
+                },
+                "body_format": "json",
+                "body": "{\"model\":\"jev-1.14.0\",\"answers\":{\"date\":{\"type\":\"choice\",\"choice\":\"column_0\",\"confidence\":1.0,\"probabilities\":{\"column_0\":1.0,\"column_1\":0.0,\"column_2\":0.0,\"column_3\":0.0}},\"date_present\":{\"type\":\"noul\",\"noul\":0.97},\"description\":{\"type\":\"choice\",\"choice\":\"column_1\",\"confidence\":1.0,\"probabilities\":{\"column_0\":0.0,\"column_1\":1.0,\"column_2\":0.0,\"column_3\":0.0}},\"description_present\":{\"type\":\"noul\",\"noul\":0.97},\"debit\":{\"type\":\"choice\",\"choice\":\"column_2\",\"confidence\":1.0,\"probabilities\":{\"column_0\":0.0,\"column_1\":0.0,\"column_2\":1.0,\"column_3\":0.0}},\"debit_present\":{\"type\":\"noul\",\"noul\":0.88},\"credit\":{\"type\":\"choice\",\"choice\":\"column_3\",\"confidence\":1.0,\"probabilities\":{\"column_0\":0.0,\"column_1\":0.0,\"column_2\":0.0,\"column_3\":1.0}},\"credit_present\":{\"type\":\"noul\",\"noul\":0.88},\"header\":{\"type\":\"noul\",\"noul\":0.08},\"currency_present\":{\"type\":\"noul\",\"noul\":0.05},\"currency\":{\"type\":\"choice\",\"choice\":\"column_2\",\"confidence\":0.27,\"probabilities\":{\"column_0\":0.07,\"column_1\":0.13,\"column_2\":0.45,\"column_3\":0.35}},\"number_format\":{\"type\":\"choice\",\"choice\":\"en_US\",\"confidence\":1.0,\"probabilities\":{\"en_US\":1.0,\"de_DE\":0.0,\"fr_FR\":0.0}},\"number_format_resolved\":{\"type\":\"noul\",\"noul\":0.89}},\"usage\":{\"input_tokens\":2163,\"output_tokens\":427}}"
+            }
+        }
+    ]
+}

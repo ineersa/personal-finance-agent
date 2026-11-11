@@ -117,7 +117,9 @@ function stackEnvironment(string $mode): array
         fclose($file);
     }
 
-    return [...chatGptEnvironment($mode), 'FINANCE_CHECKOUT_ID' => checkoutId(), 'FINANCE_PROJECT' => stackProject($mode), 'FINANCE_NETWORK' => developmentNetwork(), 'FINANCE_PUBLIC_URL' => stackUrl($mode), 'MERCURE_JWT_SECRET' => trim((string) file_get_contents($secret)), 'LOCAL_UID' => (string) posix_getuid(), 'LOCAL_GID' => (string) posix_getgid()];
+    $record = getenv('PROVIDER_CASSETTE_RECORD');
+
+    return [...chatGptEnvironment($mode), 'PROVIDER_CASSETTE_RECORD' => false === $record || '' === $record ? '0' : $record, 'FINANCE_CHECKOUT_ID' => checkoutId(), 'FINANCE_PROJECT' => stackProject($mode), 'FINANCE_NETWORK' => developmentNetwork(), 'FINANCE_PUBLIC_URL' => stackUrl($mode), 'MERCURE_JWT_SECRET' => trim((string) file_get_contents($secret)), 'LOCAL_UID' => (string) posix_getuid(), 'LOCAL_GID' => (string) posix_getgid()];
 }
 
 /** @param list<string> $arguments */
@@ -316,6 +318,28 @@ function developmentStackStop(): int
     return developmentStack('dev', 'stop');
 }
 
+const PROVIDER_REPLAY_MODE = '0';
+const PROVIDER_RECORD_MODE = '1';
+
+function browserProviderMode(): string
+{
+    $modes = [];
+    foreach (['php', 'worker'] as $service) {
+        $process = new Process([...stackCommand('browser'), 'exec', '-T', $service, 'printenv', 'PROVIDER_CASSETTE_RECORD'], \dirname(__DIR__), stackEnvironment('browser'), timeout: 30);
+        runTaskProcess($process);
+        $mode = trim($process->getOutput());
+        if (!\in_array($mode, [PROVIDER_REPLAY_MODE, PROVIDER_RECORD_MODE], true)) {
+            throw new \RuntimeException('The running browser '.$service.' has no valid provider cassette mode.');
+        }
+        $modes[] = $mode;
+    }
+    if ($modes[0] !== $modes[1]) {
+        throw new \RuntimeException('The running browser PHP and worker provider cassette modes differ.');
+    }
+
+    return $modes[0];
+}
+
 /** @param list<string> $arguments */
 #[AsTask(namespace: 'browser', name: 'live:test', description: 'Run browser tests against the isolated live stack; pass native PHPUnit arguments after --.')]
 function browserLiveTest(#[AsArgsAfterOptionEnd] array $arguments = [], bool $headed = false): int
@@ -324,7 +348,17 @@ function browserLiveTest(#[AsArgsAfterOptionEnd] array $arguments = [], bool $he
         throw new \InvalidArgumentException('Pass the PHPUnit test selection after --.');
     }
 
-    return report('browser:live:test', ['env', 'PLAYWRIGHT_HEADLESS='.($headed ? 'false' : 'true'), 'FINANCE_IMPORT_URL='.stackUrl('browser'), 'FINANCE_PROXY_IP='.proxyAddress(), 'php', 'vendor/bin/phpunit', ...$arguments, '--fail-on-empty-test-suite', '--log-junit', 'var/qa/browser-live-test/junit.xml'], headed: $headed, networked: true);
+    return report('browser:live:test', ['env', 'PROVIDER_CASSETTE_RECORD='.browserProviderMode(), 'PLAYWRIGHT_HEADLESS='.($headed ? 'false' : 'true'), 'FINANCE_IMPORT_URL='.stackUrl('browser'), 'FINANCE_PROXY_IP='.proxyAddress(), 'php', 'vendor/bin/phpunit', ...$arguments, '--fail-on-empty-test-suite', '--log-junit', 'var/qa/browser-live-test/junit.xml'], headed: $headed, networked: true);
+}
+
+#[AsTask(namespace: 'browser', name: 'replay:prepare', description: 'Seed only the canonical demo synthetic grant in the isolated browser replay AuthFileStore.')]
+function browserReplayPrepare(): int
+{
+    return report('browser:replay:prepare', ['php', 'tests/Support/prepare_replay_grant.php'], runtime: false, operation: static function (): int {
+        stackRun('browser', ['exec', '-T', 'php', 'php', 'tests/Support/prepare_replay_grant.php']);
+
+        return 0;
+    });
 }
 
 #[AsTask(namespace: 'dev', name: 'proxy:stop', description: 'Stop the shared proxy; --for-upgrade permits registered routes and removes only its owned container.')]

@@ -1,0 +1,720 @@
+{
+    "interactions": [
+        {
+            "request": {
+                "method": "POST",
+                "url": "https://api.typesafe.ai/v1/systemone",
+                "signature": "51eaac099b53b59e4d2aec0b5b812477",
+                "signature_v2": "f65ff042e8cebd6f575171d51313ea40",
+                "headers": {
+                    "authorization": [
+                        "[redacted]"
+                    ]
+                },
+                "body": {
+                    "model": "jev-1.14.0",
+                    "state": {
+                        "source_context": {
+                            "instrument_kind": "bank_account",
+                            "statement_type": "Bank-account statement: debit is money leaving this account; credit is money arriving."
+                        },
+                        "transactions": {
+                            "transaction_0": {
+                                "date": "2026-10-01",
+                                "description": "PAYROLL LANTERN LABS",
+                                "amount": "3115.00",
+                                "currency": "CAD",
+                                "direction": "Credit"
+                            },
+                            "transaction_1": {
+                                "date": "2026-10-02",
+                                "description": "RENT WILLOW COURT monthly",
+                                "amount": "1480.00",
+                                "currency": "CAD",
+                                "direction": "Debit"
+                            },
+                            "transaction_2": {
+                                "date": "2026-10-05",
+                                "description": "CEDARLINE INTERNET monthly service",
+                                "amount": "72.95",
+                                "currency": "CAD",
+                                "direction": "Debit"
+                            },
+                            "transaction_3": {
+                                "date": "2026-10-08",
+                                "description": "RIVERLIGHT ELECTRIC monthly bill",
+                                "amount": "72.57",
+                                "currency": "CAD",
+                                "direction": "Debit"
+                            },
+                            "transaction_4": {
+                                "date": "2026-10-12",
+                                "description": "PAYMENT TO OWN DEMO CREDIT CARD",
+                                "amount": "1130.94",
+                                "currency": "CAD",
+                                "direction": "Debit"
+                            },
+                            "transaction_5": {
+                                "date": "2026-10-15",
+                                "description": "PAYROLL LANTERN LABS",
+                                "amount": "3115.00",
+                                "currency": "CAD",
+                                "direction": "Credit"
+                            },
+                            "transaction_6": {
+                                "date": "2026-10-18",
+                                "description": "TRANSFER TO OWN DEMO USD ACCOUNT",
+                                "amount": "430.94",
+                                "currency": "CAD",
+                                "direction": "Debit"
+                            },
+                            "transaction_7": {
+                                "date": "2026-10-21",
+                                "description": "LOAN PAYMENT monthly",
+                                "amount": "185.00",
+                                "currency": "CAD",
+                                "direction": "Debit"
+                            }
+                        },
+                        "category_options": {
+                            "Employment Income": "Salary, wages and employment bonuses; excludes refunds and transfers",
+                            "Housing": "Rent, mortgage payments, property taxes, home insurance and repairs",
+                            "Internet & Phone": "Home internet, mobile and telephone service bills",
+                            "Utilities": "Electricity, water and heating gas",
+                            "Credit-card Payments": "Payments settling card balances; not new purchases or income",
+                            "Own-account Transfers": "Movements between the same owner’s accounts; not income or purchases",
+                            "Loan Payments": "Student, personal and other non-mortgage loan payments",
+                            "Savings & Investments": "Identifiable savings and investment contributions or withdrawals; may also have transfer meaning",
+                            "Fees & Charges": "Bank fees, card fees and interest charges",
+                            "Interest & Other Income": "Account interest and identifiable non-employment income; excludes refunds and transfers",
+                            "Groceries": "Everyday food and household purchases",
+                            "Dining & Takeout": "Restaurants, cafes, takeout and food delivery",
+                            "Subscriptions & Memberships": "Streaming, software, gym and other memberships; excludes internet and phone access",
+                            "Transportation": "Fuel, transit, parking, vehicle maintenance and vehicle insurance",
+                            "Health & Personal Care": "Medical, dental, prescriptions and personal care",
+                            "Shopping": "Clothing, electronics and household goods, including identifiable retail refunds",
+                            "Entertainment & Hobbies": "Events, games, recreation and hobby expenses",
+                            "Education": "Tuition, courses, books and training",
+                            "Gifts & Donations": "Gifts and charitable contributions",
+                            "Travel": "Hotels, flights and identifiable trip expenses",
+                            "Uncategorized": "Insufficient information or no suitable category"
+                        },
+                        "meaning_options": {
+                            "expense": "A purchase, bill, fee or loan payment; excludes transfers between own accounts and credit-card balance payments.",
+                            "income": "Earned or received income such as wages or interest; excludes refunds, own-account transfers and card balance payments.",
+                            "refund": "A reversal or return of a previous purchase or charge; not salary or an account transfer.",
+                            "own_account_transfer": "Money explicitly moved between accounts belonging to the same owner; not an unrelated incoming payment or credit-card balance settlement.",
+                            "credit_card_payment": "Either side of a payment settling the owner’s credit-card balance. On a credit-card statement, a payment received from a bank account settles this card debt, not an ordinary transfer between bank accounts. Excludes new purchases, salary and merchant refunds."
+                        },
+                        "recurrence_options": {
+                            "recurring_bill": "A periodic service, rent, utility, fee or loan bill; amounts may vary. Excludes subscription/membership products.",
+                            "subscription": "A recurring subscription or membership, monthly or annual, such as streaming, software or gym membership.",
+                            "other_recurring": "Clearly periodic activity other than a bill or subscription, such as payroll or a scheduled contribution.",
+                            "non_recurring": "An ordinary purchase or isolated transaction with no recurring contract or scheduled payment evidence. Repeated grocery/cafe visits alone are not recurring bills."
+                        }
+                    },
+                    "questions": {
+                        "transaction_0_category": {
+                            "type": "choice",
+                            "instructions": "Which category describes `transactions.transaction_0`?",
+                            "criteria": {
+                                "Employment Income": "Salary, wages and employment bonuses; excludes refunds and transfers",
+                                "Housing": "Rent, mortgage payments, property taxes, home insurance and repairs",
+                                "Internet & Phone": "Home internet, mobile and telephone service bills",
+                                "Utilities": "Electricity, water and heating gas",
+                                "Credit-card Payments": "Payments settling card balances; not new purchases or income",
+                                "Own-account Transfers": "Movements between the same owner’s accounts; not income or purchases",
+                                "Loan Payments": "Student, personal and other non-mortgage loan payments",
+                                "Savings & Investments": "Identifiable savings and investment contributions or withdrawals; may also have transfer meaning",
+                                "Fees & Charges": "Bank fees, card fees and interest charges",
+                                "Interest & Other Income": "Account interest and identifiable non-employment income; excludes refunds and transfers",
+                                "Groceries": "Everyday food and household purchases",
+                                "Dining & Takeout": "Restaurants, cafes, takeout and food delivery",
+                                "Subscriptions & Memberships": "Streaming, software, gym and other memberships; excludes internet and phone access",
+                                "Transportation": "Fuel, transit, parking, vehicle maintenance and vehicle insurance",
+                                "Health & Personal Care": "Medical, dental, prescriptions and personal care",
+                                "Shopping": "Clothing, electronics and household goods, including identifiable retail refunds",
+                                "Entertainment & Hobbies": "Events, games, recreation and hobby expenses",
+                                "Education": "Tuition, courses, books and training",
+                                "Gifts & Donations": "Gifts and charitable contributions",
+                                "Travel": "Hotels, flights and identifiable trip expenses",
+                                "Uncategorized": "Insufficient information or no suitable category"
+                            }
+                        },
+                        "transaction_0_category_supported": {
+                            "type": "noul",
+                            "instructions": "Does `transactions.transaction_0` provide enough evidence to select a specific category from these options?",
+                            "criteria": {
+                                "true": "The description or bounded same-source history supports a specific option.",
+                                "false": "The record is an opaque reference, ambiguous, or does not establish which option applies."
+                            }
+                        },
+                        "transaction_0_meaning": {
+                            "type": "choice",
+                            "instructions": "Which meaning describes `transactions.transaction_0`?",
+                            "criteria": {
+                                "expense": "A purchase, bill, fee or loan payment; excludes transfers between own accounts and credit-card balance payments.",
+                                "income": "Earned or received income such as wages or interest; excludes refunds, own-account transfers and card balance payments.",
+                                "refund": "A reversal or return of a previous purchase or charge; not salary or an account transfer.",
+                                "own_account_transfer": "Money explicitly moved between accounts belonging to the same owner; not an unrelated incoming payment or credit-card balance settlement.",
+                                "credit_card_payment": "Either side of a payment settling the owner’s credit-card balance. On a credit-card statement, a payment received from a bank account settles this card debt, not an ordinary transfer between bank accounts. Excludes new purchases, salary and merchant refunds."
+                            }
+                        },
+                        "transaction_0_meaning_supported": {
+                            "type": "noul",
+                            "instructions": "Does `transactions.transaction_0` provide enough evidence to select a specific meaning from these options?",
+                            "criteria": {
+                                "true": "The description or bounded same-source history supports a specific option.",
+                                "false": "The record is an opaque reference, ambiguous, or does not establish which option applies."
+                            }
+                        },
+                        "transaction_0_recurrence": {
+                            "type": "choice",
+                            "instructions": "Which recurrence describes `transactions.transaction_0`?",
+                            "criteria": {
+                                "recurring_bill": "A periodic service, rent, utility, fee or loan bill; amounts may vary. Excludes subscription/membership products.",
+                                "subscription": "A recurring subscription or membership, monthly or annual, such as streaming, software or gym membership.",
+                                "other_recurring": "Clearly periodic activity other than a bill or subscription, such as payroll or a scheduled contribution.",
+                                "non_recurring": "An ordinary purchase or isolated transaction with no recurring contract or scheduled payment evidence. Repeated grocery/cafe visits alone are not recurring bills."
+                            }
+                        },
+                        "transaction_0_recurrence_supported": {
+                            "type": "noul",
+                            "instructions": "Does `transactions.transaction_0` provide enough evidence to select a specific recurrence from these options?",
+                            "criteria": {
+                                "true": "The description or bounded same-source history supports a specific option.",
+                                "false": "The record is an opaque reference, ambiguous, or does not establish which option applies."
+                            }
+                        },
+                        "transaction_1_category": {
+                            "type": "choice",
+                            "instructions": "Which category describes `transactions.transaction_1`?",
+                            "criteria": {
+                                "Employment Income": "Salary, wages and employment bonuses; excludes refunds and transfers",
+                                "Housing": "Rent, mortgage payments, property taxes, home insurance and repairs",
+                                "Internet & Phone": "Home internet, mobile and telephone service bills",
+                                "Utilities": "Electricity, water and heating gas",
+                                "Credit-card Payments": "Payments settling card balances; not new purchases or income",
+                                "Own-account Transfers": "Movements between the same owner’s accounts; not income or purchases",
+                                "Loan Payments": "Student, personal and other non-mortgage loan payments",
+                                "Savings & Investments": "Identifiable savings and investment contributions or withdrawals; may also have transfer meaning",
+                                "Fees & Charges": "Bank fees, card fees and interest charges",
+                                "Interest & Other Income": "Account interest and identifiable non-employment income; excludes refunds and transfers",
+                                "Groceries": "Everyday food and household purchases",
+                                "Dining & Takeout": "Restaurants, cafes, takeout and food delivery",
+                                "Subscriptions & Memberships": "Streaming, software, gym and other memberships; excludes internet and phone access",
+                                "Transportation": "Fuel, transit, parking, vehicle maintenance and vehicle insurance",
+                                "Health & Personal Care": "Medical, dental, prescriptions and personal care",
+                                "Shopping": "Clothing, electronics and household goods, including identifiable retail refunds",
+                                "Entertainment & Hobbies": "Events, games, recreation and hobby expenses",
+                                "Education": "Tuition, courses, books and training",
+                                "Gifts & Donations": "Gifts and charitable contributions",
+                                "Travel": "Hotels, flights and identifiable trip expenses",
+                                "Uncategorized": "Insufficient information or no suitable category"
+                            }
+                        },
+                        "transaction_1_category_supported": {
+                            "type": "noul",
+                            "instructions": "Does `transactions.transaction_1` provide enough evidence to select a specific category from these options?",
+                            "criteria": {
+                                "true": "The description or bounded same-source history supports a specific option.",
+                                "false": "The record is an opaque reference, ambiguous, or does not establish which option applies."
+                            }
+                        },
+                        "transaction_1_meaning": {
+                            "type": "choice",
+                            "instructions": "Which meaning describes `transactions.transaction_1`?",
+                            "criteria": {
+                                "expense": "A purchase, bill, fee or loan payment; excludes transfers between own accounts and credit-card balance payments.",
+                                "income": "Earned or received income such as wages or interest; excludes refunds, own-account transfers and card balance payments.",
+                                "refund": "A reversal or return of a previous purchase or charge; not salary or an account transfer.",
+                                "own_account_transfer": "Money explicitly moved between accounts belonging to the same owner; not an unrelated incoming payment or credit-card balance settlement.",
+                                "credit_card_payment": "Either side of a payment settling the owner’s credit-card balance. On a credit-card statement, a payment received from a bank account settles this card debt, not an ordinary transfer between bank accounts. Excludes new purchases, salary and merchant refunds."
+                            }
+                        },
+                        "transaction_1_meaning_supported": {
+                            "type": "noul",
+                            "instructions": "Does `transactions.transaction_1` provide enough evidence to select a specific meaning from these options?",
+                            "criteria": {
+                                "true": "The description or bounded same-source history supports a specific option.",
+                                "false": "The record is an opaque reference, ambiguous, or does not establish which option applies."
+                            }
+                        },
+                        "transaction_1_recurrence": {
+                            "type": "choice",
+                            "instructions": "Which recurrence describes `transactions.transaction_1`?",
+                            "criteria": {
+                                "recurring_bill": "A periodic service, rent, utility, fee or loan bill; amounts may vary. Excludes subscription/membership products.",
+                                "subscription": "A recurring subscription or membership, monthly or annual, such as streaming, software or gym membership.",
+                                "other_recurring": "Clearly periodic activity other than a bill or subscription, such as payroll or a scheduled contribution.",
+                                "non_recurring": "An ordinary purchase or isolated transaction with no recurring contract or scheduled payment evidence. Repeated grocery/cafe visits alone are not recurring bills."
+                            }
+                        },
+                        "transaction_1_recurrence_supported": {
+                            "type": "noul",
+                            "instructions": "Does `transactions.transaction_1` provide enough evidence to select a specific recurrence from these options?",
+                            "criteria": {
+                                "true": "The description or bounded same-source history supports a specific option.",
+                                "false": "The record is an opaque reference, ambiguous, or does not establish which option applies."
+                            }
+                        },
+                        "transaction_2_category": {
+                            "type": "choice",
+                            "instructions": "Which category describes `transactions.transaction_2`?",
+                            "criteria": {
+                                "Employment Income": "Salary, wages and employment bonuses; excludes refunds and transfers",
+                                "Housing": "Rent, mortgage payments, property taxes, home insurance and repairs",
+                                "Internet & Phone": "Home internet, mobile and telephone service bills",
+                                "Utilities": "Electricity, water and heating gas",
+                                "Credit-card Payments": "Payments settling card balances; not new purchases or income",
+                                "Own-account Transfers": "Movements between the same owner’s accounts; not income or purchases",
+                                "Loan Payments": "Student, personal and other non-mortgage loan payments",
+                                "Savings & Investments": "Identifiable savings and investment contributions or withdrawals; may also have transfer meaning",
+                                "Fees & Charges": "Bank fees, card fees and interest charges",
+                                "Interest & Other Income": "Account interest and identifiable non-employment income; excludes refunds and transfers",
+                                "Groceries": "Everyday food and household purchases",
+                                "Dining & Takeout": "Restaurants, cafes, takeout and food delivery",
+                                "Subscriptions & Memberships": "Streaming, software, gym and other memberships; excludes internet and phone access",
+                                "Transportation": "Fuel, transit, parking, vehicle maintenance and vehicle insurance",
+                                "Health & Personal Care": "Medical, dental, prescriptions and personal care",
+                                "Shopping": "Clothing, electronics and household goods, including identifiable retail refunds",
+                                "Entertainment & Hobbies": "Events, games, recreation and hobby expenses",
+                                "Education": "Tuition, courses, books and training",
+                                "Gifts & Donations": "Gifts and charitable contributions",
+                                "Travel": "Hotels, flights and identifiable trip expenses",
+                                "Uncategorized": "Insufficient information or no suitable category"
+                            }
+                        },
+                        "transaction_2_category_supported": {
+                            "type": "noul",
+                            "instructions": "Does `transactions.transaction_2` provide enough evidence to select a specific category from these options?",
+                            "criteria": {
+                                "true": "The description or bounded same-source history supports a specific option.",
+                                "false": "The record is an opaque reference, ambiguous, or does not establish which option applies."
+                            }
+                        },
+                        "transaction_2_meaning": {
+                            "type": "choice",
+                            "instructions": "Which meaning describes `transactions.transaction_2`?",
+                            "criteria": {
+                                "expense": "A purchase, bill, fee or loan payment; excludes transfers between own accounts and credit-card balance payments.",
+                                "income": "Earned or received income such as wages or interest; excludes refunds, own-account transfers and card balance payments.",
+                                "refund": "A reversal or return of a previous purchase or charge; not salary or an account transfer.",
+                                "own_account_transfer": "Money explicitly moved between accounts belonging to the same owner; not an unrelated incoming payment or credit-card balance settlement.",
+                                "credit_card_payment": "Either side of a payment settling the owner’s credit-card balance. On a credit-card statement, a payment received from a bank account settles this card debt, not an ordinary transfer between bank accounts. Excludes new purchases, salary and merchant refunds."
+                            }
+                        },
+                        "transaction_2_meaning_supported": {
+                            "type": "noul",
+                            "instructions": "Does `transactions.transaction_2` provide enough evidence to select a specific meaning from these options?",
+                            "criteria": {
+                                "true": "The description or bounded same-source history supports a specific option.",
+                                "false": "The record is an opaque reference, ambiguous, or does not establish which option applies."
+                            }
+                        },
+                        "transaction_2_recurrence": {
+                            "type": "choice",
+                            "instructions": "Which recurrence describes `transactions.transaction_2`?",
+                            "criteria": {
+                                "recurring_bill": "A periodic service, rent, utility, fee or loan bill; amounts may vary. Excludes subscription/membership products.",
+                                "subscription": "A recurring subscription or membership, monthly or annual, such as streaming, software or gym membership.",
+                                "other_recurring": "Clearly periodic activity other than a bill or subscription, such as payroll or a scheduled contribution.",
+                                "non_recurring": "An ordinary purchase or isolated transaction with no recurring contract or scheduled payment evidence. Repeated grocery/cafe visits alone are not recurring bills."
+                            }
+                        },
+                        "transaction_2_recurrence_supported": {
+                            "type": "noul",
+                            "instructions": "Does `transactions.transaction_2` provide enough evidence to select a specific recurrence from these options?",
+                            "criteria": {
+                                "true": "The description or bounded same-source history supports a specific option.",
+                                "false": "The record is an opaque reference, ambiguous, or does not establish which option applies."
+                            }
+                        },
+                        "transaction_3_category": {
+                            "type": "choice",
+                            "instructions": "Which category describes `transactions.transaction_3`?",
+                            "criteria": {
+                                "Employment Income": "Salary, wages and employment bonuses; excludes refunds and transfers",
+                                "Housing": "Rent, mortgage payments, property taxes, home insurance and repairs",
+                                "Internet & Phone": "Home internet, mobile and telephone service bills",
+                                "Utilities": "Electricity, water and heating gas",
+                                "Credit-card Payments": "Payments settling card balances; not new purchases or income",
+                                "Own-account Transfers": "Movements between the same owner’s accounts; not income or purchases",
+                                "Loan Payments": "Student, personal and other non-mortgage loan payments",
+                                "Savings & Investments": "Identifiable savings and investment contributions or withdrawals; may also have transfer meaning",
+                                "Fees & Charges": "Bank fees, card fees and interest charges",
+                                "Interest & Other Income": "Account interest and identifiable non-employment income; excludes refunds and transfers",
+                                "Groceries": "Everyday food and household purchases",
+                                "Dining & Takeout": "Restaurants, cafes, takeout and food delivery",
+                                "Subscriptions & Memberships": "Streaming, software, gym and other memberships; excludes internet and phone access",
+                                "Transportation": "Fuel, transit, parking, vehicle maintenance and vehicle insurance",
+                                "Health & Personal Care": "Medical, dental, prescriptions and personal care",
+                                "Shopping": "Clothing, electronics and household goods, including identifiable retail refunds",
+                                "Entertainment & Hobbies": "Events, games, recreation and hobby expenses",
+                                "Education": "Tuition, courses, books and training",
+                                "Gifts & Donations": "Gifts and charitable contributions",
+                                "Travel": "Hotels, flights and identifiable trip expenses",
+                                "Uncategorized": "Insufficient information or no suitable category"
+                            }
+                        },
+                        "transaction_3_category_supported": {
+                            "type": "noul",
+                            "instructions": "Does `transactions.transaction_3` provide enough evidence to select a specific category from these options?",
+                            "criteria": {
+                                "true": "The description or bounded same-source history supports a specific option.",
+                                "false": "The record is an opaque reference, ambiguous, or does not establish which option applies."
+                            }
+                        },
+                        "transaction_3_meaning": {
+                            "type": "choice",
+                            "instructions": "Which meaning describes `transactions.transaction_3`?",
+                            "criteria": {
+                                "expense": "A purchase, bill, fee or loan payment; excludes transfers between own accounts and credit-card balance payments.",
+                                "income": "Earned or received income such as wages or interest; excludes refunds, own-account transfers and card balance payments.",
+                                "refund": "A reversal or return of a previous purchase or charge; not salary or an account transfer.",
+                                "own_account_transfer": "Money explicitly moved between accounts belonging to the same owner; not an unrelated incoming payment or credit-card balance settlement.",
+                                "credit_card_payment": "Either side of a payment settling the owner’s credit-card balance. On a credit-card statement, a payment received from a bank account settles this card debt, not an ordinary transfer between bank accounts. Excludes new purchases, salary and merchant refunds."
+                            }
+                        },
+                        "transaction_3_meaning_supported": {
+                            "type": "noul",
+                            "instructions": "Does `transactions.transaction_3` provide enough evidence to select a specific meaning from these options?",
+                            "criteria": {
+                                "true": "The description or bounded same-source history supports a specific option.",
+                                "false": "The record is an opaque reference, ambiguous, or does not establish which option applies."
+                            }
+                        },
+                        "transaction_3_recurrence": {
+                            "type": "choice",
+                            "instructions": "Which recurrence describes `transactions.transaction_3`?",
+                            "criteria": {
+                                "recurring_bill": "A periodic service, rent, utility, fee or loan bill; amounts may vary. Excludes subscription/membership products.",
+                                "subscription": "A recurring subscription or membership, monthly or annual, such as streaming, software or gym membership.",
+                                "other_recurring": "Clearly periodic activity other than a bill or subscription, such as payroll or a scheduled contribution.",
+                                "non_recurring": "An ordinary purchase or isolated transaction with no recurring contract or scheduled payment evidence. Repeated grocery/cafe visits alone are not recurring bills."
+                            }
+                        },
+                        "transaction_3_recurrence_supported": {
+                            "type": "noul",
+                            "instructions": "Does `transactions.transaction_3` provide enough evidence to select a specific recurrence from these options?",
+                            "criteria": {
+                                "true": "The description or bounded same-source history supports a specific option.",
+                                "false": "The record is an opaque reference, ambiguous, or does not establish which option applies."
+                            }
+                        },
+                        "transaction_4_category": {
+                            "type": "choice",
+                            "instructions": "Which category describes `transactions.transaction_4`?",
+                            "criteria": {
+                                "Employment Income": "Salary, wages and employment bonuses; excludes refunds and transfers",
+                                "Housing": "Rent, mortgage payments, property taxes, home insurance and repairs",
+                                "Internet & Phone": "Home internet, mobile and telephone service bills",
+                                "Utilities": "Electricity, water and heating gas",
+                                "Credit-card Payments": "Payments settling card balances; not new purchases or income",
+                                "Own-account Transfers": "Movements between the same owner’s accounts; not income or purchases",
+                                "Loan Payments": "Student, personal and other non-mortgage loan payments",
+                                "Savings & Investments": "Identifiable savings and investment contributions or withdrawals; may also have transfer meaning",
+                                "Fees & Charges": "Bank fees, card fees and interest charges",
+                                "Interest & Other Income": "Account interest and identifiable non-employment income; excludes refunds and transfers",
+                                "Groceries": "Everyday food and household purchases",
+                                "Dining & Takeout": "Restaurants, cafes, takeout and food delivery",
+                                "Subscriptions & Memberships": "Streaming, software, gym and other memberships; excludes internet and phone access",
+                                "Transportation": "Fuel, transit, parking, vehicle maintenance and vehicle insurance",
+                                "Health & Personal Care": "Medical, dental, prescriptions and personal care",
+                                "Shopping": "Clothing, electronics and household goods, including identifiable retail refunds",
+                                "Entertainment & Hobbies": "Events, games, recreation and hobby expenses",
+                                "Education": "Tuition, courses, books and training",
+                                "Gifts & Donations": "Gifts and charitable contributions",
+                                "Travel": "Hotels, flights and identifiable trip expenses",
+                                "Uncategorized": "Insufficient information or no suitable category"
+                            }
+                        },
+                        "transaction_4_category_supported": {
+                            "type": "noul",
+                            "instructions": "Does `transactions.transaction_4` provide enough evidence to select a specific category from these options?",
+                            "criteria": {
+                                "true": "The description or bounded same-source history supports a specific option.",
+                                "false": "The record is an opaque reference, ambiguous, or does not establish which option applies."
+                            }
+                        },
+                        "transaction_4_meaning": {
+                            "type": "choice",
+                            "instructions": "Which meaning describes `transactions.transaction_4`?",
+                            "criteria": {
+                                "expense": "A purchase, bill, fee or loan payment; excludes transfers between own accounts and credit-card balance payments.",
+                                "income": "Earned or received income such as wages or interest; excludes refunds, own-account transfers and card balance payments.",
+                                "refund": "A reversal or return of a previous purchase or charge; not salary or an account transfer.",
+                                "own_account_transfer": "Money explicitly moved between accounts belonging to the same owner; not an unrelated incoming payment or credit-card balance settlement.",
+                                "credit_card_payment": "Either side of a payment settling the owner’s credit-card balance. On a credit-card statement, a payment received from a bank account settles this card debt, not an ordinary transfer between bank accounts. Excludes new purchases, salary and merchant refunds."
+                            }
+                        },
+                        "transaction_4_meaning_supported": {
+                            "type": "noul",
+                            "instructions": "Does `transactions.transaction_4` provide enough evidence to select a specific meaning from these options?",
+                            "criteria": {
+                                "true": "The description or bounded same-source history supports a specific option.",
+                                "false": "The record is an opaque reference, ambiguous, or does not establish which option applies."
+                            }
+                        },
+                        "transaction_4_recurrence": {
+                            "type": "choice",
+                            "instructions": "Which recurrence describes `transactions.transaction_4`?",
+                            "criteria": {
+                                "recurring_bill": "A periodic service, rent, utility, fee or loan bill; amounts may vary. Excludes subscription/membership products.",
+                                "subscription": "A recurring subscription or membership, monthly or annual, such as streaming, software or gym membership.",
+                                "other_recurring": "Clearly periodic activity other than a bill or subscription, such as payroll or a scheduled contribution.",
+                                "non_recurring": "An ordinary purchase or isolated transaction with no recurring contract or scheduled payment evidence. Repeated grocery/cafe visits alone are not recurring bills."
+                            }
+                        },
+                        "transaction_4_recurrence_supported": {
+                            "type": "noul",
+                            "instructions": "Does `transactions.transaction_4` provide enough evidence to select a specific recurrence from these options?",
+                            "criteria": {
+                                "true": "The description or bounded same-source history supports a specific option.",
+                                "false": "The record is an opaque reference, ambiguous, or does not establish which option applies."
+                            }
+                        },
+                        "transaction_5_category": {
+                            "type": "choice",
+                            "instructions": "Which category describes `transactions.transaction_5`?",
+                            "criteria": {
+                                "Employment Income": "Salary, wages and employment bonuses; excludes refunds and transfers",
+                                "Housing": "Rent, mortgage payments, property taxes, home insurance and repairs",
+                                "Internet & Phone": "Home internet, mobile and telephone service bills",
+                                "Utilities": "Electricity, water and heating gas",
+                                "Credit-card Payments": "Payments settling card balances; not new purchases or income",
+                                "Own-account Transfers": "Movements between the same owner’s accounts; not income or purchases",
+                                "Loan Payments": "Student, personal and other non-mortgage loan payments",
+                                "Savings & Investments": "Identifiable savings and investment contributions or withdrawals; may also have transfer meaning",
+                                "Fees & Charges": "Bank fees, card fees and interest charges",
+                                "Interest & Other Income": "Account interest and identifiable non-employment income; excludes refunds and transfers",
+                                "Groceries": "Everyday food and household purchases",
+                                "Dining & Takeout": "Restaurants, cafes, takeout and food delivery",
+                                "Subscriptions & Memberships": "Streaming, software, gym and other memberships; excludes internet and phone access",
+                                "Transportation": "Fuel, transit, parking, vehicle maintenance and vehicle insurance",
+                                "Health & Personal Care": "Medical, dental, prescriptions and personal care",
+                                "Shopping": "Clothing, electronics and household goods, including identifiable retail refunds",
+                                "Entertainment & Hobbies": "Events, games, recreation and hobby expenses",
+                                "Education": "Tuition, courses, books and training",
+                                "Gifts & Donations": "Gifts and charitable contributions",
+                                "Travel": "Hotels, flights and identifiable trip expenses",
+                                "Uncategorized": "Insufficient information or no suitable category"
+                            }
+                        },
+                        "transaction_5_category_supported": {
+                            "type": "noul",
+                            "instructions": "Does `transactions.transaction_5` provide enough evidence to select a specific category from these options?",
+                            "criteria": {
+                                "true": "The description or bounded same-source history supports a specific option.",
+                                "false": "The record is an opaque reference, ambiguous, or does not establish which option applies."
+                            }
+                        },
+                        "transaction_5_meaning": {
+                            "type": "choice",
+                            "instructions": "Which meaning describes `transactions.transaction_5`?",
+                            "criteria": {
+                                "expense": "A purchase, bill, fee or loan payment; excludes transfers between own accounts and credit-card balance payments.",
+                                "income": "Earned or received income such as wages or interest; excludes refunds, own-account transfers and card balance payments.",
+                                "refund": "A reversal or return of a previous purchase or charge; not salary or an account transfer.",
+                                "own_account_transfer": "Money explicitly moved between accounts belonging to the same owner; not an unrelated incoming payment or credit-card balance settlement.",
+                                "credit_card_payment": "Either side of a payment settling the owner’s credit-card balance. On a credit-card statement, a payment received from a bank account settles this card debt, not an ordinary transfer between bank accounts. Excludes new purchases, salary and merchant refunds."
+                            }
+                        },
+                        "transaction_5_meaning_supported": {
+                            "type": "noul",
+                            "instructions": "Does `transactions.transaction_5` provide enough evidence to select a specific meaning from these options?",
+                            "criteria": {
+                                "true": "The description or bounded same-source history supports a specific option.",
+                                "false": "The record is an opaque reference, ambiguous, or does not establish which option applies."
+                            }
+                        },
+                        "transaction_5_recurrence": {
+                            "type": "choice",
+                            "instructions": "Which recurrence describes `transactions.transaction_5`?",
+                            "criteria": {
+                                "recurring_bill": "A periodic service, rent, utility, fee or loan bill; amounts may vary. Excludes subscription/membership products.",
+                                "subscription": "A recurring subscription or membership, monthly or annual, such as streaming, software or gym membership.",
+                                "other_recurring": "Clearly periodic activity other than a bill or subscription, such as payroll or a scheduled contribution.",
+                                "non_recurring": "An ordinary purchase or isolated transaction with no recurring contract or scheduled payment evidence. Repeated grocery/cafe visits alone are not recurring bills."
+                            }
+                        },
+                        "transaction_5_recurrence_supported": {
+                            "type": "noul",
+                            "instructions": "Does `transactions.transaction_5` provide enough evidence to select a specific recurrence from these options?",
+                            "criteria": {
+                                "true": "The description or bounded same-source history supports a specific option.",
+                                "false": "The record is an opaque reference, ambiguous, or does not establish which option applies."
+                            }
+                        },
+                        "transaction_6_category": {
+                            "type": "choice",
+                            "instructions": "Which category describes `transactions.transaction_6`?",
+                            "criteria": {
+                                "Employment Income": "Salary, wages and employment bonuses; excludes refunds and transfers",
+                                "Housing": "Rent, mortgage payments, property taxes, home insurance and repairs",
+                                "Internet & Phone": "Home internet, mobile and telephone service bills",
+                                "Utilities": "Electricity, water and heating gas",
+                                "Credit-card Payments": "Payments settling card balances; not new purchases or income",
+                                "Own-account Transfers": "Movements between the same owner’s accounts; not income or purchases",
+                                "Loan Payments": "Student, personal and other non-mortgage loan payments",
+                                "Savings & Investments": "Identifiable savings and investment contributions or withdrawals; may also have transfer meaning",
+                                "Fees & Charges": "Bank fees, card fees and interest charges",
+                                "Interest & Other Income": "Account interest and identifiable non-employment income; excludes refunds and transfers",
+                                "Groceries": "Everyday food and household purchases",
+                                "Dining & Takeout": "Restaurants, cafes, takeout and food delivery",
+                                "Subscriptions & Memberships": "Streaming, software, gym and other memberships; excludes internet and phone access",
+                                "Transportation": "Fuel, transit, parking, vehicle maintenance and vehicle insurance",
+                                "Health & Personal Care": "Medical, dental, prescriptions and personal care",
+                                "Shopping": "Clothing, electronics and household goods, including identifiable retail refunds",
+                                "Entertainment & Hobbies": "Events, games, recreation and hobby expenses",
+                                "Education": "Tuition, courses, books and training",
+                                "Gifts & Donations": "Gifts and charitable contributions",
+                                "Travel": "Hotels, flights and identifiable trip expenses",
+                                "Uncategorized": "Insufficient information or no suitable category"
+                            }
+                        },
+                        "transaction_6_category_supported": {
+                            "type": "noul",
+                            "instructions": "Does `transactions.transaction_6` provide enough evidence to select a specific category from these options?",
+                            "criteria": {
+                                "true": "The description or bounded same-source history supports a specific option.",
+                                "false": "The record is an opaque reference, ambiguous, or does not establish which option applies."
+                            }
+                        },
+                        "transaction_6_meaning": {
+                            "type": "choice",
+                            "instructions": "Which meaning describes `transactions.transaction_6`?",
+                            "criteria": {
+                                "expense": "A purchase, bill, fee or loan payment; excludes transfers between own accounts and credit-card balance payments.",
+                                "income": "Earned or received income such as wages or interest; excludes refunds, own-account transfers and card balance payments.",
+                                "refund": "A reversal or return of a previous purchase or charge; not salary or an account transfer.",
+                                "own_account_transfer": "Money explicitly moved between accounts belonging to the same owner; not an unrelated incoming payment or credit-card balance settlement.",
+                                "credit_card_payment": "Either side of a payment settling the owner’s credit-card balance. On a credit-card statement, a payment received from a bank account settles this card debt, not an ordinary transfer between bank accounts. Excludes new purchases, salary and merchant refunds."
+                            }
+                        },
+                        "transaction_6_meaning_supported": {
+                            "type": "noul",
+                            "instructions": "Does `transactions.transaction_6` provide enough evidence to select a specific meaning from these options?",
+                            "criteria": {
+                                "true": "The description or bounded same-source history supports a specific option.",
+                                "false": "The record is an opaque reference, ambiguous, or does not establish which option applies."
+                            }
+                        },
+                        "transaction_6_recurrence": {
+                            "type": "choice",
+                            "instructions": "Which recurrence describes `transactions.transaction_6`?",
+                            "criteria": {
+                                "recurring_bill": "A periodic service, rent, utility, fee or loan bill; amounts may vary. Excludes subscription/membership products.",
+                                "subscription": "A recurring subscription or membership, monthly or annual, such as streaming, software or gym membership.",
+                                "other_recurring": "Clearly periodic activity other than a bill or subscription, such as payroll or a scheduled contribution.",
+                                "non_recurring": "An ordinary purchase or isolated transaction with no recurring contract or scheduled payment evidence. Repeated grocery/cafe visits alone are not recurring bills."
+                            }
+                        },
+                        "transaction_6_recurrence_supported": {
+                            "type": "noul",
+                            "instructions": "Does `transactions.transaction_6` provide enough evidence to select a specific recurrence from these options?",
+                            "criteria": {
+                                "true": "The description or bounded same-source history supports a specific option.",
+                                "false": "The record is an opaque reference, ambiguous, or does not establish which option applies."
+                            }
+                        },
+                        "transaction_7_category": {
+                            "type": "choice",
+                            "instructions": "Which category describes `transactions.transaction_7`?",
+                            "criteria": {
+                                "Employment Income": "Salary, wages and employment bonuses; excludes refunds and transfers",
+                                "Housing": "Rent, mortgage payments, property taxes, home insurance and repairs",
+                                "Internet & Phone": "Home internet, mobile and telephone service bills",
+                                "Utilities": "Electricity, water and heating gas",
+                                "Credit-card Payments": "Payments settling card balances; not new purchases or income",
+                                "Own-account Transfers": "Movements between the same owner’s accounts; not income or purchases",
+                                "Loan Payments": "Student, personal and other non-mortgage loan payments",
+                                "Savings & Investments": "Identifiable savings and investment contributions or withdrawals; may also have transfer meaning",
+                                "Fees & Charges": "Bank fees, card fees and interest charges",
+                                "Interest & Other Income": "Account interest and identifiable non-employment income; excludes refunds and transfers",
+                                "Groceries": "Everyday food and household purchases",
+                                "Dining & Takeout": "Restaurants, cafes, takeout and food delivery",
+                                "Subscriptions & Memberships": "Streaming, software, gym and other memberships; excludes internet and phone access",
+                                "Transportation": "Fuel, transit, parking, vehicle maintenance and vehicle insurance",
+                                "Health & Personal Care": "Medical, dental, prescriptions and personal care",
+                                "Shopping": "Clothing, electronics and household goods, including identifiable retail refunds",
+                                "Entertainment & Hobbies": "Events, games, recreation and hobby expenses",
+                                "Education": "Tuition, courses, books and training",
+                                "Gifts & Donations": "Gifts and charitable contributions",
+                                "Travel": "Hotels, flights and identifiable trip expenses",
+                                "Uncategorized": "Insufficient information or no suitable category"
+                            }
+                        },
+                        "transaction_7_category_supported": {
+                            "type": "noul",
+                            "instructions": "Does `transactions.transaction_7` provide enough evidence to select a specific category from these options?",
+                            "criteria": {
+                                "true": "The description or bounded same-source history supports a specific option.",
+                                "false": "The record is an opaque reference, ambiguous, or does not establish which option applies."
+                            }
+                        },
+                        "transaction_7_meaning": {
+                            "type": "choice",
+                            "instructions": "Which meaning describes `transactions.transaction_7`?",
+                            "criteria": {
+                                "expense": "A purchase, bill, fee or loan payment; excludes transfers between own accounts and credit-card balance payments.",
+                                "income": "Earned or received income such as wages or interest; excludes refunds, own-account transfers and card balance payments.",
+                                "refund": "A reversal or return of a previous purchase or charge; not salary or an account transfer.",
+                                "own_account_transfer": "Money explicitly moved between accounts belonging to the same owner; not an unrelated incoming payment or credit-card balance settlement.",
+                                "credit_card_payment": "Either side of a payment settling the owner’s credit-card balance. On a credit-card statement, a payment received from a bank account settles this card debt, not an ordinary transfer between bank accounts. Excludes new purchases, salary and merchant refunds."
+                            }
+                        },
+                        "transaction_7_meaning_supported": {
+                            "type": "noul",
+                            "instructions": "Does `transactions.transaction_7` provide enough evidence to select a specific meaning from these options?",
+                            "criteria": {
+                                "true": "The description or bounded same-source history supports a specific option.",
+                                "false": "The record is an opaque reference, ambiguous, or does not establish which option applies."
+                            }
+                        },
+                        "transaction_7_recurrence": {
+                            "type": "choice",
+                            "instructions": "Which recurrence describes `transactions.transaction_7`?",
+                            "criteria": {
+                                "recurring_bill": "A periodic service, rent, utility, fee or loan bill; amounts may vary. Excludes subscription/membership products.",
+                                "subscription": "A recurring subscription or membership, monthly or annual, such as streaming, software or gym membership.",
+                                "other_recurring": "Clearly periodic activity other than a bill or subscription, such as payroll or a scheduled contribution.",
+                                "non_recurring": "An ordinary purchase or isolated transaction with no recurring contract or scheduled payment evidence. Repeated grocery/cafe visits alone are not recurring bills."
+                            }
+                        },
+                        "transaction_7_recurrence_supported": {
+                            "type": "noul",
+                            "instructions": "Does `transactions.transaction_7` provide enough evidence to select a specific recurrence from these options?",
+                            "criteria": {
+                                "true": "The description or bounded same-source history supports a specific option.",
+                                "false": "The record is an opaque reference, ambiguous, or does not establish which option applies."
+                            }
+                        }
+                    }
+                }
+            },
+            "response": {
+                "status": 200,
+                "headers": {
+                    "content-type": [
+                        "application/json"
+                    ],
+                    "x-typesafe-request-id": [
+                        "req_01a1c6d070cf71eebc6bcee508b93077"
+                    ],
+                    "server": [
+                        "cloudflare"
+                    ],
+                    "set-cookie": [
+                        "[redacted]"
+                    ],
+                    "content-encoding": [
+                        "gzip"
+                    ]
+                },
+                "body_format": "json",
+                "body": "{\"model\":\"jev-1.14.0\",\"answers\":{\"transaction_0_category\":{\"type\":\"choice\",\"choice\":\"Employment Income\",\"confidence\":1.0,\"probabilities\":{\"Employment Income\":1.0,\"Housing\":0.0,\"Internet & Phone\":0.0,\"Utilities\":0.0,\"Credit-card Payments\":0.0,\"Own-account Transfers\":0.0,\"Loan Payments\":0.0,\"Savings & Investments\":0.0,\"Fees & Charges\":0.0,\"Interest & Other Income\":0.0,\"Groceries\":0.0,\"Dining & Takeout\":0.0,\"Subscriptions & Memberships\":0.0,\"Transportation\":0.0,\"Health & Personal Care\":0.0,\"Shopping\":0.0,\"Entertainment & Hobbies\":0.0,\"Education\":0.0,\"Gifts & Donations\":0.0,\"Travel\":0.0,\"Uncategorized\":0.0}},\"transaction_0_category_supported\":{\"type\":\"noul\",\"noul\":0.97},\"transaction_0_meaning\":{\"type\":\"choice\",\"choice\":\"income\",\"confidence\":1.0,\"probabilities\":{\"expense\":0.0,\"income\":1.0,\"refund\":0.0,\"own_account_transfer\":0.0,\"credit_card_payment\":0.0}},\"transaction_0_meaning_supported\":{\"type\":\"noul\",\"noul\":0.97},\"transaction_0_recurrence\":{\"type\":\"choice\",\"choice\":\"other_recurring\",\"confidence\":1.0,\"probabilities\":{\"recurring_bill\":0.0,\"subscription\":0.0,\"other_recurring\":1.0,\"non_recurring\":0.0}},\"transaction_0_recurrence_supported\":{\"type\":\"noul\",\"noul\":0.75},\"transaction_1_category\":{\"type\":\"choice\",\"choice\":\"Housing\",\"confidence\":1.0,\"probabilities\":{\"Employment Income\":0.0,\"Housing\":1.0,\"Internet & Phone\":0.0,\"Utilities\":0.0,\"Credit-card Payments\":0.0,\"Own-account Transfers\":0.0,\"Loan Payments\":0.0,\"Savings & Investments\":0.0,\"Fees & Charges\":0.0,\"Interest & Other Income\":0.0,\"Groceries\":0.0,\"Dining & Takeout\":0.0,\"Subscriptions & Memberships\":0.0,\"Transportation\":0.0,\"Health & Personal Care\":0.0,\"Shopping\":0.0,\"Entertainment & Hobbies\":0.0,\"Education\":0.0,\"Gifts & Donations\":0.0,\"Travel\":0.0,\"Uncategorized\":0.0}},\"transaction_1_category_supported\":{\"type\":\"noul\",\"noul\":0.99},\"transaction_1_meaning\":{\"type\":\"choice\",\"choice\":\"expense\",\"confidence\":1.0,\"probabilities\":{\"expense\":1.0,\"income\":0.0,\"refund\":0.0,\"own_account_transfer\":0.0,\"credit_card_payment\":0.0}},\"transaction_1_meaning_supported\":{\"type\":\"noul\",\"noul\":0.96},\"transaction_1_recurrence\":{\"type\":\"choice\",\"choice\":\"recurring_bill\",\"confidence\":1.0,\"probabilities\":{\"recurring_bill\":1.0,\"subscription\":0.0,\"other_recurring\":0.0,\"non_recurring\":0.0}},\"transaction_1_recurrence_supported\":{\"type\":\"noul\",\"noul\":0.97},\"transaction_2_category\":{\"type\":\"choice\",\"choice\":\"Internet & Phone\",\"confidence\":1.0,\"probabilities\":{\"Employment Income\":0.0,\"Housing\":0.0,\"Internet & Phone\":1.0,\"Utilities\":0.0,\"Credit-card Payments\":0.0,\"Own-account Transfers\":0.0,\"Loan Payments\":0.0,\"Savings & Investments\":0.0,\"Fees & Charges\":0.0,\"Interest & Other Income\":0.0,\"Groceries\":0.0,\"Dining & Takeout\":0.0,\"Subscriptions & Memberships\":0.0,\"Transportation\":0.0,\"Health & Personal Care\":0.0,\"Shopping\":0.0,\"Entertainment & Hobbies\":0.0,\"Education\":0.0,\"Gifts & Donations\":0.0,\"Travel\":0.0,\"Uncategorized\":0.0}},\"transaction_2_category_supported\":{\"type\":\"noul\",\"noul\":0.99},\"transaction_2_meaning\":{\"type\":\"choice\",\"choice\":\"expense\",\"confidence\":1.0,\"probabilities\":{\"expense\":1.0,\"income\":0.0,\"refund\":0.0,\"own_account_transfer\":0.0,\"credit_card_payment\":0.0}},\"transaction_2_meaning_supported\":{\"type\":\"noul\",\"noul\":0.97},\"transaction_2_recurrence\":{\"type\":\"choice\",\"choice\":\"recurring_bill\",\"confidence\":1.0,\"probabilities\":{\"recurring_bill\":1.0,\"subscription\":0.0,\"other_recurring\":0.0,\"non_recurring\":0.0}},\"transaction_2_recurrence_supported\":{\"type\":\"noul\",\"noul\":0.96},\"transaction_3_category\":{\"type\":\"choice\",\"choice\":\"Utilities\",\"confidence\":1.0,\"probabilities\":{\"Employment Income\":0.0,\"Housing\":0.0,\"Internet & Phone\":0.0,\"Utilities\":1.0,\"Credit-card Payments\":0.0,\"Own-account Transfers\":0.0,\"Loan Payments\":0.0,\"Savings & Investments\":0.0,\"Fees & Charges\":0.0,\"Interest & Other Income\":0.0,\"Groceries\":0.0,\"Dining & Takeout\":0.0,\"Subscriptions & Memberships\":0.0,\"Transportation\":0.0,\"Health & Personal Care\":0.0,\"Shopping\":0.0,\"Entertainment & Hobbies\":0.0,\"Education\":0.0,\"Gifts & Donations\":0.0,\"Travel\":0.0,\"Uncategorized\":0.0}},\"transaction_3_category_supported\":{\"type\":\"noul\",\"noul\":0.98},\"transaction_3_meaning\":{\"type\":\"choice\",\"choice\":\"expense\",\"confidence\":1.0,\"probabilities\":{\"expense\":1.0,\"income\":0.0,\"refund\":0.0,\"own_account_transfer\":0.0,\"credit_card_payment\":0.0}},\"transaction_3_meaning_supported\":{\"type\":\"noul\",\"noul\":0.97},\"transaction_3_recurrence\":{\"type\":\"choice\",\"choice\":\"recurring_bill\",\"confidence\":1.0,\"probabilities\":{\"recurring_bill\":1.0,\"subscription\":0.0,\"other_recurring\":0.0,\"non_recurring\":0.0}},\"transaction_3_recurrence_supported\":{\"type\":\"noul\",\"noul\":0.96},\"transaction_4_category\":{\"type\":\"choice\",\"choice\":\"Credit-card Payments\",\"confidence\":1.0,\"probabilities\":{\"Employment Income\":0.0,\"Housing\":0.0,\"Internet & Phone\":0.0,\"Utilities\":0.0,\"Credit-card Payments\":1.0,\"Own-account Transfers\":0.0,\"Loan Payments\":0.0,\"Savings & Investments\":0.0,\"Fees & Charges\":0.0,\"Interest & Other Income\":0.0,\"Groceries\":0.0,\"Dining & Takeout\":0.0,\"Subscriptions & Memberships\":0.0,\"Transportation\":0.0,\"Health & Personal Care\":0.0,\"Shopping\":0.0,\"Entertainment & Hobbies\":0.0,\"Education\":0.0,\"Gifts & Donations\":0.0,\"Travel\":0.0,\"Uncategorized\":0.0}},\"transaction_4_category_supported\":{\"type\":\"noul\",\"noul\":0.98},\"transaction_4_meaning\":{\"type\":\"choice\",\"choice\":\"credit_card_payment\",\"confidence\":1.0,\"probabilities\":{\"expense\":0.0,\"income\":0.0,\"refund\":0.0,\"own_account_transfer\":0.0,\"credit_card_payment\":1.0}},\"transaction_4_meaning_supported\":{\"type\":\"noul\",\"noul\":0.98},\"transaction_4_recurrence\":{\"type\":\"choice\",\"choice\":\"recurring_bill\",\"confidence\":0.28,\"probabilities\":{\"recurring_bill\":0.46,\"subscription\":0.0,\"other_recurring\":0.32,\"non_recurring\":0.22}},\"transaction_4_recurrence_supported\":{\"type\":\"noul\",\"noul\":0.37},\"transaction_5_category\":{\"type\":\"choice\",\"choice\":\"Employment Income\",\"confidence\":1.0,\"probabilities\":{\"Employment Income\":1.0,\"Housing\":0.0,\"Internet & Phone\":0.0,\"Utilities\":0.0,\"Credit-card Payments\":0.0,\"Own-account Transfers\":0.0,\"Loan Payments\":0.0,\"Savings & Investments\":0.0,\"Fees & Charges\":0.0,\"Interest & Other Income\":0.0,\"Groceries\":0.0,\"Dining & Takeout\":0.0,\"Subscriptions & Memberships\":0.0,\"Transportation\":0.0,\"Health & Personal Care\":0.0,\"Shopping\":0.0,\"Entertainment & Hobbies\":0.0,\"Education\":0.0,\"Gifts & Donations\":0.0,\"Travel\":0.0,\"Uncategorized\":0.0}},\"transaction_5_category_supported\":{\"type\":\"noul\",\"noul\":0.98},\"transaction_5_meaning\":{\"type\":\"choice\",\"choice\":\"income\",\"confidence\":1.0,\"probabilities\":{\"expense\":0.0,\"income\":1.0,\"refund\":0.0,\"own_account_transfer\":0.0,\"credit_card_payment\":0.0}},\"transaction_5_meaning_supported\":{\"type\":\"noul\",\"noul\":0.98},\"transaction_5_recurrence\":{\"type\":\"choice\",\"choice\":\"other_recurring\",\"confidence\":1.0,\"probabilities\":{\"recurring_bill\":0.0,\"subscription\":0.0,\"other_recurring\":1.0,\"non_recurring\":0.0}},\"transaction_5_recurrence_supported\":{\"type\":\"noul\",\"noul\":0.93},\"transaction_6_category\":{\"type\":\"choice\",\"choice\":\"Own-account Transfers\",\"confidence\":1.0,\"probabilities\":{\"Employment Income\":0.0,\"Housing\":0.0,\"Internet & Phone\":0.0,\"Utilities\":0.0,\"Credit-card Payments\":0.0,\"Own-account Transfers\":1.0,\"Loan Payments\":0.0,\"Savings & Investments\":0.0,\"Fees & Charges\":0.0,\"Interest & Other Income\":0.0,\"Groceries\":0.0,\"Dining & Takeout\":0.0,\"Subscriptions & Memberships\":0.0,\"Transportation\":0.0,\"Health & Personal Care\":0.0,\"Shopping\":0.0,\"Entertainment & Hobbies\":0.0,\"Education\":0.0,\"Gifts & Donations\":0.0,\"Travel\":0.0,\"Uncategorized\":0.0}},\"transaction_6_category_supported\":{\"type\":\"noul\",\"noul\":0.98},\"transaction_6_meaning\":{\"type\":\"choice\",\"choice\":\"own_account_transfer\",\"confidence\":1.0,\"probabilities\":{\"expense\":0.0,\"income\":0.0,\"refund\":0.0,\"own_account_transfer\":1.0,\"credit_card_payment\":0.0}},\"transaction_6_meaning_supported\":{\"type\":\"noul\",\"noul\":0.98},\"transaction_6_recurrence\":{\"type\":\"choice\",\"choice\":\"non_recurring\",\"confidence\":0.65,\"probabilities\":{\"recurring_bill\":0.0,\"subscription\":0.0,\"other_recurring\":0.26,\"non_recurring\":0.74}},\"transaction_6_recurrence_supported\":{\"type\":\"noul\",\"noul\":0.23},\"transaction_7_category\":{\"type\":\"choice\",\"choice\":\"Loan Payments\",\"confidence\":1.0,\"probabilities\":{\"Employment Income\":0.0,\"Housing\":0.0,\"Internet & Phone\":0.0,\"Utilities\":0.0,\"Credit-card Payments\":0.0,\"Own-account Transfers\":0.0,\"Loan Payments\":1.0,\"Savings & Investments\":0.0,\"Fees & Charges\":0.0,\"Interest & Other Income\":0.0,\"Groceries\":0.0,\"Dining & Takeout\":0.0,\"Subscriptions & Memberships\":0.0,\"Transportation\":0.0,\"Health & Personal Care\":0.0,\"Shopping\":0.0,\"Entertainment & Hobbies\":0.0,\"Education\":0.0,\"Gifts & Donations\":0.0,\"Travel\":0.0,\"Uncategorized\":0.0}},\"transaction_7_category_supported\":{\"type\":\"noul\",\"noul\":0.93},\"transaction_7_meaning\":{\"type\":\"choice\",\"choice\":\"expense\",\"confidence\":1.0,\"probabilities\":{\"expense\":1.0,\"income\":0.0,\"refund\":0.0,\"own_account_transfer\":0.0,\"credit_card_payment\":0.0}},\"transaction_7_meaning_supported\":{\"type\":\"noul\",\"noul\":0.97},\"transaction_7_recurrence\":{\"type\":\"choice\",\"choice\":\"recurring_bill\",\"confidence\":1.0,\"probabilities\":{\"recurring_bill\":1.0,\"subscription\":0.0,\"other_recurring\":0.0,\"non_recurring\":0.0}},\"transaction_7_recurrence_supported\":{\"type\":\"noul\",\"noul\":0.95}},\"usage\":{\"input_tokens\":10669,\"output_tokens\":3225}}"
+            }
+        }
+    ]
+}

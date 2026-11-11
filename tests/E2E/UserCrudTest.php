@@ -4,47 +4,46 @@ declare(strict_types=1);
 
 namespace App\Tests\E2E;
 
-use App\Tests\Support\FinanceBrowserTest;
-use App\Tests\Support\SubmitsBrowserForms;
-use Hautelook\AliceBundle\PhpUnit\FixtureStore;
+use App\Tests\Support\FinanceNetworkBrowserTest;
 
-final class UserCrudTest extends FinanceBrowserTest
+final class UserCrudTest extends FinanceNetworkBrowserTest
 {
-    use SubmitsBrowserForms;
-
     private const string PASSWORD = 'Synthetic-browser-password-05';
+    private const string CHANGED_PASSWORD = 'Changed-synthetic-password-05';
 
     public function testCreateEditPasswordAndDeleteUser(): void
     {
-        $fixtures = FixtureStore::getFixtures();
-        $this->loginUser($fixtures['administrator']);
+        $this->login('admin@test.com', 'admin');
+        $suffix = bin2hex(random_bytes(6));
+        $email = 'created-'.$suffix.'@example.test';
+        $editedEmail = 'renamed-'.$suffix.'@example.test';
         $page = $this->visit('/home/user/new');
-        $page->getByLabel('Email', ['exact' => true])->fill('created@example.test');
+        $page->getByLabel('Email', ['exact' => true])->fill($email);
         $page->getByLabel('New password', ['exact' => true])->fill(self::PASSWORD);
-        $this->submit(static fn () => $page->locator('button[name="ea[newForm][btn]"], button[name="ea[editForm][btn]"]')->first()->click());
-        $page = $this->visit('/home/user');
-        $this->assertPageContains('created@example.test');
-        $userRow = $page->locator('tbody tr')->filter(['hasText' => 'created@example.test']);
+        $page->locator('button[name="ea[newForm][btn]"], button[name="ea[editForm][btn]"]')->first()->click();
+        $page = $this->visit('/home/user?query='.rawurlencode($email));
+        $this->assertPageContains($email);
+        $userRow = $page->locator('tbody tr')->filter(['hasText' => $email]);
         $userUrl = $userRow->locator('a.action-edit')->getAttribute('href');
         $userDetailUrl = $userRow->locator('a.action-detail')->getAttribute('href');
-        $page->goto($userUrl);
-        $page->getByLabel('Email', ['exact' => true])->fill('renamed@example.test');
-        $page->getByLabel('New password', ['exact' => true])->fill('Changed-synthetic-password-05');
-        $this->submit(static fn () => $page->locator('button[name="ea[newForm][btn]"], button[name="ea[editForm][btn]"]')->first()->click());
-        $page->goto($userUrl);
-        self::assertSame('renamed@example.test', $page->getByLabel('Email', ['exact' => true])->inputValue());
-        $page = $this->visit('/login');
-        $page->getByLabel('Email', ['exact' => true])->fill('renamed@example.test');
-        $page->getByLabel('Password', ['exact' => true])->fill('Changed-synthetic-password-05');
-        $this->submit(static fn () => $page->getByRole('button', ['name' => 'Log in', 'exact' => true])->click());
-        $page->locator('.finance-chat .chat-empty')->waitFor();
-        $this->loginUser($fixtures['administrator']);
-        $page->goto($userDetailUrl);
-        $page->locator('.action-delete')->click();
-        $page->locator('#modal-action-confirmation-button')->waitFor(['state' => 'visible', 'timeout' => 5000]);
-        $this->submit(static fn () => $page->locator('#modal-action-confirmation-button')->click());
-
-        $page = $this->visit('/home/user');
-        self::assertStringNotContainsString('renamed@example.test', $page->locator('body')->textContent());
+        try {
+            $page->goto($userUrl);
+            $page->getByLabel('Email', ['exact' => true])->fill($editedEmail);
+            $page->getByLabel('New password', ['exact' => true])->fill(self::CHANGED_PASSWORD);
+            $page->locator('button[name="ea[newForm][btn]"], button[name="ea[editForm][btn]"]')->first()->click();
+            $page->goto($userUrl);
+            self::assertSame($editedEmail, $page->getByLabel('Email', ['exact' => true])->inputValue());
+            $this->logout();
+            $this->login($editedEmail, self::CHANGED_PASSWORD);
+            $page->locator('.finance-chat .chat-empty')->waitFor();
+            self::assertTrue($page->getByRole('heading', ['name' => 'Make sense of your money.', 'exact' => true])->isVisible());
+            self::assertTrue($page->getByRole('button', ['name' => 'Continue with ChatGPT', 'exact' => true])->isVisible());
+            self::assertTrue($page->getByText('Connect ChatGPT to start a conversation.', ['exact' => false])->isVisible());
+        } finally {
+            $this->login('admin@test.com', 'admin');
+            $this->deleteRecord($userDetailUrl);
+        }
+        $page = $this->visit('/home/user?query='.rawurlencode($editedEmail));
+        self::assertStringNotContainsString($editedEmail, $page->locator('tbody')->textContent());
     }
 }
