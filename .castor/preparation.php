@@ -51,22 +51,6 @@ function devFixturesLoad(): int
     return report('dev:fixtures:load', ['php', 'bin/console', 'hautelook:fixtures:load', '--env=dev', '--append', '--no-interaction']);
 }
 
-#[AsTask(namespace: 'test', name: 'database:prepare', description: 'Prepare only the fixed, owned SQLite browser-test database.')]
-function testDatabasePrepare(): int
-{
-    $storage = \dirname(__DIR__).'/var/browser';
-    foreach ([\dirname($storage), $storage, $storage.'/application.db'] as $path) {
-        if (is_link($path)) {
-            throw new \RuntimeException('Refusing symlinked test database storage.');
-        }
-    }
-    if (!is_dir($storage)) {
-        mkdir($storage, 0700, true);
-    }
-
-    return report('test:database:prepare', ['php', 'bin/console', 'doctrine:migrations:migrate', '--env=test', '--no-interaction', '--allow-no-migration']);
-}
-
 #[AsTask(namespace: 'test', name: 'database:fresh', description: 'Verify migrations and mappings on new, isolated diagnostic storage without resetting existing databases.')]
 function testDatabaseFresh(): int
 {

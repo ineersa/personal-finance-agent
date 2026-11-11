@@ -10,23 +10,99 @@ This policy replaces the earlier broad coverage requirements. It does not remove
 
 [ADR 0010](docs/adr/0010-playwright-only-testing.md) selects real Playwright browsers for application behavior. PHPUnit is the browser harness, not a separate unit, kernel, service, or API-only testing layer. Keep the existing harness and generic Castor tasks; do not add scenario-specific runners, orchestration, cross-run manifests, or supplementary datasets.
 
+## Native-network suite
+
+`FinanceNetworkBrowserTest` uses native Playwright against the isolated stack's real
+HTTP URL and proxy address supplied by `browser:live:test`. It does not boot a kernel,
+intercept requests, load fixtures or roll back database writes. Main prepares canonical
+fixtures once using the existing append-only stack setup; tests never reset storage.
+Each scenario opens and closes its own browser/context and signs in through `/login`.
+Headed launches request a 2560×1440 window with native 1000ms slow motion and
+`viewport: null`, allowing the native window content area without window-size assertions.
+Headless launches use a 1920×1080 viewport without slow motion.
+
+The non-provider journeys are AuthenticationTest, CategoryCrudTest, HomepageTest,
+SettingsTest, SourceCrudTest and UserCrudTest. CRUD creates
+uniquely named records and deletes only those records through normal confirmation;
+Settings restores its original preferences in `finally`. The owner additionally approved
+one invalid-currency validation step within the existing SourceCrudTest scenario; this
+does not authorize other negative tests. These classes need no provider calls.
+
+Statement download is covered only within the existing live import journey, after
+approval and before deleting its own uploaded statement. It checks the visible filename,
+authenticated download response, uploaded CSV checksum and attachment filename, then
+clicks Download. Provider interactions use genuine reviewed recordings during replay.
+
+Run only this slice with the existing runner (stack must already be prepared):
+
+```sh
+vendor/bin/castor browser:live:test -- --filter='AuthenticationTest|CategoryCrudTest|HomepageTest|SettingsTest|SourceCrudTest|UserCrudTest' tests/E2E
+```
+
+The obsolete intercepted base and application mocks have been removed. Default
+`test` discovers both E2E and Live native-network journeys. See the precise
+[old-to-new coverage inventory](#legacy-chatmodel-coverage-inventory) for coverage
+boundaries. DemoWorkspaceTest and TransactionCrudTest were consolidated:
+
+| Removed legacy coverage | Existing journey replacement |
+|---|---|
+| DemoWorkspace connection gate | UserCrudTest's newly created ordinary user: disconnected heading, Continue with ChatGPT and connection-required message before admin deletes only that user |
+| DemoWorkspace history controls | Live ChatTest after its unchanged three recorded turns: new-chat navigation, own-chat favourite/unfavourite/favourite, bookmarked older-page cursor and Show latest, reopen/reload with saved reply/favourite state, code-word search/open, own-chat confirmed deletion |
+| TransactionCrudTest | Live StatementImportTest's own imported row: approved list, edit amount/description, persisted amount/currency/description, detail and confirmed deletion, then original statement download/checksum/disposition and statement deletion |
+
+History cursors come from read-only canonical favourite DOM IDs. The repository sorts
+IDs descending and excludes the cursor; the test checks older canonical rows plus
+the selected own chat appended outside that page. No fixed fixture UUID, extra chat,
+canonical favourite mutation, provider generation or supplementary data is added.
+Legacy literal `provisional` reply/search assertions now check the existing recorded
+code word; the old fixed row counts are derived from the discovered sidebar rows.
+Approved transaction coverage checks the imported USD row, not canonical CAD salary.
+Validation results and owner walkthrough acceptance belong on the task board.
+
+### Legacy ChatModel coverage inventory
+
+| Original scenario | Native-network replacement and limits |
+|---|---|
+| `testChatCapturesEachModelAndReasoningSelection` | Three-turn `Live/ChatTest`: Luna/Low → Luna/High → Sol/High, real job admission/worker, remembered context and saved model/effort after reload. Also checks four choices and GPT-6.1's Extra High slider/range before restoring Luna/Low. The owner-selected three turns replace the old queued-envelope assertions; there is no GPT-6.1 inference claim. |
+| `testMissingModelReturnsFormError` | Real CSRF-protected composer browser POST with only model name removed; HTTP 422 and visible composer. |
+| `testMissingEffortReturnsFormError` | Same previously approved scope for absent effort; actual HTTP 422. |
+| `testFocusPreservesActiveLiveCardAndCatchesUpWhenDisconnected` | Observes genuinely streamed active DOM, dispatches the existing declarative UI focus action and counts fetches without substituting responses. Reconnects the actual native custom element, checks its genuine CONNECTING state, quiet notice and snapshot request, then canonical snapshot and real follow-up SSE delivery. No fake EventSource, injected Turbo messages or artificial provider pacing. This is not an OS-focus or Firefox-abort reproduction. |
+| `testBrowserSubmissionNormalizesForeignToolIdsWithoutRewritingHistory` | Native full-request matching checks Luna history retains the native item `id` on same-model requests and Sol/High cassette `b701934f1011…` strips it while retaining matching plain `call_id` in call/output. Chat reload retains the original composite tool ID and displayed history. Browser-visible history and real wire requests replace direct serialization assertions; byte-identical hidden metadata is not asserted. |
+| `testFailedChartToolShowsErrorInStreamAndAfterReload` | Bounded canonical Visa query and one missing-field MCP chart request, genuinely recorded against the model and real MCP server. Incoming failed-tool Turbo markup is observed before rendering; disclosure/error arguments/result survive reload. The successful chart's separate SQL error is not mislabeled as MCP-error coverage. |
+| `testRetainedChartRemainsVisibleAfterResponseFailure` | Withholds genuine final model cassette `8f95dea91f3d…` after the real successful chart tool result, restores in `finally`, waits for actual Failed status and checks the retained interactive chart before/after reload. No synthetic result/file/history or fake terminal event. Failure status itself is transient, not asserted after reload. Do not run concurrently with another replay suite. |
+
+Refreshing the explicit-MCP capture (main only, verified task-owned recording stack and real
+private grant required):
+
+```sh
+PROVIDER_CASSETTE_RECORD=1 vendor/bin/castor browser:stack:up
+vendor/bin/castor browser:live:test -- tests/E2E/ChatModelTest.php --filter=testFailedChartToolShowsErrorInStreamAndAfterReload
+```
+
+Review and promote the genuine request-keyed captures privately, preserving originals.
+Expected chain: real finance query → one chart with missing `missing_amount` field →
+actual MCP validation error → model reports failure without retry. Model compliance
+must be checked in every new recording. Restore replay with `PROVIDER_CASSETTE_RECORD=0
+vendor/bin/castor browser:stack:up`, then `vendor/bin/castor browser:replay:prepare`.
+Main validates changed scenarios and static QA; the transition runs the full gate.
+Track validation and individual owner walkthroughs on the external board.
+
 ## Current suite
 
 | Scenario | Happy path |
 |---|---|
 | Homepage | Public landing and login link |
 | Authentication | Login and logout |
-| Chat connection gate | Disconnected Chat view and connection action; no provider call |
+| Chat connection gate (within Users) | Own disconnected ordinary user's Chat view and connection action; no provider call |
 | Settings | Save and reload reporting currency and money locale; verify localized money display |
 | Sources | Create, list, edit, detail, delete |
-| Transactions | List, detail, edit, reload and delete an approved transaction |
+| Transactions (within Live import) | List, detail, edit, reload and delete only its own approved imported transaction |
 | Categories | Ordinary-owner create, list, edit, detail, delete |
 | Users | Administrator create, list, edit email/password, verify login, detail, delete |
-| Statements | List, detail, download |
-| Live import | Upload one canonical CSV, correct draft fields and classifications, save and continue editing, save and return, delete another row, approve remaining statement rows, reload corrections, delete that uploaded statement |
-| Live chat | After owner ChatGPT login, send a synthetic message and a context-dependent follow-up through the worker/Mercure stack, then reload the answer |
+| Live import | Upload one canonical CSV, correct draft fields and classifications, save and continue editing, save and return, delete another row, approve remaining statement rows, reload corrections, view statement detail, verify and click the original CSV download, delete that uploaded statement |
+| Live chat | Three recorded turns Luna/Low → Luna/High → Sol/High through the real worker/Mercure stack, reload, own-chat history/favourites/cursor/search and deletion |
 
-The intercepted scenarios are in `tests/E2E/`; real-network import and chat journeys are in `tests/Live/`. Import calls the configured Jev provider through the actual worker, broker and Mercure stack. Chat uses the owner's connected ChatGPT account in isolated storage. Apart from the explicitly approved chat missing-selection and focus/history regressions described below, the journeys do not cover invalid submissions, repeat approval, ownership attacks, failure/retry, redelivery, quotas, hostile input or concurrent processing. Those require separate permission. Reset remains untested by owner instruction.
+Migrated CRUD/authentication views remain in `tests/E2E/`; real-network import, chat and chart journeys are in `tests/Live/`. Jev/chat HTTP uses genuine cassettes in default strict replay; the application, worker, broker, Mercure and local MCP remain real. Recording alone requires owner-managed provider authentication. Apart from the owner-approved source invalid-currency step and explicitly approved legacy chat regressions described below, the journeys do not cover other invalid submissions, repeat approval, ownership attacks, failure/retry, redelivery, quotas, hostile input or concurrent processing. Those require separate permission. Reset remains untested by owner instruction.
 
 ## Prepare the tooling runtime
 
@@ -52,7 +128,7 @@ vendor/bin/castor qa:static
 
 ## Running tests
 
-`vendor/bin/castor test` runs the nine intercepted-browser scenarios headlessly. Native PHPUnit arguments go after `--`:
+`vendor/bin/castor test` prepares checkout-owned stack/migrations, initial append-only canonical fixtures and synthetic replay grant, then runs all E2E and Live native-network scenarios headlessly. Recording mode is rejected. Native PHPUnit arguments go after `--`:
 
 ```sh
 vendor/bin/castor test -- tests/E2E/SourceCrudTest.php
@@ -63,23 +139,26 @@ Castor must not hardcode test filenames, method filters, or scenario selection. 
 
 Use `test --headed` or `check --headed` only when the owner requests a visible run. Missing display access blocks a requested headed run; it does not justify silently changing modes.
 
-Run `cs:fix`, relevant saved happy-path scenarios, and `qa:static` after code changes. The task workflow runs the literal `castor check` as the sole combined full browser/static gate at CODE-REVIEW. Do not run it prematurely during task-start. The default gate does not start a live application or make hosted model calls.
+Run `cs:fix`, relevant saved happy-path scenarios, and `qa:static` after code changes. The task workflow runs the literal `castor check` as the sole combined full browser/static gate at CODE-REVIEW. Do not run it prematurely during task-start. The default gate starts the real isolated application but never makes hosted model calls.
 
-Report actual elapsed time, results, and any gaps. Do not inflate assertion counts or add test matrices. Routine validation must stay short; ask permission before expanding its scope or runtime.
+Report actual elapsed time, results, and any gaps. Do not inflate assertion counts or add test matrices. Routine validation must stay short; ask permission before expanding its scope or runtime. Run only against an idle checkout-owned browser stack: default preparation stops the owned worker, clears/rebuilds the test container, migrates/prepares fixtures and grant, then starts the worker before browser execution. This prevents long-lived workers retaining removed test service overrides. Preparation failure may leave the worker stopped; inspect the printed report rather than retrying providers.
 
 ## Fixtures and isolation
 
 Both development and tests use the canonical `fixtures/central/*.yaml` account definitions and `fixtures/*.yaml` tenant definitions. Do not create a supplementary test dataset or mutate development data for verification. Manual currency-rate CRUD and its scenario have been removed; rates are maintained by canonical history and ECB refresh.
 
-The intercepted suite uses `var/browser/application.db` for identity and `var/browser/tenants/<user-id>.db` for finance. `castor test` prepares central storage with native Doctrine migrations; it does not drop the database. The native Alice loader is decorated to provision/migrate tenant storage and load the same canonical definitions with Alice's `ObjectManagerPersister` and purger. No finance entities are persisted through the central entity manager.
-
-Fixture-backed scenarios extend `tests/Support/FinanceBrowserTest.php`. The owner-approved `RefreshTenantDatabasesTrait` composes/aliases Hautelook Alice's native `RefreshDatabaseTrait`: Alice retains the central fixture lifecycle, while the project extension starts and rolls back tenant transactions. The test-only `TestTenantManagers` retains connections across intercepted requests and includes tenants opened during a scenario; newly created tenant files are removed after rollback. The documented DAMA `SkipDatabaseRollback` attribute remains, so Alice/project fixture transactions have one owner. DAMA remains installed for other intercepted scenarios. Read records through `FixtureStore`, not deprecated static properties. This narrow lifecycle exception does not authorize another fixture framework, dataset or runner.
+Native-network storage is isolated under `var/browser-live/browser/`: central identity,
+tenant finance files, broker and chart documents belong to this checkout's stack.
+The first bootstrap uses Doctrine migrations and native append-only canonical Alice
+loading; existing storage is never purged. DAMA remains installed, but neither it nor
+Alice transaction rollback isolates independent workers. Each journey deletes only its
+own UI-created records; no kernel interception, synthetic session bypass or service
+substitution remains.
 
 The tenant redesign uses a clean fixture-backed development cutover, not an upgrade converter. Before resetting existing disposable dev/test databases, main must verify exact paths and active stack ownership. Do not delete uploads, OAuth credentials, unrelated volumes or another checkout's data. Fresh storage applies central migrations normally; fixture loading provisions tenant schemas automatically. For subsequent finance migrations, use `vendor/bin/castor app:console -- app:tenant:migrate` (or the matching browser-stack console). Generate finance migrations with `doctrine:migrations:diff --em=finance --configuration=config/migrations/finance.yaml` through Castor's isolated-database option, not against published tenant files.
 
-Use `loginUser()` when authentication is setup rather than the action under test. Use the existing `SubmitsBrowserForms` helper for native form submissions and redirects through the pinned interception bridge. Do not replace that helper with test-only application behavior. Assert a persisted result, not just a successful click.
-
-Database rollback does not restore filesystem changes or isolate other processes. The live import journey deletes only its own uploaded statement through the browser, not canonical fixture files.
+Every journey signs in through the real login form. Filesystem cleanup is through
+the application's owned deletion actions, never broad directory cleanup.
 
 ## Isolated live stack
 
@@ -105,27 +184,34 @@ For explicitly authorized abrupt-worker diagnostics only, `vendor/bin/castor bro
 
 Before the chat journey, ask the owner to sign into this stack's Finance URL as `demo@test.com / demo`, then use **Continue with ChatGPT** and complete consent. Confirm the connected status in Settings. Do not start provider tests until that login is complete. The browser must run on the same host as the loopback OAuth callback.
 
-Chat uses the package-managed store at `var/private/chatgpt-auth` inside the application, mapped to `var/browser-live/private/chatgpt-auth` in this isolated stack. Web and worker share those files and the same user registration-store identifier. OAuth attempts and subscription topics use the connection epoch. Chat jobs carry trusted owner/conversation identifiers and native input messages; the worker rechecks ownership and uses the current owner registration, not a saved conversation epoch. Disconnect retains registration for reconnecting. The committed public client ID and installation ID are shared across worktrees and users; grants and attempts remain isolated. Fresh stores receive only the configured registration through the native atomic store API; matching saved grants are unchanged and mismatched client registrations fail without a rewrite. Fresh-store authorization reuse and provider UI deduplication remain unverified; do not reconnect or copy credentials merely to test this configuration. There is no account-switch action. Do not copy credentials from another checkout, inspect token contents, or put credentials in fixtures, cassettes, commands or reports. The live chat test sends synthetic text only and makes real provider requests. It requires access to `gpt-6-luna`; model registration alone does not establish entitlement. Missing login or model access is a failure, not a skipped/passing integration.
+Chat uses the package-managed store at `var/private/chatgpt-auth` inside the application, mapped to `var/browser-live/private/chatgpt-auth` in this isolated stack. Web and worker share those files and the same user registration-store identifier. OAuth attempts and subscription topics use the connection epoch. Chat jobs carry trusted owner/conversation identifiers and native input messages; the worker rechecks ownership and uses the current owner registration, not a saved conversation epoch. Disconnect retains registration for reconnecting. The committed public client ID and installation ID are shared across worktrees and users; grants and attempts remain isolated. Fresh stores receive only the configured registration through the native atomic store API; matching saved grants are unchanged and mismatched client registrations fail without a rewrite. Fresh-store authorization reuse and provider UI deduplication remain unverified; do not reconnect or copy credentials merely to test this configuration. There is no account-switch action. Do not copy credentials from another checkout, inspect token contents, or put credentials in fixtures, cassettes, commands or reports. The chat test sends synthetic text only; real provider requests occur solely in explicit recording mode. It requires access to `gpt-6-luna`; model registration alone does not establish entitlement. Missing login or model access is a failure, not a skipped/passing integration.
 
 The editable system prompt is `prompts/chat.txt`, loaded by Symfony AI's file-based prompt processor. `CHAT_MODEL=gpt-6-luna` and `CHAT_REASONING_EFFORT=low` initialize the composer's model/reasoning defaults. Each submitted combination is validated and captured immutably in its queued `GenerateChat`; the worker executes that selection, not current environment defaults. Later UI or default changes cannot retarget admitted work. The last submitted model/effort pair is saved on owned conversation metadata before dispatch and restored by the form on navigation/reload. Unsaved control changes are not preferences. New chats and older chats with null selection fields use configured defaults. Apply the additive selection migration before serving this revision; canonical native messages are unchanged. Only provider-emitted readable summaries/commentary are displayed, so those sections may be absent. The worker binds the finance toolbox to the conversation owner and chart storage to that trusted conversation. Initial user-role context supplies the schema and `prompts/finance-context.txt` once before the first question; only real questions appear as visible turns. Progress comes from the native Agent execution and is not persisted as a separate state machine. The sanitizer still filters HTML and links, but its input-length limit is disabled for complete long replies; this removes its input-size denial-of-service bound.
 
 Pages and reconnect snapshots render native history through Twig. Live response content comes from a handler-local native stream listener; tool cards render native progress calls/results directly. Streaming updates only the affected response/card/chart, then completion reconciles that user's reply from the execution's native messages. The initial turn is published only on the first native model-request progress event, after input persistence. Native conversation/user/tool identifiers anchor the DOM and tool-detail state; chart iframes keep stable IDs and existing morph updates without `data-turbo-permanent`, which enters the pinned Turbo cloning path. This is a presentation boundary, not a replay or recovery subsystem; source inspection alone does not prove live timing or iframe continuity.
 
-Chat displays an accessible **Live updates disconnected** notice while its configured native Mercure source lacks `connected`; it does not report inference failure. The notice's **Reload conversation** link performs a normal full-page GET retaining the selected conversation. The shared focus/acknowledgement handler defers snapshots while the native source is connected and a response has the transient `data-chat-response-active` marker, preserving both the initial Running marker and later live tool cards before a completed-round checkpoint. Native Running status renders this marker; completion/failure rendering removes it. Disconnected focus and acknowledgement still fetch the existing canonical snapshot even if the marker remains. Native observer/reconnect catch-up is unchanged, and all snapshots retain the stale-version guard. Snapshot success does not clear the notice: only native connection status does. EventSource still owns reconnection; no polling, timers, publication retries, authorization renewal or inference resends were added. Import views do not receive the chat-only focus action or notice.
+Chat keeps native EventSource CONNECTING retries quiet. A terminal CLOSED source receives one native custom-element replacement; the reload notice is a last resort if that recovery also terminates. Intentional navigation is suppressed. This notice does not report inference failure. The shared focus/acknowledgement handler defers snapshots while the source is connected and a response has `data-chat-response-active`, preserving live progress before its canonical checkpoint. Disconnected focus still requests a snapshot; newer streamed updates invalidate stale snapshots. There is no polling, authorization renewal or inference resend. The focus regression checks these presentation boundaries, not the unresolved Firefox terminal-abort root cause.
 
 Request-only foreign/unknown-model history conversion removes the ChatGPT bridge's native tool-item suffix from composite call IDs and copies only explicitly matching results in that converted round. Exact-model calls/results, unmatched/plain IDs and canonical history remain unchanged. Both model/effort enum fields use native `NotNull` validation alongside the existing supported-combination check and normal form-error response. These are source-level contracts, not claims that special-case browser checks passed; new negative/fault scenarios require owner approval.
 
-The owner separately approved four saved regression methods in `ChatModelTest`: missing model (one browser POST), missing effort (one browser POST), connected-active focus/card preservation with disconnected-focus catch-up (one scoped lifecycle journey), and tool-identity conversion through browser submission (one execution). They reuse canonical Alice users and synthetic replay auth; the wire case uses native SyncTransport, MockHub and MockHttpClient for ChatGPT plus empty MCP discovery. It seeds only runtime synthetic native chat messages, then observes the actual Agent/platform request and verifies stored rounds/IDs/signatures remain intact. The chart client is an injected native untraced service with unchanged production timeout/redirect options, allowing this no-network override without another runner. The existing focus case renders actual start/tool Twig streams through native Turbo in a real browser: start → successful submit-end/acknowledged action → later tool update → focus must retain the Running marker/card without a snapshot; disconnected focus then reads the real intercepted snapshot and clears that stale view. Only the source connection marker and DOM events are synthetic; it proves declarative action behavior, not native OS/tab-focus transitions, actual Mercure connectivity or worker timing. No real provider calls or cassettes are involved, and adding these methods is not evidence they pass.
+The approved legacy ChatModel regressions now use real HTTP and local services.
+Missing model/effort submit the actual CSRF-protected form. Focus exercises the
+declarative UI action during observed real streamed progress, then the native source's
+disconnect/reconnect lifecycle; no EventSource state or Turbo messages are fabricated.
+It checks canonical catch-up and real follow-up delivery without artificial pacing.
+Explicit MCP chart failure uses a genuine missing-field capture; incoming stream markup is observed before render and saved
+details checked after reload. Retained-chart failure withholds the genuine final
+model cassette and restores it in `finally`, exercising the actual fail-closed
+provider boundary. Validation reports, not this description, establish passing runs.
+Exact request/history ID coverage and limitations are recorded in the linked inventory.
 
-The owner also approved one failed-chart-tool browser regression in `ChatModelTest`: submit one synthetic chart request through the actual handler and native Agent/MCP pipeline, with MockHttpClient returning an explicit MCP error. Native MockHub captures the handler's publications; the browser renders those unmodified fragments through Turbo up to the failed card, then reloads the canonical saved history. Both views must show **Tool call failed** and expandable error details. This uses existing synthetic auth, fixtures and SyncTransport, not a live provider or network worker/broker test. Rendering captured fragments proves the streamed markup, not real-time delivery or timing.
-
-The owner approved one isolated browser-only disconnect/reconnect diagnostic, with no model call, resend, restart or data changes: observe the native source and notice, disconnect/reconnect the owned browser context once, inspect native reconnection and snapshot requests, return focus to inspect saved-state refresh, then inspect the normal reload link and selected-conversation URL. Report transport state and UI outcomes separately; a fresh HTTP 200 is not proof that the earlier tab received completion. Do not add a saved special-case scenario or extend fault testing beyond that authorization. Main owns this diagnostic and the existing saved happy-path/static checks; these instructions do not claim those checks passed.
+Additional fault/recovery scenarios still require explicit owner approval. A fresh HTTP 200 is not proof of SSE delivery; report transport and UI outcomes separately.
 
 Reporting examples and their supplied verification provenance live in [docs/examples/finance-reporting](docs/examples/finance-reporting/README.md). That reference directory is not loaded into the application. Use a new isolated conversation for the updated initial-context example; existing conversations receive the refreshed system policy but retain their initial snapshot. For one representative authorized reporting journey, ask an explicit-period/currency question and inspect SQL evidence, gross purchases/refunds/net labels, material coverage, a justified dark chart with matching aggregates and the final Markdown. Do not automatically execute the 12-query/six-chart reference collection as a live-model matrix. Source/schema review and supplied scratch-SQL results are not a live application pass. `get_unovis_info` now uses a text-only native MCP pass-through; generator output and private retention remain unchanged.
 
 Prompt changes alter model request bodies, so existing strict provider cassettes may no longer match. Do not rewrite native provider frames to compensate; any fresh synthetic recording requires the normal explicit authorization and privacy review. Actual saved-suite and live outcomes must be reported separately.
 
-The current saved chat happy path also requires access to `gpt-6-sol`: it asserts the initial `gpt-6-luna`/`low` defaults, completes the SQL-backed first reply, selects `gpt-6-sol`/`high`, then checks follow-up context and native tool/history persistence after reload. Run with both cassette flags at zero. The filtered command below excludes the existing whitespace special-case scenario; do not run that scenario without explicit permission.
+Recording the current saved chat happy path requires access to both models: it asserts the initial `gpt-6-luna`/`low` defaults and completes the SQL-backed first reply, changes only reasoning to `high` for the second question, then changes only the model to `gpt-6-sol` for the third question. Both follow-ups check remembered context; reload checks model/reasoning selection and native tool/history persistence. Routine runs use strict provider replay and the synthetic grant described below, without provider credentials. The filtered command below excludes the existing whitespace special-case scenario; do not run that scenario without explicit permission.
 
 Run the relevant live journey, then stop the owned stack when it is no longer needed:
 
@@ -140,7 +226,7 @@ vendor/bin/castor browser:stack:stop
 
 ### Inline chart validation
 
-`tests/Live/ChartTest.php` is the single chart happy-path journey: actual finance SQL → discovered Unovis bar tool → known synthetic payroll value 2860 → private sandboxed interactive document → real hover tooltip → same document and tooltip after reload. It requires ordinary live mode (`CHAT_CASSETTE_REPLAY=0`), fresh isolated migrated/fixture-backed storage and the owner's ChatGPT connection. The chart container starts with the normal stack; it has no host port. Local chart files live at `var/browser-live/browser/charts` for this stack, `var/browser/charts` for intercepted tests, and `var/charts` for development. New chat opens an unstored draft without deleting existing history or files. Only explicit confirmed Delete removes that conversation and its private charts; do not delete chats or reset owner history merely to prepare tests.
+`tests/Live/ChartTest.php` is the single chart happy-path journey: ask for September 2026 Rewards Visa spending by category in CAD as a horizontal bar chart, excluding repayments, without prescribing SQL or tool arguments. Expected category totals come from the existing canonical statement manifest and category definitions. The browser checks all chart categories/amounts, its private sandboxed document, a real hover tooltip, and the same document and tooltip after reload. Recording requires explicit `PROVIDER_CASSETTE_RECORD=1`, initialized task-owned fixture storage and the owner's ChatGPT connection; replay requires reviewed current provider cassettes and the synthetic native grant described below. The chart container starts with the normal stack; it has no host port. Local chart files live at `var/browser-live/browser/charts` for this stack and `var/charts` for development. New chat opens an unstored draft without deleting existing history or files. Only explicit confirmed Delete removes that conversation and its private charts; do not delete chats or reset owner history merely to prepare tests.
 
 Build the pinned fork without affecting running services with `vendor/bin/castor charts:build --browser`. Once the operator confirms there is no active generation, `vendor/bin/castor browser:stack:up` deploys the changed chart service and PHP/worker mounts; no reset or fixture reload is needed for an existing isolated stack. The Compose-project-scoped `chart_output` volume is staging only, not retained conversation storage. Node creates ordinary readable documents there and PHP/worker can remove them through the writable directory. Verify actual cross-container permissions during the live journey, not just source inspection. Never remove this or other volumes to update the service.
 
@@ -151,51 +237,117 @@ vendor/bin/castor browser:live:test -- tests/Live/ChartTest.php
 vendor/bin/castor browser:live:test --headed -- tests/Live/ChartTest.php
 ```
 
-The generic live runner defaults to headless; `--headed` supplies the existing display-enabled QA runtime and `PLAYWRIGHT_HEADLESS=false`. The chart scenario honors it. No chart-specific runner, dataset or test endpoint is introduced. Tool-owned validation feedback and local renderer/MCP failure-to-model-continuation browser verification are explicitly requested by task 13, but are **not covered by this happy-path scenario** and remain required verification work. Do not infer those checks pass from source inspection or the backend integration probe.
+The generic live runner defaults to headless; `--headed` supplies the existing display-enabled QA runtime and `PLAYWRIGHT_HEADLESS=false`. The chart scenario honors it. No chart-specific runner, dataset or test endpoint is introduced. The separate explicit-MCP-error regression covers tool validation feedback and model continuation; do not infer those checks from the chart happy path or source inspection.
 
-**Existing replay is stale for the chart-enabled toolbox:** `tests/Fixtures/chat/synthetic-chat.json` captured finance-only tool definitions, while generation now advertises discovered Unovis tools as well. Stock cassette request matching includes that request body. Its recorded provider frames were not edited or fabricated. Re-record the existing synthetic journey with explicit permission and inspect/publish the native result using the recording procedure below before claiming offline chat replay works. Live chart proof must still be distinguished from provider replay; chart requests and local HTML generation are not wrapped by the inference cassette.
+Current recordings live under `tests/Fixtures/providers/`; the obsolete finance-only cassette is removed. Live provider proof must still be distinguished from provider replay; local chart requests and HTML generation are not wrapped by the inference cassette.
 
-### Private synthetic chat recording procedure
+### Provider cassette recording and offline replay (task 33)
 
-The live chat journey opens the unstored draft route, then creates a native conversation with its first submission and follows up in that conversation; it never clears existing chats. Coordinate with the owner before recording: only wholly synthetic conversation history may enter a published cassette. Do not discard an existing conversation to make the test pass. The two deterministic prompts request one canonical synthetic transaction description through SQL and then recall a code word. The current prompt template must also contain no personal data.
+`PROVIDER_CASSETTE_RECORD` is the sole mode flag in the isolated browser stack,
+forwarded to both PHP and worker. Its default is `0`: strict offline replay.
+`1` explicitly enables real ChatGPT inference, Jev and ECB HTTP recording. OAuth
+uses the ordinary live client **only** in recording mode, and is never recorded.
+In replay it receives a native `CassetteHttpClient(record: false)` with no real
+client and a deliberately absent `tests/Fixtures/providers/oauth-unavailable.json`.
+Never create that file: unexpected authorization, discovery or refresh must fail.
+Local chart/MCP, scheduler consumption, broker, worker and Mercure remain real.
+Jev receives a clearly synthetic key in replay; recording uses the configured key.
 
-For an explicitly authorized recording, recreate the owned browser stack with recording enabled, then run the existing journey. Preview-only model/effort configuration initializes composer defaults; accepted jobs execute their captured per-turn selection. The current journey starts at `gpt-6-luna`/`low`, then selects `gpt-6-sol`/`high` before the follow-up. It is not the old single-model recording procedure. New chat opens a fresh unstored draft without discarding retained history:
+`ProviderCassetteHttpClient` selects a SHA-256 filename from method, URL, query and
+body, then delegates final signature verification, recording and FIFO replay to
+installed Symfony AI `HttpCassette`/`CassetteHttpClient`. Independent requests/jobs
+can select their own recording; repeated identical requests within a job still
+consume FIFO and fail when exhausted. Explicit `kernel.reset` tags clear clients
+between Messenger jobs. Installed TypeSafe `ModelClient` retains the injected
+client and calls `request()` directly, without cloning it. The adapter implements
+native `withOptions()` merging against the complete supported option set, passing
+only explicit options to avoid overriding the real client's defaults. Clones copy
+existing native clients (and their cursor objects); the configured provider
+services themselves are reset after each job.
+
+Private captures are `var/browser-live/private/provider-cassettes/{chat,jev,ecb}`
+on the host (`var/private/provider-cassettes/` in the container). Recording refuses
+an existing capture for a newly selected key, rather than overwriting it. Capture
+directories/files are created with modes 0700/0600. Reviewed replay locations are
+`tests/Fixtures/providers/{chat,jev,ecb}`. Missing, exhausted or mismatched cassettes
+fail without network fallback. Reviewed genuine recordings cover chat, successful
+and explicitly failed MCP charts, import and ECB requests.
+
+Only two nonsemantic replacements are permitted: the UUID-shaped conversation
+`prompt_cache_key`, and the complete `Current date (UTC): YYYY-MM-DD.` header prefix
+at the start of a line in top-level model `instructions`. The reporting currency
+and remaining instructions on that line are preserved. The same native replacements select and verify
+the cassette; live requests remain unchanged. No normalization of bare dates,
+SQL, model/effort, prompts otherwise, schema, tool IDs/results, or finance values.
+Compressed and stream/callback request bodies are rejected before networking.
+No compression configuration has been changed. Native cassettes redact credentials
+and personal request data; this is not proof that response bodies are publishable.
+Main must privately inspect captures for account identity, tokens, private payloads
+and unexpected data before promoting genuine bytes to the reviewed directories.
+Promotion also removes opaque `x-codex-turn-state` and `x-oai-request-id` response
+headers; request signatures and provider response bodies remain unchanged.
+No semantic response editing or fabricated provider fixtures is permitted. Native
+record/replay buffers provider responses: it does not reproduce live token timing.
+
+#### Explicit recording (main only)
+
+Use the already-initialized task-owned browser stack and owner-managed real sign-in.
+Do not reseed it, inspect/copy grants, clear captures or remove storage. Model defaults
+must match the selected saved journey (Luna/low → Luna/high → Sol/high).
+Only run specifically authorized saved journeys with wholly synthetic input:
 
 ```sh
-CHAT_MODEL=gpt-6-luna CHAT_REASONING_EFFORT=low CHAT_CASSETTE_RECORD=1 vendor/bin/castor browser:stack:up
-vendor/bin/castor browser:stack:console --worker -- debug:container 'App\Chat\AgentFactory'
+PROVIDER_CASSETTE_RECORD=1 vendor/bin/castor browser:stack:up
 vendor/bin/castor browser:live:test -- --filter=testStreamedReplyAndFollowUp tests/Live/ChatTest.php
-# Disable recording before any further app use, including after a failed test:
-CHAT_CASSETTE_RECORD=0 vendor/bin/castor browser:stack:up
+vendor/bin/castor browser:live:test -- tests/Live/ChartTest.php
+vendor/bin/castor browser:live:test -- tests/Live/StatementImportTest.php
+# Also restore strict replay after a failed recording attempt:
+PROVIDER_CASSETTE_RECORD=0 vendor/bin/castor browser:stack:up
 ```
 
-The test-only service override lives in `config/services_test.yaml`, after the main service definitions. The targeted container inspection must show `app.chat.recording_http_client` among AgentFactory's arguments before a paid run. A successful chat test alone does not prove recording: confirm that the cassette exists afterward.
+These are activation/capture commands, not a substitute for checking run reports. ChatTest, ChartTest
+and StatementImportTest now share FinanceNetworkBrowserTest: real login/HTTP,
+headless by default, 2560×1440 headed window and 1000ms native action pacing.
+Chat and chart journeys start at the empty `/home/chat` draft and confirm deletion
+of only their newly created conversation after all existing assertions succeed.
+The whitespace/delete-cancel case only reads an existing history entry, rejects
+empty input and cancels deletion; it does not modify or delete that conversation.
+Import retains its upload/edit/delete-draft/approve/download/delete workflow.
+Failure cleanup closes browsers but conservatively retains newly created records:
+the runner reports the captured conversation/processing URL for inspection, without
+racing possibly active workers or retrying providers. Default routing selects all native-network journeys. Main coordinates execution
+and private review/promotion; there is no automatic
+promotion, regeneration, fallback or per-scenario runner. ECB scheduled requests
+also require genuine reviewed recordings; an uncovered scheduler request fails.
 
-Only the Agent inference transport is wrapped with Symfony AI's stock `CassetteHttpClient`; OAuth, discovery and refresh use the original client. Output is `var/browser-live/private/chat-cassettes/synthetic-chat.json`, ignored by Git, inside a mode-0700 directory with a mode-0600 file. Existing output is refused rather than appended or overwritten. Inspect it privately before publishing anything; never print raw bodies or credentials to reports. Stock header/request redaction is not a guarantee that every response field is suitable for publication. Native message items and encrypted reasoning remain conversation data pending inspection. Report captured event types/counts without payloads; summaries and commentary are optional even with `reasoning.summary=auto`.
+#### Synthetic replay grant preparation
 
-### Offline chat replay
-
-The reviewed synthetic cassette is `tests/Fixtures/chat/synthetic-chat.json`, recorded from the earlier single-model two-prompt chat journey using `gpt-6-luna`, reasoning effort `high` and summary `auto` for both turns. Its three inference interactions contain one real SQL tool call, its canonical payroll result, the first answer and the follow-up code-word answer. The initial user context contains only the recording-time context template and table definitions; the only user questions are the two saved synthetic test prompts. No prior conversation history is included. That historical live recording passed all 14 assertions. It is not model-switch proof. The current `testStreamedReplyAndFollowUp` instead requires Luna/low then Sol/high and cannot replay this cassette. No conditional same-model variant or fabricated frames were added; offline replay remains stale, independently of the already documented toolbox/prompt mismatches.
-
-The publishable copy preserves event order, SQL arguments/results and readable answers. Stock-redacted authorization remains redacted; request session/trace identifiers and nonsemantic response headers (including cookies and opaque turn state) are removed, retaining SSE content type. Two opaque encrypted-reasoning values are replaced consistently across response events and later request history with nonsecret placeholders; request signatures are regenerated for those privacy-redacted bodies. No model or tool frames are invented. The private original remains unchanged. Credential/JWT/email pattern checks found no matches in the copy; this is not an absolute guarantee of absence of secrets. The recording contains encrypted reasoning items but no readable reasoning-summary or commentary events, so it does not establish coverage of either display path. Parallel tool calls are not covered.
-
-Replay requires the isolated database migrated and the canonical fixtures loaded, with synthetic conversation history suitable for recording. The ordinary demo fixture invokes `User::initializeChatGptIdentity()` through native Alice method calls to create a fresh random, nonsecret connection epoch. It does not assign a fixed namespace or include credentials, client IDs or provider registration data. Normal live mode remains disconnected until owner OAuth; replay-only DI supplies synthetic in-memory auth state and a throwing mock OAuth client without reading real auth files. A clean fixture-backed stack therefore needs no real ChatGPT sign-in for offline replay. Existing stacks without an initialized demo epoch still require initialization through their ordinary connection flow; do not reload fixtures over existing identities. Inference uses stock `CassetteHttpClient(record: false)` without a real client. Missing cassette, unmatched requests or exhausted interactions fail rather than making live requests.
+Replay uses the package's **real `AuthFileStore`**, not substituted AuthStorage.
+The owner-approved fixture helper writes only the canonical demo user's configured
+registration in `var/private/chatgpt-replay-auth`; normal recording keeps the
+existing `var/private/chatgpt-auth` untouched. The helper boots the actual test
+Kernel solely to look up the canonical demo fixture with Doctrine, requires its
+existing ChatGPT registration identity, and writes synthetic access/refresh/JWT
+values with configured client ID, native issuer/direct scope, synthetic subject
+and nonce, and a fresh one-day expiry. The JWT payload is empty JSON, suitable for
+the ordinary identity display path. No real grant is read/copied and no database
+record is changed. Other users are not implicitly connected. This setup proves
+neither OAuth sign-in nor credential refresh; unexpected OAuth HTTP fails offline.
 
 ```sh
-# Historical single-model replay settings, not a passing setup for the current live journey:
-CHAT_MODEL=gpt-6-luna CHAT_REASONING_EFFORT=high CHAT_CASSETTE_REPLAY=1 CHAT_CASSETTE_RECORD=0 vendor/bin/castor browser:stack:up
-# Restart before each replay journey to reset the worker's in-memory FIFO cursor:
-CHAT_CASSETTE_REPLAY=1 vendor/bin/castor browser:stack:restart-worker
-# No current saved journey matches this historical cassette; do not run the model-switch test as replay proof.
-# Restore ordinary live behavior, including after a failed test:
-CHAT_MODEL=gpt-6-luna CHAT_REASONING_EFFORT=low CHAT_CASSETTE_REPLAY=0 CHAT_CASSETTE_RECORD=0 vendor/bin/castor browser:stack:up
+PROVIDER_CASSETTE_RECORD=0 vendor/bin/castor browser:stack:up
+vendor/bin/castor browser:replay:prepare
+# After main has reviewed/promoted current genuine provider recordings:
+vendor/bin/castor browser:live:test -- --filter=testStreamedReplyAndFollowUp tests/Live/ChatTest.php
+vendor/bin/castor browser:live:test -- tests/Live/ChartTest.php
+vendor/bin/castor browser:live:test -- tests/Live/StatementImportTest.php
 ```
 
-The recorded single-model journey sent the same two deterministic messages, checked follow-up context and reload persistence, expanded the real SQL call arguments/result and verified the persisted call identifier/result after reload. It started from the unstored draft route, created a conversation on first submission and appended the follow-up to its native history without discarding existing chats. Native Agent execution, bridge conversion, worker, broker and private Mercure remained in use. The existing test-only HTTP delegate maps the new conversation cache UUID and the complete `Current date (UTC): YYYY-MM-DD.` system header to the recorded values through native `HttpCassette` replacements. Bare dates, financial records, schema, tools, SQL, currency, model and reasoning effort are not normalized; those must match the reviewed recording. Runtime-day replacement alone does not resolve the current model-switch, toolbox or prompt mismatches. Any future authorized replay verification must use the recording's same-model settings and matching request bodies, not relabel the old frames as a model switch. Explicit Delete or reset still requires the relevant authorization. The captured requests were plain JSON; this replay configuration does not support compressed requests. The stock client buffers responses, so replay does not establish live streaming timing. To run the current live model-switch journey instead, leave both cassette flags at zero, configure Luna/low defaults and complete the owner-login prerequisite above.
-
-The runner supplies the current checkout URL and proxy address internally. No manual URL flags are needed. The stack uses `var/browser-live` for its application database, private uploads, broker database, and socket. The fixed intercepted database and development data are separate. Native migrations and append-only fixture loading are the only setup; there are no test endpoints, application fault hooks, or cross-run state files.
-
-A browser timeout, failed provider call, missing tool, interrupted process, or unavailable stack is a failure, not a pass. Do not stop unrelated containers, remove volumes, or clear owner data. Stop the shared proxy only through `dev:proxy:stop` when no checkout uses it.
+`browser:replay:prepare` executes `tests/Support/prepare_replay_grant.php` in this
+checkout's browser PHP container via the existing Castor lifecycle helpers. It
+refuses recording mode or a non-test environment. Repeat it when the synthetic
+grant expires; it never contacts a provider. Consult task-board validation entries
+for actual recording/replay outcomes and owner walkthrough acceptance.
 
 ## Diagnostics and evidence
 

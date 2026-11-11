@@ -117,7 +117,9 @@ function stackEnvironment(string $mode): array
         fclose($file);
     }
 
-    return [...chatGptEnvironment($mode), 'FINANCE_CHECKOUT_ID' => checkoutId(), 'FINANCE_PROJECT' => stackProject($mode), 'FINANCE_NETWORK' => developmentNetwork(), 'FINANCE_PUBLIC_URL' => stackUrl($mode), 'MERCURE_JWT_SECRET' => trim((string) file_get_contents($secret)), 'LOCAL_UID' => (string) posix_getuid(), 'LOCAL_GID' => (string) posix_getgid()];
+    $record = getenv('PROVIDER_CASSETTE_RECORD');
+
+    return [...chatGptEnvironment($mode), 'PROVIDER_CASSETTE_RECORD' => false === $record || '' === $record ? '0' : $record, 'FINANCE_CHECKOUT_ID' => checkoutId(), 'FINANCE_PROJECT' => stackProject($mode), 'FINANCE_NETWORK' => developmentNetwork(), 'FINANCE_PUBLIC_URL' => stackUrl($mode), 'MERCURE_JWT_SECRET' => trim((string) file_get_contents($secret)), 'LOCAL_UID' => (string) posix_getuid(), 'LOCAL_GID' => (string) posix_getgid()];
 }
 
 /** @param list<string> $arguments */
@@ -325,6 +327,16 @@ function browserLiveTest(#[AsArgsAfterOptionEnd] array $arguments = [], bool $he
     }
 
     return report('browser:live:test', ['env', 'PLAYWRIGHT_HEADLESS='.($headed ? 'false' : 'true'), 'FINANCE_IMPORT_URL='.stackUrl('browser'), 'FINANCE_PROXY_IP='.proxyAddress(), 'php', 'vendor/bin/phpunit', ...$arguments, '--fail-on-empty-test-suite', '--log-junit', 'var/qa/browser-live-test/junit.xml'], headed: $headed, networked: true);
+}
+
+#[AsTask(namespace: 'browser', name: 'replay:prepare', description: 'Seed only the canonical demo synthetic grant in the isolated browser replay AuthFileStore.')]
+function browserReplayPrepare(): int
+{
+    return report('browser:replay:prepare', ['php', 'tests/Support/prepare_replay_grant.php'], runtime: false, operation: static function (): int {
+        stackRun('browser', ['exec', '-T', 'php', 'php', 'tests/Support/prepare_replay_grant.php']);
+
+        return 0;
+    });
 }
 
 #[AsTask(namespace: 'dev', name: 'proxy:stop', description: 'Stop the shared proxy; --for-upgrade permits registered routes and removes only its owned container.')]

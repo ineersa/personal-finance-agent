@@ -8,7 +8,7 @@ services:
       DATABASE_URL: 'sqlite:////app/var/browser/application.db'
       CHAT_MODEL: '${CHAT_MODEL:-gpt-6-luna}'
       CHAT_REASONING_EFFORT: '${CHAT_REASONING_EFFORT:-low}'
-      CHAT_CASSETTE_REPLAY: '${CHAT_CASSETTE_REPLAY:-0}'
+      PROVIDER_CASSETTE_RECORD: '${PROVIDER_CASSETTE_RECORD:-0}'
     volumes: !override
       - .:/app:ro
       - ./var/browser-live:/app/var
@@ -28,8 +28,7 @@ services:
       APP_SECRET: browser-synthetic-only
       CHAT_MODEL: '${CHAT_MODEL:-gpt-6-luna}'
       CHAT_REASONING_EFFORT: '${CHAT_REASONING_EFFORT:-low}'
-      CHAT_CASSETTE_RECORD: '${CHAT_CASSETTE_RECORD:-0}'
-      CHAT_CASSETTE_REPLAY: '${CHAT_CASSETTE_REPLAY:-0}'
+      PROVIDER_CASSETTE_RECORD: '${PROVIDER_CASSETTE_RECORD:-0}'
     volumes: !override
       - .:/app:ro
       - ./var/browser-live:/app/var

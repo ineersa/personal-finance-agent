@@ -163,12 +163,36 @@ function lspCheck(): int
 function browserTest(bool $headed = false, #[AsArgsAfterOptionEnd] array $arguments = []): int
 {
     return report('test', ['vendor/bin/castor', 'test', ...($headed ? ['--headed'] : []), '--', ...$arguments], runtime: false, operation: static function () use ($headed, $arguments): int {
-        $prepared = testDatabasePrepare();
+        $record = getenv('PROVIDER_CASSETTE_RECORD');
+        if (false !== $record && '' !== $record && '0' !== $record) {
+            throw new \RuntimeException('Routine tests only replay. Record explicitly through browser:stack:up and browser:live:test.');
+        }
+        $database = \dirname(__DIR__).'/var/browser-live/browser/application.db';
+        foreach ([\dirname(__DIR__).'/var', \dirname(__DIR__).'/var/browser-live', \dirname($database), $database] as $storage) {
+            if (is_link($storage)) {
+                throw new \RuntimeException('Refusing symlinked browser storage.');
+            }
+        }
+        $fresh = !file_exists($database);
+        $started = browserStackUp();
+        if (0 !== $started) {
+            return $started;
+        }
+        // This runner owns an idle isolated stack; a long-running worker must not
+        // retain the previous compiled test container or service substitutions.
+        stackRun('browser', ['stop', 'worker']);
+        stackRun('browser', ['exec', '-T', 'php', 'php', 'bin/console', 'cache:clear', '--env=test', '--no-interaction']);
+        stackRun('browser', ['exec', '-T', 'php', 'php', 'bin/console', 'doctrine:migrations:migrate', '--no-interaction']);
+        if ($fresh) {
+            stackRun('browser', ['exec', '-T', 'php', 'php', 'bin/console', 'hautelook:fixtures:load', '--append', '--no-interaction']);
+        }
+        $prepared = browserReplayPrepare();
         if (0 !== $prepared) {
             return $prepared;
         }
+        stackRun('browser', ['up', '-d', '--wait', 'worker']);
 
-        return report('test:browser', ['env', 'PLAYWRIGHT_HEADLESS='.($headed ? 'false' : 'true'), 'php', 'vendor/bin/phpunit', ...$arguments, '--fail-on-empty-test-suite', '--log-junit', 'var/qa/test/junit.xml'], headed: $headed);
+        return report('test:browser', ['env', 'PLAYWRIGHT_HEADLESS='.($headed ? 'false' : 'true'), 'FINANCE_IMPORT_URL='.stackUrl('browser'), 'FINANCE_PROXY_IP='.proxyAddress(), 'php', 'vendor/bin/phpunit', ...$arguments, '--fail-on-empty-test-suite', '--log-junit', 'var/qa/test/junit.xml'], headed: $headed, networked: true);
     });
 }
 

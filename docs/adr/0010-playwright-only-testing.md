@@ -47,6 +47,27 @@ Use fixed, separate SQLite test storage; Doctrine's database-name suffix does no
 
 ### Commands and prerequisites
 
+Amendment, 2026-11-11 (task 33): the owner superseded the earlier permissions for
+kernel interception and application mocks. All journeys now use the native-network
+browser base against checkout-owned application, database, worker, broker, Mercure
+and local chart/MCP services. Remove the obsolete intercepted base, tenant transaction
+helper and application service substitutions; keep DAMA installed. Cross-process
+storage is prepared through Doctrine and native append-only canonical Alice loading,
+not per-test rollback or a replacement fixture framework. Each journey cleans up only
+its own UI-created data. Never purge an owner's preview.
+
+External provider interactions are genuinely recorded from canonical synthetic data
+and replayed through Symfony AI's native HTTP cassette facilities. Native replay's
+internal MockResponse transports recorded bytes; it does not authorize fabricated
+responses, model events, fake EventSource, manual Turbo injection or queue/Mercure
+substitution. Routine `test`/`check` are strict replay, including financial workflows;
+missing or mismatched recordings fail without network fallback. Recording is explicit,
+private until reviewed, and separate from the synthetic native AuthFileStore replay
+grant. No fabricated token pacing is permitted. Requested headed walkthroughs use a
+2560×1440 window with native 1000ms slowMo; headless runs remain unpaced and no
+window-size assertions are required. See the coverage inventory in TESTING.md for
+remaining evidence gaps; this decision is not proof that every migration passes.
+
 Use Castor for the browser-suite task and the combined validation gate. Extend the concise report convention from [ADR 0009](0009-castor-and-static-checks.md): preserve failure codes, save diagnostics, and print short summaries. Keep formatting fixes separate from validation.
 
 The command surface is `test` for the headless-by-default suite, `qa:static` for static-only checks, and `check` as the sole combined gate executed by the task workflow. Castor owns their runtime and lifecycle implementation; do not add executable task wrappers or another combined command.
