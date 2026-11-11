@@ -124,8 +124,10 @@ final class ChatModelTest extends FinanceNetworkBrowserTest
         $this->login();
         $page = $this->visit('/home/chat');
         self::assertSame(0, $page->locator('.chat-turn')->count());
-        // Observe actual incoming Turbo streams before rendering; never inject one.
-        $page->addInitScript(<<<'JS'
+        // Keep the authenticated subscription alive across the submitting page's redirect.
+        // The shared context also closes this observer on failure during teardown.
+        $observer = $page->context()->newPage();
+        $observer->addInitScript(<<<'JS'
             window.chartFailureStreamSeen = false;
             document.addEventListener('turbo:before-stream-render', event => {
                 const stream = event.detail.newStream;
@@ -136,6 +138,8 @@ final class ChatModelTest extends FinanceNetworkBrowserTest
                 }
             });
             JS);
+        $observer->goto($page->url());
+        $observer->waitForFunction('() => document.querySelector("#import-live-subscription turbo-mercure-stream-source")?.es?.readyState === EventSource.OPEN');
         $page->getByLabel('Your message', ['exact' => true])->fill(self::FAILED_CHART_PROMPT);
         $page->getByRole('button', ['name' => 'Send message', 'exact' => true])->click();
         $page->waitForURL('**/home/chat?conversation=*');
@@ -149,7 +153,9 @@ final class ChatModelTest extends FinanceNetworkBrowserTest
         self::assertNotEmpty($tool->locator('.chat-tool-result')->textContent());
         self::assertSame(0, $page->locator('.chat-chart')->count());
         $result = $tool->locator('.chat-tool-result')->textContent();
-        self::assertTrue($page->evaluate('() => window.chartFailureStreamSeen === true'), 'The real Mercure stream must carry the failed chart tool, not only a snapshot.');
+        $observer->waitForFunction('() => window.chartFailureStreamSeen === true');
+        self::assertTrue($observer->evaluate('() => window.chartFailureStreamSeen === true'), 'The real Mercure stream must carry the failed chart tool, not only a snapshot.');
+        $observer->close();
         $page->reload();
         self::assertStringContainsString('Tool call failed', $tool->locator('summary')->textContent());
         $tool->locator('summary')->click();
