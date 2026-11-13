@@ -18,7 +18,7 @@ ADRs record significant technical decisions, their context, and their consequenc
 | [0010](0010-playwright-only-testing.md) | Accepted | Test application behavior only through Playwright, using visible browsers and agent-operated verification. |
 | [0011](0011-layered-rate-limiting.md) | Superseded by 0021 | Original per-user limits, upload quotas and shared AI budgets; implementation deferred. |
 | [0012](0012-configurable-ai-providers.md) | Chat scope superseded by 0030 | Original multi-provider chat selection; independent extraction configuration remains. |
-| [0013](0013-symfony-ai-agent-runtime.md) | Accepted; amended 2026-11-08 | Use Symfony AI's agent loop with native Messenger concurrency of four isolated worker contexts and a simple context handoff for late implementation; quotas, budgets and per-user admission remain deferred by 0021. |
+| [0013](0013-symfony-ai-agent-runtime.md) | Runtime superseded by 0032; loop/context handoff accepted | Preserve Symfony AI's agent loop and simple context handoff; the historical native worker pool is replaced by cooperative Amp/Revolt execution. Quotas, budgets and per-user admission remain deferred by 0021. |
 | [0014](0014-inline-chat-and-antv-charts.md) | Superseded by 0026 | Display chart images inline in chat using a Docker-hosted AntV MCP server and its documented free hosted renderer; remove the separate artifact workspace. |
 | [0015](0015-sqlite-conversation-history.md) | Superseded by 0029 | Original temporary/saved retention and queued/running protection. |
 | [0016](0016-local-markitdown-conversion.md) | Accepted | Convert PDF/XLSX locally with official MarkItDown MCP in Docker; parse CSV in PHP, leaving OCR backend selection unresolved. |
@@ -34,9 +34,10 @@ ADRs record significant technical decisions, their context, and their consequenc
 | [0026](0026-local-unovis-charts.md) | Accepted | Generate local interactive Unovis HTML, retain privately and serve through restricted sandboxed iframes. |
 | [0027](0027-owned-chat-history-controls.md) | Superseded by 0029 | Original custom history adapter, duplicate readable projection and generation recovery metadata. |
 | [0028](0028-native-chat-search.md) | Accepted | Search owned readable chat text with native SQLite FTS5 and an explicitly approved SQLite-specific migration exception. |
-| [0029](0029-native-chat-store.md) | Accepted | Direct native Doctrine message store, linked finance metadata, native concurrency/delivery and no custom recovery or parallel transcript. |
+| [0029](0029-native-chat-store.md) | Accepted; runtime amended by 0032 | Direct native Doctrine message store, linked finance metadata, native delivery and no custom recovery or parallel transcript. |
 | [0030](0030-chatgpt-model-selection.md) | Accepted | ChatGPT-only per-turn model/reasoning selection and request-only native history compatibility. |
 | [0031](0031-local-demo-packaging.md) | Accepted | Complete local production-mode demo with a narrow Bash installer, canonical one-off Alice provisioning and persistent private storage. |
+| [0032](0032-revolt-amp-worker-runtime.md) | Accepted; temporary executor copy authorized | Replace native worker contexts with one four-in-flight Amp/Revolt consumer, explicit untraced Amp HTTP and a temporary application copy of the unpublished upstream Amp tool executor until release; retain native Worker and Symfony AI semantics. |
 
 ## Recording decisions
 

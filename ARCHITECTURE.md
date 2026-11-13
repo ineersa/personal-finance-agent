@@ -15,7 +15,7 @@ flowchart LR
     subgraph Docker["Local demo Compose project"]
         PHP["FrankenPHP / Symfony\nEasyAdmin + Twig + Turbo"]
         Broker["sqlite-queue broker\nUnix socket + separate SQLite"]
-        Worker["Messenger worker\nchat + imports + Scheduler\nnative concurrency: 4"]
+        Worker["Messenger worker\nchat + imports + Scheduler\nAmp/Revolt: 4 in flight, one process"]
         Hub["Private Mercure hub"]
         Charts["Local Unovis MCP\npackaged HTML runtime"]
         Central[("Central SQLite\nusers + conversations + messages")]
@@ -103,7 +103,7 @@ sequenceDiagram
     User->>Web: Question + model / reasoning selection
     Web->>Store: Persist owned conversation and submission
     Web->>Broker: GenerateChat
-    Worker->>Broker: Consume with native worker context
+    Worker->>Broker: Native Worker with cooperative Amp strategy
     Worker->>Store: Load native history and conversation owner
     Worker->>GPT: Current instructions + retained context
     loop Native agent tool calls as needed

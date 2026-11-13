@@ -38,6 +38,8 @@ services:
             - '../src/Doctrine/SqliteMigrator.php'
             - '../src/Doctrine/SqliteImmediateTransactionConnection.php'
             - '../src/Doctrine/SqliteImmediateTransactionDriver.php'
+            - '../src/Messenger/AmpMessageExecutionStrategy.php'
+            - '../src/Chat/AmpToolExecutor.php'
 
     Symfony\AI\Platform\Message\TemplateRenderer\StringTemplateRenderer: ~
 
@@ -49,18 +51,16 @@ services:
 
     Symfony\AI\Agent\MessageStore\MessageStoreInterface: '@Symfony\AI\Agent\Bridge\Doctrine\DoctrineDbalMessageStore'
 
-    # Native and untraced: OAuth credentials must not enter the HTTP profiler.
+    # Explicit Amp transport, untraced: OAuth credentials must not enter the HTTP profiler.
     app.chatgpt.http_client:
-        class: Symfony\Contracts\HttpClient\HttpClientInterface
-        factory: ['Symfony\Component\HttpClient\HttpClient', 'create']
+        class: Symfony\Component\HttpClient\AmpHttpClient
         autoconfigure: false
         arguments:
             $defaultOptions: { timeout: 15, max_duration: 30 }
 
-    # Native and untraced, like the ChatGPT client: MCP arguments stay out of the profiler.
+    # Amp-managed MCP waits; arguments stay out of the HTTP profiler.
     app.charts.http_client:
-        class: Symfony\Contracts\HttpClient\HttpClientInterface
-        factory: ['Symfony\Component\HttpClient\HttpClient', 'create']
+        class: Symfony\Component\HttpClient\AmpHttpClient
         autoconfigure: false
         arguments:
             $defaultOptions: { timeout: 15, max_duration: 45, max_redirects: 0 }
@@ -103,13 +103,22 @@ services:
     App\Controller\StatementImportController:
         bind: { $entityManager: '@doctrine.orm.finance_entity_manager' }
 
-    # Native client without framework tracing: statement payloads must not enter profiler collectors.
+    # Amp transport without framework tracing: statement payloads stay private.
     app.jev.http_client:
-        class: Symfony\Contracts\HttpClient\HttpClientInterface
-        factory: ['Symfony\Component\HttpClient\HttpClient', 'create']
+        class: Symfony\Component\HttpClient\AmpHttpClient
         autoconfigure: false
         arguments:
             $defaultOptions: { timeout: 30, max_duration: 60 }
+
+    # Private live HTML must not be retained by the framework HTTP profiler.
+    app.mercure.http_client:
+        class: Symfony\Component\HttpClient\AmpHttpClient
+        autoconfigure: false
+
+    # Scheduled public-rate requests also yield; retain the existing default HTTP options.
+    app.ecb.http_client:
+        class: Symfony\Component\HttpClient\AmpHttpClient
+        autoconfigure: false
 
     app.jev.model_catalog:
         class: Symfony\AI\Platform\Bridge\TypeSafe\ModelCatalog

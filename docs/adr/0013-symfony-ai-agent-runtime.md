@@ -1,8 +1,10 @@
 # ADR 0013: Use Symfony AI agents with native Messenger concurrency
 
-- Status: Accepted
+- Status: Accepted; runtime portion superseded by [ADR 0032](0032-revolt-amp-worker-runtime.md)
 - Date: 2026-10-29
 - Amended: 2026-11-08
+
+On 2026-11-12, the owner replaced the native worker-pool runtime below with the cooperative Amp/Revolt runtime in ADR 0032. The historical amendment and rationale remain below; Symfony AI ownership of the loop and the context-handoff decision remain accepted.
 
 ## Amendment: native worker pool
 

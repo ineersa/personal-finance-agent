@@ -22,7 +22,7 @@ services:
       - .:/app:ro
       - ./var/browser-live:/app/var
   worker:
-    command: ['php', 'bin/console', 'messenger:consume', 'statement_import', 'chat', '--concurrency=4', '--keepalive=5', '--memory-limit=256M', '--time-limit=3600', '--no-interaction']
+    command: ['php', 'bin/console', 'app:messenger:consume', 'statement_import', 'chat', '--keepalive=5', '--memory-limit=256M', '--time-limit=3600', '--no-interaction']
     environment:
       APP_ENV: test
       APP_DEBUG: '1'

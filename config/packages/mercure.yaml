@@ -1,6 +1,7 @@
 mercure:
     hubs:
         default:
+            http_client: app.mercure.http_client
             cookie_name: '%env(MERCURE_COOKIE_NAME)%'
             url: '%env(default::MERCURE_URL)%'
             public_url: '%env(default::MERCURE_PUBLIC_URL)%'

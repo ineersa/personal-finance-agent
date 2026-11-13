@@ -262,7 +262,7 @@ uses the ordinary live client **only** in recording mode, and is never recorded.
 In replay it receives a native `CassetteHttpClient(record: false)` with no real
 client and a deliberately absent `tests/Fixtures/providers/oauth-unavailable.json`.
 Never create that file: unexpected authorization, discovery or refresh must fail.
-Local chart/MCP, broker, worker and Mercure remain real. The browser worker consumes only `statement_import` and `chat`, not `scheduler_default`. Browser finances use canonical seeded currency rates; scheduled ECB currency refresh is not covered by these journeys. Development and production worker commands are unchanged.
+Local chart/MCP, broker, worker and Mercure remain real. All Compose workers use `app:messenger:consume`: one PHP process, at most four Amp/Revolt handlers, native Worker delivery and five-second keepalive, with service resets only at drained boundaries. Development and production retain `scheduler_default`, `statement_import` and `chat`; the browser worker consumes only `statement_import` and `chat`. Browser finances use canonical seeded currency rates; scheduled ECB refresh is not covered by these journeys. Strict provider replay does not establish live Amp HTTP-wait overlap. See [ADR 0032](docs/adr/0032-revolt-amp-worker-runtime.md).
 Jev receives a clearly synthetic key in replay; recording uses the configured key.
 
 `ProviderCassetteHttpClient` selects a SHA-256 filename from method, URL, query and
@@ -270,12 +270,12 @@ body, then delegates final signature verification, recording and FIFO replay to
 installed Symfony AI `HttpCassette`/`CassetteHttpClient`. Independent requests/jobs
 can select their own recording; repeated identical requests within a job still
 consume FIFO and fail when exhausted. Explicit `kernel.reset` tags clear clients
-between Messenger jobs. Installed TypeSafe `ModelClient` retains the injected
+at safe drained worker boundaries, never while another handler is active. Installed TypeSafe `ModelClient` retains the injected
 client and calls `request()` directly, without cloning it. The adapter implements
 native `withOptions()` merging against the complete supported option set, passing
 only explicit options to avoid overriding the real client's defaults. Clones copy
 existing native clients (and their cursor objects); the configured provider
-services themselves are reset after each job.
+services themselves are reset after all in-flight handlers and their native completion callbacks drain, not after each overlapping job. Replay cursor sharing is unchanged; replay is not proof of concurrent identical-request isolation.
 
 Private captures are `var/browser-live/private/provider-cassettes/{chat,jev}`
 on the host (`var/private/provider-cassettes/` in the container). Recording refuses
