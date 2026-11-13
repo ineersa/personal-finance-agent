@@ -57,7 +57,7 @@ canonical favourite mutation, provider generation or supplementary data is added
 Legacy literal `provisional` reply/search assertions now check the existing recorded
 code word; the old fixed row counts are derived from the discovered sidebar rows.
 Approved transaction coverage checks the imported USD row, not canonical CAD salary.
-Validation results and owner walkthrough acceptance belong on the task board.
+Validation results and owner walkthrough acceptance belong on the current GitHub issue.
 
 ### Legacy ChatModel coverage inventory
 
@@ -85,7 +85,7 @@ actual MCP validation error → model reports failure without retry. Model compl
 must be checked in every new recording. Restore replay with `PROVIDER_CASSETTE_RECORD=0
 vendor/bin/castor browser:stack:up`, then `vendor/bin/castor browser:replay:prepare`.
 Main validates changed scenarios and static QA; the transition runs the full gate.
-Track validation and individual owner walkthroughs on the external board.
+Track validation and individual owner walkthroughs on the current GitHub issue.
 
 ## Current suite
 

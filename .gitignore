@@ -13,7 +13,8 @@
 /.idea/
 /var/
 /bench/results/
-/.hatfield/
+/.hatfield/*
+!/.hatfield/task-hooks/
 
 # Generated artifacts
 callgraph.json
