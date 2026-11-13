@@ -19,7 +19,7 @@ use function Amp\Future\awaitFirst;
 /** Amp owns suspension; Symfony retains dispatch, acknowledgement and delivery identity. */
 final class AmpMessageExecutionStrategy implements MessageExecutionStrategyInterface
 {
-    public const int MAX_IN_FLIGHT = 4;
+    public const int MAX_IN_FLIGHT = 10;
     private const float POLL_SECONDS = 0.1;
 
     /** @var array<int, Future<\Closure(): void>> */

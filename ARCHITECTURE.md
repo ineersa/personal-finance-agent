@@ -15,7 +15,7 @@ flowchart LR
     subgraph Docker["Local demo Compose project"]
         PHP["FrankenPHP / Symfony\nEasyAdmin + Twig + Turbo"]
         Broker["sqlite-queue broker\nUnix socket + separate SQLite"]
-        Worker["Messenger worker\nchat + imports + Scheduler\nAmp/Revolt: 4 in flight, one process"]
+        Worker["Messenger worker\nchat + imports + Scheduler\nAmp/Revolt: 10 in flight, one process"]
         Hub["Private Mercure hub"]
         Charts["Local Unovis MCP\npackaged HTML runtime"]
         Central[("Central SQLite\nusers + conversations + messages")]

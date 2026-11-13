@@ -34,7 +34,7 @@ use Symfony\Contracts\Service\ResetInterface;
 
 use function Amp\delay;
 
-#[AsCommand(name: 'app:messenger:consume', description: 'Consume messages cooperatively in one Amp/Revolt process (four in flight).')]
+#[AsCommand(name: 'app:messenger:consume', description: 'Consume messages cooperatively in one Amp/Revolt process (ten in flight).')]
 final class CooperativeConsumeCommand extends Command implements SignalableCommandInterface
 {
     private const int IDLE_WAIT_MILLISECONDS = 1_000;
