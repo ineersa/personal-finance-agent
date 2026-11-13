@@ -9,11 +9,12 @@ use App\Enum\ReportingCurrency;
 use App\Repository\CurrencyRateRepository;
 use Doctrine\ORM\EntityManagerInterface;
 use Psr\Log\LoggerInterface;
+use Symfony\Component\DependencyInjection\Attribute\Autowire;
 use Symfony\Contracts\HttpClient\HttpClientInterface;
 
 final readonly class EcbRateRefresher
 {
-    public function __construct(private HttpClientInterface $client, private EntityManagerInterface $central, private TenantManagers $tenants, private LoggerInterface $logger)
+    public function __construct(#[Autowire(service: 'app.ecb.http_client')] private HttpClientInterface $client, private EntityManagerInterface $central, private TenantManagers $tenants, private LoggerInterface $logger)
     {
     }
 

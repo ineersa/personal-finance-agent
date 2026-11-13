@@ -75,15 +75,19 @@ final readonly class AgentFactory
         $factory = new Psr17Factory();
         $chartHttp = new Psr18Client($this->chartHttp, $factory, $factory);
         $chartClient = Client::builder()->setClientInfo('finance-charts', '1.0')->setInitTimeout(10)->setRequestTimeout(45)->setMaxRetries(0)->build();
-        $chartTools = new ClientToolset(ChartToolset::NAME, $chartClient, new HttpTransport(ChartToolset::ENDPOINT, httpClient: $chartHttp, requestFactory: $factory, streamFactory: $factory, maxSseBufferBytes: 262144));
+        $chartTools = new SynchronizedMcpToolset(new ClientToolset(ChartToolset::NAME, $chartClient, new HttpTransport(ChartToolset::ENDPOINT, httpClient: $chartHttp, requestFactory: $factory, streamFactory: $factory, maxSseBufferBytes: 262144)));
+
+        // One native toolbox is shared by the agent and its Amp-owned sibling-tool scheduler.
+        $toolbox = new FaultTolerantToolbox(new ExplicitToolErrors(new ChainToolbox([
+            new Toolbox([$this->tool->forOwner($owner)], eventDispatcher: $events),
+            new McpToolbox(new ChartToolset($chartTools, $this->files, $conversation, $message, $this->conversations), eventDispatcher: $events),
+        ])));
 
         return new Agent(new Platform([$provider]), $model,
             inputProcessors: [new ModelHistoryInputProcessor(), new SystemPromptInputProcessor($prompt)],
             // Keep native NullLogger: debug tool logging would expose SQL arguments.
-            toolbox: new FaultTolerantToolbox(new ExplicitToolErrors(new ChainToolbox([
-                new Toolbox([$this->tool->forOwner($owner)], eventDispatcher: $events),
-                new McpToolbox(new ChartToolset($chartTools, $this->files, $conversation, $message, $this->conversations), eventDispatcher: $events),
-            ]))),
+            toolbox: $toolbox,
+            toolExecutor: new AmpToolExecutor($toolbox),
             eventDispatcher: $events,
             messageStore: $this->store,
         );

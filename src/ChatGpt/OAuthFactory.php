@@ -24,7 +24,6 @@ final readonly class OAuthFactory
         private IdTokenVerifier $verifier,
         private OAuthConfig $config,
         private Filesystem $filesystem,
-        private LockFactory $locks,
         private ClockInterface $clock,
         #[Autowire('%kernel.project_dir%/var/private/chatgpt-auth')] private string $directory,
         #[Autowire('%app.chatgpt.installation_id%')] private string $installationId,
@@ -36,8 +35,12 @@ final readonly class OAuthFactory
     {
         // Separate from the previous encrypted store; existing credentials are never migrated.
         $this->filesystem->mkdir($this->directory, 0700);
+        // Web and worker share this directory; their default /tmp lock stores do not.
+        $lockDirectory = $this->directory.'/locks';
+        $this->filesystem->mkdir($lockDirectory, 0700);
+        $locks = new LockFactory(new CooperativeFlockStore($lockDirectory));
 
-        return new AuthFileStore($this->directory.'/'.$identity.'.json', $this->locks, $this->filesystem, $this->installationId);
+        return new AuthFileStore($this->directory.'/'.$identity.'.json', $locks, $this->filesystem, $this->installationId);
     }
 
     public function create(string $identity): OAuthService

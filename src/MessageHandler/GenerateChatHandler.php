@@ -10,6 +10,7 @@ use App\Chat\InitialContext;
 use App\Message\GenerateChat;
 use App\Repository\ChatConversationRepository;
 use App\Repository\UserRepository;
+use Doctrine\ORM\EntityManagerInterface;
 use Symfony\AI\Agent\Exception\ConflictException;
 use Symfony\AI\Agent\Execution\ExecutionStatus;
 use Symfony\AI\Agent\Execution\Update\Progress;
@@ -28,15 +29,20 @@ final readonly class GenerateChatHandler
 {
     private const float UPDATE_INTERVAL = 0.05;
 
-    public function __construct(private UserRepository $users, private ChatConversationRepository $conversations, private MessageStoreInterface $store, private InitialContext $context, private AgentFactory $agents, private ChatUpdates $updates)
+    public function __construct(private UserRepository $users, private EntityManagerInterface $entityManager, private ChatConversationRepository $conversations, private MessageStoreInterface $store, private InitialContext $context, private AgentFactory $agents, private ChatUpdates $updates)
     {
     }
 
     public function __invoke(GenerateChat $message): void
     {
         $owner = $this->users->find($message->ownerId);
-        $conversation = null === $owner ? null : $this->conversations->owned($owner, $message->conversationId);
-        if (null === $conversation || null === $owner) {
+        if (null === $owner) {
+            return;
+        }
+        // Peers may keep the identity map alive; refresh preferences without detaching their entities.
+        $this->entityManager->refresh($owner);
+        $conversation = $this->conversations->owned($owner, $message->conversationId);
+        if (null === $conversation) {
             return;
         }
         $id = UuidV7::fromString($conversation->id);
