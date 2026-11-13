@@ -16,6 +16,7 @@
         "ext-sqlite3": "*",
         "amphp/amp": "^3.1",
         "amphp/http-client": "^5.3.2",
+        "amphp/sync": "^2.3",
         "doctrine/doctrine-bundle": "^3.3",
         "doctrine/doctrine-migrations-bundle": "^4.0",
         "doctrine/orm": "^3.7",

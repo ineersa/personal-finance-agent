@@ -11,6 +11,7 @@ use Ineersa\SqliteQueue\Messenger\Transport;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
 use Revolt\EventLoop;
+use Symfony\Bridge\Doctrine\Messenger\DoctrineClearEntityManagerWorkerSubscriber;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Command\SignalableCommandInterface;
@@ -21,6 +22,7 @@ use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\SignalRegistry\SignalRegistry;
 use Symfony\Component\DependencyInjection\Attribute\Autowire;
 use Symfony\Component\DependencyInjection\ServicesResetterInterface;
+use Symfony\Component\EventDispatcher\EventDispatcherInterface;
 use Symfony\Component\EventDispatcher\ScopedEventDispatcher;
 use Symfony\Component\Messenger\Event\WorkerRunningEvent;
 use Symfony\Component\Messenger\EventListener\StopWorkerOnMemoryLimitListener;
@@ -28,8 +30,6 @@ use Symfony\Component\Messenger\Exception\TransportException;
 use Symfony\Component\Messenger\RoutableMessageBus;
 use Symfony\Component\Messenger\Transport\Receiver\ReceiverInterface;
 use Symfony\Component\Messenger\Worker;
-use Symfony\Contracts\EventDispatcher\EventDispatcherInterface;
-use Symfony\Contracts\EventDispatcher\ListenerIntrospectionInterface;
 use Symfony\Contracts\Service\ResetInterface;
 
 use function Amp\delay;
@@ -47,8 +47,9 @@ final class CooperativeConsumeCommand extends Command implements SignalableComma
     public function __construct(
         #[Autowire(service: 'messenger.routable_message_bus')] private readonly RoutableMessageBus $bus,
         #[Autowire(service: 'messenger.receiver_locator')] private readonly ContainerInterface $receivers,
-        #[Autowire(service: 'event_dispatcher')] private readonly EventDispatcherInterface&ListenerIntrospectionInterface $events,
+        #[Autowire(service: 'event_dispatcher')] private readonly EventDispatcherInterface $events,
         #[Autowire(service: ServicesResetterInterface::class)] private readonly ResetInterface $resetter,
+        #[Autowire(service: 'doctrine.orm.messenger.event_subscriber.doctrine_clear_entity_manager')] private readonly DoctrineClearEntityManagerWorkerSubscriber $doctrineClearer,
         private readonly ?LoggerInterface $logger = null,
     ) {
         parent::__construct();
@@ -110,10 +111,15 @@ final class CooperativeConsumeCommand extends Command implements SignalableComma
             throw new \InvalidArgumentException('Keepalive, time and memory limits must be positive.');
         }
         $stop = $this->stop = new DeferredCancellation();
-        $strategy = new AmpMessageExecutionStrategy($this->bus, $this->resetter->reset(...));
+        $onDrained = function (): void {
+            // Keep Doctrine's native all-manager clearing, but never detach a suspended peer's entities.
+            $this->doctrineClearer->onWorkerMessageHandled();
+            $this->resetter->reset();
+        };
+        $strategy = new AmpMessageExecutionStrategy($this->bus, $onDrained);
         $events = new ScopedEventDispatcher($this->events);
         // The native consume command installs its reset listener locally, not globally.
-        // This command instead resets only after all handlers and settlements drain.
+        // Doctrine also has a global handled/failed subscriber, detached only while this command runs below.
         $events->addSubscriber(new StopWorkerOnMemoryLimitListener($memoryLimit, $this->logger));
         $events->addListener(WorkerRunningEvent::class, static function (WorkerRunningEvent $event) use ($waitOwner, $queues, $strategy, $stop): void {
             if (!$event->isWorkerIdle() || $stop->isCancelled()) {
@@ -146,14 +152,18 @@ final class CooperativeConsumeCommand extends Command implements SignalableComma
         EventLoop::unreference($leaseTimer);
         EventLoop::unreference($deadlineTimer);
         $output->writeln(\sprintf('Consuming %s in one process with at most %d cooperative handlers.', implode(', ', $names), AmpMessageExecutionStrategy::MAX_IN_FLIGHT));
+        // ScopedEventDispatcher forwards these events: remove only the native clear subscriber,
+        // retaining every other handled/failed listener and restoring ordinary consumer behavior on exit.
+        $this->events->removeSubscriber($this->doctrineClearer);
         try {
             // Idle readiness is Amp-aware above; never enter Worker's blocking Clock sleep.
             $this->worker->run(['sleep' => 0, 'fetch_size' => 1, 'time_limit' => $timeLimit]);
         } finally {
             try {
                 $strategy->shutdown();
-                $this->resetter->reset();
+                $onDrained();
             } finally {
+                $this->events->addSubscriber($this->doctrineClearer);
                 EventLoop::cancel($leaseTimer);
                 EventLoop::cancel($deadlineTimer);
                 $this->worker = null;
