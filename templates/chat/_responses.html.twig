@@ -1,0 +1,10 @@
+{% set anchor = user.id.toRfc4122 %}
+{% for message in exchange %}
+    {% if message.role == roles.Assistant %}
+        <div class="chat-response" id="{{ activity ? 'chat-response' : 'chat-answer-response' }}-{{ conversation.id }}-{{ user.id }}-{{ anchor }}">
+            <div id="{{ activity ? 'chat-content' : 'chat-answer-content' }}-{{ conversation.id }}-{{ user.id }}-{{ anchor }}">{% include 'chat/_content.html.twig' with {content: message.content} %}</div>
+        </div>
+    {% elseif message.role == roles.ToolCall %}
+        {% set anchor = message.toolCall.id %}
+    {% endif %}
+{% endfor %}

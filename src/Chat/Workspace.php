@@ -37,7 +37,7 @@ final readonly class Workspace
     public const string EMPTY_ID = 'empty';
     public const string COMMENTARY_PHASE = 'commentary';
 
-    public function __construct(private ChatConversationRepository $conversations, private EntityManagerInterface $entityManager, private MessageStoreInterface $store, private MessageBusInterface $bus, private ChartFiles $files, private LoggerInterface $logger)
+    public function __construct(private ChatConversationRepository $conversations, private EntityManagerInterface $entityManager, private MessageStoreInterface $store, private MessageBusInterface $bus, private ChartFiles $files, private LoggerInterface $logger, private ChatControl $control)
     {
     }
 
@@ -81,12 +81,19 @@ final readonly class Workspace
             $conversation->label = $question;
             $this->entityManager->persist($conversation);
         }
-        $conversation->model = $model;
-        $conversation->effort = $effort;
-        $this->entityManager->flush();
         // Native message IDs survive Messenger redelivery; Agent owns continuation and conflicts.
         $input = $input->with(Message::ofUser($question));
-        $this->bus->dispatch(new GenerateChat($conversation->id, $user->getId() ?? throw new \LogicException('Owner unavailable.'), $input, $model, $effort));
+        $turn = $input->getMessages()[array_key_last($input->getMessages())]->getId()->toRfc4122();
+        $this->control->pending($conversation->id, $turn);
+        try {
+            $conversation->model = $model;
+            $conversation->effort = $effort;
+            $this->entityManager->flush();
+            $this->bus->dispatch(new GenerateChat($conversation->id, $user->getId() ?? throw new \LogicException('Owner unavailable.'), $input, $model, $effort));
+        } catch (\Throwable $error) {
+            $this->control->finish($conversation->id, $turn, \Symfony\AI\Agent\Execution\ExecutionStatus::Failed);
+            throw $error;
+        }
 
         return $conversation;
     }

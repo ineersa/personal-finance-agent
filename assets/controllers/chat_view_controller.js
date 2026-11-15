@@ -8,6 +8,7 @@ export default class extends Controller {
     inputRevision = 0;
     following = true;
     summaries = new Set();
+    activeActivities = new WeakSet();
 
     connect() {
         this.resize = () => {
@@ -20,8 +21,16 @@ export default class extends Controller {
         if (this.hasSubmissionTarget && !this.submissionTarget.hidden) this.waitForProgress();
         if (!this.hasScrollTarget) return;
         this.observer = new MutationObserver(() => {
-            if (this.waitingForProgress && this.hasSubmittedTurn()) this.clearSubmission();
-            this.scrollTarget.querySelectorAll('details[id]').forEach(details => {
+            if (this.waitingForProgress && (this.hasSubmittedTurn() || this.scrollTarget.querySelector('.chat-error'))) this.clearSubmission();
+            this.scrollTarget.querySelectorAll('.chat-activity[id]').forEach(details => {
+                const running = details.closest('.chat-turn').querySelector('[data-chat-response-active]');
+                if (running && !this.activeActivities.has(details)) {
+                    details.open = true;
+                    details.querySelector('.chat-activity-label').textContent = 'Working';
+                    this.activeActivities.add(details);
+                } else if (!running && this.activeActivities.delete(details)) details.open = false;
+            });
+            this.scrollTarget.querySelectorAll('.chat-tool[id]').forEach(details => {
                 details.open = this.summaries.has(details.id);
             });
             if (this.following) this.jumpToLatest();
@@ -45,6 +54,7 @@ export default class extends Controller {
     }
 
     submissionStarted(event) {
+        if (event.defaultPrevented) return;
         if (event.type === 'submit' && event.target.dataset.turbo === 'true') return;
         this.submittedRevision = this.inputRevision;
         this.submittedTurnIds = new Set([...this.element.querySelectorAll('.chat-turn[id]')].map(turn => turn.id));
@@ -83,10 +93,10 @@ export default class extends Controller {
     }
 
     hasSubmittedTurn() {
-        // A native input checkpoint supplies a real user turn, even before any
-        // answer tokens. Empty snapshots and updates to older replies do not.
+        // A saved input alone does not prove live progress. Keep waiting feedback
+        // until the worker supplies an active indicator or a completed answer.
         return [...this.element.querySelectorAll('.chat-turn[id]')].some(turn =>
-            !this.submittedTurnIds.has(turn.id) && turn.querySelector('.chat-question p')?.textContent.trim()
+            !this.submittedTurnIds.has(turn.id) && turn.querySelector('[data-chat-response-active], [data-chat-saved]')
         );
     }
 
@@ -99,7 +109,7 @@ export default class extends Controller {
         if (event.key !== 'Enter' || event.shiftKey || event.isComposing || event.keyCode === 229) return;
         event.preventDefault();
         const send = this.inputTarget.form.querySelector('[data-chat-send]');
-        if (this.inputTarget.value.trim() && send && !send.disabled) this.inputTarget.form.requestSubmit(send);
+        if (this.inputTarget.value.trim() && send && !send.disabled && send.type === 'submit') this.inputTarget.form.requestSubmit(send);
     }
 
     trackScroll() {
@@ -115,7 +125,7 @@ export default class extends Controller {
     }
 
     rememberSummary(event) {
-        if (!(event.target instanceof HTMLDetailsElement) || !this.element.contains(event.target)) return;
+        if (!(event.target instanceof HTMLDetailsElement) || !event.target.classList.contains('chat-tool') || !this.element.contains(event.target)) return;
         if (event.target.open) this.summaries.add(event.target.id);
         else this.summaries.delete(event.target.id);
     }

@@ -1,5 +1,10 @@
 <turbo-stream action="append" target="chat-responses-{{ conversation.id }}-{{ user.id }}"><template>
-    <div class="chat-response" id="chat-response-{{ conversation.id }}-{{ user.id }}-{{ anchor }}">
+    <div class="chat-response" id="chat-response-{{ conversation.id }}-{{ user.id }}-{{ anchor }}" data-chat-response-active>
         <div id="chat-content-{{ conversation.id }}-{{ user.id }}-{{ anchor }}"></div>
+    </div>
+</template></turbo-stream>
+<turbo-stream action="append" target="chat-answers-{{ conversation.id }}-{{ user.id }}"><template>
+    <div class="chat-response" id="chat-answer-response-{{ conversation.id }}-{{ user.id }}-{{ anchor }}">
+        <div id="chat-answer-content-{{ conversation.id }}-{{ user.id }}-{{ anchor }}"></div>
     </div>
 </template></turbo-stream>

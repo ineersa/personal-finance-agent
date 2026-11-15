@@ -32,11 +32,11 @@ final class ChatConversationRepository extends ServiceEntityRepository
             ->getQuery()->getOneOrNullResult(\Doctrine\ORM\AbstractQuery::HYDRATE_ARRAY);
     }
 
-    public function attachChart(ChatConversation $conversation, string $message, string $file): void
+    public function attachChart(ChatConversation $conversation, string $message, string $file, string $title): void
     {
-        $this->getEntityManager()->wrapInTransaction(function () use ($conversation, $message, $file): void {
+        $this->getEntityManager()->wrapInTransaction(function () use ($conversation, $message, $file, $title): void {
             $this->getEntityManager()->refresh($conversation);
-            $conversation->charts[] = ['message' => $message, 'file' => $file];
+            $conversation->charts[] = ['message' => $message, 'file' => $file, 'title' => $title];
         });
     }
 

@@ -108,7 +108,8 @@ abstract class FinanceNetworkBrowserTest extends TestCase
         self::assertNotEmpty($query['conversation'] ?? null);
         self::assertSame($query['conversation'], $row->getAttribute('data-conversation-id'));
         self::assertSame(0, $this->page->locator('[data-chat-response-active]')->count(), 'Do not delete an active generation.');
-        self::assertTrue($this->page->locator('.chat-turn')->last()->locator('.chat-answer[data-chat-saved]')->isVisible());
+        $turn = $this->page->locator('.chat-turn')->last();
+        self::assertTrue($turn->locator('.chat-answer[data-chat-saved]')->isVisible() || $turn->getByText('Stopped', ['exact' => true])->isVisible(), 'Cleanup requires a completed answer or confirmed stopped execution.');
         $row->getByRole('button', ['name' => 'Chat actions', 'exact' => true])->click();
         $row->getByRole('button', ['name' => 'Delete chat', 'exact' => true])->click();
         $this->page->locator('#modal-action-confirmation-button')->waitFor(['state' => 'visible']);

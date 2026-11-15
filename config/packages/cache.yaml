@@ -1,4 +1,10 @@
 # yaml-language-server: $schema=../schema.json
+framework:
+    cache:
+        pools:
+            cache.chat_control:
+                adapter: cache.adapter.doctrine_dbal
+                provider: doctrine.dbal.default_connection
 #cache:
     # Unique name of your app: used to compute stable namespaces for cache keys.
     #prefix_seed: your_vendor_name/app_name

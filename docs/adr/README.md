@@ -38,6 +38,8 @@ ADRs record significant technical decisions, their context, and their consequenc
 | [0030](0030-chatgpt-model-selection.md) | Accepted | ChatGPT-only per-turn model/reasoning selection and request-only native history compatibility. |
 | [0031](0031-local-demo-packaging.md) | Accepted | Complete local production-mode demo with a narrow Bash installer, canonical one-off Alice provisioning and persistent private storage. |
 | [0032](0032-revolt-amp-worker-runtime.md) | Accepted; temporary executor copy authorized | Replace native worker contexts with one four-in-flight Amp/Revolt consumer, explicit untraced Amp HTTP and a temporary application copy of the unpublished upstream Amp tool executor until release; retain native Worker and Symfony AI semantics. |
+| [0033](0033-chat-feedback-and-chart-panel.md) | Accepted | Continuous transient chat feedback, separate activity/answer regions and a responsive dark chart panel, using official Unovis without a generic artifact subsystem. |
+| [0034](0034-chat-stop-mailbox.md) | Accepted | Native Stop through a shared Doctrine-backed cancellation mailbox and bounded reload control presence, without a parallel transcript or retry engine. |
 
 ## Recording decisions
 

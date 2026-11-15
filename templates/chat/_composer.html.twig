@@ -1,4 +1,4 @@
-<div id="{{ chat.composer_id }}" data-controller="chat-model">
+<div id="{{ chat.composer_id }}" data-controller="chat-model" data-chat-model-restore-value="{{ not chat.conversation_id and not form.vars.submitted ? 'true' : 'false' }}">
     <p id="{{ chat.composer_id }}-error" role="status" data-chat-view-target="error"></p>
     {{ form_label(form.question) }}
     {{ form_widget(form.question) }}
@@ -6,7 +6,7 @@
         <span class="preview-note">Enter to send · Shift+Enter for a new line</span>
         <div class="chat-composer-actions">
             <details class="chat-model-menu" data-chat-model-target="menu" data-action="keydown.esc->chat-model#close click@window->chat-model#dismiss">
-                <summary aria-controls="{{ chat.composer_id }}-model-panel">Model</summary>
+                <summary aria-controls="{{ chat.composer_id }}-model-panel" data-chat-model-target="selected">{% for choice in form.model.vars.choices %}{% if choice.value == form.model.vars.value %}{{ choice.label }}{% endif %}{% endfor %}</summary>
                 <div id="{{ chat.composer_id }}-model-panel" class="chat-model-panel">
                     {{ form_label(form.model) }}
                     <div class="chat-model-dropdown">{{ form_widget(form.model) }}</div>

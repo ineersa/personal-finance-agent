@@ -19,6 +19,8 @@ final readonly class ChartToolset implements ToolsetInterface
     public const string INFO_TOOL = 'get_unovis_info';
     public const string ENDPOINT = 'http://charts:3737/mcp';
     public const string OUTPUT_TYPE = 'html';
+    public const string THEME = 'dark';
+    public const array COLORS = ['#b9edd1', '#94b9ef', '#d9b6ed', '#edcb94', '#edaaaa', '#92d4d4'];
     public const string PROMPT_LINE = 'Unovis chart tools are discovered from the local MCP service and save interactive HTML inline in this conversation.';
     public const string GUIDELINES = 'Use the discovered chart tools when a visualization materially helps answer the user question, using authorized SQL results. Calculate values in {finance_name}; do not invent or mentally calculate chart data. Rendering is local. The application manages outputType and outputPath for private inline HTML presentation. The info tool returns server information as text, not a chart. Follow each tool schema for chart options. If a tool returns an error, use its feedback to correct the call and try again when appropriate. Charts appear inline automatically; do not emit HTML, scripts, image Markdown or chart links.';
 
@@ -47,7 +49,9 @@ final readonly class ChartToolset implements ToolsetInterface
         try {
             try {
                 // Chart options belong to the server; only presentation and the destination belong to us.
-                $result = $this->connection->callTool($name, [...$arguments, 'outputType' => self::OUTPUT_TYPE, 'outputPath' => $path]);
+                // Native HTML rendering is responsive; model-selected pixel sizes must not dictate the panel.
+                unset($arguments['width'], $arguments['height']);
+                $result = $this->connection->callTool($name, [...$arguments, 'theme' => self::THEME, 'colors' => self::COLORS, 'outputType' => self::OUTPUT_TYPE, 'outputPath' => $path]);
             } catch (\Throwable $error) {
                 return CallToolResult::error([new TextContent(str_replace($path, '[private chart output]', $error->getMessage()))]);
             }
@@ -64,7 +68,7 @@ final readonly class ChartToolset implements ToolsetInterface
             }
             try {
                 $filename = $this->files->retain($this->conversation->id, $path);
-                $this->conversations->attachChart($this->conversation, $this->message, $filename);
+                $this->conversations->attachChart($this->conversation, $this->message, $filename, \is_string($arguments['title'] ?? null) ? $arguments['title'] : 'Financial chart');
             } catch (\Throwable) {
                 return CallToolResult::error([new TextContent('The chart output could not be retained privately. No document was attached.')]);
             }

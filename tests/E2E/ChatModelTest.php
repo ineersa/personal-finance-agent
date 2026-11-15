@@ -148,6 +148,7 @@ final class ChatModelTest extends FinanceNetworkBrowserTest
         $tool = $page->locator('.chat-tool')->filter(['hasText' => 'unovis_generate_bar_chart']);
         self::assertSame(1, $tool->count(), 'The recorded model must make exactly one chart call, without retry.');
         self::assertStringContainsString('Tool call failed', $tool->locator('summary')->textContent());
+        $page->locator('.chat-activity > summary')->click();
         $tool->locator('summary')->click();
         self::assertStringContainsString('missing_amount', $tool->locator('.chat-tool-arguments')->textContent());
         self::assertNotEmpty($tool->locator('.chat-tool-result')->textContent());
@@ -158,6 +159,7 @@ final class ChatModelTest extends FinanceNetworkBrowserTest
         $observer->close();
         $page->reload();
         self::assertStringContainsString('Tool call failed', $tool->locator('summary')->textContent());
+        $page->locator('.chat-activity > summary')->click();
         $tool->locator('summary')->click();
         self::assertSame($result, $tool->locator('.chat-tool-result')->textContent());
         $this->deleteCreatedChat();

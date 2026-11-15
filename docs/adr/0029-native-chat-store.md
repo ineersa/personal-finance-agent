@@ -1,6 +1,8 @@
 # ADR 0029: Native Symfony AI conversation storage
 
 - Status: Accepted
+- Stop amended by: [ADR 0034](0034-chat-stop-mailbox.md), allowing only the owner-authorized shared cancellation mailbox and expiring control presence; history remains native and no custom retry/recovery engine is restored.
+- Presentation amended by: [ADR 0033](0033-chat-feedback-and-chart-panel.md), separating activity/answer targets, transient phase feedback and a chart side panel without changing native storage or execution.
 - Date: 2026-11-06
 - Amended by: [ADR 0030](0030-chatgpt-model-selection.md) for captured queued model/effort and a request-only native input processor; direct storage is unchanged.
 - Runtime amended by: [ADR 0032](0032-revolt-amp-worker-runtime.md) replaces native worker contexts with a cooperative Amp/Revolt consumer; native storage and delivery limitations below remain unchanged.
