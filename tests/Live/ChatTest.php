@@ -16,6 +16,16 @@ final class ChatTest extends FinanceNetworkBrowserTest
     {
         $this->login();
         $page = $this->page;
+        $page->addInitScript(<<<'JS'
+            window.terminalObserved = false;
+            window.terminalSnapshotObserved = false;
+            document.addEventListener('chat-control:terminal', () => { window.terminalObserved = true; });
+            document.addEventListener('turbo:before-stream-render', event => {
+                if (window.terminalObserved && event.detail.newStream.hasAttribute('data-import-snapshot')) {
+                    window.terminalSnapshotObserved = true;
+                }
+            });
+            JS);
         $page->goto($this->url.'/home/chat');
         $page->getByLabel('Your message', ['exact' => true])->fill('Show my September 2026 spending by category for Maple Harbour Rewards Visa · 4826 in CAD as a horizontal bar chart, excluding card repayments. Briefly summarize the biggest expenses.');
         $page->getByRole('button', ['name' => 'Send message', 'exact' => true])->click();
@@ -33,6 +43,8 @@ final class ChatTest extends FinanceNetworkBrowserTest
         $terminalLabel = trim($page->locator('.chat-progress')->textContent());
         self::assertContains($terminalLabel, ['Stopped', 'Reply complete']);
         $page->getByRole('button', ['name' => 'Send message', 'exact' => true])->waitFor();
+        $page->waitForFunction('() => window.terminalSnapshotObserved === true');
+        self::assertSame(0, $page->locator('[data-controller~="chat-progress"]')->count());
         self::assertSame($draft, $page->getByLabel('Your message', ['exact' => true])->inputValue());
         self::assertSame(1, $page->locator('.chat-turn')->count());
         self::assertSame(0, $page->locator('[data-chat-response-active]')->count());

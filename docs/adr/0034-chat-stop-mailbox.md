@@ -26,4 +26,6 @@ Handle intentional native Cancelled separately from real failures, publish Stopp
 
 ## Validation
 
+Every observed busy-to-idle transition dispatches the native Stimulus `chat-control:terminal` event to the existing version-guarded snapshot catch-up action. This reconciles the persisted answer and tool results even when a terminal Mercure publication was missed, and replaces the transient progress controller rather than merely changing its label. Snapshot targets remain the conversation workspace and Send button, not the composer/textarea, so a typed draft survives. Initial idle rendering and repeated terminal polls do not dispatch another transition, avoiding a reconciliation loop. No separate recovery mechanism or status-only fabricated answer is added.
+
 Use the existing native-network browser harness, real cooperative worker/broker/Mercure and genuine provider cassettes. Verify the Send/Stop/Stopped journey, reload reconciliation and continued usability through the UI, plus the existing chat/chart happy paths and static gate. No fabricated streams/provider responses or service-only tests. Additional fault injection, worker crashes, saturation/concurrency matrices and expiry-boundary tests require separate owner permission. Owner design acceptance still precedes independent review.

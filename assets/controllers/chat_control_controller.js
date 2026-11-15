@@ -2,6 +2,7 @@ import { Controller } from '@hotwired/stimulus';
 
 const STATUS = Object.freeze({ pending: 'pending', running: 'running', completed: 'completed', failed: 'failed', cancelled: 'cancelled' });
 const REFRESH_MILLISECONDS = 2000;
+const TERMINAL_EVENT = 'terminal';
 
 export default class extends Controller {
     static targets = ['button'];
@@ -81,6 +82,7 @@ export default class extends Controller {
     }
 
     render(state) {
+        const wasBusy = Boolean(this.busy);
         const previousTurn = this.busy ? this.state?.turn : null;
         this.state = state;
         this.busy = state && [STATUS.pending, STATUS.running].includes(state.status);
@@ -115,6 +117,7 @@ export default class extends Controller {
             clearTimeout(this.timer);
             this.timer = setTimeout(() => this.refresh(), REFRESH_MILLISECONDS);
         }
+        if (wasBusy && !this.busy) this.dispatch(TERMINAL_EVENT);
     }
 
     notice(message) {
