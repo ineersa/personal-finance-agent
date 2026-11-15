@@ -57,9 +57,11 @@ final class ChatModelTest extends FinanceNetworkBrowserTest
                 window.snapshotObserved = false;
                 let genuineProgressArrived = false;
                 let fetches = 0;
+                const snapshotUrl = document.querySelector('[data-import-catch-up-url-value]').getAttribute('data-import-catch-up-url-value');
                 const originalFetch = window.fetch;
                 window.fetch = function (...args) {
-                    ++fetches;
+                    // Measure snapshot replacement, not the independent Stop-status GET on focus.
+                    if (args[0] === snapshotUrl) ++fetches;
                     return originalFetch.apply(this, args);
                 };
                 document.addEventListener('turbo:before-stream-render', event => {
