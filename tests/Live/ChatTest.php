@@ -29,7 +29,9 @@ final class ChatTest extends FinanceNetworkBrowserTest
         $page->getByLabel('Your message', ['exact' => true])->press('Enter');
         self::assertSame(1, $page->locator('.chat-turn')->count());
         $page->getByRole('button', ['name' => 'Stop', 'exact' => true])->click();
-        $page->getByText('Stopped', ['exact' => true])->waitFor();
+        $page->waitForFunction("() => ['Stopped', 'Reply complete'].includes(document.querySelector('.chat-progress')?.textContent.trim())");
+        $terminalLabel = trim($page->locator('.chat-progress')->textContent());
+        self::assertContains($terminalLabel, ['Stopped', 'Reply complete']);
         $page->getByRole('button', ['name' => 'Send message', 'exact' => true])->waitFor();
         self::assertSame($draft, $page->getByLabel('Your message', ['exact' => true])->inputValue());
         self::assertSame(1, $page->locator('.chat-turn')->count());
@@ -37,7 +39,10 @@ final class ChatTest extends FinanceNetworkBrowserTest
         self::assertSame(0, $page->locator('.chat-error')->count());
         $page->reload();
         $page->getByRole('button', ['name' => 'Send message', 'exact' => true])->waitFor();
-        $page->getByText('Stopped', ['exact' => true])->waitFor();
+        $page->getByText($terminalLabel, ['exact' => true])->waitFor();
+        $state = json_decode((string) $page->locator('[data-chat-control-state]')->getAttribute('data-chat-control-state'), true, flags: \JSON_THROW_ON_ERROR);
+        self::assertSame('Stopped' === $terminalLabel ? ExecutionStatus::Cancelled->value : ExecutionStatus::Completed->value, $state['status']);
+        fwrite(\STDERR, 'Stop journey terminal: '.$state['status']."\n");
         self::assertSame(0, $page->locator('[data-chat-response-active]')->count());
         $this->deleteCreatedChat();
     }

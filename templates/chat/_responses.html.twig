@@ -8,3 +8,8 @@
         {% set anchor = message.toolCall.id %}
     {% endif %}
 {% endfor %}
+{% if running and last and (last.role == roles.User or last.role == roles.ToolCall) %}
+    <div class="chat-response" id="{{ activity ? 'chat-response' : 'chat-answer-response' }}-{{ conversation.id }}-{{ user.id }}-{{ anchor }}" {% if activity %}data-chat-response-active{% endif %}>
+        <div id="{{ activity ? 'chat-content' : 'chat-answer-content' }}-{{ conversation.id }}-{{ user.id }}-{{ anchor }}"></div>
+    </div>
+{% endif %}

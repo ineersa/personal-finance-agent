@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Chat;
 
 use Psr\Cache\CacheItemPoolInterface;
+use Psr\Log\LoggerInterface;
 use Revolt\EventLoop;
 use Symfony\AI\Agent\Execution\ExecutionInterface;
 use Symfony\AI\Agent\Execution\ExecutionStatus;
@@ -29,7 +30,7 @@ final class ChatControl
     private ?string $timer = null;
     private float $heartbeat = 0;
 
-    public function __construct(#[Autowire(service: 'cache.chat_control')] private readonly CacheItemPoolInterface $cache)
+    public function __construct(#[Autowire(service: 'cache.chat_control')] private readonly CacheItemPoolInterface $cache, private readonly LoggerInterface $logger)
     {
     }
 
@@ -100,6 +101,16 @@ final class ChatControl
     }
 
     private function tick(): void
+    {
+        try {
+            $this->poll();
+        } catch (\Throwable) {
+            // A callback failure must not abort unrelated executions in the cooperative worker.
+            $this->logger->warning('Chat control poll unavailable.');
+        }
+    }
+
+    private function poll(): void
     {
         $keys = array_map(static fn (string $turn): string => self::CANCEL_PREFIX.$turn, array_keys($this->executions));
         foreach ($this->cache->getItems($keys) as $key => $item) {
