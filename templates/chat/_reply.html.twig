@@ -6,23 +6,15 @@
 {% endfor %}
 {% set last = exchange|last %}
 {% set completed = last and last.role == roles.Assistant and not last.hasToolCalls and last.asText %}
+{% set running = status|default(null) == statuses.Running %}
 <span class="chat-speaker">ChatGPT</span>
-<p class="chat-progress" id="chat-status-{{ conversation.id }}-{{ user.id }}" role="status" {% if status|default(null) == statuses.Running %}data-chat-response-active{% endif %}>{{ status|default(null) == statuses.Running ? 'Responding…' : (status|default(null) == statuses.Failed ? 'Failed' : (completed ? 'Reply complete' : '')) }}</p>
-<div id="chat-responses-{{ conversation.id }}-{{ user.id }}">
-    {% set anchor = user.id.toRfc4122 %}
-    {% for message in exchange %}
-        {% if message.role == roles.Assistant %}
-            <div class="chat-response" id="chat-response-{{ conversation.id }}-{{ user.id }}-{{ anchor }}">
-                <div id="chat-content-{{ conversation.id }}-{{ user.id }}-{{ anchor }}">{% include 'chat/_content.html.twig' with {content: message.content} %}</div>
-            </div>
-        {% elseif message.role == roles.ToolCall %}
-            {% set anchor = message.toolCall.id %}
-        {% endif %}
-    {% endfor %}
-    {% if last and last.role in [roles.User, roles.ToolCall] %}
-        <div class="chat-response" id="chat-response-{{ conversation.id }}-{{ user.id }}-{{ anchor }}"><div id="chat-content-{{ conversation.id }}-{{ user.id }}-{{ anchor }}"></div></div>
-    {% endif %}
-</div>
-{% if status|default(null) != statuses.Running %}
-    {% include 'chat/_charts.html.twig' %}
-{% endif %}
+<details class="chat-activity" id="chat-activity-{{ conversation.id }}-{{ user.id }}" {% if running %}open data-chat-running{% endif %}>
+    <summary><span class="chat-activity-label">{{ running ? 'Working' : 'View activity' }}</span> <span aria-hidden="true">⌄</span></summary>
+    <div id="chat-responses-{{ conversation.id }}-{{ user.id }}">{% include 'chat/_responses.html.twig' with {activity: true} %}</div>
+</details>
+<div id="chat-answers-{{ conversation.id }}-{{ user.id }}">{% include 'chat/_responses.html.twig' with {activity: false} %}</div>
+{% include 'chat/_charts.html.twig' %}
+<p class="chat-progress" id="chat-status-{{ conversation.id }}-{{ user.id }}" role="status" {% if running %}data-chat-response-active data-controller="chat-progress"{% endif %}>
+    <span id="chat-stage-{{ conversation.id }}-{{ user.id }}" data-chat-progress-target="label">{{ running ? 'Waiting for assistant…' : (status|default(null) == statuses.Cancelled ? 'Stopped' : (status|default(null) == statuses.Failed ? 'Failed' : (completed ? 'Reply complete' : ''))) }}</span>
+    {% if running %}<span data-chat-progress-target="elapsed" aria-hidden="true"></span>{% endif %}
+</p>

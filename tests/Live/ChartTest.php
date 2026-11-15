@@ -24,12 +24,27 @@ final class ChartTest extends FinanceNetworkBrowserTest
         self::assertSame(0, $turnIndex, 'Create this journey\'s conversation only from the empty new-chat route.');
         $question = 'Show my September 2026 spending by category for Maple Harbour Rewards Visa · 4826 in CAD as a horizontal bar chart, excluding card repayments. Briefly summarize the biggest expenses.';
         $page->getByLabel('Your message', ['exact' => true])->fill($question);
+        $page->addInitScript(<<<'JS'
+            (() => {
+                window.chartOpenedWhileStreaming = false;
+                const observer = new MutationObserver(() => {
+                    if (document.querySelector('.chat-chart-panel:not([hidden]) iframe') && document.querySelector('[data-chat-response-active]')) {
+                        window.chartOpenedWhileStreaming = true;
+                        observer.disconnect();
+                    }
+                });
+                observer.observe(document, { childList: true, subtree: true, attributes: true, attributeFilter: ['hidden'] });
+            })();
+            JS);
         $page->getByRole('button', ['name' => 'Send message', 'exact' => true])->click();
         $page->waitForURL('**/home/chat?conversation=*');
         $this->createdArtifactUrl = $page->url();
         $turn = $page->locator('.chat-turn')->nth($turnIndex);
         $turn->getByText($question, ['exact' => true])->waitFor();
         $turn->locator('.chat-answer[data-chat-saved]')->waitFor(['timeout' => 120000]);
+        self::assertTrue($page->evaluate('() => window.chartOpenedWhileStreaming'), 'The chart panel must auto-open while the assistant is still responding, before any chart-link click.');
+        self::assertNull($turn->locator('.chat-activity')->getAttribute('open'));
+        $turn->locator('.chat-activity > summary')->click();
         $tool = $turn->locator('.chat-tool')->filter(['hasText' => 'unovis_generate_bar_chart'])->first();
         self::assertSame(ExecutionStatus::Completed->value, $tool->getAttribute('data-tool-status'));
         $tool->locator('summary')->click();
@@ -56,7 +71,9 @@ final class ChartTest extends FinanceNetworkBrowserTest
         $firstCategory = $arguments['data'][0][$arguments['x']];
         $firstAmount = (new \NumberFormatter('en_US', \NumberFormatter::DECIMAL))->format($expected[$firstCategory] / 100);
         self::assertNotFalse($firstAmount);
-        $document = $turn->locator('.chat-chart iframe');
+        $chartLink = $turn->locator('.chat-chart-link')->first();
+        $chartLink->click();
+        $document = $page->locator('.chat-chart-panel .chat-chart iframe');
         $document->waitFor();
         $src = $document->getAttribute('src');
         self::assertStringStartsWith('/home/chat/', $src);
@@ -77,8 +94,15 @@ final class ChartTest extends FinanceNetworkBrowserTest
             $labels[] = preg_replace('/\s/u', '', $ticks->nth($index)->textContent());
         }
         self::assertContains(preg_replace('/\s/u', '', $firstCategory), $labels);
+        self::assertSame('dark', $frame->locator('html')->getAttribute('data-theme'));
+        self::assertSame('rgb(25, 25, 27)', $frame->locator('body')->evaluate('(body) => getComputedStyle(body).backgroundColor'));
+        $page->getByRole('button', ['name' => 'Back to conversation', 'exact' => true])->click();
+        self::assertSame('false', $chartLink->getAttribute('aria-expanded'));
+        $chartLink->click();
+        self::assertSame($src, $document->getAttribute('src'));
         $page->reload();
-        $document = $page->locator('.chat-turn')->nth($turnIndex)->locator('.chat-chart iframe');
+        $page->locator('.chat-turn')->nth($turnIndex)->locator('.chat-chart-link')->first()->click();
+        $document = $page->locator('.chat-chart-panel .chat-chart iframe');
         $document->waitFor();
         self::assertSame($src, $document->getAttribute('src'));
         $frame->locator('svg path[class$="-bar"]')->first()->hover();

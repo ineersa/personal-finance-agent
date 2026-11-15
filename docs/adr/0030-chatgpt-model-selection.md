@@ -2,6 +2,7 @@
 
 - Status: Accepted
 - Date: 2026-11-07
+- Composer presentation and the original no-localStorage rule are partially superseded by [ADR 0033](0033-chat-feedback-and-chart-panel.md): colored selected-model trigger, colored reasoning slider, and a browser-local model default for new drafts. Existing conversation selection and queued request capture remain unchanged.
 - Supersedes only the multi-provider **chat** scope in [ADR 0012](0012-configurable-ai-providers.md).
 - Amends the fixed execution-time model/effort in [ADR 0024](0024-basic-chatgpt-worker-chat.md) and [ADR 0029](0029-native-chat-store.md), and narrows the chat history adaptation in [ADR 0018](0018-finance-review-sql-and-jev.md). Extraction decisions remain unchanged.
 

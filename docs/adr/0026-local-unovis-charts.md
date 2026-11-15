@@ -2,6 +2,7 @@
 
 - Status: Accepted
 - Date: 2026-11-05
+- Presentation and dependency pin amended by: [ADR 0033](0033-chat-feedback-and-chart-panel.md). Its chart panel, upstream Unovis release and application-owned responsive dark presentation replace the earlier inline-only/fork choices below; storage and isolation remain accepted.
 - Supersedes: [ADR 0014](0014-inline-chat-and-antv-charts.md)
 - Amended by: [ADR 0029](0029-native-chat-store.md), moving private-chart membership from duplicate turn JSON into linked application metadata. Existing chat rows are discarded, not converted; storage bytes are not purged by migration.
 

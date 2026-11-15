@@ -9,7 +9,12 @@
     {% endif %}
     <div class="chat-turns" id="chat-turns-{{ chat.conversation_id }}">
         {% for exchange in exchanges %}
-            {% include 'chat/_turn.html.twig' with {conversation: chat.conversation, user: exchange|first} %}
+            {% set states = enum('Symfony\\AI\\Agent\\Execution\\ExecutionStatus') %}
+            {% set status = null %}
+            {% if chat.control and chat.control.turn == (exchange|first).id.toRfc4122 %}
+                {% set status = chat.control.status in [states.Pending.value, states.Running.value] ? states.Running : (chat.control.status == states.Cancelled.value ? states.Cancelled : (chat.control.status == states.Failed.value ? states.Failed : states.Completed)) %}
+            {% endif %}
+            {% include 'chat/_turn.html.twig' with {conversation: chat.conversation, user: exchange|first, status: status} %}
         {% endfor %}
     </div>
     <div id="chat-error-{{ chat.conversation_id }}"></div>

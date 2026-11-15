@@ -1,8 +1,8 @@
 FROM node:24.22.2-bookworm AS build
 WORKDIR /unovis
 RUN git init . \
-    && git remote add origin https://github.com/ineersa/unovis.git \
-    && git fetch --depth=1 origin e57001218dd00995aa13331bf731bd0bb4644fb9 \
+    && git remote add origin https://github.com/f5/unovis.git \
+    && git fetch --depth=1 origin 002633e531a70cc27b88ebf68a4e48d1d4abbaad \
     && git checkout --detach FETCH_HEAD \
     && corepack enable \
     && corepack prepare pnpm@10.23.0 --activate \

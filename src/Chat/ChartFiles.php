@@ -16,6 +16,18 @@ final readonly class ChartFiles
     public const int MAX_BYTES = 2097152;
     public const string HTML_CSP = "sandbox allow-scripts; default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; img-src data:; connect-src 'none'; object-src 'none'; frame-src 'none'; base-uri 'none'; form-action 'none'; frame-ancestors 'self'";
 
+    // Trusted presentation only. Unovis owns responsive rendering and all chart data/scripts.
+    private const string PRESENTATION = <<<'HTML'
+        <style>
+        :root[data-theme="dark"] { --uv-bg: #19191b; --uv-fg: #ededee; --uv-muted: #a2a2aa; --uv-border: #353539; }
+        html, body { block-size: 100%; color-scheme: dark; }
+        body { padding: 1.25rem; }
+        .uv-root { block-size: 100%; gap: 1rem; }
+        .uv-title { display: none; }
+        .uv-chart { flex: 1; aspect-ratio: auto; min-block-size: 0; }
+        </style>
+        HTML;
+
     public function __construct(#[Target('charts.storage')] private FilesystemOperator $storage)
     {
     }
@@ -39,6 +51,7 @@ final readonly class ChartFiles
             if (false === $html || '' === $html || \strlen($html) > self::MAX_BYTES) {
                 throw new \DomainException('The chart document exceeds its resource limit.');
             }
+            $html = str_replace('</head>', self::PRESENTATION.'</head>', $html);
             $filename = Uuid::v4()->toRfc4122().'.html';
             try {
                 $this->storage->write($conversation.'/'.$filename, $html);

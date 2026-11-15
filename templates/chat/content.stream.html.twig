@@ -1,1 +1,2 @@
-<turbo-stream action="update" target="chat-content-{{ conversation.id }}-{{ user.id }}-{{ anchor }}"><template>{% include 'chat/_content.html.twig' with {content: response.content} %}</template></turbo-stream>
+<turbo-stream action="update" target="chat-content-{{ conversation.id }}-{{ user.id }}-{{ anchor }}"><template><span data-chat-response-active hidden></span>{% include 'chat/_content.html.twig' with {content: response.content, activity: true} %}</template></turbo-stream>
+<turbo-stream action="update" target="chat-answer-content-{{ conversation.id }}-{{ user.id }}-{{ anchor }}"><template>{% include 'chat/_content.html.twig' with {content: response.content, activity: false} %}</template></turbo-stream>

@@ -36,12 +36,13 @@ final class ChatMessageType extends AbstractType
                 'constraints' => [new NotNull()],
                 'choice_label' => static fn (ChatModel $choice): string => $choice->label(),
                 'choice_attr' => static fn (ChatModel $choice): array => ['data-efforts' => json_encode(array_column($choice->efforts(), 'value'), \JSON_THROW_ON_ERROR)],
-                'attr' => ['data-chat-model-target' => 'model', 'data-action' => 'change->chat-model#update'],
+                'attr' => ['data-chat-model-target' => 'model', 'data-action' => 'change->chat-model#selectModel'],
             ])
             ->add('effort', EnumType::class, [
                 'class' => ReasoningEffort::class,
                 'constraints' => [new NotNull()],
                 'label' => 'Reasoning level',
+                'choice_attr' => static fn (ReasoningEffort $choice): array => ['data-color' => $choice->color()],
                 'attr' => ['data-chat-model-target' => 'effort'],
             ])
             ->add('question', TextareaType::class, [

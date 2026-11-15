@@ -31,7 +31,7 @@ class ChatConversation
     #[ORM\Column(nullable: true, enumType: ReasoningEffort::class)]
     public ?ReasoningEffort $effort = null;
 
-    /** @var list<array{message: string, file: string}> */
+    /** @var list<array{message: string, file: string, title?: string}> */
     #[ORM\Column(type: 'json')]
     public array $charts = [];
 

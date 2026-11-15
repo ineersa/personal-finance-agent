@@ -12,6 +12,53 @@ use Symfony\AI\Agent\Execution\ExecutionStatus;
 
 final class ChatTest extends FinanceNetworkBrowserTest
 {
+    public function testStopReplyAndReload(): void
+    {
+        $this->login();
+        $page = $this->page;
+        $page->addInitScript(<<<'JS'
+            window.terminalObserved = false;
+            window.terminalSnapshotObserved = false;
+            document.addEventListener('chat-control:terminal', () => { window.terminalObserved = true; });
+            document.addEventListener('turbo:before-stream-render', event => {
+                if (window.terminalObserved && event.detail.newStream.hasAttribute('data-import-snapshot')) {
+                    window.terminalSnapshotObserved = true;
+                }
+            });
+            JS);
+        $page->goto($this->url.'/home/chat');
+        $page->getByLabel('Your message', ['exact' => true])->fill('Show my September 2026 spending by category for Maple Harbour Rewards Visa · 4826 in CAD as a horizontal bar chart, excluding card repayments. Briefly summarize the biggest expenses.');
+        $page->getByRole('button', ['name' => 'Send message', 'exact' => true])->click();
+        $page->waitForURL('**/home/chat?conversation=*');
+        $this->createdArtifactUrl = $page->url();
+        $page->locator('[data-chat-response-active]')->first()->waitFor();
+        $page->reload();
+        $page->getByRole('button', ['name' => 'Stop', 'exact' => true])->waitFor();
+        $draft = 'Keep this next question as a draft.';
+        $page->getByLabel('Your message', ['exact' => true])->fill($draft);
+        $page->getByLabel('Your message', ['exact' => true])->press('Enter');
+        self::assertSame(1, $page->locator('.chat-turn')->count());
+        $page->getByRole('button', ['name' => 'Stop', 'exact' => true])->click();
+        $page->waitForFunction("() => ['Stopped', 'Reply complete'].includes(document.querySelector('.chat-progress')?.textContent.trim())");
+        $terminalLabel = trim($page->locator('.chat-progress')->textContent());
+        self::assertContains($terminalLabel, ['Stopped', 'Reply complete']);
+        $page->getByRole('button', ['name' => 'Send message', 'exact' => true])->waitFor();
+        $page->waitForFunction('() => window.terminalSnapshotObserved === true');
+        self::assertSame(0, $page->locator('[data-controller~="chat-progress"]')->count());
+        self::assertSame($draft, $page->getByLabel('Your message', ['exact' => true])->inputValue());
+        self::assertSame(1, $page->locator('.chat-turn')->count());
+        self::assertSame(0, $page->locator('[data-chat-response-active]')->count());
+        self::assertSame(0, $page->locator('.chat-error')->count());
+        $page->reload();
+        $page->getByRole('button', ['name' => 'Send message', 'exact' => true])->waitFor();
+        $page->getByText($terminalLabel, ['exact' => true])->waitFor();
+        $state = json_decode((string) $page->locator('[data-chat-control-state]')->getAttribute('data-chat-control-state'), true, flags: \JSON_THROW_ON_ERROR);
+        self::assertSame('Stopped' === $terminalLabel ? ExecutionStatus::Cancelled->value : ExecutionStatus::Completed->value, $state['status']);
+        fwrite(\STDERR, 'Stop journey terminal: '.$state['status']."\n");
+        self::assertSame(0, $page->locator('[data-chat-response-active]')->count());
+        $this->deleteCreatedChat();
+    }
+
     public function testWhitespacePreservesNativeDeleteConfirmation(): void
     {
         $this->login();
@@ -45,6 +92,8 @@ final class ChatTest extends FinanceNetworkBrowserTest
         $page->goto($url.'/home/chat');
         self::assertTrue($page->getByRole('button', ['name' => 'Send message', 'exact' => true])->isVisible(), 'The owner must connect ChatGPT in this isolated stack before the live test.');
         $menu = $page->locator('.chat-model-menu summary');
+        self::assertSame(ChatModel::Gpt6Luna->label(), $menu->textContent());
+        self::assertSame('rgb(0, 255, 255)', $menu->evaluate('(summary) => getComputedStyle(summary).color'));
         $menu->click();
         self::assertSame(ChatModel::Gpt6Luna->value, $page->getByLabel('Model', ['exact' => true])->inputValue());
         self::assertSame('Low', $page->getByRole('slider', ['name' => 'Reasoning level', 'exact' => true])->getAttribute('aria-valuetext'));
@@ -56,6 +105,8 @@ final class ChatTest extends FinanceNetworkBrowserTest
         $effort->press('ArrowLeft');
         self::assertSame('4', $effort->getAttribute('max'));
         self::assertSame('Extra High', $effort->getAttribute('aria-valuetext'));
+        self::assertSame(ChatModel::Gpt61Sol->label(), $menu->textContent());
+        self::assertSame('rgb(255, 0, 0)', $menu->evaluate('(summary) => getComputedStyle(summary).color'));
         $model->selectOption(ChatModel::Gpt6Luna->value);
         $effort->press('Home');
         $effort->press('ArrowRight');
@@ -77,6 +128,8 @@ final class ChatTest extends FinanceNetworkBrowserTest
         self::assertNull($tool->getAttribute('open'));
         $callId = $tool->getAttribute('data-tool-call-id');
         self::assertNotEmpty($callId);
+        self::assertNull($page->locator('.chat-turn')->first()->locator('.chat-activity')->getAttribute('open'));
+        $page->locator('.chat-turn')->first()->locator('.chat-activity > summary')->click();
         $tool->locator('summary')->click();
         self::assertStringContainsString('SELECT', strtoupper($tool->locator('.chat-tool-arguments')->textContent()));
         self::assertStringContainsString('PAYROLL LANTERN LABS', $tool->locator('.chat-tool-result')->textContent());
@@ -89,10 +142,32 @@ final class ChatTest extends FinanceNetworkBrowserTest
         self::assertSame('High', $page->getByRole('slider', ['name' => 'Reasoning level', 'exact' => true])->getAttribute('aria-valuetext'));
         $menu->click();
         $page->getByLabel('Your message', ['exact' => true])->fill($followUp);
+        $page->evaluate(<<<'JS'
+            () => {
+                window.chatPresentation = { active: false, text: false, sending: false, activity: false };
+                const activityObserver = new MutationObserver(() => {
+                    if ([...document.querySelectorAll('.chat-activity[open]')].some(details => details.closest('.chat-turn').querySelector('[data-chat-response-active]'))) {
+                        window.chatPresentation.activity = true;
+                        activityObserver.disconnect();
+                    }
+                });
+                activityObserver.observe(document, { childList: true, subtree: true, attributes: true, attributeFilter: ['open'] });
+                document.addEventListener('turbo:before-stream-render', event => {
+                    const stream = event.detail.newStream;
+                    if (stream.hasAttribute('data-import-snapshot')) return;
+                    if (stream.templateElement.content.querySelector('[data-chat-response-active]')) window.chatPresentation.active = true;
+                    if (stream.getAttribute('target')?.startsWith('chat-answer-content-') && stream.templateElement.content.querySelector('.chat-answer')) window.chatPresentation.text = true;
+                });
+                document.querySelector('.chat-composer').addEventListener('turbo:submit-start', () => {
+                    window.chatPresentation.sending = !document.querySelector('.chat-submission').hidden;
+                });
+            }
+            JS);
         $page->getByRole('button', ['name' => 'Send message', 'exact' => true])->click();
         $page->locator('.chat-turn')->nth($initialTurns + 1)->getByText($followUp, ['exact' => true])->waitFor();
         $page->locator('.chat-turn')->last()->locator('.chat-answer[data-chat-saved]')->waitFor(['timeout' => 120000]);
         self::assertStringContainsString($code, $page->locator('.chat-answer')->last()->textContent());
+        self::assertSame(['active' => true, 'text' => true, 'sending' => true, 'activity' => true], $page->evaluate('() => window.chatPresentation'));
         self::assertNotNull($tool->getAttribute('open'));
 
         $modelFollowUp = 'Repeat the code word from the start of this conversation. Reply with that code only.';
@@ -114,6 +189,7 @@ final class ChatTest extends FinanceNetworkBrowserTest
         $menu->click();
         self::assertStringContainsString($code, $page->locator('.chat-answer')->last()->textContent());
         self::assertSame($callId, $tool->getAttribute('data-tool-call-id'));
+        $page->locator('.chat-turn')->first()->locator('.chat-activity > summary')->click();
         $tool->locator('summary')->click();
         self::assertStringContainsString('PAYROLL LANTERN LABS', $tool->locator('.chat-tool-result')->textContent());
         $this->assertCreatedConversationHistory($code);
@@ -142,6 +218,13 @@ final class ChatTest extends FinanceNetworkBrowserTest
 
         $this->visit($page->getByRole('link', ['name' => 'New chat', 'exact' => true])->getAttribute('href'));
         self::assertSame(0, $page->locator('.chat-navigation-row.is-active')->count());
+        $menu = $page->locator('.chat-model-menu summary');
+        self::assertSame(ChatModel::Gpt6Sol->label(), $menu->textContent(), 'New chat restores the last explicitly chosen browser model.');
+        $page->reload();
+        $menu->click();
+        self::assertSame(ChatModel::Gpt6Sol->value, $page->getByLabel('Model', ['exact' => true])->inputValue());
+        self::assertSame('Low', $page->getByRole('slider', ['name' => 'Reasoning level', 'exact' => true])->getAttribute('aria-valuetext'), 'Only the model is remembered across new chats; the configured reasoning default remains authoritative.');
+        $menu->click();
         $this->visit($ownRow->locator('a.ea-sidebar-item-link')->getAttribute('href'));
         $ownRow->getByRole('button', ['name' => 'Chat actions', 'exact' => true])->click();
         $ownRow->getByRole('button', ['name' => 'Favourite', 'exact' => true])->click();

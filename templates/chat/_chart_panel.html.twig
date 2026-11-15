@@ -1,0 +1,10 @@
+<aside class="chat-chart-panel" id="chat-chart-panel" aria-label="Conversation charts" data-chat-charts-target="panel" hidden>
+    <header class="chat-chart-header">
+        <div><p class="eyebrow">Your charts</p><h2 data-chat-charts-target="title">Financial chart</h2></div>
+        <button type="button" data-action="chat-charts#close" aria-label="Back to conversation">Close <span aria-hidden="true">×</span></button>
+    </header>
+    <label class="visually-hidden" for="chat-chart-select">Select chart</label>
+    <select id="chat-chart-select" data-chat-charts-target="select" data-action="change->chat-charts#select"></select>
+    <div class="chat-chart-views" data-chat-charts-target="views"></div>
+    <p class="chat-chart-privacy">Interactive · Saved privately with this conversation</p>
+</aside>

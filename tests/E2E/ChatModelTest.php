@@ -57,9 +57,11 @@ final class ChatModelTest extends FinanceNetworkBrowserTest
                 window.snapshotObserved = false;
                 let genuineProgressArrived = false;
                 let fetches = 0;
+                const snapshotUrl = document.querySelector('[data-import-catch-up-url-value]').getAttribute('data-import-catch-up-url-value');
                 const originalFetch = window.fetch;
                 window.fetch = function (...args) {
-                    ++fetches;
+                    // Measure snapshot replacement, not the independent Stop-status GET on focus.
+                    if (args[0] === snapshotUrl) ++fetches;
                     return originalFetch.apply(this, args);
                 };
                 document.addEventListener('turbo:before-stream-render', event => {
@@ -148,6 +150,7 @@ final class ChatModelTest extends FinanceNetworkBrowserTest
         $tool = $page->locator('.chat-tool')->filter(['hasText' => 'unovis_generate_bar_chart']);
         self::assertSame(1, $tool->count(), 'The recorded model must make exactly one chart call, without retry.');
         self::assertStringContainsString('Tool call failed', $tool->locator('summary')->textContent());
+        $page->locator('.chat-activity > summary')->click();
         $tool->locator('summary')->click();
         self::assertStringContainsString('missing_amount', $tool->locator('.chat-tool-arguments')->textContent());
         self::assertNotEmpty($tool->locator('.chat-tool-result')->textContent());
@@ -158,6 +161,7 @@ final class ChatModelTest extends FinanceNetworkBrowserTest
         $observer->close();
         $page->reload();
         self::assertStringContainsString('Tool call failed', $tool->locator('summary')->textContent());
+        $page->locator('.chat-activity > summary')->click();
         $tool->locator('summary')->click();
         self::assertSame($result, $tool->locator('.chat-tool-result')->textContent());
         $this->deleteCreatedChat();

@@ -5,8 +5,10 @@ declare(strict_types=1);
 namespace App\Controller;
 
 use App\Chat\ChatAction;
+use App\Chat\ChatControl;
 use App\Chat\ChatModel;
 use App\Chat\ChatSelection;
+use App\Chat\ChatStop;
 use App\Chat\ChatUpdates;
 use App\Chat\ReasoningEffort;
 use App\Chat\Workspace;
@@ -17,6 +19,7 @@ use App\Form\ChatMessageType;
 use App\Security\FinanceRecordVoter;
 use EasyCorp\Bundle\EasyAdminBundle\Attribute\AdminRoute;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpKernel\Attribute\MapQueryString;
@@ -117,5 +120,23 @@ final class ChatSubmitController extends AbstractController
         $response->headers->set('Cache-Control', 'no-store');
 
         return $response;
+    }
+
+    #[Route('/home/chat/control', name: ChatControl::STATUS_ROUTE, methods: [Request::METHOD_GET])]
+    public function control(#[CurrentUser] User $user, Workspace $workspace, ChatControl $control, #[MapQueryString] ChatSelection $selection): JsonResponse
+    {
+        $conversation = $workspace->current($user, $selection->conversation) ?? throw $this->createNotFoundException();
+
+        return $this->json($control->state($conversation->id), headers: ['Cache-Control' => 'no-store']);
+    }
+
+    #[Route('/home/chat/stop', name: ChatControl::STOP_ROUTE, methods: [Request::METHOD_POST])]
+    #[IsCsrfTokenValid(ChatControl::STOP_CSRF)]
+    public function stop(#[MapRequestPayload] ChatStop $action, #[CurrentUser] User $user, Workspace $workspace, ChatControl $control): JsonResponse
+    {
+        $conversation = $workspace->current($user, $action->conversation) ?? throw $this->createNotFoundException();
+        $control->requestStop($conversation->id, $action->turn);
+
+        return $this->json($control->state($conversation->id), headers: ['Cache-Control' => 'no-store']);
     }
 }
