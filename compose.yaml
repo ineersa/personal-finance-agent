@@ -1,6 +1,25 @@
 name: personal-finance-agent
 
 services:
+  markitdown:
+    build:
+      context: docker/markitdown
+    init: true
+    read_only: true
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    mem_limit: 512m
+    cpus: 1
+    pids_limit: 64
+    tmpfs:
+      - /tmp:size=64m,mode=1777
+    volumes:
+      - statement_staging:/statement-staging:ro
+    networks: [conversion]
+    logging:
+      driver: none
+    # No published port, credentials, database, private statement store or outbound network.
+
   charts:
     build:
       context: docker/charts
@@ -28,6 +47,8 @@ services:
       XDG_DATA_HOME: /tmp/caddy-data
     volumes:
       - chart_output:/chart-output
+      - statement_staging:/statement-staging
+    networks: [default, conversion]
     ports:
       - "127.0.0.1:${HTTP_PORT:-8080}:8080"
     healthcheck:
@@ -54,7 +75,12 @@ services:
 
 volumes:
   chart_output:
+  statement_staging:
 ###> symfony/mercure-bundle ###
   mercure_data:
   mercure_config:
 ###< symfony/mercure-bundle ###
+
+networks:
+  conversion:
+    internal: true

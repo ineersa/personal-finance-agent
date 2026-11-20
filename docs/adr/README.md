@@ -21,7 +21,7 @@ ADRs record significant technical decisions, their context, and their consequenc
 | [0013](0013-symfony-ai-agent-runtime.md) | Runtime superseded by 0032; loop/context handoff accepted | Preserve Symfony AI's agent loop and simple context handoff; the historical native worker pool is replaced by cooperative Amp/Revolt execution. Quotas, budgets and per-user admission remain deferred by 0021. |
 | [0014](0014-inline-chat-and-antv-charts.md) | Superseded by 0026 | Display chart images inline in chat using a Docker-hosted AntV MCP server and its documented free hosted renderer; remove the separate artifact workspace. |
 | [0015](0015-sqlite-conversation-history.md) | Superseded by 0029 | Original temporary/saved retention and queued/running protection. |
-| [0016](0016-local-markitdown-conversion.md) | Accepted | Convert PDF/XLSX locally with official MarkItDown MCP in Docker; parse CSV in PHP, leaving OCR backend selection unresolved. |
+| [0016](0016-local-markitdown-conversion.md) | Accepted, amended | Convert PDF locally with official MarkItDown MCP in Docker; read XLSX locally into the shared CSV/PHP/Jev tabular path, leaving OCR backend selection unresolved. |
 | [0017](0017-exact-money-and-ecb-reporting.md) | Accepted | Preserve exact decimal money and present one configurable reporting currency using ECB reference rates. |
 | [0018](0018-finance-review-sql-and-jev.md) | Accepted | Approve editable drafts before analysis; use bounded owner-scoped SQL, Jev decision tasks, and isolated target-model history conversion. |
 | [0019](0019-worktree-development-routing.md) | Accepted | Route checkout-scoped development and live-browser stacks through a shared loopback Caddy proxy. |

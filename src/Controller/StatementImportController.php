@@ -8,6 +8,7 @@ use App\Entity\User;
 use App\Enum\ProcessingStatus;
 use App\Finance\Entity\Source;
 use App\Import\ImportException;
+use App\Import\StatementFormat;
 use App\Import\StatementUpload;
 use App\Repository\SourceRepository;
 use App\Repository\StatementRepository;
@@ -40,8 +41,8 @@ final class StatementImportController extends AbstractController
     {
         $form = $this->createFormBuilder()
             ->add('source', EntityType::class, ['class' => Source::class, 'choice_label' => 'name', 'query_builder' => static fn () => $sources->query(), 'placeholder' => 'Select your account or card'])
-            ->add('file', FileType::class, ['label' => 'CSV statement', 'constraints' => [new Assert\NotNull(), new Assert\File(maxSize: 10 * 1024 * 1024, extensions: ['csv' => ['text/plain', 'text/csv', 'application/csv', 'application/vnd.ms-excel']])]])
-            ->add('providerConsent', CheckboxType::class, ['label' => 'I agree to send statement samples and transaction details to the configured Jev provider for interpretation.', 'constraints' => [new Assert\IsTrue(message: 'Consent is required before provider processing.')]])
+            ->add('file', FileType::class, ['label' => 'Statement file', 'constraints' => [new Assert\NotNull(), new Assert\File(maxSize: 10 * 1024 * 1024, extensions: StatementFormat::extensions())]])
+            ->add('providerConsent', CheckboxType::class, ['label' => 'I agree to send PDF converted text to my connected ChatGPT account for extraction, and CSV/XLSX row samples and transaction details to the configured Jev provider for interpretation.', 'constraints' => [new Assert\IsTrue(message: 'Consent is required before provider processing.')]])
             ->getForm();
         $form->handleRequest($request);
         if ($form->isSubmitted() && $form->isValid()) {

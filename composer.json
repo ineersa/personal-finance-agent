@@ -29,6 +29,7 @@
         "league/flysystem-bundle": "^3.0",
         "mcp/sdk": "^0.9",
         "nyholm/psr7": "^1.8",
+        "openspout/openspout": "^4.33",
         "revolt/event-loop": "^1.0",
         "symfony/ai-agent": "~1.0.0@beta",
         "symfony/ai-decision-platform": "~1.0.0@beta",

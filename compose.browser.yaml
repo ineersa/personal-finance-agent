@@ -13,6 +13,7 @@ services:
       - .:/app:ro
       - ./var/browser-live:/app/var
       - chart_output:/chart-output
+      - statement_staging:/statement-staging
   broker:
     environment:
       APP_ENV: test
@@ -34,3 +35,4 @@ services:
       - .:/app:ro
       - ./var/browser-live:/app/var
       - chart_output:/chart-output
+      - statement_staging:/statement-staging

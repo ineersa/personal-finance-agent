@@ -1,9 +1,11 @@
 {% extends '@EasyAdmin/page/content.html.twig' %}
 {% form_theme form with ['@EasyAdmin/crud/form_theme.html.twig'] only %}
-{% block content_title %}Upload CSV statement{% endblock %}
+{% block content_title %}Upload statement{% endblock %}
 {% block main %}
     <p>Maximum 10 MiB. Select the account or card that owns this statement. Set its currency and instrument kind in Sources first.</p>
-    <p>Processing sends representative CSV rows and transaction details to <strong>{{ providerUrl }}</strong> using Jev. This is separate from your chat provider. Private descriptions, dates and amounts can leave this installation. Uploaded bytes remain in private local storage.</p>
+    <p>Processing sends representative CSV/XLSX rows and transaction details to <strong>{{ providerUrl }}</strong> using Jev. This is separate from your chat provider. Private descriptions, dates and amounts can leave this installation. Uploaded bytes remain in private local storage.</p>
+    <p>XLSX worksheets are read locally into tabular rows and use the same column mapping, exact parsing and Jev classification as CSV. Spreadsheets do not use MarkItDown, GPT-6 Luna or a ChatGPT connection. Each non-empty worksheet must contain a transaction table with separate debit/credit columns; use values rather than formulas. Legacy XLS is not supported.</p>
+    <p>Digital PDFs are converted locally with MarkItDown, then their converted text is sent to your connected ChatGPT account for extraction using the fixed GPT-6 Luna / medium trial selection. This selection is independent of your chat settings and does not use chat history or tools. Jev then classifies the extracted rows. Connect ChatGPT before uploading PDF. Scanned PDF/OCR support is not established.</p>
     <p>Use UTF-8 comma-separated CSV with separate unsigned debit/credit columns. Number formatting is detected from the file, independently of your display preferences. Dates may include a time; YYYY-MM-DD avoids day/month ambiguity. Processing creates drafts only; nothing is automatically approved or included in financial analysis.</p>
     {{ form_start(form) }}
         {{ form_errors(form) }}

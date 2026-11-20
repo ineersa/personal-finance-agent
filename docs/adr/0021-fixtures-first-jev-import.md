@@ -24,7 +24,7 @@ Bundle number-format selection from labelled examples and its evidence-sufficien
 
 Use Jev separately for transaction meaning, category and recurrence. Choice always selects an option; pair it with evidence-sufficiency questions and retain unknown/unresolved outcomes. Do not treat probability thresholds tuned on a few examples as established accuracy. Use compatible Symfony AI facilities, keep credentials server-side, and disclose the actual external destination. The initial hosted experiment sent only invented data. Do not log personal financial payloads, despite the upstream development skill's payload-logging suggestion.
 
-PDF/XLSX conversion and configured LLM row extraction remain governed by ADRs 0016 and 0018. Jev is not an arbitrary-field generator or OCR engine.
+PDF conversion and configured LLM row extraction remain governed by ADRs 0016 and 0018. Under the 2026-11-20 amendment to ADR 0016, XLSX worksheet cells are read locally into the shared CSV column-mapping/exact PHP parsing/Jev classification path, without MarkItDown or generative row extraction. Jev is not an arbitrary-field generator or OCR engine.
 
 ### Independent finance dimensions
 

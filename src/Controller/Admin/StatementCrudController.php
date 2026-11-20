@@ -39,7 +39,7 @@ final class StatementCrudController extends OwnedCrudController
 
     public function configureActions(Actions $actions): Actions
     {
-        $upload = Action::new('uploadCsv', 'Upload CSV')->linkToRoute('admin_statement_upload')->createAsGlobalAction();
+        $upload = Action::new('uploadCsv', 'Upload statement')->linkToRoute('admin_statement_upload')->createAsGlobalAction();
         $processing = Action::new('processing', 'Processing and drafts')->linkToRoute('admin_statement_processing', static fn (Statement $statement): array => ['id' => $statement->getId()]);
         $download = Action::new('download', 'Download')
             ->linkToRoute('app_statement_download', static fn (Statement $statement): array => ['id' => $statement->getId()])

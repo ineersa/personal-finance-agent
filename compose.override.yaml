@@ -21,10 +21,12 @@ services:
     volumes: !override
       - ./:/app
       - chart_output:/chart-output
+      - statement_staging:/statement-staging
     ports: !override
       - '127.0.0.1:${CHATGPT_CALLBACK_PORT}:8081'
     networks:
       default: {}
+      conversion: {}
       development:
         aliases:
           - "${FINANCE_PROJECT}"
@@ -57,6 +59,8 @@ services:
     volumes:
       - ./:/app
       - chart_output:/chart-output
+      - statement_staging:/statement-staging
+    networks: [default, conversion]
     command: ['php', 'bin/console', 'app:messenger:consume', 'scheduler_default', 'statement_import', 'chat', '--keepalive=5', '--memory-limit=256M', '--time-limit=3600', '--no-interaction']
     healthcheck:
       disable: true

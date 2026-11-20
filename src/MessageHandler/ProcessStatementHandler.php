@@ -10,9 +10,13 @@ use App\Finance\Entity\Category;
 use App\Finance\Entity\Transaction;
 use App\Finance\TenantManagers;
 use App\Import\CsvParser;
+use App\Import\DocumentConverter;
+use App\Import\DocumentExtraction;
 use App\Import\ImportException;
 use App\Import\ImportUpdates;
+use App\Import\StatementFormat;
 use App\Import\TransactionInterpreter;
+use App\Import\XlsxParser;
 use App\Message\ProcessStatementMessage;
 use App\Repository\CategoryRepository;
 use App\Repository\StatementRepository;
@@ -23,7 +27,7 @@ use Symfony\Component\Messenger\Attribute\AsMessageHandler;
 #[AsMessageHandler]
 final readonly class ProcessStatementHandler
 {
-    public function __construct(private EntityManagerInterface $entityManager, private TenantManagers $tenants, private StatementStorage $storage, private CsvParser $parser, private TransactionInterpreter $interpreter, private ImportUpdates $updates)
+    public function __construct(private EntityManagerInterface $entityManager, private TenantManagers $tenants, private StatementStorage $storage, private CsvParser $parser, private TransactionInterpreter $interpreter, private ImportUpdates $updates, private DocumentConverter $converter, private DocumentExtraction $extraction, private XlsxParser $xlsx)
     {
     }
 
@@ -58,16 +62,28 @@ final readonly class ProcessStatementHandler
                 if (null === $statement->source->currency) {
                     throw new ImportException('The source currency is missing.');
                 }
-                $stream = $this->storage->read($statement->storedFilename);
-                try {
-                    $content = stream_get_contents($stream, 10 * 1024 * 1024 + 1);
-                } finally {
-                    fclose($stream);
+                $explicitDate = null;
+                if (StatementFormat::isPdf($statement->mediaType)) {
+                    if (null === $owner->getChatGptIdentity()) {
+                        throw new ImportException('Connect ChatGPT before processing a PDF statement.');
+                    }
+                    $extracted = $this->extraction->extract($owner, $this->converter->convert($statement), $statement->source->currency, $statement->source->instrumentKind->value, $message->extractionModel, $message->extractionEffort);
+                    $rows = $extracted['rows'];
+                    $explicitDate = $extracted['statementDate'];
+                } else {
+                    $stream = $this->storage->read($statement->storedFilename);
+                    try {
+                        $content = stream_get_contents($stream, 10 * 1024 * 1024 + 1);
+                    } finally {
+                        fclose($stream);
+                    }
+                    if (false === $content || $statement->byteSize !== \strlen($content) || !hash_equals($statement->sha256, hash('sha256', $content))) {
+                        throw new ImportException('Statement bytes are unavailable or do not match their saved metadata.');
+                    }
+                    $rows = \in_array($statement->mediaType, StatementFormat::Xlsx->mediaTypes(), true)
+                        ? $this->xlsx->parse($content, $statement->source->currency, $statement->source->instrumentKind)
+                        : $this->parser->parse($content, $statement->source->currency, $statement->source->instrumentKind);
                 }
-                if (false === $content || $statement->byteSize !== \strlen($content) || !hash_equals($statement->sha256, hash('sha256', $content))) {
-                    throw new ImportException('Statement bytes are unavailable or do not match their saved metadata.');
-                }
-                $rows = $this->parser->parse($content, $statement->source->currency, $statement->source->instrumentKind);
                 $categories = $categories->findAllIndexedByName();
                 $catalog = array_map(static fn (Category $category): string => $category->description ?? $category->name, $categories);
                 $rows = $this->interpreter->interpret($rows, $statement->source->instrumentKind, $catalog);
@@ -92,7 +108,7 @@ final readonly class ProcessStatementHandler
                     ));
                 }
                 $statement->processingStatus = ProcessingStatus::Completed;
-                $statement->statementDate ??= $earliestDate;
+                $statement->statementDate ??= $explicitDate ?? $earliestDate;
                 $statement->processingError = null;
                 $statement->processedAt = new \DateTimeImmutable();
                 $em->flush();
