@@ -70,7 +70,7 @@ final readonly class DocumentConverter
             return $this->request($path);
         } catch (\Throwable) {
             // Do not retain upstream messages, paths, document content or provider payloads.
-            throw new ImportException('Local document conversion failed. Verify that the digital PDF or XLSX contains readable text.');
+            throw new ImportException('Local conversion did not complete. Check that the conversion service is available and the document contains readable text.');
         } finally {
             if ((is_file($path) && !unlink($path)) || !rmdir($directory)) {
                 throw new ImportException('Local conversion staging cleanup failed; operator attention is required.');
