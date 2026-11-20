@@ -100,7 +100,7 @@ final readonly class DocumentExtraction
     /** @return array{statementDate: ?\DateTimeImmutable, rows: list<ParsedTransactionDTO>} */
     private function validate(mixed $data, string $currency): array
     {
-        if (!\is_array($data) || 2 !== \count($data) || !\array_key_exists('statementDate', $data) || !isset($data['rows']) || !\is_array($data['rows']) || !array_is_list($data['rows']) || [] === $data['rows']) {
+        if (!\is_array($data) || 2 !== \count($data) || !\array_key_exists('statementDate', $data) || !isset($data['rows']) || !\is_array($data['rows']) || !array_is_list($data['rows'])) {
             throw new ImportException('Extraction returned no valid transactions.');
         }
         $statementDate = null === $data['statementDate'] ? null : self::date($data['statementDate']);
