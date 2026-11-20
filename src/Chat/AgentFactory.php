@@ -12,6 +12,7 @@ use App\Repository\ChatConversationRepository;
 use Mcp\Client;
 use Mcp\Client\Transport\HttpTransport;
 use Nyholm\Psr7\Factory\Psr17Factory;
+use Psr\Log\LoggerInterface;
 use Symfony\AI\Agent\Agent;
 use Symfony\AI\Agent\Bridge\Mcp\ClientToolset;
 use Symfony\AI\Agent\Bridge\Mcp\McpToolbox;
@@ -24,11 +25,13 @@ use Symfony\AI\Platform\Bridge\OpenAIChatGPT\Factory;
 use Symfony\AI\Platform\Bridge\OpenResponses\ModelCatalog;
 use Symfony\AI\Platform\Bridge\OpenResponses\ResponsesModel;
 use Symfony\AI\Platform\Capability;
+use Symfony\AI\Platform\Event\InvocationEvent;
 use Symfony\AI\Platform\Message\Content\File;
 use Symfony\AI\Platform\Message\Template;
 use Symfony\AI\Platform\Message\TemplateRenderer\StringTemplateRenderer;
 use Symfony\AI\Platform\Platform;
 use Symfony\Component\DependencyInjection\Attribute\Autowire;
+use Symfony\Component\EventDispatcher\EventDispatcher;
 use Symfony\Component\HttpClient\Psr18Client;
 use Symfony\Contracts\EventDispatcher\EventDispatcherInterface;
 use Symfony\Contracts\HttpClient\HttpClientInterface;
@@ -44,6 +47,8 @@ final readonly class AgentFactory
         private ChartFiles $files,
         private ChatConversationRepository $conversations,
         private MessageStoreInterface $store,
+        private LoggerInterface $logger,
+        #[Autowire('%env(int:CHAT_HANDOFF_THRESHOLD)%')] private int $handoffThreshold,
         #[Autowire(service: 'app.chatgpt.http_client')] private HttpClientInterface $http,
         #[Autowire(service: 'app.charts.http_client')] private HttpClientInterface $chartHttp,
         #[Autowire('%kernel.project_dir%')] private string $projectDir,
@@ -56,7 +61,12 @@ final readonly class AgentFactory
             throw new \LogicException('Configure a chat model.');
         }
         $catalog = new ModelCatalog([$model => ['class' => ResponsesModel::class, 'capabilities' => [Capability::INPUT_MESSAGES, Capability::OUTPUT_TEXT, Capability::THINKING, Capability::TOOL_CALLING]]]);
-        $provider = Factory::createProvider($this->oauth->create($identity), $this->http, $catalog);
+        $providerEvents = new EventDispatcher();
+        $provider = Factory::createProvider($this->oauth->create($identity), $this->http, $catalog, eventDispatcher: $providerEvents);
+        // Native app contract: the first stored message is the private InitialContext, never submitted browser text.
+        $initial = $this->store->load(\Symfony\Component\Uid\UuidV7::fromString($conversation->id))->getMessages()[0] ?? null;
+        $initialId = $initial instanceof \Symfony\AI\Platform\Message\UserMessage ? $initial->getId()->toRfc4122() : null;
+        $providerEvents->addListener(InvocationEvent::class, new ContextHandoff($provider, $this->conversations, $conversation, $this->logger, $this->handoffThreshold, $initialId));
 
         $chartGuidelines = $this->templates->render(Template::string(ChartToolset::GUIDELINES), [
             'finance_name' => TenantSqlTool::QUERY_NAME,

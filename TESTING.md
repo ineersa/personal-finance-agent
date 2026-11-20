@@ -159,6 +159,12 @@ Run `cs:fix`, relevant saved happy-path scenarios, and `qa:static` after code ch
 
 Report actual elapsed time, results, and any gaps. Do not inflate assertion counts or add test matrices. Routine validation must stay short; ask permission before expanding its scope or runtime. Run only against an idle checkout-owned browser stack: default preparation stops the owned worker, clears/rebuilds the test container, migrates/prepares fixtures and grant, then starts the worker before browser execution. This prevents long-lived workers retaining removed test service overrides. Preparation failure may leave the worker stopped; inspect the printed report rather than retrying providers.
 
+### Context handoff exercise
+
+`tests/Live/CompactionTest.php` is one ordinary synthetic financial-analysis/continuation/reload journey. For the compaction checkout only, put `CHAT_HANDOFF_THRESHOLD=23000` in ignored `.env.test.local` before main prepares the isolated test worker/container; the production default remains 180000. Use the existing generic runner to select that file. Do not change the threshold on an owner's running preview or copy credentials/finance data.
+
+The browser checks preserve both original question/answer history and a later completed reply after reload. Because handoff shaping is deliberately invisible and does not rewrite native history, those UI assertions alone do not prove a handoff occurred. Main must inspect genuine isolated provider request evidence: ordinary same-model Responses handoff with unchanged instructions/tool definitions/cache affinity, `tool_choice: none`, then a subsequent request containing the saved handoff plus complete recent groups and not its covered prefix. Missing exact recordings fail closed. Recording and external account use need explicit owner authorization; do not generate substitute fixtures or fabricated responses. The first unmeasured invocation remains subject to provider context enforcement.
+
 ## Fixtures and isolation
 
 Both development and tests use the canonical `fixtures/central/*.yaml` account definitions and `fixtures/*.yaml` tenant definitions. Do not create a supplementary test dataset or mutate development data for verification. Manual currency-rate CRUD and its scenario have been removed; rates are maintained by canonical history and ECB refresh.
