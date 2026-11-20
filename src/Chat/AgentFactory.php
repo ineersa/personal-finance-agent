@@ -55,7 +55,7 @@ final readonly class AgentFactory
     ) {
     }
 
-    public function create(User $owner, string $identity, string $model, EventDispatcherInterface $events, ChatConversation $conversation, string $message): Agent
+    public function create(User $owner, string $identity, string $model, EventDispatcherInterface $events, ChatConversation $conversation, string $message, ?string $initialId): Agent
     {
         if ('' === $model) {
             throw new \LogicException('Configure a chat model.');
@@ -63,9 +63,6 @@ final readonly class AgentFactory
         $catalog = new ModelCatalog([$model => ['class' => ResponsesModel::class, 'capabilities' => [Capability::INPUT_MESSAGES, Capability::OUTPUT_TEXT, Capability::THINKING, Capability::TOOL_CALLING]]]);
         $providerEvents = new EventDispatcher();
         $provider = Factory::createProvider($this->oauth->create($identity), $this->http, $catalog, eventDispatcher: $providerEvents);
-        // Native app contract: the first stored message is the private InitialContext, never submitted browser text.
-        $initial = $this->store->load(\Symfony\Component\Uid\UuidV7::fromString($conversation->id))->getMessages()[0] ?? null;
-        $initialId = $initial instanceof \Symfony\AI\Platform\Message\UserMessage ? $initial->getId()->toRfc4122() : null;
         $providerEvents->addListener(InvocationEvent::class, new ContextHandoff($provider, $this->conversations, $conversation, $this->logger, $this->handoffThreshold, $initialId));
 
         $chartGuidelines = $this->templates->render(Template::string(ChartToolset::GUIDELINES), [

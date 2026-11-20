@@ -226,11 +226,6 @@ final class ContextHandoff
             if (!$message instanceof AssistantMessage && !$message instanceof UserMessage && !$message instanceof ToolCallMessage) {
                 continue;
             }
-            if ($message instanceof AssistantMessage) {
-                foreach ($message->getToolCalls() as $call) {
-                    $bytes += \strlen($call->getName()) + \strlen(json_encode($call->getArguments(), \JSON_THROW_ON_ERROR | \JSON_UNESCAPED_UNICODE | \JSON_UNESCAPED_SLASHES));
-                }
-            }
             foreach ($message->getContent() as $part) {
                 if ($part instanceof Text) {
                     $bytes += \strlen($part->getText());

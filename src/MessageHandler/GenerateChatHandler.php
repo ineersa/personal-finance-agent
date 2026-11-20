@@ -100,7 +100,10 @@ final readonly class GenerateChatHandler
             $request = 0 === $input->count()
                 ? $input->with($this->context->messageForOwner($owner))->merge($message->input)
                 : $message->input;
-            $execution = $this->agents->create($owner, $registration, $message->model->value, $events, $conversation, $question->getId()->toRfc4122())->call($request,
+            // Older conversations identify the private InitialContext by its position in stored history.
+            $initial = $input->getMessages()[0] ?? null;
+            $initialId = $initial instanceof \Symfony\AI\Platform\Message\UserMessage ? $initial->getId()->toRfc4122() : null;
+            $execution = $this->agents->create($owner, $registration, $message->model->value, $events, $conversation, $question->getId()->toRfc4122(), $initialId)->call($request,
                 ['stream' => true, 'prompt_cache_key' => $conversation->id, 'reasoning' => ['effort' => $message->effort->value, 'summary' => 'auto']],
             );
             $this->control->register($conversation->id, $turn, $execution);
