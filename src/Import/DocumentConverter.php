@@ -61,13 +61,15 @@ final readonly class DocumentConverter
                 fclose($input);
             }
             if ($size !== $statement->byteSize || hash_file('sha256', $path) !== $statement->sha256) {
-                throw new ImportException('Stored statement does not match its admitted metadata.');
+                throw new ImportException('The stored file no longer matches the uploaded statement. Import stopped before conversion.');
             }
             // Only this disposable staging volume is visible to the read-only converter.
             chmod($directory, 0755);
             chmod($path, 0644);
 
             return $this->request($path);
+        } catch (ImportException $error) {
+            throw $error;
         } catch (\Throwable) {
             // Do not retain upstream messages, paths, document content or provider payloads.
             throw new ImportException('Local conversion did not complete. Check that the conversion service is available and the document contains readable text.');
