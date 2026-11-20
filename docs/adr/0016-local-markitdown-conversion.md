@@ -1,7 +1,13 @@
-# ADR 0016: Convert PDF and XLSX statements locally with MarkItDown MCP
+# ADR 0016: Convert PDF statements locally with MarkItDown MCP
 
 - Status: Accepted
 - Date: 2026-10-29
+
+## Amendment — 2026-11-20: XLSX uses the tabular import path
+
+The owner revised workbook routing in issue #27: XLSX cells are read locally with maintained `openspout/openspout` (locked at 4.33.0), not MarkItDown or a generative extractor. Each non-empty worksheet supplies tabular rows to the existing CSV column mapper and exact PHP transaction parser, followed by existing Jev classification and editable drafts. No ChatGPT connection, Luna inference, custom OOXML parser or legacy XLS support is added for spreadsheets. PDF conversion/extraction remains unchanged. This amendment supersedes the original XLSX-through-MCP choice below; the decision text is updated to show the current boundary.
+
+OpenSpout handles shared strings, worksheet cell positions and workbook date systems. It exposes numeric cells as PHP integers/floats, not original numeric XML lexemes: the application performs no money arithmetic or display-format rounding and passes round-trip decimal text into the existing exact parser, but does not claim arbitrary-precision recovery of XLSX numeric cells. Use text cells when exact original decimal spelling/precision must be retained. Worksheets must be transaction tables; formulas/error cells and non-tabular summaries require export to values/CSV rather than a new formula or layout inference engine. See [implementation limits](../local-document-conversion.md).
 
 ## Context
 
@@ -11,11 +17,11 @@ Statement extraction needs document conversion without building a custom OCR eng
 
 ### Official converter and worker flow
 
-Use official `microsoft/markitdown`, specifically `packages/markitdown-mcp`, running locally in Docker for PDF/XLSX conversion. Do not substitute the third-party `zcaceres/markdownify` wrapper. Parse CSV in PHP rather than sending it through this converter.
+Use official `microsoft/markitdown`, specifically `packages/markitdown-mcp`, running locally in Docker for PDF conversion. Do not substitute the third-party `zcaceres/markdownify` wrapper. Parse CSV in PHP and read XLSX cells locally into the shared tabular path rather than sending either through this converter.
 
-For PDF/XLSX, use the worker-driven flow: authorized upload → local document conversion through MCP → configured LLM structured row extraction → validated editable draft → user approval → approved transactions for analysis. Jev supplies categorization/decision tasks during draft preparation/review, not arbitrary-field extraction, as clarified in [ADR 0018](0018-finance-review-sql-and-jev.md). CSV is PHP-parsed without a mandatory LLM extraction step. Conversion output is intermediate document text, not validated financial records, and complex-table fidelity is not guaranteed.
+For PDF, use the worker-driven flow: authorized upload → local document conversion through MCP → configured LLM structured row extraction → validated editable draft → user approval → approved transactions for analysis. Jev supplies categorization/decision tasks during draft preparation/review, not arbitrary-field extraction, as clarified in [ADR 0018](0018-finance-review-sql-and-jev.md). CSV/XLSX use the shared PHP tabular parser without a mandatory generative LLM extraction step. Conversion output is intermediate document text, not validated financial records, and complex-table fidelity is not guaranteed.
 
-Ordinary digital PDF/XLSX conversion uses local parser dependencies, not an LLM or mandatory API key. Subsequent AI-assisted processing follows its backend's data-transfer policy; local conversion does not make Jev or a hosted model local. The separate Jev backend in ADR 0018 does not expand the chat-provider scope in [ADR 0012](0012-configurable-ai-providers.md).
+Ordinary digital PDF conversion and XLSX cell reading use local parser dependencies, not an LLM or mandatory API key. Subsequent AI-assisted processing follows its backend's data-transfer policy; local conversion does not make Jev or a hosted model local. The separate Jev backend in ADR 0018 does not expand the chat-provider scope in [ADR 0012](0012-configurable-ai-providers.md).
 
 ### OCR is not established by ordinary conversion
 
@@ -41,9 +47,10 @@ Treat uploaded content and converted text as untrusted data, not instructions. K
 - PDF, XLSX, and CSV are selected input types; supported banks/layouts, complex-table accuracy, scanned-PDF/OCR handling, and exact extraction mappings still require verification.
 - Existing budgets, the shared one-active-AI-generation-per-user limit, temporary/saved history, and AntV inline charts remain unchanged. Conversion is not a route around AI admission or accounting rules.
 - Verify actual converter/worker integration, known extracted values, ownership, hostile content, and no-text/error cases through headed browser checks in [TESTING.md](../../TESTING.md), using synthetic fixtures.
-- No application code, runtime skill, MCP catalog, API/settings contract, container, dependency, converter call, or OCR integration has been implemented or validated by this decision.
+- This decision alone is not runtime proof. Issue #27's implementation and remaining verification limitations are documented in [local document conversion](../local-document-conversion.md); OCR integration remains unselected and unverified.
 
 ## References
 
 - [Microsoft MarkItDown](https://github.com/microsoft/markitdown).
 - [Official MarkItDown MCP package](https://github.com/microsoft/markitdown/tree/main/packages/markitdown-mcp).
+- [OpenSpout documentation](https://github.com/openspout/openspout/blob/v4.33.0/docs/documentation.md).

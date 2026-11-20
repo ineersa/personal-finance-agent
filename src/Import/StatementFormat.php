@@ -20,9 +20,9 @@ enum StatementFormat: string
         };
     }
 
-    public static function isDocument(string $mediaType): bool
+    public static function isPdf(string $mediaType): bool
     {
-        return \in_array($mediaType, [...self::Pdf->mediaTypes(), ...self::Xlsx->mediaTypes()], true);
+        return \in_array($mediaType, self::Pdf->mediaTypes(), true);
     }
 
     /** @return array<string, list<string>> */

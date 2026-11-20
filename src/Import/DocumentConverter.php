@@ -26,7 +26,6 @@ final readonly class DocumentConverter
     public const int TIMEOUT_SECONDS = 60;
     private const array EXTENSIONS = [
         'application/pdf' => 'pdf',
-        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' => 'xlsx',
     ];
 
     public function __construct(private StatementStorage $storage)
@@ -38,7 +37,7 @@ final readonly class DocumentConverter
     {
         $extension = self::EXTENSIONS[$statement->mediaType] ?? null;
         if (null === $extension || $statement->byteSize <= 0 || $statement->byteSize > self::MAX_INPUT_BYTES) {
-            throw new ImportException('Local conversion requires a PDF or XLSX of at most 10 MiB.');
+            throw new ImportException('Local conversion requires a PDF of at most 10 MiB.');
         }
         $directory = self::STAGING.'/'.Uuid::v4()->toRfc4122();
         if (!mkdir($directory, 0755)) {

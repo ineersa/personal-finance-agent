@@ -33,8 +33,8 @@ final readonly class StatementUpload
         if (!$file->isValid() || $file->getSize() <= 0 || $file->getSize() > DocumentConverter::MAX_INPUT_BYTES || null === $format || !\in_array($file->getMimeType(), $format->mediaTypes(), true)) {
             throw new ImportException('Upload a non-empty PDF, XLSX or CSV of at most 10 MiB.');
         }
-        if (StatementFormat::Csv !== $format && null === $owner->getChatGptIdentity()) {
-            throw new ImportException('Connect ChatGPT before uploading a PDF or XLSX statement.');
+        if (StatementFormat::Pdf === $format && null === $owner->getChatGptIdentity()) {
+            throw new ImportException('Connect ChatGPT before uploading a PDF statement.');
         }
         $sha256 = hash_file('sha256', $file->getPathname());
         if (false === $sha256) {

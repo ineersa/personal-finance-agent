@@ -16,10 +16,19 @@ final readonly class CsvParser
     /** @return list<ParsedTransactionDTO> */
     public function parse(#[\SensitiveParameter] string $content, string $currency, InstrumentKind $instrument): array
     {
+        return $this->parseRows($this->read($content), $currency, $instrument);
+    }
+
+    /**
+     * @param non-empty-list<list<string>> $rows
+     *
+     * @return list<ParsedTransactionDTO>
+     */
+    public function parseRows(#[\SensitiveParameter] array $rows, string $currency, InstrumentKind $instrument): array
+    {
         if (1 !== preg_match('/\A[A-Z]{3}\z/D', $currency)) {
             throw new ImportException('Select a source with an explicit three-letter currency before parsing.');
         }
-        $rows = $this->read($content);
         $mapping = $this->mapper->map($rows, $currency, $instrument);
 
         return self::transactions($rows, $mapping, $currency);

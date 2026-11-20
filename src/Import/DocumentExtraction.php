@@ -39,7 +39,7 @@ final readonly class DocumentExtraction
     {
         $identity = $owner->getChatGptIdentity();
         if (null === $identity) {
-            throw new ImportException('Connect ChatGPT before processing a PDF or XLSX statement.');
+            throw new ImportException('Connect ChatGPT before processing a PDF statement.');
         }
         try {
             $modelSelection->validateEffort($effort);
