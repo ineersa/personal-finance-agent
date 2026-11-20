@@ -4,6 +4,7 @@ FROM dunglas/frankenphp:1.13.5-php8.5-bookworm@sha256:8104eb9c834d905e5678a183d0
 WORKDIR /app
 
 RUN install-php-extensions @composer bcmath intl mbstring pdo_sqlite sqlite3 pcntl posix zip opcache
+RUN mkdir /statement-staging && chmod 1777 /statement-staging
 
 COPY docker/frankenphp/Caddyfile /etc/caddy/Caddyfile
 COPY docker/frankenphp/uploads.ini /usr/local/etc/php/conf.d/uploads.ini

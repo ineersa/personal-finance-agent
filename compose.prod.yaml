@@ -26,6 +26,8 @@ x-demo-runtime: &demo-runtime
     - app_charts:/app/var/charts
     - broker_data:/app/var/queue
     - chart_output:/chart-output
+    - statement_staging:/statement-staging
+  networks: [default, conversion]
 
 services:
   php:

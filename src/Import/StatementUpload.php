@@ -29,15 +29,19 @@ final readonly class StatementUpload
         if (null === $source->currency) {
             throw new ImportException('Set the source currency before uploading a statement.');
         }
-        if (!$file->isValid() || $file->getSize() <= 0 || $file->getSize() > 10 * 1024 * 1024 || 'csv' !== strtolower($file->getClientOriginalExtension())) {
-            throw new ImportException('Upload a non-empty CSV of at most 10 MiB.');
+        $format = StatementFormat::tryFrom(strtolower($file->getClientOriginalExtension()));
+        if (!$file->isValid() || $file->getSize() <= 0 || $file->getSize() > DocumentConverter::MAX_INPUT_BYTES || null === $format || !\in_array($file->getMimeType(), $format->mediaTypes(), true)) {
+            throw new ImportException('Upload a non-empty PDF, XLSX or CSV of at most 10 MiB.');
+        }
+        if (StatementFormat::Csv !== $format && null === $owner->getChatGptIdentity()) {
+            throw new ImportException('Connect ChatGPT before uploading a PDF or XLSX statement.');
         }
         $sha256 = hash_file('sha256', $file->getPathname());
         if (false === $sha256) {
             throw new ImportException('Cannot read uploaded statement metadata.');
         }
         $originalFilename = $file->getClientOriginalName();
-        $mediaType = $file->getMimeType() ?? 'text/plain';
+        $mediaType = $file->getMimeType();
         $byteSize = $file->getSize();
         try {
             $filename = $this->storage->store($file);
@@ -81,7 +85,7 @@ final readonly class StatementUpload
         $id = $statement->getId() ?? throw new \LogicException('Statement missing.');
         $ownerId = $owner->getId() ?? throw new \LogicException('Owner missing.');
         try {
-            $this->bus->dispatch(new ProcessStatementMessage($id, $ownerId, $statement->storedFilename));
+            $this->bus->dispatch(new ProcessStatementMessage($id, $ownerId, $statement->storedFilename, DocumentExtraction::MODEL, DocumentExtraction::EFFORT));
         } catch (\Throwable) {
             // A worker may already have claimed or completed this import.
             $this->statements->transition($id, $statement->storedFilename, ProcessingStatus::Queued, ProcessingStatus::Failed, 'The processing queue is unavailable. Retry when the broker is running.');

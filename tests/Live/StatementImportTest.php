@@ -21,7 +21,7 @@ final class StatementImportTest extends FinanceNetworkBrowserTest
         $csvPath = \dirname(__DIR__, 2).'/resources/demo-statements/'.$statement['file'];
         $page->goto($url.'/home/statement-upload');
         $page->getByLabel('Source', ['exact' => true])->selectOption(['label' => 'Maple Harbour Chequing · 7318']);
-        $page->getByLabel('CSV statement', ['exact' => true])->setInputFiles($csvPath);
+        $page->getByLabel('Statement file', ['exact' => true])->setInputFiles($csvPath);
         $page->getByRole('checkbox')->check();
         $page->getByRole('button', ['name' => 'Upload and prepare drafts'])->click();
         $page->waitForURL('**/home/statement-processing/*');
