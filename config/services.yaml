@@ -17,6 +17,7 @@ parameters:
     env(CHATGPT_FINANCE_URL): ''
     env(CHAT_MODEL): 'gpt-6-luna'
     env(CHAT_REASONING_EFFORT): 'low'
+    env(CHAT_HANDOFF_THRESHOLD): '180000'
 
 services:
     # default configuration for services in *this* file

@@ -35,6 +35,10 @@ class ChatConversation
     #[ORM\Column(type: 'json')]
     public array $charts = [];
 
+    /** @var array{summary: string, through: string}|null */
+    #[ORM\Column(type: 'json', nullable: true)]
+    public ?array $handoff = null;
+
     public function __construct(
         #[ORM\ManyToOne]
         #[ORM\JoinColumn(nullable: false, onDelete: 'RESTRICT')]

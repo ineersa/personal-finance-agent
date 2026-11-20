@@ -20,7 +20,6 @@ use Symfony\AI\Agent\Execution\ExecutionStatus;
 use Symfony\AI\Agent\Execution\Update\Progress;
 use Symfony\AI\Agent\MessageStore\MessageStoreInterface;
 use Symfony\AI\Agent\Toolbox\Event\ToolCallsExecuted;
-use Symfony\AI\Platform\Message\Message;
 use Symfony\AI\Platform\Result\Stream\AssistantMessageStreamListener;
 use Symfony\AI\Platform\Result\Stream\Delta\CommentaryDelta;
 use Symfony\AI\Platform\Result\Stream\Delta\DeltaInterface;
@@ -99,9 +98,12 @@ final readonly class GenerateChatHandler
         try {
             // Decide when processing, after earlier queued submissions have saved their native history.
             $request = 0 === $input->count()
-                ? $input->with(Message::ofUser($this->context->forOwner($owner)))->merge($message->input)
+                ? $input->with($this->context->messageForOwner($owner))->merge($message->input)
                 : $message->input;
-            $execution = $this->agents->create($owner, $registration, $message->model->value, $events, $conversation, $question->getId()->toRfc4122())->call($request,
+            // Older conversations identify the private InitialContext by its position in stored history.
+            $initial = $input->getMessages()[0] ?? null;
+            $initialId = $initial instanceof \Symfony\AI\Platform\Message\UserMessage ? $initial->getId()->toRfc4122() : null;
+            $execution = $this->agents->create($owner, $registration, $message->model->value, $events, $conversation, $question->getId()->toRfc4122(), $initialId)->call($request,
                 ['stream' => true, 'prompt_cache_key' => $conversation->id, 'reasoning' => ['effort' => $message->effort->value, 'summary' => 'auto']],
             );
             $this->control->register($conversation->id, $turn, $execution);

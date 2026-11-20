@@ -9,6 +9,7 @@ use App\Entity\User;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\DBAL\Exception\DriverException;
 use Doctrine\DBAL\ParameterType;
+use Doctrine\DBAL\Types\Types;
 use Doctrine\Persistence\ManagerRegistry;
 
 /** @extends ServiceEntityRepository<ChatConversation> */
@@ -30,6 +31,19 @@ final class ChatConversationRepository extends ServiceEntityRepository
         return $this->createQueryBuilder('c')->select('c.id, c.label, c.favourite')
             ->where('c.user = :owner AND c.id = :id')->setParameter('owner', $owner)->setParameter('id', $id)
             ->getQuery()->getOneOrNullResult(\Doctrine\ORM\AbstractQuery::HYDRATE_ARRAY);
+    }
+
+    public function saveHandoff(ChatConversation $conversation, string $summary, string $through): void
+    {
+        $handoff = ['summary' => $summary, 'through' => $through];
+        $changed = $this->getEntityManager()->getConnection()->update('chat_metadata', ['handoff' => $handoff], [
+            'id' => $conversation->id,
+            'user_id' => $conversation->getUser()->getId(),
+        ], ['handoff' => Types::JSON]);
+        if (1 !== $changed) {
+            throw new \RuntimeException('The owned conversation is no longer available.');
+        }
+        $conversation->handoff = $handoff;
     }
 
     public function attachChart(ChatConversation $conversation, string $message, string $file, string $title): void
